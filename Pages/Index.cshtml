@@ -1,10 +1,110 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="dashboard">
+
+    <div class="dashboard-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p>Resumen general del taller mecánico</p>
+        </div>
+
+        <div class="dashboard-date">
+            <span>Hoy</span>
+            <strong>@DateTime.Now.ToString("dd/MM/yyyy")</strong>
+        </div>
+    </div>
+
+    <!-- MÉTRICAS -->
+
+    <div class="metrics-grid">
+
+        <div class="metric-card">
+            <div class="metric-icon">👨‍🔧</div>
+
+            <div class="metric-info">
+                <span class="metric-label">Mecánicos disponibles</span>
+                <strong class="metric-value">0</strong>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">🚗</div>
+
+            <div class="metric-info">
+                <span class="metric-label">Vehículos en taller</span>
+                <strong class="metric-value">0</strong>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">🔧</div>
+
+            <div class="metric-info">
+                <span class="metric-label">Órdenes activas</span>
+                <strong class="metric-value">0</strong>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon">⏳</div>
+
+            <div class="metric-info">
+                <span class="metric-label">Órdenes pendientes</span>
+                <strong class="metric-value">0</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ÓRDENES RECIENTES -->
+
+    <div class="recent-orders">
+
+        <div class="section-header">
+            <div>
+                <h2>Órdenes recientes</h2>
+                <p>Últimas órdenes de trabajo registradas</p>
+            </div>
+
+            <a class="view-all" href="#">
+                Ver todas →
+            </a>
+        </div>
+
+        <div class="table-container">
+
+            <table class="orders-table">
+
+                <thead>
+                    <tr>
+                        <th>ORDEN</th>
+                        <th>PLACA</th>
+                        <th>VEHÍCULO</th>
+                        <th>MECÁNICO</th>
+                        <th>ESTADO</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <strong>No hay órdenes recientes</strong>
+                            <span>Las órdenes de trabajo aparecerán aquí.</span>
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
 </div>
