@@ -1,7 +1,9 @@
+using TallerMecanico.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddScoped<DatabaseConnection>();
 
 var app = builder.Build();
 
