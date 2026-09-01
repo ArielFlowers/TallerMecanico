@@ -9,9 +9,8 @@ public class DashboardService
         return new DashboardViewModel
         {
             MecanicosDisponibles = 0,
-            VehiculosEnTaller = 0,
-            OrdenesActivas = 0,
-            OrdenesPendientes = 0
+            VehiculosRegistrados = 0,
+            ServiciosRegistrados = 0
         };
     }
 }
