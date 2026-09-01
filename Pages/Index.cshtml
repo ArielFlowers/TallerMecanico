@@ -1,11 +1,11 @@
 ﻿@page
 @model IndexModel
+
 @{
     ViewData["Title"] = "Dashboard";
 }
 
 <div class="dashboard">
-
     <div class="dashboard-header">
         <div>
             <h1>Dashboard</h1>
@@ -18,13 +18,9 @@
         </div>
     </div>
 
-    <!-- MÉTRICAS -->
-
     <div class="metrics-grid">
-
         <div class="metric-card">
             <div class="metric-icon">👨‍🔧</div>
-
             <div class="metric-info">
                 <span class="metric-label">Mecánicos disponibles</span>
                 <strong class="metric-value">@Model.Dashboard.MecanicosDisponibles</strong>
@@ -33,7 +29,6 @@
 
         <div class="metric-card">
             <div class="metric-icon">🚗</div>
-
             <div class="metric-info">
                 <span class="metric-label">Vehículos en taller</span>
                 <strong class="metric-value">@Model.Dashboard.VehiculosEnTaller</strong>
@@ -42,7 +37,6 @@
 
         <div class="metric-card">
             <div class="metric-icon">🔧</div>
-
             <div class="metric-info">
                 <span class="metric-label">Órdenes activas</span>
                 <strong class="metric-value">@Model.Dashboard.OrdenesActivas</strong>
@@ -51,34 +45,25 @@
 
         <div class="metric-card">
             <div class="metric-icon">⏳</div>
-
             <div class="metric-info">
                 <span class="metric-label">Órdenes pendientes</span>
                 <strong class="metric-value">@Model.Dashboard.OrdenesPendientes</strong>
             </div>
         </div>
-
     </div>
 
-    <!-- ÓRDENES RECIENTES -->
-
     <div class="recent-orders">
-
         <div class="section-header">
             <div>
                 <h2>Órdenes recientes</h2>
                 <p>Últimas órdenes de trabajo registradas</p>
             </div>
 
-            <a class="view-all" href="#">
-                Ver todas →
-            </a>
+            <span class="view-all">Ver todas →</span>
         </div>
 
         <div class="table-container">
-
             <table class="orders-table">
-
                 <thead>
                     <tr>
                         <th>ORDEN</th>
@@ -90,7 +75,6 @@
                 </thead>
 
                 <tbody>
-
                     <tr>
                         <td colspan="5" class="empty-state">
                             <div class="empty-icon">📋</div>
@@ -98,13 +82,8 @@
                             <span>Las órdenes de trabajo aparecerán aquí.</span>
                         </td>
                     </tr>
-
                 </tbody>
-
             </table>
-
         </div>
-
     </div>
-
 </div>
