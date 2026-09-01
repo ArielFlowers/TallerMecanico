@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - Taller Mecánico</title>
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+
+<body>
+    <div class="app-container">
+
+        <aside class="sidebar">
+
+            <div class="brand">
+                <div class="brand-icon">
+                    🔧
+                </div>
+
+                <div class="brand-text">
+                    <span class="brand-title">TALLER</span>
+                    <span class="brand-subtitle">MECÁNICO</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+
+                <a class="menu-item active" asp-page="/Index">
+                    <span class="menu-icon">⌂</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a class="menu-item" asp-page="/Mecanicos/Index">
+                    <span class="menu-icon">👤</span>
+                    <span>Mecánicos</span>
+                </a>
+
+                <a class="menu-item" asp-page="/Vehiculos/Index">
+                    <span class="menu-icon">🚗</span>
+                    <span>Vehículos</span>
+                </a>
+
+                <a class="menu-item" asp-page="/Ordenes/Index">
+                    <span class="menu-icon">🔧</span>
+                    <span>Órdenes de Trabajo</span>
+                </a>
+
+                <a class="menu-item" asp-page="/Historial/Index">
+                    <span class="menu-icon">📋</span>
+                    <span>Historial</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-footer">
+                <span>Sistema de Gestión</span>
+                <small>© 2026 Taller Mecánico</small>
+            </div>
+
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <span class="topbar-label">GESTIÓN DEL TALLER</span>
+                </div>
+
+                <div class="topbar-user">
+                    <span class="user-icon">👤</span>
+                    <span>Administrador</span>
+                </div>
+            </header>
+
+            <section class="page-content">
+                @RenderBody()
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+```
