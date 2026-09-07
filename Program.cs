@@ -8,6 +8,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<DatabaseConnection>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<ServicioRepository>();
+builder.Services.AddScoped<ServicioService>();
 builder.Services.AddScoped<DashboardService>();
 
 var app = builder.Build();
