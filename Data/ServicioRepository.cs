@@ -116,12 +116,30 @@ public class ServicioRepository
         command.ExecuteNonQuery();
     }
 
+    public int Count()
+    {
+        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        connection.Open();
+
+        const string query = """
+            SELECT COUNT(*)
+            FROM Servicios;
+            """;
+
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        return Convert.ToInt32(command.ExecuteScalar());
+    }
+
     private static void AddParameters(SqliteCommand command, Servicio servicio)
     {
         command.Parameters.AddWithValue("@Nombre", servicio.Nombre);
         command.Parameters.AddWithValue("@Descripcion", servicio.Descripcion);
         command.Parameters.AddWithValue("@Costo", servicio.Costo);
-        command.Parameters.AddWithValue("@TiempoEstimadoHoras", servicio.TiempoEstimadoHoras);
+        command.Parameters.AddWithValue(
+            "@TiempoEstimadoHoras",
+            servicio.TiempoEstimadoHoras);
     }
 
     private static Servicio MapServicio(SqliteDataReader reader)
