@@ -1,0 +1,100 @@
+﻿@page
+@model TallerMecanico.Pages.Servicios.IndexModel
+
+@{
+    ViewData["Title"] = "Servicios";
+}
+
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1>Gestión de Servicios</h1>
+            <p>Administra el catálogo de servicios del taller.</p>
+        </div>
+
+        <div class="services-actions">
+            <a asp-page="./Index" class="services-btn services-btn-secondary">
+                Refrescar
+            </a>
+
+            <a asp-page="./Create" class="services-btn services-btn-primary">
+                + Nuevo Servicio
+            </a>
+        </div>
+    </div>
+
+    <section class="recent-orders">
+        <div class="section-header">
+            <div>
+                <h2>Servicios registrados</h2>
+                <p>@Model.Servicios.Count servicio(s) en el catálogo</p>
+            </div>
+        </div>
+
+        @if (Model.Servicios.Count == 0)
+        {
+            <div class="services-empty">
+                <div class="services-empty-icon">🔧</div>
+                <strong>No existen servicios registrados</strong>
+                <span>
+                    Registra un nuevo servicio para comenzar a administrar el catálogo.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+                <table class="orders-table services-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Costo</th>
+                            <th>Tiempo estimado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var servicio in Model.Servicios)
+                        {
+                            <tr>
+                                <td class="service-name">
+                                    @servicio.Nombre
+                                </td>
+
+                                <td>
+                                    @servicio.Descripcion
+                                </td>
+
+                                <td>
+                                    Bs. @servicio.Costo.ToString("0.00")
+                                </td>
+
+                                <td>
+                                    @servicio.TiempoEstimadoHoras h
+                                </td>
+
+                                <td>
+                                    <div class="services-row-actions">
+                                        <a asp-page="./Edit"
+                                           asp-route-id="@servicio.Id"
+                                           class="service-action service-action-edit">
+                                            Editar
+                                        </a>
+
+                                        <a asp-page="./Delete"
+                                           asp-route-id="@servicio.Id"
+                                           class="service-action service-action-delete">
+                                            Eliminar
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

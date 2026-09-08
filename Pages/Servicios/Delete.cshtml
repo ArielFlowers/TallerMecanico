@@ -1,0 +1,71 @@
+﻿@page
+@model TallerMecanico.Pages.Servicios.DeleteModel
+
+@{
+    ViewData["Title"] = "Eliminar Servicio";
+}
+
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1>Eliminar Servicio</h1>
+            <p>Confirma la eliminación del servicio seleccionado.</p>
+        </div>
+
+        <a asp-page="./Index"
+           class="services-btn services-btn-secondary">
+            Volver
+        </a>
+    </div>
+
+    <section class="service-form-card">
+        <div class="service-form-header">
+            <h2>Confirmar eliminación</h2>
+            <p>Esta acción eliminará el servicio del catálogo.</p>
+        </div>
+
+        <div class="service-form">
+            <div class="service-delete-warning">
+                <strong>¿Estás seguro de que deseas eliminar este servicio?</strong>
+                <span>Revisa los datos antes de confirmar.</span>
+            </div>
+
+            <div class="service-delete-details">
+                <div class="service-delete-item">
+                    <span>Nombre</span>
+                    <strong>@Model.Servicio.Nombre</strong>
+                </div>
+
+                <div class="service-delete-item">
+                    <span>Descripción</span>
+                    <strong>@Model.Servicio.Descripcion</strong>
+                </div>
+
+                <div class="service-delete-item">
+                    <span>Costo</span>
+                    <strong>Bs. @Model.Servicio.Costo.ToString("0.00")</strong>
+                </div>
+
+                <div class="service-delete-item">
+                    <span>Tiempo estimado</span>
+                    <strong>@Model.Servicio.TiempoEstimadoHoras h</strong>
+                </div>
+            </div>
+
+            <form method="post"
+                  asp-route-id="@Model.Servicio.Id"
+                  class="service-form-actions">
+
+                <a asp-page="./Index"
+                   class="services-btn services-btn-secondary">
+                    Cancelar
+                </a>
+
+                <button type="submit"
+                        class="services-btn services-btn-danger">
+                    Eliminar Servicio
+                </button>
+            </form>
+        </div>
+    </section>
+</div>
