@@ -925,6 +925,100 @@ body {
     }
 }
 
+/* =========================
+   MODALES
+   ========================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(13, 10, 18, 0.72);
+}
+
+    .modal-overlay.is-open {
+        display: flex;
+    }
+
+.modal-dialog {
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+    .modal-dialog .service-form-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+.modal-close {
+    padding: 0 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color var(--transition);
+}
+
+    .modal-close:hover {
+        color: var(--text-primary);
+    }
+
+body.modal-open {
+    overflow: hidden;
+}
+
+button.service-action {
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+@media (max-width: 650px) {
+    .modal-overlay {
+        padding: 12px;
+    }
+
+    .modal-dialog {
+        max-height: 95vh;
+    }
+}
+
+/* =========================
+   VALIDACION EN LINEA
+   ========================= */
+
+.field-warning {
+    display: none;
+    color: var(--warning);
+    font-size: 11px;
+}
+
+    .field-warning.is-visible {
+        display: block;
+    }
+
+.service-input.input-warning {
+    border-color: var(--warning);
+}
+
+    .service-input.input-warning:focus {
+        border-color: var(--warning);
+        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.14);
+    }
+
 /* =========================================
    SIDEBAR MODULES AND SUBMENUS
    ========================================= */
