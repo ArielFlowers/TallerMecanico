@@ -27,7 +27,7 @@ public class IndexModel : PageModel
         CargarVehiculos();
     }
 
-    public IActionResult OnPostCrear()
+    public IActionResult OnPostCreate()
     {
         if (!ModelState.IsValid)
         {
@@ -45,12 +45,12 @@ public class IndexModel : PageModel
             return MostrarModal("crear");
         }
 
-        _vehiculoService.Crear(vehiculo);
+        _vehiculoService.Create(vehiculo);
 
         return RedirectToPage();
     }
 
-    public IActionResult OnPostEditar()
+    public IActionResult OnPostUpdate()
     {
         if (!ModelState.IsValid)
         {
@@ -68,14 +68,14 @@ public class IndexModel : PageModel
             return MostrarModal("editar");
         }
 
-        _vehiculoService.Actualizar(vehiculo);
+        _vehiculoService.Update(vehiculo);
 
         return RedirectToPage();
     }
 
-    public IActionResult OnPostEliminar(int id)
+    public IActionResult OnPostDelete(int id)
     {
-        _vehiculoService.Eliminar(id);
+        _vehiculoService.Delete(id);
 
         return RedirectToPage();
     }
@@ -90,7 +90,7 @@ public class IndexModel : PageModel
 
     private void CargarVehiculos()
     {
-        Vehiculos = _vehiculoService.ObtenerTodos();
+        Vehiculos = _vehiculoService.GetAll();
     }
 
     private Vehiculo MapearVehiculo(int id)

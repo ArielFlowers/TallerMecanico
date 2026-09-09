@@ -4,15 +4,15 @@ namespace TallerMecanico.Services;
 
 public interface IVehiculoService
 {
-    List<Vehiculo> ObtenerTodos();
+    List<Vehiculo> GetAll();
 
-    Vehiculo? ObtenerPorId(int id);
+    Vehiculo? GetById(int id);
 
-    void Crear(Vehiculo vehiculo);
+    void Create(Vehiculo vehiculo);
 
-    void Actualizar(Vehiculo vehiculo);
+    void Update(Vehiculo vehiculo);
 
-    void Eliminar(int id);
+    void Delete(int id);
 
     bool PlacaRegistrada(string placa, int idExcluido);
 }

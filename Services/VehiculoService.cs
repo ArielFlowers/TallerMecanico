@@ -12,27 +12,27 @@ public class VehiculoService : IVehiculoService
         _vehiculoRepository = vehiculoRepository;
     }
 
-    public List<Vehiculo> ObtenerTodos()
+    public List<Vehiculo> GetAll()
     {
         return _vehiculoRepository.GetAll();
     }
 
-    public Vehiculo? ObtenerPorId(int id)
+    public Vehiculo? GetById(int id)
     {
         return _vehiculoRepository.GetById(id);
     }
 
-    public void Crear(Vehiculo vehiculo)
+    public void Create(Vehiculo vehiculo)
     {
         _vehiculoRepository.Add(vehiculo);
     }
 
-    public void Actualizar(Vehiculo vehiculo)
+    public void Update(Vehiculo vehiculo)
     {
         _vehiculoRepository.Update(vehiculo);
     }
 
-    public void Eliminar(int id)
+    public void Delete(int id)
     {
         _vehiculoRepository.Delete(id);
     }

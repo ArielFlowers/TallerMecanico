@@ -125,7 +125,7 @@
             <button type="button" class="modal-close" data-modal-cerrar>&times;</button>
         </div>
 
-        <form method="post" asp-page-handler="Crear" class="service-form">
+        <form method="post" asp-page-handler="Create" class="service-form">
             <div class="service-form-group">
                 <label for="crear-placa">Placa</label>
 
@@ -210,7 +210,7 @@
             <button type="button" class="modal-close" data-modal-cerrar>&times;</button>
         </div>
 
-        <form method="post" asp-page-handler="Editar" class="service-form">
+        <form method="post" asp-page-handler="Update" class="service-form">
             <input asp-for="Formulario.Id" id="editar-id" type="hidden" />
 
             <div class="service-form-group">
@@ -291,7 +291,7 @@
             <button type="button" class="modal-close" data-modal-cerrar>&times;</button>
         </div>
 
-        <form method="post" asp-page-handler="Eliminar" class="service-form">
+        <form method="post" asp-page-handler="Delete" class="service-form">
             <input type="hidden" name="id" id="eliminar-id" />
 
             <div class="service-delete-warning">
