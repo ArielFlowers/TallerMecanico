@@ -18,6 +18,9 @@ builder.Services.AddScoped<
     IHistorialCostoServicioService,
     HistorialCostoServicioService>();
 
+builder.Services.AddScoped<IVehiculoRepository, VehiculoRepository>();
+builder.Services.AddScoped<IVehiculoService, VehiculoService>();
+
 var app = builder.Build();
 
 using (IServiceScope scope = app.Services.CreateScope())
