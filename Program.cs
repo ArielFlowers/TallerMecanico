@@ -5,9 +5,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<DatabaseConnection>();
+builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<DashboardService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var databaseInitializer =
+        scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+
+    await databaseInitializer.InitializeAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
