@@ -1,0 +1,278 @@
+@page
+@model TallerMecanico.Pages.Mecanicos.IndexModel
+
+@{
+    ViewData["Title"] = "Gestión de Mecánicos";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/mecanicos.css" asp-append-version="true" />
+}
+
+<div class="dashboard mecanicos-page">
+    <div class="dashboard-header mecanicos-header">
+        <div>
+            <h1>Gestión de Mecánicos</h1>
+            <p>Administra el personal técnico registrado en el taller.</p>
+        </div>
+
+        <button type="button"
+                class="mecanicos-btn mecanicos-btn-primary"
+                id="abrir-crear-mecanico">
+            <span aria-hidden="true">＋</span>
+            Nuevo Registro
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.MensajeExito))
+    {
+        <div class="mecanicos-alert mecanicos-alert-success" role="status">
+            @Model.MensajeExito
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.MensajeError))
+    {
+        <div class="mecanicos-alert mecanicos-alert-error" role="alert">
+            @Model.MensajeError
+        </div>
+    }
+
+    <div class="mecanicos-toolbar">
+        <form method="get" class="mecanicos-search" role="search">
+            <label asp-for="TerminoBusqueda" class="visually-hidden">
+                Buscar mecánicos
+            </label>
+            <span class="mecanicos-search-icon" aria-hidden="true">⌕</span>
+            <input asp-for="TerminoBusqueda"
+                   class="mecanicos-search-input"
+                   placeholder="Buscar por CI, nombre, especialidad o celular"
+                   autocomplete="off" />
+            <button type="submit" class="mecanicos-btn mecanicos-btn-secondary">
+                Buscar
+            </button>
+
+            @if (!string.IsNullOrWhiteSpace(Model.TerminoBusqueda))
+            {
+                <a asp-page="./Index" class="mecanicos-clear-search">
+                    Limpiar
+                </a>
+            }
+        </form>
+    </div>
+
+    <section class="recent-orders mecanicos-panel" aria-labelledby="mecanicos-listado-titulo">
+        <div class="section-header">
+            <div>
+                <h2 id="mecanicos-listado-titulo">Mecánicos Registrados</h2>
+                <p>@Model.Mecanicos.Count mecánico(s) encontrado(s)</p>
+            </div>
+        </div>
+
+        @if (Model.Mecanicos.Count == 0)
+        {
+            <div class="mecanicos-empty">
+                <div class="mecanicos-empty-icon" aria-hidden="true">👨‍🔧</div>
+                <strong>
+                    @(string.IsNullOrWhiteSpace(Model.TerminoBusqueda)
+                        ? "No existen mecánicos registrados"
+                        : "No se encontraron coincidencias")
+                </strong>
+                <span>
+                    @(string.IsNullOrWhiteSpace(Model.TerminoBusqueda)
+                        ? "Registra un mecánico para comenzar a administrar el personal."
+                        : "Prueba con otro CI, nombre, especialidad o celular.")
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+                <table class="orders-table mecanicos-table">
+                    <thead>
+                        <tr>
+                            <th>CI</th>
+                            <th>Nombre Completo</th>
+                            <th>Especialidad</th>
+                            <th>Celular</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mecanico in Model.Mecanicos)
+                        {
+                            <tr>
+                                <td class="mecanico-ci">@mecanico.Ci</td>
+                                <td class="mecanico-nombre">@mecanico.NombreCompleto</td>
+                                <td>
+                                    <span class="mecanico-especialidad">
+                                        @mecanico.Especialidad
+                                    </span>
+                                </td>
+                                <td>@mecanico.Celular</td>
+                                <td>
+                                    <div class="mecanicos-row-actions">
+                                        <button type="button"
+                                                class="mecanico-action mecanico-action-edit"
+                                                data-editar-mecanico
+                                                data-id="@mecanico.Id"
+                                                data-ci="@mecanico.Ci"
+                                                data-nombre="@mecanico.NombreCompleto"
+                                                data-especialidad="@mecanico.Especialidad"
+                                                data-celular="@mecanico.Celular">
+                                            Editar
+                                        </button>
+                                        <button type="button"
+                                                class="mecanico-action mecanico-action-delete"
+                                                data-eliminar-mecanico
+                                                data-id="@mecanico.Id"
+                                                data-nombre="@mecanico.NombreCompleto">
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+<dialog class="mecanicos-dialog"
+        id="mecanico-form-dialog"
+        data-open-mode="@Model.FormularioActivo">
+    <div class="mecanicos-dialog-header">
+        <div>
+            <h2 id="mecanico-form-title">Nuevo Mecánico</h2>
+            <p id="mecanico-form-description">
+                Completa los datos para registrar un mecánico.
+            </p>
+        </div>
+        <button type="button"
+                class="mecanicos-dialog-close"
+                data-close-dialog
+                aria-label="Cerrar formulario">×</button>
+    </div>
+
+    <form method="post" class="mecanicos-form" id="mecanico-form">
+        <input asp-for="MecanicoId" type="hidden" />
+        <input type="hidden"
+               name="TerminoBusqueda"
+               value="@Model.TerminoBusqueda" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="mecanicos-validation-summary"></div>
+
+        <div class="mecanicos-form-grid">
+            <div class="mecanicos-form-group">
+                <label asp-for="MecanicoInput.Ci">CI</label>
+                <input asp-for="MecanicoInput.Ci"
+                       class="mecanicos-input"
+                       placeholder="Ej. 1234567-1A"
+                       autocomplete="off" />
+                <span asp-validation-for="MecanicoInput.Ci"
+                      class="mecanicos-validation"></span>
+            </div>
+
+            <div class="mecanicos-form-group">
+                <label asp-for="MecanicoInput.Celular">Celular</label>
+                <input asp-for="MecanicoInput.Celular"
+                       class="mecanicos-input"
+                       placeholder="Ej. 70712345"
+                       inputmode="numeric"
+                       autocomplete="tel" />
+                <span asp-validation-for="MecanicoInput.Celular"
+                      class="mecanicos-validation"></span>
+            </div>
+
+            <div class="mecanicos-form-group mecanicos-form-group-wide">
+                <label asp-for="MecanicoInput.NombreCompleto">Nombre Completo</label>
+                <input asp-for="MecanicoInput.NombreCompleto"
+                       class="mecanicos-input"
+                       placeholder="Ej. Juan Carlos Pérez"
+                       autocomplete="name" />
+                <span asp-validation-for="MecanicoInput.NombreCompleto"
+                      class="mecanicos-validation"></span>
+            </div>
+
+            <div class="mecanicos-form-group mecanicos-form-group-wide">
+                <label asp-for="MecanicoInput.Especialidad">Especialidad</label>
+                <input asp-for="MecanicoInput.Especialidad"
+                       class="mecanicos-input"
+                       placeholder="Ej. Diagnóstico electrónico"
+                       autocomplete="off" />
+                <span asp-validation-for="MecanicoInput.Especialidad"
+                      class="mecanicos-validation"></span>
+            </div>
+        </div>
+
+        <div class="mecanicos-form-actions">
+            <button type="button"
+                    class="mecanicos-btn mecanicos-btn-secondary"
+                    data-close-dialog>
+                Cancelar
+            </button>
+            <button type="submit"
+                    asp-page-handler="Crear"
+                    class="mecanicos-btn mecanicos-btn-primary"
+                    id="guardar-nuevo-mecanico">
+                Guardar Mecánico
+            </button>
+            <button type="submit"
+                    asp-page-handler="Actualizar"
+                    class="mecanicos-btn mecanicos-btn-primary"
+                    id="guardar-edicion-mecanico"
+                    hidden>
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<dialog class="mecanicos-dialog mecanicos-delete-dialog"
+        id="mecanico-delete-dialog">
+    <div class="mecanicos-dialog-header">
+        <div>
+            <h2>Eliminar Mecánico</h2>
+            <p>Esta acción eliminará permanentemente el registro.</p>
+        </div>
+        <button type="button"
+                class="mecanicos-dialog-close"
+                data-close-dialog
+                aria-label="Cerrar confirmación">×</button>
+    </div>
+
+    <form method="post"
+          asp-page-handler="Eliminar"
+          class="mecanicos-delete-form">
+        <input type="hidden" name="MecanicoId" id="mecanico-eliminar-id" />
+        <input type="hidden"
+               name="TerminoBusqueda"
+               value="@Model.TerminoBusqueda" />
+
+        <div class="mecanicos-delete-warning">
+            <span aria-hidden="true">!</span>
+            <div>
+                <strong>¿Deseas eliminar a <span id="mecanico-eliminar-nombre"></span>?</strong>
+                <p>El registro dejará de aparecer en la gestión de mecánicos.</p>
+            </div>
+        </div>
+
+        <div class="mecanicos-form-actions">
+            <button type="button"
+                    class="mecanicos-btn mecanicos-btn-secondary"
+                    data-close-dialog>
+                Cancelar
+            </button>
+            <button type="submit" class="mecanicos-btn mecanicos-btn-danger">
+                Eliminar Mecánico
+            </button>
+        </div>
+    </form>
+</dialog>
+
+@section Scripts {
+    <script src="~/js/mecanicos.js" asp-append-version="true"></script>
+}
