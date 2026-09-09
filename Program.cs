@@ -10,6 +10,13 @@ builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<ServicioRepository>();
 builder.Services.AddScoped<ServicioService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<
+    IHistorialCostoServicioRepository,
+    HistorialCostoServicioRepository>();
+
+builder.Services.AddScoped<
+    IHistorialCostoServicioService,
+    HistorialCostoServicioService>();
 
 var app = builder.Build();
 

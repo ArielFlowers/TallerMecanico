@@ -1,0 +1,106 @@
+@page
+@model TallerMecanico.Pages.Historial.IndexModel
+
+@{
+    ViewData["Title"] = "Historial de Costos";
+}
+
+<div class="dashboard">
+
+    <div class="dashboard-header">
+        <div>
+            <h1>Historial de Costos</h1>
+            <p>
+                Consulta los cambios realizados en los costos de los
+                servicios del taller.
+            </p>
+        </div>
+
+        <div class="services-actions">
+            <a asp-page="./Index"
+               class="services-btn services-btn-secondary">
+                Refrescar
+            </a>
+
+            <a asp-page="/Servicios/Index"
+               class="services-btn services-btn-primary">
+                Ver Servicios
+            </a>
+        </div>
+    </div>
+
+    <section class="recent-orders">
+
+        <div class="section-header">
+            <div>
+                <h2>Cambios registrados</h2>
+                <p>
+                    @Model.Historial.Count cambio(s) de costo registrado(s)
+                </p>
+            </div>
+        </div>
+
+        @if (Model.Historial.Count == 0)
+        {
+            <div class="services-empty">
+                <div class="services-empty-icon">📋</div>
+
+                <strong>
+                    No existen cambios de costo registrados
+                </strong>
+
+                <span>
+                    Los cambios aparecerán automáticamente cuando
+                    se modifique el costo de un servicio.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+
+                <table class="orders-table services-table">
+
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Servicio</th>
+                            <th>Costo anterior</th>
+                            <th>Costo nuevo</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var cambio in Model.Historial)
+                        {
+                            <tr>
+                                <td>
+                                    @cambio.FechaCambio.ToString(
+                                        "dd/MM/yyyy HH:mm")
+                                </td>
+
+                                <td class="service-name">
+                                    @cambio.NombreServicio
+                                </td>
+
+                                <td>
+                                    Bs. @cambio.CostoAnterior.ToString("0.00")
+                                </td>
+
+                                <td>
+                                    Bs. @cambio.CostoNuevo.ToString("0.00")
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </section>
+
+</div>
