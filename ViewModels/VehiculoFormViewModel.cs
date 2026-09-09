@@ -18,7 +18,7 @@ public class VehiculoFormViewModel
 
     [Range(0, int.MaxValue,
         ErrorMessage = "El kilometraje no puede ser negativo.")]
-    public int Kilometraje { get; set; }
+    public int? Kilometraje { get; set; }
 
     [StringLength(250,
         ErrorMessage = "Las observaciones no pueden superar los 250 caracteres.")]

@@ -109,7 +109,7 @@ public class IndexModel : PageModel
             Id = id,
             Placa = Formulario.Placa.Trim().ToUpperInvariant(),
             Modelo = Formulario.Modelo.Trim(),
-            Kilometraje = Formulario.Kilometraje,
+            Kilometraje = Formulario.Kilometraje ?? 0,
             Observaciones = Formulario.Observaciones?.Trim() ?? string.Empty
         };
     }
