@@ -13,10 +13,19 @@ public class DatabaseInitializer
 
     public void Initialize()
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using SqliteConnection connection =
+            _databaseConnection.CreateConnection();
+
         connection.Open();
 
-        const string createServiciosTableQuery = """
+        CreateServiciosTable(connection);
+        CreateHistorialCostoServiciosTable(connection);
+        CreateHistorialCostoServicioTrigger(connection);
+    }
+
+    private static void CreateServiciosTable(SqliteConnection connection)
+    {
+        const string query = """
             CREATE TABLE IF NOT EXISTS Servicios (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Nombre TEXT NOT NULL,
@@ -26,8 +35,60 @@ public class DatabaseInitializer
             );
             """;
 
+        ExecuteCommand(connection, query);
+    }
+
+    private static void CreateHistorialCostoServiciosTable(
+        SqliteConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS HistorialCostoServicios (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ServicioId INTEGER NOT NULL,
+                NombreServicio TEXT NOT NULL,
+                CostoAnterior REAL NOT NULL,
+                CostoNuevo REAL NOT NULL,
+                FechaCambio TEXT NOT NULL
+            );
+            """;
+
+        ExecuteCommand(connection, query);
+    }
+
+    private static void CreateHistorialCostoServicioTrigger(
+        SqliteConnection connection)
+    {
+        const string query = """
+            CREATE TRIGGER IF NOT EXISTS TRG_Servicios_HistorialCosto
+            AFTER UPDATE OF Costo ON Servicios
+            WHEN OLD.Costo <> NEW.Costo
+            BEGIN
+                INSERT INTO HistorialCostoServicios (
+                    ServicioId,
+                    NombreServicio,
+                    CostoAnterior,
+                    CostoNuevo,
+                    FechaCambio
+                )
+                VALUES (
+                    NEW.Id,
+                    NEW.Nombre,
+                    OLD.Costo,
+                    NEW.Costo,
+                    datetime('now', 'localtime')
+                );
+            END;
+            """;
+
+        ExecuteCommand(connection, query);
+    }
+
+    private static void ExecuteCommand(
+        SqliteConnection connection,
+        string query)
+    {
         using SqliteCommand command = connection.CreateCommand();
-        command.CommandText = createServiciosTableQuery;
+        command.CommandText = query;
         command.ExecuteNonQuery();
     }
 }
