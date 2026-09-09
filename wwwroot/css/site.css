@@ -1010,14 +1010,58 @@ button.service-action {
         display: block;
     }
 
-.service-input.input-warning {
-    border-color: var(--warning);
+.service-input.input-error {
+    border-color: var(--danger);
 }
 
-    .service-input.input-warning:focus {
-        border-color: var(--warning);
-        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.14);
+    .service-input.input-error:focus {
+        border-color: var(--danger);
+        box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.14);
     }
+
+.campo-obligatorio {
+    color: var(--danger);
+}
+
+/* =========================
+   VEHICULOS
+   ========================= */
+
+.vehiculos-table th {
+    text-transform: uppercase;
+}
+
+.buscador {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.buscador-icono {
+    position: absolute;
+    left: 11px;
+    font-size: 11px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.buscador-input {
+    width: 210px;
+    min-height: 38px;
+    padding-left: 32px;
+}
+
+.service-action-icon {
+    width: 32px;
+    padding: 7px 0;
+    font-size: 13px;
+}
+
+@media (max-width: 650px) {
+    .buscador-input {
+        width: 100%;
+    }
+}
 
 /* =========================================
    SIDEBAR MODULES AND SUBMENUS

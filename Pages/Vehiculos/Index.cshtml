@@ -9,10 +9,19 @@
     <div class="dashboard-header">
         <div>
             <h1>Gestión de Vehículos</h1>
-            <p>Administra los vehículos ingresados al taller.</p>
+            <p>Administra y registra los vehículos del taller.</p>
         </div>
 
         <div class="services-actions">
+            <form method="get" class="buscador">
+                <span class="buscador-icono">🔍</span>
+
+                <input type="search"
+                       asp-for="Buscar"
+                       class="service-input buscador-input"
+                       placeholder="Buscar..." />
+            </form>
+
             <a asp-page="./Index" class="services-btn services-btn-secondary">
                 Refrescar
             </a>
@@ -20,7 +29,7 @@
             <button type="button"
                     class="services-btn services-btn-primary"
                     data-modal-abrir="modal-crear">
-                + Nuevo Vehículo
+                + Nuevo Registro
             </button>
         </div>
     </div>
@@ -28,8 +37,7 @@
     <section class="recent-orders">
         <div class="section-header">
             <div>
-                <h2>Vehículos registrados</h2>
-                <p>@Model.Vehiculos.Count vehículo(s) en el taller</p>
+                <h2>Vehículos Registrados (@Model.Vehiculos.Count)</h2>
             </div>
         </div>
 
@@ -46,7 +54,7 @@
         else
         {
             <div class="table-container">
-                <table class="orders-table services-table">
+                <table class="orders-table services-table vehiculos-table">
                     <thead>
                         <tr>
                             <th>Placa</th>
@@ -82,22 +90,24 @@
                                 <td>
                                     <div class="services-row-actions">
                                         <button type="button"
-                                                class="service-action service-action-edit"
+                                                class="service-action service-action-icon service-action-edit"
+                                                title="Editar vehículo"
                                                 data-modal-abrir="modal-editar"
                                                 data-id="@vehiculo.Id"
                                                 data-placa="@vehiculo.Placa"
                                                 data-modelo="@vehiculo.Modelo"
                                                 data-kilometraje="@vehiculo.Kilometraje"
                                                 data-observaciones="@vehiculo.Observaciones">
-                                            Editar
+                                            ✎
                                         </button>
 
                                         <button type="button"
-                                                class="service-action service-action-delete"
+                                                class="service-action service-action-icon service-action-delete"
+                                                title="Eliminar vehículo"
                                                 data-modal-abrir="modal-eliminar"
                                                 data-id="@vehiculo.Id"
                                                 data-placa="@vehiculo.Placa">
-                                            Eliminar
+                                            🗑
                                         </button>
                                     </div>
                                 </td>
@@ -119,7 +129,7 @@
         <div class="service-form-header">
             <div>
                 <h2>Registrar Nuevo Vehículo</h2>
-                <p>Completa los datos del vehículo que ingresa al taller.</p>
+                <p>Completa los datos para registrar un nuevo vehículo.</p>
             </div>
 
             <button type="button" class="modal-close" data-modal-cerrar>&times;</button>
@@ -127,7 +137,9 @@
 
         <form method="post" asp-page-handler="Create" class="service-form">
             <div class="service-form-group">
-                <label for="crear-placa">Placa</label>
+                <label for="crear-placa">
+                    Placa <span class="campo-obligatorio">*</span>
+                </label>
 
                 <input asp-for="Formulario.Placa"
                        id="crear-placa"
@@ -142,12 +154,14 @@
             </div>
 
             <div class="service-form-group">
-                <label for="crear-modelo">Modelo</label>
+                <label for="crear-modelo">
+                    Modelo <span class="campo-obligatorio">*</span>
+                </label>
 
                 <input asp-for="Formulario.Modelo"
                        id="crear-modelo"
                        class="service-input"
-                       placeholder="Ej. Toyota Corolla" />
+                       placeholder="Ej. Toyota Hilux 2021" />
 
                 <span asp-validation-for="Formulario.Modelo"
                       class="service-validation"></span>
@@ -161,7 +175,7 @@
                        class="service-input"
                        type="number"
                        min="0"
-                       placeholder="Ej. 85000" />
+                       placeholder="Ej. 45000" />
 
                 <span asp-validation-for="Formulario.Kilometraje"
                       class="service-validation"></span>
@@ -174,7 +188,7 @@
                           id="crear-observaciones"
                           class="service-input service-textarea"
                           rows="3"
-                          placeholder="Detalles del estado del vehículo"></textarea>
+                          placeholder="Detalles adicionales del estado del vehículo..."></textarea>
 
                 <span asp-validation-for="Formulario.Observaciones"
                       class="service-validation"></span>
@@ -188,7 +202,7 @@
                 </button>
 
                 <button type="submit" class="services-btn services-btn-primary">
-                    Guardar Vehículo
+                    Guardar
                 </button>
             </div>
         </form>
@@ -214,7 +228,9 @@
             <input asp-for="Formulario.Id" id="editar-id" type="hidden" />
 
             <div class="service-form-group">
-                <label for="editar-placa">Placa</label>
+                <label for="editar-placa">
+                    Placa <span class="campo-obligatorio">*</span>
+                </label>
 
                 <input asp-for="Formulario.Placa"
                        id="editar-placa"
@@ -228,7 +244,9 @@
             </div>
 
             <div class="service-form-group">
-                <label for="editar-modelo">Modelo</label>
+                <label for="editar-modelo">
+                    Modelo <span class="campo-obligatorio">*</span>
+                </label>
 
                 <input asp-for="Formulario.Modelo"
                        id="editar-modelo"
@@ -271,7 +289,7 @@
                 </button>
 
                 <button type="submit" class="services-btn services-btn-primary">
-                    Guardar Cambios
+                    Guardar
                 </button>
             </div>
         </form>
@@ -309,7 +327,7 @@
                 </button>
 
                 <button type="submit" class="services-btn services-btn-danger">
-                    Eliminar Vehículo
+                    Eliminar
                 </button>
             </div>
         </form>

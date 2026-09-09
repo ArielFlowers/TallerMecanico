@@ -38,6 +38,35 @@ public class VehiculoRepository : IVehiculoRepository
         return vehiculos;
     }
 
+    public List<Vehiculo> Search(string filtro)
+    {
+        List<Vehiculo> vehiculos = [];
+
+        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        connection.Open();
+
+        const string query = """
+            SELECT Id, Placa, Modelo, Kilometraje, Observaciones
+            FROM Vehiculos
+            WHERE Placa LIKE @Filtro
+               OR Modelo LIKE @Filtro
+            ORDER BY Placa;
+            """;
+
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        command.Parameters.AddWithValue("@Filtro", $"%{filtro}%");
+
+        using SqliteDataReader reader = command.ExecuteReader();
+
+        while (reader.Read())
+        {
+            vehiculos.Add(MapVehiculo(reader));
+        }
+
+        return vehiculos;
+    }
+
     public Vehiculo? GetById(int id)
     {
         using SqliteConnection connection = _databaseConnection.CreateConnection();

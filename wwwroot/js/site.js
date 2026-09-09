@@ -189,10 +189,10 @@
                 input.value.length > 0 && !formatoPlaca.test(input.value);
 
             aviso.textContent =
-                invalido ? "Formato alfanumérico requerido." : "";
+                invalido ? "⚠ Formato alfanumérico requerido" : "";
 
             aviso.classList.toggle("is-visible", invalido);
-            input.classList.toggle("input-warning", invalido);
+            input.classList.toggle("input-error", invalido);
 
         });
 

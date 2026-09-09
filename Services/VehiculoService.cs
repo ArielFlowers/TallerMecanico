@@ -17,6 +17,11 @@ public class VehiculoService : IVehiculoService
         return _vehiculoRepository.GetAll();
     }
 
+    public List<Vehiculo> Search(string filtro)
+    {
+        return _vehiculoRepository.Search(filtro);
+    }
+
     public Vehiculo? GetById(int id)
     {
         return _vehiculoRepository.GetById(id);

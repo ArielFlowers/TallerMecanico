@@ -18,6 +18,9 @@ public class IndexModel : PageModel
     [BindProperty]
     public VehiculoFormViewModel Formulario { get; set; } = new();
 
+    [BindProperty(SupportsGet = true)]
+    public string? Buscar { get; set; }
+
     public List<Vehiculo> Vehiculos { get; private set; } = [];
 
     public string? ModalAbierto { get; private set; }
@@ -90,7 +93,13 @@ public class IndexModel : PageModel
 
     private void CargarVehiculos()
     {
-        Vehiculos = _vehiculoService.GetAll();
+        if (string.IsNullOrWhiteSpace(Buscar))
+        {
+            Vehiculos = _vehiculoService.GetAll();
+            return;
+        }
+
+        Vehiculos = _vehiculoService.Search(Buscar.Trim());
     }
 
     private Vehiculo MapearVehiculo(int id)

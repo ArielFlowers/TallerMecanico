@@ -6,6 +6,8 @@ public interface IVehiculoService
 {
     List<Vehiculo> GetAll();
 
+    List<Vehiculo> Search(string filtro);
+
     Vehiculo? GetById(int id);
 
     void Create(Vehiculo vehiculo);
