@@ -1,11 +1,15 @@
 using TallerMecanico.Data;
 using TallerMecanico.Services;
+using TallerMecanico.Validators;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<DatabaseConnection>();
 builder.Services.AddScoped<DatabaseInitializer>();
+builder.Services.AddScoped<IMecanicoRepository, MecanicoRepository>();
+builder.Services.AddScoped<ValidacionMecanicos>();
+builder.Services.AddScoped<MecanicoService>();
 builder.Services.AddScoped<DashboardService>();
 
 var app = builder.Build();
