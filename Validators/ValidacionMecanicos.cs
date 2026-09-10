@@ -85,6 +85,13 @@ public class ValidacionMecanicos
         {
             errores[nameof(MecanicoInputModel.NombreCompleto)] =
                 $"El nombre completo no debe superar los {LongitudMaximaNombreCompleto} caracteres.";
+            return;
+        }
+
+        if (!SoloContieneLetrasYEspacios(nombreCompleto))
+        {
+            errores[nameof(MecanicoInputModel.NombreCompleto)] =
+                "El nombre completo debe contener únicamente letras y espacios.";
         }
     }
 
@@ -103,7 +110,19 @@ public class ValidacionMecanicos
         {
             errores[nameof(MecanicoInputModel.Especialidad)] =
                 $"La especialidad no debe superar los {LongitudMaximaEspecialidad} caracteres.";
+            return;
         }
+
+        if (!SoloContieneLetrasYEspacios(especialidad))
+        {
+            errores[nameof(MecanicoInputModel.Especialidad)] =
+                "La especialidad debe contener únicamente letras y espacios.";
+        }
+    }
+
+    private static bool SoloContieneLetrasYEspacios(string texto)
+    {
+        return texto.All(caracter => char.IsLetter(caracter) || caracter == ' ');
     }
 
     private static void ValidarCelular(string? celular, IDictionary<string, string> errores)
