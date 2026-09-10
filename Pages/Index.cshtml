@@ -2,45 +2,87 @@
 @model IndexModel
 
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="dashboard">
-    <div class="dashboard-header">
-        <div>
-            <h1>Dashboard</h1>
-            <p>Resumen general del taller mecánico</p>
+<div class="home">
+    <section class="home-hero">
+        <div class="home-hero-overlay"></div>
+        <div class="home-hero-content">
+            <h1>Potencia la eficiencia de tu taller mecánico</h1>
+            <p>Centraliza el registro de vehículos, optimiza la carga laboral de tus especialistas y mantén un control absoluto sobre tu catálogo de servicios</p>
+        </div>
+    </section>
+
+    <section class="home-features">
+        <a class="home-card" asp-page="/Vehiculos/Index">
+            <div class="home-card-icon">🚗</div>
+            <h2>Gestión de Vehículos</h2>
+            <p>Registro clínico de cada vehículo: ficha completa, historial y seguimiento centralizado.</p>
+        </a>
+
+        <a class="home-card" asp-page="/Mecanicos/Index">
+            <div class="home-card-icon">👨‍🔧</div>
+            <h2>Especialistas en Acción</h2>
+            <p>Asignación y control de la carga laboral de tus mecánicos especialistas.</p>
+        </a>
+
+        <a class="home-card" asp-page="/Servicios/Index">
+            <div class="home-card-icon">📋</div>
+            <h2>Catálogo de Servicios</h2>
+            <p>Estandarización de costos y tiempos para cada servicio del taller.</p>
+        </a>
+    </section>
+
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Resumen general del taller mecánico</p>
+            </div>
+
+            <div class="dashboard-date">
+                <span>Hoy</span>
+                <strong>@DateTime.Now.ToString("dd/MM/yyyy")</strong>
+            </div>
         </div>
 
-        <div class="dashboard-date">
-            <span>Hoy</span>
-            <strong>@DateTime.Now.ToString("dd/MM/yyyy")</strong>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">👨‍🔧</div>
+                <div class="metric-info">
+                    <span class="metric-label">Mecánicos disponibles</span>
+                    <strong class="metric-value">@Model.Dashboard.MecanicosDisponibles</strong>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🚗</div>
+                <div class="metric-info">
+                    <span class="metric-label">Vehículos registrados</span>
+                    <strong class="metric-value">@Model.Dashboard.VehiculosRegistrados</strong>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">🔧</div>
+                <div class="metric-info">
+                    <span class="metric-label">Servicios registrados</span>
+                    <strong class="metric-value">@Model.Dashboard.ServiciosRegistrados</strong>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="metrics-grid">
-        <div class="metric-card">
-            <div class="metric-icon">👨‍🔧</div>
-            <div class="metric-info">
-                <span class="metric-label">Mecánicos disponibles</span>
-                <strong class="metric-value">@Model.Dashboard.MecanicosDisponibles</strong>
-            </div>
+    <section class="home-audit">
+        <div class="home-audit-content">
+            <h2>Auditoría de Costos en Tiempo Real</h2>
+            <p>El sistema rastrea cada modificación de precios de servicios para garantizar transparencia total en tu taller.</p>
+            <a class="home-audit-link" asp-page="/Historial/Index">Ver historial de cambios</a>
         </div>
+    </section>
 
-        <div class="metric-card">
-            <div class="metric-icon">🚗</div>
-            <div class="metric-info">
-                <span class="metric-label">Vehículos registrados</span>
-                <strong class="metric-value">@Model.Dashboard.VehiculosRegistrados</strong>
-            </div>
-        </div>
-
-        <div class="metric-card">
-            <div class="metric-icon">🔧</div>
-            <div class="metric-info">
-                <span class="metric-label">Servicios registrados</span>
-                <strong class="metric-value">@Model.Dashboard.ServiciosRegistrados</strong>
-            </div>
-        </div>
-    </div>
+    <footer class="home-footer">
+        <span>AutoTaller Pro - v1.0</span>
+    </footer>
 </div>
