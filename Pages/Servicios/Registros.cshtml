@@ -1,0 +1,46 @@
+﻿@page
+@model TallerMecanico.Pages.Servicios.RegistrosModel
+@using TallerMecanico.ViewModels
+
+@{
+    ViewData["Title"] = "Registros de Servicios";
+
+    ServicioTablaViewModel tablaModel = new()
+    {
+        Servicios = Model.Servicios,
+        MostrarAcciones = false
+    };
+}
+
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1>Registros de Servicios</h1>
+            <p>Consulta los servicios actualmente registrados en el catálogo.</p>
+        </div>
+
+        <div class="services-actions">
+            <a asp-page="./Registros"
+               class="services-btn services-btn-secondary">
+                Refrescar
+            </a>
+
+            <a asp-page="./Index"
+               class="services-btn services-btn-secondary">
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <section class="recent-orders">
+        <div class="section-header">
+            <div>
+                <h2>Servicios registrados</h2>
+                <p>@Model.Servicios.Count servicio(s) en el catálogo</p>
+            </div>
+        </div>
+
+        <partial name="_TablaServicios"
+                 model="tablaModel" />
+    </section>
+</div>

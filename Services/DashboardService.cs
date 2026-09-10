@@ -5,9 +5,9 @@ namespace TallerMecanico.Services;
 
 public class DashboardService
 {
-    private readonly ServicioRepository _servicioRepository;
+    private readonly IServicioRepository _servicioRepository;
 
-    public DashboardService(ServicioRepository servicioRepository)
+    public DashboardService(IServicioRepository servicioRepository)
     {
         _servicioRepository = servicioRepository;
     }

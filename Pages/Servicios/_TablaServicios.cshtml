@@ -1,0 +1,74 @@
+﻿@model TallerMecanico.ViewModels.ServicioTablaViewModel
+
+@if (Model.Servicios.Count == 0)
+{
+    <div class="services-empty">
+        <strong>No existen servicios registrados</strong>
+
+        <span>
+            Actualmente no hay servicios disponibles en el catálogo.
+        </span>
+    </div>
+}
+else
+{
+    <div class="table-container">
+        <table class="orders-table services-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Costo</th>
+                    <th>Tiempo estimado</th>
+
+                    @if (Model.MostrarAcciones)
+                    {
+                        <th>Acciones</th>
+                    }
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var servicio in Model.Servicios)
+                {
+                    <tr>
+                        <td class="service-name">
+                            @servicio.Nombre
+                        </td>
+
+                        <td>
+                            @servicio.Descripcion
+                        </td>
+
+                        <td>
+                            Bs. @servicio.Costo.ToString("0.00")
+                        </td>
+
+                        <td>
+                            @servicio.TiempoEstimadoHoras h
+                        </td>
+
+                        @if (Model.MostrarAcciones)
+                        {
+                            <td>
+                                <div class="services-row-actions">
+                                    <a asp-page="./Edit"
+                                       asp-route-id="@servicio.Id"
+                                       class="service-action service-action-edit">
+                                        Editar
+                                    </a>
+
+                                    <a asp-page="./Delete"
+                                       asp-route-id="@servicio.Id"
+                                       class="service-action service-action-delete">
+                                        Eliminar
+                                    </a>
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

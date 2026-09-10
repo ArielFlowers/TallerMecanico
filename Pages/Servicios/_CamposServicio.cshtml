@@ -1,0 +1,64 @@
+﻿@model TallerMecanico.ViewModels.ServicioFormViewModel
+
+<div class="service-form-group">
+    <label asp-for="Nombre">
+        Nombre
+    </label>
+
+    <input asp-for="Nombre"
+           class="service-input"
+           placeholder="Ej. Cambio de aceite" />
+
+    <span asp-validation-for="Nombre"
+          class="service-validation">
+    </span>
+</div>
+
+<div class="service-form-group">
+    <label asp-for="Descripcion">
+        Descripción
+    </label>
+
+    <textarea asp-for="Descripcion"
+              class="service-input service-textarea"
+              rows="4"
+              placeholder="Describe brevemente el servicio"></textarea>
+
+    <span asp-validation-for="Descripcion"
+          class="service-validation">
+    </span>
+</div>
+
+<div class="service-form-row">
+    <div class="service-form-group">
+        <label asp-for="Costo">
+            Costo (Bs.)
+        </label>
+
+        <input asp-for="Costo"
+               class="service-input"
+               type="number"
+               step="0.01"
+               min="0.01" />
+
+        <span asp-validation-for="Costo"
+              class="service-validation">
+        </span>
+    </div>
+
+    <div class="service-form-group">
+        <label asp-for="TiempoEstimadoHoras">
+            Tiempo estimado (horas)
+        </label>
+
+        <input asp-for="TiempoEstimadoHoras"
+               class="service-input"
+               type="number"
+               step="0.01"
+               min="0.01" />
+
+        <span asp-validation-for="TiempoEstimadoHoras"
+              class="service-validation">
+        </span>
+    </div>
+</div>

@@ -8,93 +8,77 @@
 <div class="dashboard">
     <div class="dashboard-header">
         <div>
-            <h1>Gestión de Servicios</h1>
-            <p>Administra el catálogo de servicios del taller.</p>
-        </div>
-
-        <div class="services-actions">
-            <a asp-page="./Index" class="services-btn services-btn-secondary">
-                Refrescar
-            </a>
-
-            <a asp-page="./Create" class="services-btn services-btn-primary">
-                + Nuevo Servicio
-            </a>
+            <h1>Servicios</h1>
+            <p>Selecciona la operación que deseas realizar en el catálogo de servicios.</p>
         </div>
     </div>
 
-    <section class="recent-orders">
-        <div class="section-header">
-            <div>
-                <h2>Servicios registrados</h2>
-                <p>@Model.Servicios.Count servicio(s) en el catálogo</p>
-            </div>
+    <section class="services-module">
+        <div class="services-module-grid">
+
+            <a asp-page="./Create"
+               class="services-module-card">
+
+                <div class="services-module-content">
+                    <span class="services-module-label">
+                        Registro
+                    </span>
+
+                    <h2>Nuevo servicio</h2>
+
+                    <p>
+                        Registra un nuevo servicio indicando nombre,
+                        descripción, costo y tiempo estimado.
+                    </p>
+                </div>
+
+                <div class="services-module-action">
+                    Registrar servicio
+                </div>
+            </a>
+
+            <a asp-page="./Registros"
+               class="services-module-card">
+
+                <div class="services-module-content">
+                    <span class="services-module-label">
+                        Consulta
+                    </span>
+
+                    <h2>Ver registros</h2>
+
+                    <p>
+                        Consulta los servicios actualmente almacenados
+                        en el catálogo del taller.
+                    </p>
+                </div>
+
+                <div class="services-module-action">
+                    Consultar servicios
+                </div>
+            </a>
+
+            <a asp-page="./Control"
+               class="services-module-card">
+
+                <div class="services-module-content">
+                    <span class="services-module-label">
+                        Administración
+                    </span>
+
+                    <h2>Control de registros</h2>
+
+                    <p>
+                        Administra los servicios registrados mediante
+                        las opciones de edición y eliminación.
+                    </p>
+                </div>
+
+                <div class="services-module-action">
+                    Administrar servicios
+                </div>
+            </a>
+
         </div>
-
-        @if (Model.Servicios.Count == 0)
-        {
-            <div class="services-empty">
-                <div class="services-empty-icon">🔧</div>
-                <strong>No existen servicios registrados</strong>
-                <span>
-                    Registra un nuevo servicio para comenzar a administrar el catálogo.
-                </span>
-            </div>
-        }
-        else
-        {
-            <div class="table-container">
-                <table class="orders-table services-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Costo</th>
-                            <th>Tiempo estimado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach (var servicio in Model.Servicios)
-                        {
-                            <tr>
-                                <td class="service-name">
-                                    @servicio.Nombre
-                                </td>
-
-                                <td>
-                                    @servicio.Descripcion
-                                </td>
-
-                                <td>
-                                    Bs. @servicio.Costo.ToString("0.00")
-                                </td>
-
-                                <td>
-                                    @servicio.TiempoEstimadoHoras h
-                                </td>
-
-                                <td>
-                                    <div class="services-row-actions">
-                                        <a asp-page="./Edit"
-                                           asp-route-id="@servicio.Id"
-                                           class="service-action service-action-edit">
-                                            Editar
-                                        </a>
-
-                                        <a asp-page="./Delete"
-                                           asp-route-id="@servicio.Id"
-                                           class="service-action service-action-delete">
-                                            Eliminar
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
     </section>
 </div>
