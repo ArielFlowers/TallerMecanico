@@ -1,22 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
 
 namespace TallerMecanico.Pages.Servicios;
 
 public class IndexModel : PageModel
 {
-    private readonly ServicioService _servicioService;
-
-    public IndexModel(ServicioService servicioService)
-    {
-        _servicioService = servicioService;
-    }
-
-    public List<Servicio> Servicios { get; private set; } = [];
-
-    public void OnGet()
-    {
-        Servicios = _servicioService.ObtenerTodos();
-    }
 }
