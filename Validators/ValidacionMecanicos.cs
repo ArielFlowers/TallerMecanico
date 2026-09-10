@@ -36,6 +36,13 @@ public class ValidacionMecanicos
             return;
         }
 
+        if (ContieneEspacios(ci))
+        {
+            errores[nameof(MecanicoInputModel.Ci)] =
+                "El CI no debe contener espacios.";
+            return;
+        }
+
         if (!TieneFormatoCiValido(ci))
         {
             errores[nameof(MecanicoInputModel.Ci)] =
@@ -125,11 +132,23 @@ public class ValidacionMecanicos
         return texto.All(caracter => char.IsLetter(caracter) || caracter == ' ');
     }
 
+    private static bool ContieneEspacios(string texto)
+    {
+        return texto.Any(char.IsWhiteSpace);
+    }
+
     private static void ValidarCelular(string? celular, IDictionary<string, string> errores)
     {
         if (string.IsNullOrWhiteSpace(celular))
         {
             errores[nameof(MecanicoInputModel.Celular)] = "El celular es obligatorio.";
+            return;
+        }
+
+        if (ContieneEspacios(celular))
+        {
+            errores[nameof(MecanicoInputModel.Celular)] =
+                "El celular no debe contener espacios.";
             return;
         }
 
