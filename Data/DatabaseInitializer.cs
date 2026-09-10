@@ -22,6 +22,7 @@ public class DatabaseInitializer
         CreateServiciosTable(connection);
         CreateHistorialCostoServiciosTable(connection);
         CreateHistorialCostoServicioTrigger(connection);
+        CreateVehiculosTable(connection);
     }
 
     private static void CreateMecanicosTable(SqliteConnection connection)
@@ -95,6 +96,21 @@ public class DatabaseInitializer
                     datetime('now', 'localtime')
                 );
             END;
+            """;
+
+        ExecuteCommand(connection, query);
+    }
+
+    private static void CreateVehiculosTable(SqliteConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS Vehiculos (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Placa TEXT NOT NULL UNIQUE,
+                Modelo TEXT NOT NULL,
+                Kilometraje INTEGER NOT NULL CHECK (Kilometraje >= 0),
+                Observaciones TEXT NOT NULL DEFAULT ''
+            );
             """;
 
         ExecuteCommand(connection, query);

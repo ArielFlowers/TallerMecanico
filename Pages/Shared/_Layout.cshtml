@@ -84,7 +84,8 @@
                             <span>Clientes</span>
                         </a>
 
-                        <a class="submenu-item" href="#">
+                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Vehiculos") ? "active" : "")"
+                           asp-page="/Vehiculos/Index">
                             <span>Vehículos</span>
                         </a>
 

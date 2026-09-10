@@ -1017,6 +1017,144 @@ body {
     }
 }
 
+/* =========================
+   MODALES
+   ========================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(13, 10, 18, 0.72);
+}
+
+    .modal-overlay.is-open {
+        display: flex;
+    }
+
+.modal-dialog {
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+    .modal-dialog .service-form-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+.modal-close {
+    padding: 0 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color var(--transition);
+}
+
+    .modal-close:hover {
+        color: var(--text-primary);
+    }
+
+body.modal-open {
+    overflow: hidden;
+}
+
+button.service-action {
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+@media (max-width: 650px) {
+    .modal-overlay {
+        padding: 12px;
+    }
+
+    .modal-dialog {
+        max-height: 95vh;
+    }
+}
+
+/* =========================
+   VALIDACION EN LINEA
+   ========================= */
+
+.field-warning {
+    display: none;
+    color: var(--warning);
+    font-size: 11px;
+}
+
+    .field-warning.is-visible {
+        display: block;
+    }
+
+.service-input.input-error {
+    border-color: var(--danger);
+}
+
+    .service-input.input-error:focus {
+        border-color: var(--danger);
+        box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.14);
+    }
+
+.campo-obligatorio {
+    color: var(--danger);
+}
+
+/* =========================
+   VEHICULOS
+   ========================= */
+
+.vehiculos-table th {
+    text-transform: uppercase;
+}
+
+.buscador {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.buscador-icono {
+    position: absolute;
+    left: 11px;
+    font-size: 11px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.buscador-input {
+    width: 210px;
+    min-height: 38px;
+    padding-left: 32px;
+}
+
+.service-action-icon {
+    width: 32px;
+    padding: 7px 0;
+    font-size: 13px;
+}
+
+@media (max-width: 650px) {
+    .buscador-input {
+        width: 100%;
+    }
+}
+
 /* =========================================
    SIDEBAR MODULES AND SUBMENUS
    ========================================= */

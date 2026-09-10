@@ -1,0 +1,335 @@
+@page
+@model TallerMecanico.Pages.Vehiculos.IndexModel
+
+@{
+    ViewData["Title"] = "Vehículos";
+}
+
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1>Gestión de Vehículos</h1>
+            <p>Administra y registra los vehículos del taller.</p>
+        </div>
+
+        <div class="services-actions">
+            <form method="get" class="buscador">
+                <span class="buscador-icono">🔍</span>
+
+                <input type="search"
+                       asp-for="Buscar"
+                       class="service-input buscador-input"
+                       placeholder="Buscar..." />
+            </form>
+
+            <a asp-page="./Index" class="services-btn services-btn-secondary">
+                Refrescar
+            </a>
+
+            <button type="button"
+                    class="services-btn services-btn-primary"
+                    data-modal-abrir="modal-crear">
+                + Nuevo Registro
+            </button>
+        </div>
+    </div>
+
+    <section class="recent-orders">
+        <div class="section-header">
+            <div>
+                <h2>Vehículos Registrados (@Model.Vehiculos.Count)</h2>
+            </div>
+        </div>
+
+        @if (Model.Vehiculos.Count == 0)
+        {
+            <div class="services-empty">
+                <div class="services-empty-icon">🚗</div>
+                <strong>No existen vehículos registrados</strong>
+                <span>
+                    Registra un nuevo vehículo para comenzar a llevar el control.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+                <table class="orders-table services-table vehiculos-table">
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Modelo</th>
+                            <th>Kilometraje</th>
+                            <th>Observaciones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var vehiculo in Model.Vehiculos)
+                        {
+                            <tr>
+                                <td class="service-name">
+                                    @vehiculo.Placa
+                                </td>
+
+                                <td>
+                                    @vehiculo.Modelo
+                                </td>
+
+                                <td>
+                                    @vehiculo.Kilometraje km
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(vehiculo.Observaciones)
+                                        ? "-"
+                                        : vehiculo.Observaciones)
+                                </td>
+
+                                <td>
+                                    <div class="services-row-actions">
+                                        <button type="button"
+                                                class="service-action service-action-icon service-action-edit"
+                                                title="Editar vehículo"
+                                                data-modal-abrir="modal-editar"
+                                                data-id="@vehiculo.Id"
+                                                data-placa="@vehiculo.Placa"
+                                                data-modelo="@vehiculo.Modelo"
+                                                data-kilometraje="@vehiculo.Kilometraje"
+                                                data-observaciones="@vehiculo.Observaciones">
+                                            ✎
+                                        </button>
+
+                                        <button type="button"
+                                                class="service-action service-action-icon service-action-delete"
+                                                title="Eliminar vehículo"
+                                                data-modal-abrir="modal-eliminar"
+                                                data-id="@vehiculo.Id"
+                                                data-placa="@vehiculo.Placa">
+                                            🗑
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+
+<!-- MODAL: REGISTRAR NUEVO VEHÍCULO -->
+<div id="modal-crear"
+     class="modal-overlay @(Model.ModalAbierto == "crear" ? "is-open" : "")">
+
+    <div class="modal-dialog">
+        <div class="service-form-header">
+            <div>
+                <h2>Registrar Nuevo Vehículo</h2>
+                <p>Completa los datos para registrar un nuevo vehículo.</p>
+            </div>
+
+            <button type="button" class="modal-close" data-modal-cerrar>&times;</button>
+        </div>
+
+        <form method="post" asp-page-handler="Create" class="service-form">
+            <div class="service-form-group">
+                <label for="crear-placa">
+                    Placa <span class="campo-obligatorio">*</span>
+                </label>
+
+                <input asp-for="Formulario.Placa"
+                       id="crear-placa"
+                       class="service-input"
+                       maxlength="8"
+                       placeholder="Ej. 1234ABC"
+                       data-placa-input />
+
+                <span class="field-warning" data-placa-aviso></span>
+                <span asp-validation-for="Formulario.Placa"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-group">
+                <label for="crear-modelo">
+                    Modelo <span class="campo-obligatorio">*</span>
+                </label>
+
+                <input asp-for="Formulario.Modelo"
+                       id="crear-modelo"
+                       class="service-input"
+                       placeholder="Ej. Toyota Hilux 2021" />
+
+                <span asp-validation-for="Formulario.Modelo"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-group">
+                <label for="crear-kilometraje">Kilometraje</label>
+
+                <input asp-for="Formulario.Kilometraje"
+                       id="crear-kilometraje"
+                       class="service-input"
+                       type="number"
+                       min="0"
+                       placeholder="Ej. 45000" />
+
+                <span asp-validation-for="Formulario.Kilometraje"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-group">
+                <label for="crear-observaciones">Observaciones</label>
+
+                <textarea asp-for="Formulario.Observaciones"
+                          id="crear-observaciones"
+                          class="service-input service-textarea"
+                          rows="3"
+                          placeholder="Detalles adicionales del estado del vehículo..."></textarea>
+
+                <span asp-validation-for="Formulario.Observaciones"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-actions">
+                <button type="button"
+                        class="services-btn services-btn-secondary"
+                        data-modal-cerrar>
+                    Cancelar
+                </button>
+
+                <button type="submit" class="services-btn services-btn-primary">
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- MODAL: EDITAR VEHÍCULO -->
+<div id="modal-editar"
+     class="modal-overlay @(Model.ModalAbierto == "editar" ? "is-open" : "")">
+
+    <div class="modal-dialog">
+        <div class="service-form-header">
+            <div>
+                <h2>Editar Vehículo</h2>
+                <p>Modifica los datos del vehículo y guarda los cambios.</p>
+            </div>
+
+            <button type="button" class="modal-close" data-modal-cerrar>&times;</button>
+        </div>
+
+        <form method="post" asp-page-handler="Update" class="service-form">
+            <input asp-for="Formulario.Id" id="editar-id" type="hidden" />
+
+            <div class="service-form-group">
+                <label for="editar-placa">
+                    Placa <span class="campo-obligatorio">*</span>
+                </label>
+
+                <input asp-for="Formulario.Placa"
+                       id="editar-placa"
+                       class="service-input"
+                       maxlength="8"
+                       data-placa-input />
+
+                <span class="field-warning" data-placa-aviso></span>
+                <span asp-validation-for="Formulario.Placa"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-group">
+                <label for="editar-modelo">
+                    Modelo <span class="campo-obligatorio">*</span>
+                </label>
+
+                <input asp-for="Formulario.Modelo"
+                       id="editar-modelo"
+                       class="service-input" />
+
+                <span asp-validation-for="Formulario.Modelo"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-group">
+                <label for="editar-kilometraje">Kilometraje</label>
+
+                <input asp-for="Formulario.Kilometraje"
+                       id="editar-kilometraje"
+                       class="service-input"
+                       type="number"
+                       min="0" />
+
+                <span asp-validation-for="Formulario.Kilometraje"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-group">
+                <label for="editar-observaciones">Observaciones</label>
+
+                <textarea asp-for="Formulario.Observaciones"
+                          id="editar-observaciones"
+                          class="service-input service-textarea"
+                          rows="3"></textarea>
+
+                <span asp-validation-for="Formulario.Observaciones"
+                      class="service-validation"></span>
+            </div>
+
+            <div class="service-form-actions">
+                <button type="button"
+                        class="services-btn services-btn-secondary"
+                        data-modal-cerrar>
+                    Cancelar
+                </button>
+
+                <button type="submit" class="services-btn services-btn-primary">
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- MODAL: ELIMINAR VEHÍCULO -->
+<div id="modal-eliminar" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="service-form-header">
+            <div>
+                <h2>Eliminar Vehículo</h2>
+                <p>Confirma la eliminación del vehículo seleccionado.</p>
+            </div>
+
+            <button type="button" class="modal-close" data-modal-cerrar>&times;</button>
+        </div>
+
+        <form method="post" asp-page-handler="Delete" class="service-form">
+            <input type="hidden" name="id" id="eliminar-id" />
+
+            <div class="service-delete-warning">
+                <strong id="eliminar-placa"></strong>
+                <span>
+                    Se eliminará este vehículo del taller y no se podrá deshacer.
+                </span>
+            </div>
+
+            <div class="service-form-actions">
+                <button type="button"
+                        class="services-btn services-btn-secondary"
+                        data-modal-cerrar>
+                    Cancelar
+                </button>
+
+                <button type="submit" class="services-btn services-btn-danger">
+                    Eliminar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
