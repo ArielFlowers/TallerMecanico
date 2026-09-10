@@ -36,6 +36,13 @@ public class ValidacionMecanicos
             return;
         }
 
+        if (ContieneEspacios(ci))
+        {
+            errores[nameof(MecanicoInputModel.Ci)] =
+                "El CI no debe contener espacios.";
+            return;
+        }
+
         if (!TieneFormatoCiValido(ci))
         {
             errores[nameof(MecanicoInputModel.Ci)] =
@@ -85,6 +92,13 @@ public class ValidacionMecanicos
         {
             errores[nameof(MecanicoInputModel.NombreCompleto)] =
                 $"El nombre completo no debe superar los {LongitudMaximaNombreCompleto} caracteres.";
+            return;
+        }
+
+        if (!SoloContieneLetrasYEspacios(nombreCompleto))
+        {
+            errores[nameof(MecanicoInputModel.NombreCompleto)] =
+                "El nombre completo debe contener únicamente letras y espacios.";
         }
     }
 
@@ -103,7 +117,24 @@ public class ValidacionMecanicos
         {
             errores[nameof(MecanicoInputModel.Especialidad)] =
                 $"La especialidad no debe superar los {LongitudMaximaEspecialidad} caracteres.";
+            return;
         }
+
+        if (!SoloContieneLetrasYEspacios(especialidad))
+        {
+            errores[nameof(MecanicoInputModel.Especialidad)] =
+                "La especialidad debe contener únicamente letras y espacios.";
+        }
+    }
+
+    private static bool SoloContieneLetrasYEspacios(string texto)
+    {
+        return texto.All(caracter => char.IsLetter(caracter) || caracter == ' ');
+    }
+
+    private static bool ContieneEspacios(string texto)
+    {
+        return texto.Any(char.IsWhiteSpace);
     }
 
     private static void ValidarCelular(string? celular, IDictionary<string, string> errores)
@@ -111,6 +142,13 @@ public class ValidacionMecanicos
         if (string.IsNullOrWhiteSpace(celular))
         {
             errores[nameof(MecanicoInputModel.Celular)] = "El celular es obligatorio.";
+            return;
+        }
+
+        if (ContieneEspacios(celular))
+        {
+            errores[nameof(MecanicoInputModel.Celular)] =
+                "El celular no debe contener espacios.";
             return;
         }
 
