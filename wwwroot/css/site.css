@@ -676,7 +676,7 @@ body {
 }
 
     .service-action-delete:hover {
-        background: rgba(248, 113, 113, 0.1);
+        background: var(--surface-hover);
         border-color: var(--danger);
         color: var(--danger);
     }
@@ -689,12 +689,6 @@ body {
     justify-content: center;
     padding: 32px;
     text-align: center;
-}
-
-.services-empty-icon {
-    margin-bottom: 14px;
-    font-size: 30px;
-    opacity: 0.7;
 }
 
 .services-empty strong {
@@ -727,6 +721,104 @@ body {
     }
 }
 
+/* =========================
+   PORTADA DE SERVICIOS
+   ========================= */
+
+.services-module {
+    width: 100%;
+}
+
+.services-module-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.services-module-card {
+    min-width: 0;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background-color var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+    .services-module-card:hover {
+        background: var(--surface-light);
+        border-color: var(--primary);
+        color: var(--text-primary);
+        transform: translateY(-2px);
+    }
+
+.services-module-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.services-module-label {
+    width: fit-content;
+    color: var(--primary-hover);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.services-module-content h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.services-module-content p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.services-module-action {
+    width: fit-content;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    color: var(--primary-hover);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.services-module-card:hover .services-module-action {
+    color: var(--text-primary);
+}
+
+@media (max-width: 1000px) {
+    .services-module-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .services-module-card {
+        min-height: 180px;
+    }
+}
+
+@media (max-width: 650px) {
+    .services-module-grid {
+        gap: 12px;
+    }
+
+    .services-module-card {
+        min-height: auto;
+        padding: 20px;
+    }
+}
 /* =========================
    FORMULARIO DE SERVICIOS
    ========================= */
@@ -863,8 +955,8 @@ body {
     flex-direction: column;
     gap: 6px;
     padding: 16px;
-    background: rgba(248, 113, 113, 0.08);
-    border: 1px solid rgba(248, 113, 113, 0.25);
+    background: var(--surface-light);
+    border: 1px solid var(--danger);
     border-radius: var(--radius-sm);
 }
 
@@ -914,9 +1006,9 @@ body {
 }
 
     .services-btn-danger:hover {
-        background: #fb8a8a;
-        border-color: #fb8a8a;
-        color: var(--background);
+        background: var(--surface-hover);
+        border-color: var(--danger);
+        color: var(--danger);
     }
 
 @media (max-width: 650px) {

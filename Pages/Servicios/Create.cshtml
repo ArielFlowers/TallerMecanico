@@ -29,66 +29,8 @@
                  class="service-validation-summary">
             </div>
 
-            <div class="service-form-group">
-                <label asp-for="Formulario.Nombre">
-                    Nombre
-                </label>
-
-                <input asp-for="Formulario.Nombre"
-                       class="service-input"
-                       placeholder="Ej. Cambio de aceite" />
-
-                <span asp-validation-for="Formulario.Nombre"
-                      class="service-validation">
-                </span>
-            </div>
-
-            <div class="service-form-group">
-                <label asp-for="Formulario.Descripcion">
-                    Descripción
-                </label>
-
-                <textarea asp-for="Formulario.Descripcion"
-                          class="service-input service-textarea"
-                          rows="4"
-                          placeholder="Describe brevemente el servicio"></textarea>
-
-                <span asp-validation-for="Formulario.Descripcion"
-                      class="service-validation">
-                </span>
-            </div>
-
-            <div class="service-form-row">
-                <div class="service-form-group">
-                    <label asp-for="Formulario.Costo">
-                        Costo (Bs.)
-                    </label>
-
-                    <input asp-for="Formulario.Costo"
-                           class="service-input"
-                           type="number"
-                           step="0.01" />
-
-                    <span asp-validation-for="Formulario.Costo"
-                          class="service-validation">
-                    </span>
-                </div>
-
-                <div class="service-form-group">
-                    <label asp-for="Formulario.TiempoEstimadoHoras">
-                        Tiempo estimado (horas)
-                    </label>
-
-                    <input asp-for="Formulario.TiempoEstimadoHoras"
-                           class="service-input"
-                           type="number"
-                           step="0.01" />
-
-                    <span asp-validation-for="Formulario.TiempoEstimadoHoras"
-                          class="service-validation">
-                    </span>
-                </div>
-            </div>
+            <partial name="_CamposServicio"
+                     for="Formulario" />
 
             <div class="service-form-actions">
                 <a asp-page="./Index"

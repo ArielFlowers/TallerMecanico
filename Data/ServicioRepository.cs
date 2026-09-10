@@ -3,7 +3,7 @@ using TallerMecanico.Models;
 
 namespace TallerMecanico.Data;
 
-public class ServicioRepository
+public class ServicioRepository : IServicioRepository
 {
     private readonly DatabaseConnection _databaseConnection;
 
@@ -16,7 +16,9 @@ public class ServicioRepository
     {
         List<Servicio> servicios = [];
 
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using SqliteConnection connection =
+            _databaseConnection.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -40,7 +42,9 @@ public class ServicioRepository
 
     public Servicio? GetById(int id)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using SqliteConnection connection =
+            _databaseConnection.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -65,23 +69,31 @@ public class ServicioRepository
 
     public void Add(Servicio servicio)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using SqliteConnection connection =
+            _databaseConnection.CreateConnection();
+
         connection.Open();
 
         const string query = """
-            INSERT INTO Servicios (Nombre, Descripcion, Costo, TiempoEstimadoHoras)
-            VALUES (@Nombre, @Descripcion, @Costo, @TiempoEstimadoHoras);
+            INSERT INTO Servicios
+                (Nombre, Descripcion, Costo, TiempoEstimadoHoras)
+            VALUES
+                (@Nombre, @Descripcion, @Costo, @TiempoEstimadoHoras);
             """;
 
         using SqliteCommand command = connection.CreateCommand();
         command.CommandText = query;
+
         AddParameters(command, servicio);
+
         command.ExecuteNonQuery();
     }
 
     public void Update(Servicio servicio)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using SqliteConnection connection =
+            _databaseConnection.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -95,14 +107,18 @@ public class ServicioRepository
 
         using SqliteCommand command = connection.CreateCommand();
         command.CommandText = query;
+
         AddParameters(command, servicio);
         command.Parameters.AddWithValue("@Id", servicio.Id);
+
         command.ExecuteNonQuery();
     }
 
     public void Delete(int id)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using SqliteConnection connection =
+            _databaseConnection.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -113,12 +129,15 @@ public class ServicioRepository
         using SqliteCommand command = connection.CreateCommand();
         command.CommandText = query;
         command.Parameters.AddWithValue("@Id", id);
+
         command.ExecuteNonQuery();
     }
 
     public int Count()
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using SqliteConnection connection =
+            _databaseConnection.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -132,11 +151,22 @@ public class ServicioRepository
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    private static void AddParameters(SqliteCommand command, Servicio servicio)
+    private static void AddParameters(
+        SqliteCommand command,
+        Servicio servicio)
     {
-        command.Parameters.AddWithValue("@Nombre", servicio.Nombre);
-        command.Parameters.AddWithValue("@Descripcion", servicio.Descripcion);
-        command.Parameters.AddWithValue("@Costo", servicio.Costo);
+        command.Parameters.AddWithValue(
+            "@Nombre",
+            servicio.Nombre);
+
+        command.Parameters.AddWithValue(
+            "@Descripcion",
+            servicio.Descripcion);
+
+        command.Parameters.AddWithValue(
+            "@Costo",
+            servicio.Costo);
+
         command.Parameters.AddWithValue(
             "@TiempoEstimadoHoras",
             servicio.TiempoEstimadoHoras);

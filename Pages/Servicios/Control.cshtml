@@ -1,0 +1,51 @@
+﻿@page
+@model TallerMecanico.Pages.Servicios.ControlModel
+@using TallerMecanico.ViewModels
+
+@{
+    ViewData["Title"] = "Control de Servicios";
+
+    ServicioTablaViewModel tablaModel = new()
+    {
+        Servicios = Model.Servicios,
+        MostrarAcciones = true
+    };
+}
+
+<div class="dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1>Control de Servicios</h1>
+            <p>Administra, actualiza y elimina los servicios registrados.</p>
+        </div>
+
+        <div class="services-actions">
+            <a asp-page="./Index"
+               class="services-btn services-btn-secondary">
+                Volver
+            </a>
+
+            <a asp-page="./Control"
+               class="services-btn services-btn-secondary">
+                Refrescar
+            </a>
+
+            <a asp-page="./Create"
+               class="services-btn services-btn-primary">
+                + Nuevo Servicio
+            </a>
+        </div>
+    </div>
+
+    <section class="recent-orders">
+        <div class="section-header">
+            <div>
+                <h2>Servicios registrados</h2>
+                <p>@Model.Servicios.Count servicio(s) en el catálogo</p>
+            </div>
+        </div>
+
+        <partial name="_TablaServicios"
+                 model="tablaModel" />
+    </section>
+</div>

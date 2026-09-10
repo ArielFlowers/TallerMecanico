@@ -34,6 +34,6 @@ public class DeleteModel : PageModel
     {
         _servicioService.Eliminar(id);
 
-        return RedirectToPage("./Index");
+        return RedirectToPage("./Control");
     }
 }

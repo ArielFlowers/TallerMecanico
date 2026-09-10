@@ -1,15 +1,23 @@
 using TallerMecanico.Data;
 using TallerMecanico.Services;
+using TallerMecanico.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+
 builder.Services.AddScoped<DatabaseConnection>();
 builder.Services.AddScoped<DatabaseInitializer>();
-builder.Services.AddScoped<ServicioRepository>();
+
+builder.Services.AddScoped<IMecanicoRepository, MecanicoRepository>();
+builder.Services.AddScoped<ValidacionMecanicos>();
+builder.Services.AddScoped<MecanicoService>();
+
+builder.Services.AddScoped<IServicioRepository, ServicioRepository>();
 builder.Services.AddScoped<ServicioService>();
-builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<ValidacionServicios>();
+
 builder.Services.AddScoped<
     IHistorialCostoServicioRepository,
     HistorialCostoServicioRepository>();
@@ -20,6 +28,8 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<IVehiculoRepository, VehiculoRepository>();
 builder.Services.AddScoped<IVehiculoService, VehiculoService>();
+
+builder.Services.AddScoped<DashboardService>();
 
 var app = builder.Build();
 

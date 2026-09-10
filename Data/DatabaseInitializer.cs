@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 
 namespace TallerMecanico.Data;
 
@@ -18,10 +18,27 @@ public class DatabaseInitializer
 
         connection.Open();
 
+        CreateMecanicosTable(connection);
         CreateServiciosTable(connection);
         CreateHistorialCostoServiciosTable(connection);
         CreateHistorialCostoServicioTrigger(connection);
         CreateVehiculosTable(connection);
+    }
+
+    private static void CreateMecanicosTable(SqliteConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS Mecanicos
+            (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Ci TEXT NOT NULL UNIQUE,
+                NombreCompleto TEXT NOT NULL,
+                Especialidad TEXT NOT NULL,
+                Celular TEXT NOT NULL
+            );
+            """;
+
+        ExecuteCommand(connection, query);
     }
 
     private static void CreateServiciosTable(SqliteConnection connection)

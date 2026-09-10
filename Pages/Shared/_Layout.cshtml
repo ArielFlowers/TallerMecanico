@@ -7,6 +7,7 @@
     <title>@ViewData["Title"] - Taller Mecánico</title>
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>
@@ -48,7 +49,8 @@
 
                     <div class="submenu" id="personal-menu">
 
-                        <a class="submenu-item" href="#">
+                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Mecanicos") ? "active" : "")"
+                           asp-page="/Mecanicos/Index">
                             <span>Mecánicos</span>
                         </a>
 
