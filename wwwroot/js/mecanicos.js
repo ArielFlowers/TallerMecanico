@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const mecanicoId = document.getElementById("MecanicoId");
     const ci = document.getElementById("MecanicoInput_Ci");
     const nombreCompleto = document.getElementById("MecanicoInput_NombreCompleto");
+    const genero = document.getElementById("MecanicoInput_Genero");
     const especialidad = document.getElementById("MecanicoInput_Especialidad");
     const celular = document.getElementById("MecanicoInput_Celular");
     const formTitle = document.getElementById("mecanico-form-title");
@@ -25,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
         mecanicoId instanceof HTMLInputElement &&
         ci instanceof HTMLInputElement &&
         nombreCompleto instanceof HTMLInputElement &&
+        genero instanceof HTMLSelectElement &&
         especialidad instanceof HTMLInputElement &&
         celular instanceof HTMLInputElement &&
         formTitle &&
@@ -46,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
             mecanicoId.value = esEdicion && datos ? datos.id : "0";
             ci.value = esEdicion && datos ? datos.ci : "";
             nombreCompleto.value = esEdicion && datos ? datos.nombre : "";
+            genero.value = esEdicion && datos ? datos.genero : "";
             especialidad.value = esEdicion && datos ? datos.especialidad : "";
             celular.value = esEdicion && datos ? datos.celular : "";
         }
@@ -69,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 id: button.dataset.id ?? "0",
                 ci: button.dataset.ci ?? "",
                 nombre: button.dataset.nombre ?? "",
+                genero: button.dataset.genero ?? "",
                 especialidad: button.dataset.especialidad ?? "",
                 celular: button.dataset.celular ?? ""
             });

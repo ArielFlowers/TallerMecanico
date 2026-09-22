@@ -93,6 +93,7 @@
                         <tr>
                             <th>CI</th>
                             <th>Nombre Completo</th>
+                            <th>Género</th>
                             <th>Especialidad</th>
                             <th>Celular</th>
                             <th>Acciones</th>
@@ -104,6 +105,7 @@
                             <tr>
                                 <td class="mecanico-ci">@mecanico.Ci</td>
                                 <td class="mecanico-nombre">@mecanico.NombreCompleto</td>
+                                <td>@mecanico.Genero</td>
                                 <td>
                                     <span class="mecanico-especialidad">
                                         @mecanico.Especialidad
@@ -118,6 +120,7 @@
                                                 data-id="@mecanico.Id"
                                                 data-ci="@mecanico.Ci"
                                                 data-nombre="@mecanico.NombreCompleto"
+                                                data-genero="@mecanico.Genero"
                                                 data-especialidad="@mecanico.Especialidad"
                                                 data-celular="@mecanico.Celular">
                                             Editar
@@ -197,7 +200,20 @@
                       class="mecanicos-validation"></span>
             </div>
 
-            <div class="mecanicos-form-group mecanicos-form-group-wide">
+            <div class="mecanicos-form-group">
+                <label asp-for="MecanicoInput.Genero">Género</label>
+                <select asp-for="MecanicoInput.Genero"
+                        class="mecanicos-input"
+                        required>
+                    <option value="">Seleccione un género</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                </select>
+                <span asp-validation-for="MecanicoInput.Genero"
+                      class="mecanicos-validation"></span>
+            </div>
+
+            <div class="mecanicos-form-group">
                 <label asp-for="MecanicoInput.Especialidad">Especialidad</label>
                 <input asp-for="MecanicoInput.Especialidad"
                        class="mecanicos-input"
