@@ -105,7 +105,8 @@ public class MecanicoService
         return new MecanicoInputModel
         {
             Ci = NormalizarCi(mecanicoInput.Ci),
-            NombreCompleto = NormalizarEspacios(mecanicoInput.NombreCompleto),
+            Nombres = NormalizarEspacios(mecanicoInput.Nombres),
+            Apellidos = NormalizarEspacios(mecanicoInput.Apellidos),
             Genero = (mecanicoInput.Genero ?? string.Empty).Trim(),
             Especialidad = NormalizarEspacios(mecanicoInput.Especialidad),
             Celular = (mecanicoInput.Celular ?? string.Empty).Trim()
@@ -140,7 +141,8 @@ public class MecanicoService
         return new Mecanico
         {
             Ci = mecanicoInput.Ci,
-            NombreCompleto = mecanicoInput.NombreCompleto,
+            Nombres = mecanicoInput.Nombres,
+            Apellidos = mecanicoInput.Apellidos,
             Genero = mecanicoInput.Genero,
             Especialidad = mecanicoInput.Especialidad,
             Celular = mecanicoInput.Celular
