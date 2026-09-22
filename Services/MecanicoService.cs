@@ -105,8 +105,8 @@ public class MecanicoService
         return new MecanicoInputModel
         {
             Ci = NormalizarCi(mecanicoInput.Ci),
-            Nombres = NormalizarEspacios(mecanicoInput.Nombres),
-            Apellidos = NormalizarEspacios(mecanicoInput.Apellidos),
+            Nombres = NormalizarNombre(mecanicoInput.Nombres),
+            Apellidos = NormalizarNombre(mecanicoInput.Apellidos),
             Genero = (mecanicoInput.Genero ?? string.Empty).Trim(),
             Especialidad = NormalizarEspacios(mecanicoInput.Especialidad),
             Celular = (mecanicoInput.Celular ?? string.Empty).Trim()
@@ -134,6 +134,19 @@ public class MecanicoService
     {
         var textoSinEspaciosExternos = (texto ?? string.Empty).Trim();
         return EspaciosConsecutivos.Replace(textoSinEspaciosExternos, " ");
+    }
+
+    private static string NormalizarNombre(string? nombre)
+    {
+        var nombreSinEspaciosInnecesarios = NormalizarEspacios(nombre);
+        var palabras = nombreSinEspaciosInnecesarios.Split(
+            ' ',
+            StringSplitOptions.RemoveEmptyEntries);
+
+        return string.Join(
+            " ",
+            palabras.Select(palabra =>
+                $"{char.ToUpperInvariant(palabra[0])}{palabra[1..].ToLowerInvariant()}"));
     }
 
     private static Mecanico CrearMecanico(MecanicoInputModel mecanicoInput)
