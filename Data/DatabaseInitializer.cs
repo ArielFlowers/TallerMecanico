@@ -32,8 +32,21 @@ public class DatabaseInitializer
             (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Ci TEXT NOT NULL UNIQUE,
-                NombreCompleto TEXT NOT NULL,
-                Especialidad TEXT NOT NULL,
+                Nombres TEXT NOT NULL,
+                Apellidos TEXT NOT NULL,
+                Genero TEXT NOT NULL CHECK (Genero IN ('Masculino', 'Femenino')),
+                Especialidad TEXT NOT NULL CHECK
+                (
+                    Especialidad IN
+                    (
+                        'Mecánica Automotriz General',
+                        'Motores',
+                        'Electricidad Automotriz',
+                        'Carrocería Automotriz',
+                        'Climatización Automotriz',
+                        'Sin Especialidad'
+                    )
+                ),
                 Celular TEXT NOT NULL
             );
             """;

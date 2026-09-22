@@ -8,8 +8,7 @@ public class ValidacionMecanicos
     private const int LongitudMaximaBaseCi = 8;
     private const int LongitudMinimaComplementoCi = 1;
     private const int LongitudMaximaComplementoCi = 2;
-    private const int LongitudMaximaNombreCompleto = 100;
-    private const int LongitudMaximaEspecialidad = 60;
+    private const int LongitudMaximaNombresYApellidos = 100;
     private const int LongitudCelular = 8;
 
     private const char SeparadorComplementoCi = '-';
@@ -21,8 +20,8 @@ public class ValidacionMecanicos
         var errores = new Dictionary<string, string>();
 
         ValidarCi(mecanico.Ci, errores);
-        ValidarNombreCompleto(mecanico.NombreCompleto, errores);
-        ValidarEspecialidad(mecanico.Especialidad, errores);
+        ValidarNombres(mecanico.Nombres, errores);
+        ValidarApellidos(mecanico.Apellidos, errores);
         ValidarCelular(mecanico.Celular, errores);
 
         return errores;
@@ -77,53 +76,53 @@ public class ValidacionMecanicos
                complemento.All(char.IsAsciiLetterOrDigit);
     }
 
-    private static void ValidarNombreCompleto(
-        string? nombreCompleto,
+    private static void ValidarNombres(
+        string? nombres,
         IDictionary<string, string> errores)
     {
-        if (string.IsNullOrWhiteSpace(nombreCompleto))
+        if (string.IsNullOrWhiteSpace(nombres))
         {
-            errores[nameof(MecanicoInputModel.NombreCompleto)] =
-                "El nombre completo es obligatorio.";
+            errores[nameof(MecanicoInputModel.Nombres)] =
+                "Los nombres son obligatorios.";
             return;
         }
 
-        if (nombreCompleto.Length > LongitudMaximaNombreCompleto)
+        if (nombres.Length > LongitudMaximaNombresYApellidos)
         {
-            errores[nameof(MecanicoInputModel.NombreCompleto)] =
-                $"El nombre completo no debe superar los {LongitudMaximaNombreCompleto} caracteres.";
+            errores[nameof(MecanicoInputModel.Nombres)] =
+                $"Los nombres no pueden superar los {LongitudMaximaNombresYApellidos} caracteres.";
             return;
         }
 
-        if (!SoloContieneLetrasYEspacios(nombreCompleto))
+        if (!SoloContieneLetrasYEspacios(nombres))
         {
-            errores[nameof(MecanicoInputModel.NombreCompleto)] =
-                "El nombre completo debe contener únicamente letras y espacios.";
+            errores[nameof(MecanicoInputModel.Nombres)] =
+                "Los nombres solo pueden contener letras y espacios.";
         }
     }
 
-    private static void ValidarEspecialidad(
-        string? especialidad,
+    private static void ValidarApellidos(
+        string? apellidos,
         IDictionary<string, string> errores)
     {
-        if (string.IsNullOrWhiteSpace(especialidad))
+        if (string.IsNullOrWhiteSpace(apellidos))
         {
-            errores[nameof(MecanicoInputModel.Especialidad)] =
-                "La especialidad es obligatoria.";
+            errores[nameof(MecanicoInputModel.Apellidos)] =
+                "Los apellidos son obligatorios.";
             return;
         }
 
-        if (especialidad.Length > LongitudMaximaEspecialidad)
+        if (apellidos.Length > LongitudMaximaNombresYApellidos)
         {
-            errores[nameof(MecanicoInputModel.Especialidad)] =
-                $"La especialidad no debe superar los {LongitudMaximaEspecialidad} caracteres.";
+            errores[nameof(MecanicoInputModel.Apellidos)] =
+                $"Los apellidos no pueden superar los {LongitudMaximaNombresYApellidos} caracteres.";
             return;
         }
 
-        if (!SoloContieneLetrasYEspacios(especialidad))
+        if (!SoloContieneLetrasYEspacios(apellidos))
         {
-            errores[nameof(MecanicoInputModel.Especialidad)] =
-                "La especialidad debe contener únicamente letras y espacios.";
+            errores[nameof(MecanicoInputModel.Apellidos)] =
+                "Los apellidos solo pueden contener letras y espacios.";
         }
     }
 

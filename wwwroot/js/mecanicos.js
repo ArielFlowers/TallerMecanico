@@ -10,7 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("mecanico-form");
     const mecanicoId = document.getElementById("MecanicoId");
     const ci = document.getElementById("MecanicoInput_Ci");
-    const nombreCompleto = document.getElementById("MecanicoInput_NombreCompleto");
+    const nombres = document.getElementById("MecanicoInput_Nombres");
+    const apellidos = document.getElementById("MecanicoInput_Apellidos");
+    const genero = document.getElementById("MecanicoInput_Genero");
     const especialidad = document.getElementById("MecanicoInput_Especialidad");
     const celular = document.getElementById("MecanicoInput_Celular");
     const formTitle = document.getElementById("mecanico-form-title");
@@ -24,8 +26,10 @@ document.addEventListener("DOMContentLoaded", () => {
         form instanceof HTMLFormElement &&
         mecanicoId instanceof HTMLInputElement &&
         ci instanceof HTMLInputElement &&
-        nombreCompleto instanceof HTMLInputElement &&
-        especialidad instanceof HTMLInputElement &&
+        nombres instanceof HTMLInputElement &&
+        apellidos instanceof HTMLInputElement &&
+        genero instanceof HTMLSelectElement &&
+        especialidad instanceof HTMLSelectElement &&
         celular instanceof HTMLInputElement &&
         formTitle &&
         formDescription &&
@@ -45,7 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
             form.reset();
             mecanicoId.value = esEdicion && datos ? datos.id : "0";
             ci.value = esEdicion && datos ? datos.ci : "";
-            nombreCompleto.value = esEdicion && datos ? datos.nombre : "";
+            nombres.value = esEdicion && datos ? datos.nombres : "";
+            apellidos.value = esEdicion && datos ? datos.apellidos : "";
+            genero.value = esEdicion && datos ? datos.genero : "";
             especialidad.value = esEdicion && datos ? datos.especialidad : "";
             celular.value = esEdicion && datos ? datos.celular : "";
         }
@@ -68,7 +74,9 @@ document.addEventListener("DOMContentLoaded", () => {
             configurarFormulario("editar", {
                 id: button.dataset.id ?? "0",
                 ci: button.dataset.ci ?? "",
-                nombre: button.dataset.nombre ?? "",
+                nombres: button.dataset.nombres ?? "",
+                apellidos: button.dataset.apellidos ?? "",
+                genero: button.dataset.genero ?? "",
                 especialidad: button.dataset.especialidad ?? "",
                 celular: button.dataset.celular ?? ""
             });
@@ -79,7 +87,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[data-eliminar-mecanico]").forEach(button => {
         button.addEventListener("click", () => {
             deleteId.value = button.dataset.id ?? "0";
-            deleteName.textContent = button.dataset.nombre ?? "este mecánico";
+            const nombreMecanico = [button.dataset.nombres, button.dataset.apellidos]
+                .filter(Boolean)
+                .join(" ");
+
+            deleteName.textContent = nombreMecanico || "este mecánico";
             deleteDialog.showModal();
         });
     });

@@ -92,7 +92,9 @@
                     <thead>
                         <tr>
                             <th>CI</th>
-                            <th>Nombre Completo</th>
+                            <th>Nombres</th>
+                            <th>Apellidos</th>
+                            <th>Género</th>
                             <th>Especialidad</th>
                             <th>Celular</th>
                             <th>Acciones</th>
@@ -103,7 +105,9 @@
                         {
                             <tr>
                                 <td class="mecanico-ci">@mecanico.Ci</td>
-                                <td class="mecanico-nombre">@mecanico.NombreCompleto</td>
+                                <td class="mecanico-nombre">@mecanico.Nombres</td>
+                                <td>@mecanico.Apellidos</td>
+                                <td>@mecanico.Genero</td>
                                 <td>
                                     <span class="mecanico-especialidad">
                                         @mecanico.Especialidad
@@ -117,7 +121,9 @@
                                                 data-editar-mecanico
                                                 data-id="@mecanico.Id"
                                                 data-ci="@mecanico.Ci"
-                                                data-nombre="@mecanico.NombreCompleto"
+                                                data-nombres="@mecanico.Nombres"
+                                                data-apellidos="@mecanico.Apellidos"
+                                                data-genero="@mecanico.Genero"
                                                 data-especialidad="@mecanico.Especialidad"
                                                 data-celular="@mecanico.Celular">
                                             Editar
@@ -126,7 +132,8 @@
                                                 class="mecanico-action mecanico-action-delete"
                                                 data-eliminar-mecanico
                                                 data-id="@mecanico.Id"
-                                                data-nombre="@mecanico.NombreCompleto">
+                                                data-nombres="@mecanico.Nombres"
+                                                data-apellidos="@mecanico.Apellidos">
                                             Eliminar
                                         </button>
                                     </div>
@@ -187,22 +194,52 @@
                       class="mecanicos-validation"></span>
             </div>
 
-            <div class="mecanicos-form-group mecanicos-form-group-wide">
-                <label asp-for="MecanicoInput.NombreCompleto">Nombre Completo</label>
-                <input asp-for="MecanicoInput.NombreCompleto"
+            <div class="mecanicos-form-group">
+                <label asp-for="MecanicoInput.Nombres">Nombres</label>
+                <input asp-for="MecanicoInput.Nombres"
                        class="mecanicos-input"
-                       placeholder="Ej. Juan Carlos Pérez"
-                       autocomplete="name" />
-                <span asp-validation-for="MecanicoInput.NombreCompleto"
+                       placeholder="Ej. Juan Carlos"
+                       autocomplete="given-name" />
+                <span asp-validation-for="MecanicoInput.Nombres"
                       class="mecanicos-validation"></span>
             </div>
 
-            <div class="mecanicos-form-group mecanicos-form-group-wide">
-                <label asp-for="MecanicoInput.Especialidad">Especialidad</label>
-                <input asp-for="MecanicoInput.Especialidad"
+            <div class="mecanicos-form-group">
+                <label asp-for="MecanicoInput.Apellidos">Apellidos</label>
+                <input asp-for="MecanicoInput.Apellidos"
                        class="mecanicos-input"
-                       placeholder="Ej. Diagnóstico electrónico"
-                       autocomplete="off" />
+                       placeholder="Ej. Pérez Mercado"
+                       autocomplete="family-name" />
+                <span asp-validation-for="MecanicoInput.Apellidos"
+                      class="mecanicos-validation"></span>
+            </div>
+
+            <div class="mecanicos-form-group">
+                <label asp-for="MecanicoInput.Genero">Género</label>
+                <select asp-for="MecanicoInput.Genero"
+                        class="mecanicos-input"
+                        required>
+                    <option value="">Seleccione un género</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                </select>
+                <span asp-validation-for="MecanicoInput.Genero"
+                      class="mecanicos-validation"></span>
+            </div>
+
+            <div class="mecanicos-form-group">
+                <label asp-for="MecanicoInput.Especialidad">Especialidad</label>
+                <select asp-for="MecanicoInput.Especialidad"
+                        class="mecanicos-input"
+                        required>
+                    <option value="">Seleccione una especialidad</option>
+                    <option value="Mecánica Automotriz General">Mecánica Automotriz General</option>
+                    <option value="Motores">Motores</option>
+                    <option value="Electricidad Automotriz">Electricidad Automotriz</option>
+                    <option value="Carrocería Automotriz">Carrocería Automotriz</option>
+                    <option value="Climatización Automotriz">Climatización Automotriz</option>
+                    <option value="Sin Especialidad">Sin Especialidad</option>
+                </select>
                 <span asp-validation-for="MecanicoInput.Especialidad"
                       class="mecanicos-validation"></span>
             </div>

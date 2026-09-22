@@ -4,7 +4,11 @@ public class MecanicoInputModel
 {
     public string Ci { get; set; } = string.Empty;
 
-    public string NombreCompleto { get; set; } = string.Empty;
+    public string Nombres { get; set; } = string.Empty;
+
+    public string Apellidos { get; set; } = string.Empty;
+
+    public string Genero { get; set; } = string.Empty;
 
     public string Especialidad { get; set; } = string.Empty;
 

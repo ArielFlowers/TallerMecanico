@@ -9,7 +9,7 @@ namespace TallerMecanico.Services;
 public class MecanicoService
 {
     private const char SeparadorComplementoCi = '-';
-    private const string MensajeCiDuplicado =
+    private const string MensajeCiDuplicado = 
         "Ya existe un mecánico registrado con este CI.";
 
     private static readonly Regex EspaciosConsecutivos = new(@"\s+", RegexOptions.Compiled);
@@ -105,8 +105,10 @@ public class MecanicoService
         return new MecanicoInputModel
         {
             Ci = NormalizarCi(mecanicoInput.Ci),
-            NombreCompleto = NormalizarEspacios(mecanicoInput.NombreCompleto),
-            Especialidad = NormalizarEspacios(mecanicoInput.Especialidad),
+            Nombres = NormalizarNombre(mecanicoInput.Nombres),
+            Apellidos = NormalizarNombre(mecanicoInput.Apellidos),
+            Genero = (mecanicoInput.Genero ?? string.Empty).Trim(),
+            Especialidad = (mecanicoInput.Especialidad ?? string.Empty).Trim(),
             Celular = (mecanicoInput.Celular ?? string.Empty).Trim()
         };
     }
@@ -134,12 +136,27 @@ public class MecanicoService
         return EspaciosConsecutivos.Replace(textoSinEspaciosExternos, " ");
     }
 
+    private static string NormalizarNombre(string? nombre)
+    {
+        var nombreSinEspaciosInnecesarios = NormalizarEspacios(nombre);
+        var palabras = nombreSinEspaciosInnecesarios.Split(
+            ' ',
+            StringSplitOptions.RemoveEmptyEntries);
+
+        return string.Join(
+            " ",
+            palabras.Select(palabra =>
+                $"{char.ToUpperInvariant(palabra[0])}{palabra[1..].ToLowerInvariant()}"));
+    }
+
     private static Mecanico CrearMecanico(MecanicoInputModel mecanicoInput)
     {
         return new Mecanico
         {
             Ci = mecanicoInput.Ci,
-            NombreCompleto = mecanicoInput.NombreCompleto,
+            Nombres = mecanicoInput.Nombres,
+            Apellidos = mecanicoInput.Apellidos,
+            Genero = mecanicoInput.Genero,
             Especialidad = mecanicoInput.Especialidad,
             Celular = mecanicoInput.Celular
         };
