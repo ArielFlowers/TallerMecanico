@@ -108,7 +108,7 @@ public class MecanicoService
             Nombres = NormalizarNombre(mecanicoInput.Nombres),
             Apellidos = NormalizarNombre(mecanicoInput.Apellidos),
             Genero = (mecanicoInput.Genero ?? string.Empty).Trim(),
-            Especialidad = NormalizarEspacios(mecanicoInput.Especialidad),
+            Especialidad = (mecanicoInput.Especialidad ?? string.Empty).Trim(),
             Celular = (mecanicoInput.Celular ?? string.Empty).Trim()
         };
     }

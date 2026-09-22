@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
         nombres instanceof HTMLInputElement &&
         apellidos instanceof HTMLInputElement &&
         genero instanceof HTMLSelectElement &&
-        especialidad instanceof HTMLInputElement &&
+        especialidad instanceof HTMLSelectElement &&
         celular instanceof HTMLInputElement &&
         formTitle &&
         formDescription &&

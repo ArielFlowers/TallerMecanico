@@ -9,7 +9,6 @@ public class ValidacionMecanicos
     private const int LongitudMinimaComplementoCi = 1;
     private const int LongitudMaximaComplementoCi = 2;
     private const int LongitudMaximaNombresYApellidos = 100;
-    private const int LongitudMaximaEspecialidad = 60;
     private const int LongitudCelular = 8;
 
     private const char SeparadorComplementoCi = '-';
@@ -23,7 +22,6 @@ public class ValidacionMecanicos
         ValidarCi(mecanico.Ci, errores);
         ValidarNombres(mecanico.Nombres, errores);
         ValidarApellidos(mecanico.Apellidos, errores);
-        ValidarEspecialidad(mecanico.Especialidad, errores);
         ValidarCelular(mecanico.Celular, errores);
 
         return errores;
@@ -125,31 +123,6 @@ public class ValidacionMecanicos
         {
             errores[nameof(MecanicoInputModel.Apellidos)] =
                 "Los apellidos solo pueden contener letras y espacios.";
-        }
-    }
-
-    private static void ValidarEspecialidad(
-        string? especialidad,
-        IDictionary<string, string> errores)
-    {
-        if (string.IsNullOrWhiteSpace(especialidad))
-        {
-            errores[nameof(MecanicoInputModel.Especialidad)] =
-                "La especialidad es obligatoria.";
-            return;
-        }
-
-        if (especialidad.Length > LongitudMaximaEspecialidad)
-        {
-            errores[nameof(MecanicoInputModel.Especialidad)] =
-                $"La especialidad no debe superar los {LongitudMaximaEspecialidad} caracteres.";
-            return;
-        }
-
-        if (!SoloContieneLetrasYEspacios(especialidad))
-        {
-            errores[nameof(MecanicoInputModel.Especialidad)] =
-                "La especialidad debe contener únicamente letras y espacios.";
         }
     }
 

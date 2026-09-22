@@ -229,10 +229,17 @@
 
             <div class="mecanicos-form-group">
                 <label asp-for="MecanicoInput.Especialidad">Especialidad</label>
-                <input asp-for="MecanicoInput.Especialidad"
-                       class="mecanicos-input"
-                       placeholder="Ej. Diagnóstico electrónico"
-                       autocomplete="off" />
+                <select asp-for="MecanicoInput.Especialidad"
+                        class="mecanicos-input"
+                        required>
+                    <option value="">Seleccione una especialidad</option>
+                    <option value="Mecánica Automotriz General">Mecánica Automotriz General</option>
+                    <option value="Motores">Motores</option>
+                    <option value="Electricidad Automotriz">Electricidad Automotriz</option>
+                    <option value="Carrocería Automotriz">Carrocería Automotriz</option>
+                    <option value="Climatización Automotriz">Climatización Automotriz</option>
+                    <option value="Sin Especialidad">Sin Especialidad</option>
+                </select>
                 <span asp-validation-for="MecanicoInput.Especialidad"
                       class="mecanicos-validation"></span>
             </div>
