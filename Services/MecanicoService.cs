@@ -106,6 +106,7 @@ public class MecanicoService
         {
             Ci = NormalizarCi(mecanicoInput.Ci),
             NombreCompleto = NormalizarEspacios(mecanicoInput.NombreCompleto),
+            Genero = (mecanicoInput.Genero ?? string.Empty).Trim(),
             Especialidad = NormalizarEspacios(mecanicoInput.Especialidad),
             Celular = (mecanicoInput.Celular ?? string.Empty).Trim()
         };
@@ -140,6 +141,7 @@ public class MecanicoService
         {
             Ci = mecanicoInput.Ci,
             NombreCompleto = mecanicoInput.NombreCompleto,
+            Genero = mecanicoInput.Genero,
             Especialidad = mecanicoInput.Especialidad,
             Celular = mecanicoInput.Celular
         };
