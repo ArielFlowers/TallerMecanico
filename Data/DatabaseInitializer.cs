@@ -32,7 +32,9 @@ public class DatabaseInitializer
             (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Ci TEXT NOT NULL UNIQUE,
-                NombreCompleto TEXT NOT NULL,
+                Nombres TEXT NOT NULL,
+                Apellidos TEXT NOT NULL,
+                Genero TEXT NOT NULL CHECK (Genero IN ('Masculino', 'Femenino')),
                 Especialidad TEXT NOT NULL,
                 Celular TEXT NOT NULL
             );

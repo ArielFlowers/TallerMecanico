@@ -9,14 +9,18 @@ public class MecanicoRepository : IMecanicoRepository
         INSERT INTO Mecanicos
         (
             Ci,
-            NombreCompleto,
+            Nombres,
+            Apellidos,
+            Genero,
             Especialidad,
             Celular
         )
         VALUES
         (
             @Ci,
-            @NombreCompleto,
+            @Nombres,
+            @Apellidos,
+            @Genero,
             @Especialidad,
             @Celular
         )
@@ -27,12 +31,15 @@ public class MecanicoRepository : IMecanicoRepository
         SELECT
             Id,
             Ci,
-            NombreCompleto,
+            Nombres,
+            Apellidos,
+            Genero,
             Especialidad,
             Celular
         FROM Mecanicos
         ORDER BY
-            NombreCompleto COLLATE NOCASE ASC,
+            Apellidos COLLATE NOCASE ASC,
+            Nombres COLLATE NOCASE ASC,
             Ci COLLATE NOCASE ASC;
         """;
 
@@ -40,17 +47,22 @@ public class MecanicoRepository : IMecanicoRepository
         SELECT
             Id,
             Ci,
-            NombreCompleto,
+            Nombres,
+            Apellidos,
+            Genero,
             Especialidad,
             Celular
         FROM Mecanicos
         WHERE
             Ci COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
-            OR NombreCompleto COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
+            OR Nombres COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
+            OR Apellidos COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
+            OR Genero COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
             OR Especialidad COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
             OR Celular COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
         ORDER BY
-            NombreCompleto COLLATE NOCASE ASC,
+            Apellidos COLLATE NOCASE ASC,
+            Nombres COLLATE NOCASE ASC,
             Ci COLLATE NOCASE ASC;
         """;
 
@@ -58,7 +70,9 @@ public class MecanicoRepository : IMecanicoRepository
         UPDATE Mecanicos
         SET
             Ci = @Ci,
-            NombreCompleto = @NombreCompleto,
+            Nombres = @Nombres,
+            Apellidos = @Apellidos,
+            Genero = @Genero,
             Especialidad = @Especialidad,
             Celular = @Celular
         WHERE Id = @Id;
@@ -189,8 +203,10 @@ public class MecanicoRepository : IMecanicoRepository
         Mecanico mecanico)
     {
         command.Parameters.Add("@Ci", SqliteType.Text).Value = mecanico.Ci;
-        command.Parameters.Add("@NombreCompleto", SqliteType.Text).Value =
-            mecanico.NombreCompleto;
+        command.Parameters.Add("@Nombres", SqliteType.Text).Value = mecanico.Nombres;
+        command.Parameters.Add("@Apellidos", SqliteType.Text).Value =
+            mecanico.Apellidos;
+        command.Parameters.Add("@Genero", SqliteType.Text).Value = mecanico.Genero;
         command.Parameters.Add("@Especialidad", SqliteType.Text).Value =
             mecanico.Especialidad;
         command.Parameters.Add("@Celular", SqliteType.Text).Value = mecanico.Celular;
@@ -202,8 +218,10 @@ public class MecanicoRepository : IMecanicoRepository
         {
             Id = reader.GetInt32(reader.GetOrdinal(nameof(Mecanico.Id))),
             Ci = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Ci))),
-            NombreCompleto = reader.GetString(
-                reader.GetOrdinal(nameof(Mecanico.NombreCompleto))),
+            Nombres = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Nombres))),
+            Apellidos = reader.GetString(
+                reader.GetOrdinal(nameof(Mecanico.Apellidos))),
+            Genero = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Genero))),
             Especialidad = reader.GetString(
                 reader.GetOrdinal(nameof(Mecanico.Especialidad))),
             Celular = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Celular)))
