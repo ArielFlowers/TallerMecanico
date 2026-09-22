@@ -6,6 +6,8 @@ public class MecanicoInputModel
 
     public string NombreCompleto { get; set; } = string.Empty;
 
+    public string Genero { get; set; } = string.Empty;
+
     public string Especialidad { get; set; } = string.Empty;
 
     public string Celular { get; set; } = string.Empty;

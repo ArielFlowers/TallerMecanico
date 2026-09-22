@@ -9,7 +9,7 @@ namespace TallerMecanico.Services;
 public class MecanicoService
 {
     private const char SeparadorComplementoCi = '-';
-    private const string MensajeCiDuplicado =
+    private const string MensajeCiDuplicado = 
         "Ya existe un mecánico registrado con este CI.";
 
     private static readonly Regex EspaciosConsecutivos = new(@"\s+", RegexOptions.Compiled);
