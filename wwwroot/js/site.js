@@ -160,4 +160,57 @@
     }
 
 
+    // ===== CONTROL DE ESPACIOS EN SERVICIOS =====
+
+    document
+        .querySelectorAll("[data-espacios-controlados]")
+        .forEach(campo => {
+
+            campo.addEventListener("keydown", event => {
+
+                if (event.key !== " ") {
+                    return;
+                }
+
+                const inicio = campo.selectionStart ?? 0;
+                const fin = campo.selectionEnd ?? 0;
+                const valor = campo.value;
+
+                const haySeleccion = inicio !== fin;
+
+                if (haySeleccion) {
+                    return;
+                }
+
+                const estaAlInicio = inicio === 0;
+                const caracterAnterior = valor[inicio - 1];
+
+                if (estaAlInicio || caracterAnterior === " ") {
+                    event.preventDefault();
+                }
+
+            });
+
+            campo.addEventListener("input", () => {
+
+                let valorNormalizado = campo.value;
+
+                valorNormalizado =
+                    valorNormalizado.replace(/^ +/, "");
+
+                valorNormalizado =
+                    valorNormalizado.replace(/ {2,}/g, " ");
+
+                if (campo.value !== valorNormalizado) {
+                    campo.value = valorNormalizado;
+                }
+
+            });
+
+            campo.addEventListener("blur", () => {
+                campo.value = campo.value.trim();
+            });
+
+        });
+
 });

@@ -9,11 +9,11 @@ namespace TallerMecanico.Pages.Servicios;
 
 public class CreateModel : PageModel
 {
-    private readonly ServicioService _servicioService;
+    private readonly IServicioService _servicioService;
     private readonly ValidacionServicios _validacionServicios;
 
     public CreateModel(
-        ServicioService servicioService,
+        IServicioService servicioService,
         ValidacionServicios validacionServicios)
     {
         _servicioService = servicioService;
@@ -22,6 +22,9 @@ public class CreateModel : PageModel
 
     [BindProperty]
     public ServicioFormViewModel Formulario { get; set; } = new();
+
+    [TempData]
+    public string? MensajeExito { get; set; }
 
     public IActionResult OnPost()
     {
@@ -35,6 +38,8 @@ public class CreateModel : PageModel
         Servicio servicio = CrearServicioDesdeFormulario();
 
         _servicioService.Crear(servicio);
+
+        MensajeExito = "Servicio creado correctamente.";
 
         return RedirectToPage("./Index");
     }

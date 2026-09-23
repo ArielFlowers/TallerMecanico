@@ -6,9 +6,9 @@ namespace TallerMecanico.Pages.Servicios;
 
 public class RegistrosModel : PageModel
 {
-    private readonly ServicioService _servicioService;
+    private readonly IServicioService _servicioService;
 
-    public RegistrosModel(ServicioService servicioService)
+    public RegistrosModel(IServicioService servicioService)
     {
         _servicioService = servicioService;
     }

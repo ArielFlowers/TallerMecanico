@@ -9,11 +9,11 @@ namespace TallerMecanico.Pages.Servicios;
 
 public class EditModel : PageModel
 {
-    private readonly ServicioService _servicioService;
+    private readonly IServicioService _servicioService;
     private readonly ValidacionServicios _validacionServicios;
 
     public EditModel(
-        ServicioService servicioService,
+        IServicioService servicioService,
         ValidacionServicios validacionServicios)
     {
         _servicioService = servicioService;
@@ -22,6 +22,9 @@ public class EditModel : PageModel
 
     [BindProperty]
     public ServicioFormViewModel Formulario { get; set; } = new();
+
+    [TempData]
+    public string? MensajeExito { get; set; }
 
     public int ServicioId { get; private set; }
 
@@ -53,7 +56,17 @@ public class EditModel : PageModel
 
         Servicio servicio = CrearServicioDesdeFormulario(id);
 
-        _servicioService.Actualizar(servicio);
+        try
+        {
+            _servicioService.Actualizar(servicio);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return Page();
+        }
+
+        MensajeExito = "Servicio actualizado correctamente.";
 
         return RedirectToPage("./Control");
     }

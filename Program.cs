@@ -1,6 +1,9 @@
 using TallerMecanico.Data;
+using TallerMecanico.Data.Factories;
+using TallerMecanico.Models;
 using TallerMecanico.Services;
 using TallerMecanico.Validators;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,13 +12,14 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<DatabaseConnection>();
 builder.Services.AddScoped<DatabaseInitializer>();
+builder.Services.AddScoped<DatabaseConnectionFactory,MySqlConnectionFactory>();
 
 builder.Services.AddScoped<IMecanicoRepository, MecanicoRepository>();
 builder.Services.AddScoped<ValidacionMecanicos>();
 builder.Services.AddScoped<MecanicoService>();
 
-builder.Services.AddScoped<IServicioRepository, ServicioRepository>();
-builder.Services.AddScoped<ServicioService>();
+builder.Services.AddScoped<IRepository<Servicio>, ServicioRepository>();
+builder.Services.AddScoped<IServicioService, ServicioService>();
 builder.Services.AddScoped<ValidacionServicios>();
 
 builder.Services.AddScoped<

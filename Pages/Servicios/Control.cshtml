@@ -37,6 +37,22 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
+    {
+        <div class="service-validation-summary"
+             role="alert">
+            @Model.MensajeError
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito))
+    {
+        <div class="service-validation-summary"
+             role="status">
+            @Model.MensajeExito
+        </div>
+    }
+
     <section class="recent-orders">
         <div class="section-header">
             <div>

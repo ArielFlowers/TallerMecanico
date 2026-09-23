@@ -13,6 +13,14 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito))
+    {
+        <div class="service-validation-summary"
+             role="status">
+            @Model.MensajeExito
+        </div>
+    }
+
     <section class="services-module">
         <div class="services-module-grid">
 

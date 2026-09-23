@@ -1,15 +1,16 @@
 using TallerMecanico.Data;
+using TallerMecanico.Models;
 using TallerMecanico.ViewModels;
 
 namespace TallerMecanico.Services;
 
 public class DashboardService
 {
-    private readonly IServicioRepository _servicioRepository;
+    private readonly IRepository<Servicio> _servicioRepository;
     private readonly IVehiculoRepository _vehiculoRepository;
 
     public DashboardService(
-        IServicioRepository servicioRepository,
+        IRepository<Servicio> servicioRepository,
         IVehiculoRepository vehiculoRepository)
     {
         _servicioRepository = servicioRepository;

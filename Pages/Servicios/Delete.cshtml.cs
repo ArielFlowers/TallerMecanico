@@ -7,14 +7,20 @@ namespace TallerMecanico.Pages.Servicios;
 
 public class DeleteModel : PageModel
 {
-    private readonly ServicioService _servicioService;
+    private readonly IServicioService _servicioService;
 
-    public DeleteModel(ServicioService servicioService)
+    public DeleteModel(IServicioService servicioService)
     {
         _servicioService = servicioService;
     }
 
     public Servicio Servicio { get; private set; } = new();
+
+    [TempData]
+    public string? MensajeError { get; set; }
+
+    [TempData]
+    public string? MensajeExito { get; set; }
 
     public IActionResult OnGet(int id)
     {
@@ -32,7 +38,15 @@ public class DeleteModel : PageModel
 
     public IActionResult OnPost(int id)
     {
-        _servicioService.Eliminar(id);
+        try
+        {
+            _servicioService.Eliminar(id);
+            MensajeExito = "Servicio eliminado correctamente.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            MensajeError = ex.Message;
+        }
 
         return RedirectToPage("./Control");
     }
