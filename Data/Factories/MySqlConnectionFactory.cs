@@ -5,8 +5,10 @@ namespace TallerMecanico.Data.Factories;
 
 public sealed class MySqlConnectionFactory : DatabaseConnectionFactory
 {
+    private const string ConnectionStringName = "MySqlConnection";
+
     public MySqlConnectionFactory(IConfiguration configuration)
-        : base(configuration)
+        : base(configuration, ConnectionStringName)
     {
     }
 

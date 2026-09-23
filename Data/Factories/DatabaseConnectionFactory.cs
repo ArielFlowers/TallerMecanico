@@ -6,12 +6,14 @@ public abstract class DatabaseConnectionFactory
 {
     protected readonly string ConnectionString;
 
-    protected DatabaseConnectionFactory(IConfiguration configuration)
+    protected DatabaseConnectionFactory(
+        IConfiguration configuration,
+        string connectionStringName)
     {
         ConnectionString =
-            configuration.GetConnectionString("DefaultConnection")
+            configuration.GetConnectionString(connectionStringName)
             ?? throw new InvalidOperationException(
-                "La cadena de conexión no está configurada.");
+                $"La cadena de conexión '{connectionStringName}' no está configurada.");
     }
 
     public abstract DbConnection CreateConnection();
