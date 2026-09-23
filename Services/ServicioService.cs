@@ -25,18 +25,32 @@ public class ServicioService : IServicioService
     public void Crear(Servicio servicio)
     {
         ValidarServicio(servicio);
+
         _servicioRepository.Add(servicio);
     }
 
     public void Actualizar(Servicio servicio)
     {
         ValidarServicio(servicio);
+        ValidarExistencia(servicio.Id);
+
         _servicioRepository.Update(servicio);
     }
 
     public void Eliminar(int id)
     {
+        ValidarExistencia(id);
+
         _servicioRepository.Delete(id);
+    }
+
+    private void ValidarExistencia(int id)
+    {
+        if (_servicioRepository.GetById(id) is null)
+        {
+            throw new InvalidOperationException(
+                "El servicio solicitado no existe.");
+        }
     }
 
     private static void ValidarServicio(Servicio servicio)
