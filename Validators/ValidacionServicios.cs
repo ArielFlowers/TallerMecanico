@@ -4,8 +4,8 @@ namespace TallerMecanico.Validators;
 
 public class ValidacionServicios
 {
-    private const int LongitudMaximaNombre = 100;
-    private const int LongitudMaximaDescripcion = 300;
+    private const int LongitudMaximaNombre = 50;
+    private const int LongitudMaximaDescripcion = 150;
 
     private const string CaracteresEspecialesNombre = "-/().";
     private const string CaracteresEspecialesDescripcion = ",:;%+";
