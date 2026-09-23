@@ -5,9 +5,9 @@ namespace TallerMecanico.Services;
 
 public class ServicioService : IServicioService
 {
-    private readonly IServicioRepository _servicioRepository;
+    private readonly IRepository<Servicio> _servicioRepository;
 
-    public ServicioService(IServicioRepository servicioRepository)
+    public ServicioService(IRepository<Servicio> servicioRepository)
     {
         _servicioRepository = servicioRepository;
     }

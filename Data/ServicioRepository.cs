@@ -3,7 +3,7 @@ using TallerMecanico.Models;
 
 namespace TallerMecanico.Data;
 
-public class ServicioRepository : IServicioRepository
+public class ServicioRepository : IRepository<Servicio>
 {
     private readonly DatabaseConnection _databaseConnection;
 

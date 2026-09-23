@@ -1,4 +1,5 @@
 using TallerMecanico.Data;
+using TallerMecanico.Models;
 using TallerMecanico.Services;
 using TallerMecanico.Validators;
 
@@ -14,7 +15,7 @@ builder.Services.AddScoped<IMecanicoRepository, MecanicoRepository>();
 builder.Services.AddScoped<ValidacionMecanicos>();
 builder.Services.AddScoped<MecanicoService>();
 
-builder.Services.AddScoped<IServicioRepository, ServicioRepository>();
+builder.Services.AddScoped<IRepository<Servicio>, ServicioRepository>();
 builder.Services.AddScoped<IServicioService, ServicioService>();
 builder.Services.AddScoped<ValidacionServicios>();
 
