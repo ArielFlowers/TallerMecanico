@@ -52,9 +52,15 @@ public class EditModel : PageModel
         }
 
         Servicio servicio = CrearServicioDesdeFormulario(id);
-
-        _servicioService.Actualizar(servicio);
-
+        try
+        {
+            _servicioService.Actualizar(servicio);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return Page();
+        }
         return RedirectToPage("./Control");
     }
 

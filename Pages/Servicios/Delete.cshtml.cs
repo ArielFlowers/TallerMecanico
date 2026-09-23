@@ -16,6 +16,9 @@ public class DeleteModel : PageModel
 
     public Servicio Servicio { get; private set; } = new();
 
+    [TempData]
+    public string? MensajeError { get; set; }
+
     public IActionResult OnGet(int id)
     {
         Servicio? servicio = _servicioService.ObtenerPorId(id);
@@ -32,7 +35,14 @@ public class DeleteModel : PageModel
 
     public IActionResult OnPost(int id)
     {
-        _servicioService.Eliminar(id);
+        try
+        {
+            _servicioService.Eliminar(id);
+        }
+        catch (InvalidOperationException ex)
+        {
+            MensajeError = ex.Message;
+        }
 
         return RedirectToPage("./Control");
     }

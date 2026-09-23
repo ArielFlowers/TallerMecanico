@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
@@ -14,6 +15,9 @@ public class ControlModel : PageModel
     }
 
     public List<Servicio> Servicios { get; private set; } = [];
+
+    [TempData]
+    public string? MensajeError { get; set; }
 
     public void OnGet()
     {
