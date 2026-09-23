@@ -2,7 +2,7 @@ using TallerMecanico.Models;
 
 namespace TallerMecanico.Data;
 
-public interface IMecanicoRepository
+public interface IMecanicoRepository : IRepository
 {
     Task<int> CrearAsync(Mecanico mecanico);
 
