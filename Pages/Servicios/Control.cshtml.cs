@@ -19,6 +19,9 @@ public class ControlModel : PageModel
     [TempData]
     public string? MensajeError { get; set; }
 
+    [TempData]
+    public string? MensajeExito { get; set; }
+
     public void OnGet()
     {
         Servicios = _servicioService.ObtenerTodos();

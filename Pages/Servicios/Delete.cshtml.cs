@@ -19,6 +19,9 @@ public class DeleteModel : PageModel
     [TempData]
     public string? MensajeError { get; set; }
 
+    [TempData]
+    public string? MensajeExito { get; set; }
+
     public IActionResult OnGet(int id)
     {
         Servicio? servicio = _servicioService.ObtenerPorId(id);
@@ -38,6 +41,7 @@ public class DeleteModel : PageModel
         try
         {
             _servicioService.Eliminar(id);
+            MensajeExito = "Servicio eliminado correctamente.";
         }
         catch (InvalidOperationException ex)
         {

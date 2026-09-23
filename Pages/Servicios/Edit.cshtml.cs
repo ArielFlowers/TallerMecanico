@@ -23,6 +23,9 @@ public class EditModel : PageModel
     [BindProperty]
     public ServicioFormViewModel Formulario { get; set; } = new();
 
+    [TempData]
+    public string? MensajeExito { get; set; }
+
     public int ServicioId { get; private set; }
 
     public IActionResult OnGet(int id)
@@ -52,6 +55,7 @@ public class EditModel : PageModel
         }
 
         Servicio servicio = CrearServicioDesdeFormulario(id);
+
         try
         {
             _servicioService.Actualizar(servicio);
@@ -61,6 +65,9 @@ public class EditModel : PageModel
             ModelState.AddModelError(string.Empty, ex.Message);
             return Page();
         }
+
+        MensajeExito = "Servicio actualizado correctamente.";
+
         return RedirectToPage("./Control");
     }
 
