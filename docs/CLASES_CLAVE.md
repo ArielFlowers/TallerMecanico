@@ -41,7 +41,7 @@ Rutas: `/` Inicio/Dashboard, `/Mecanicos` (CRUD en 1 página con handlers), `/Ve
 |---|---|
 | `Models/Mecanico.cs` | `Id:int, Ci:string, NombreCompleto:string, Especialidad:string, Celular:string` |
 | `Models/Servicio.cs` | `Id:int, Nombre:string, Descripcion:string, Costo:decimal, TiempoEstimadoHoras:decimal` |
-| `Models/Vehiculo.cs` | `Id:int, Placa:string (UNIQUE), Modelo:string, Kilometraje:int, Observaciones:string` |
+| `Models/Vehiculo.cs` | `Id:int, Placa:string (UNIQUE), Marca:string, Modelo:string, Kilometraje:int, Observaciones:string` |
 | `Models/HistorialCostoServicio.cs` | `Id:int, ServicioId:int, NombreServicio:string, CostoAnterior:decimal, CostoNuevo:decimal, FechaCambio:DateTime` |
 
 ## Data/ (acceso SQLite crudo)
@@ -58,7 +58,7 @@ Rutas: `/` Inicio/Dashboard, `/Mecanicos` (CRUD en 1 página con handlers), `/Ve
 Tablas:
 - `Mecanicos(Id PK AI, Ci TEXT UNIQUE NOT NULL, NombreCompleto, Especialidad, Celular)`.
 - `Servicios(Id PK AI, Nombre, Descripcion TEXT NOT NULL, Costo REAL CHECK>0, TiempoEstimadoHoras REAL CHECK>0)`.
-- `Vehiculos(Id PK AI, Placa TEXT UNIQUE NOT NULL, Modelo, Kilometraje, Observaciones)`.
+- `Vehiculos(Id PK AI, Placa TEXT UNIQUE NOT NULL, Marca, Modelo, Kilometraje, Observaciones)`.
 - `HistorialCostoServicios(Id PK AI, ServicioId INT, NombreServicio TEXT, CostoAnterior REAL, CostoNuevo REAL, FechaCambio TEXT)`.
 - Trigger `TRG_Servicios_HistorialCosto`: `AFTER UPDATE OF Costo ON Servicios WHEN OLD.Costo<>NEW.Costo` → `INSERT Historial(... datetime('now','localtime'))`.
 
@@ -68,7 +68,7 @@ Tablas:
 |---|---|
 | `Services/MecanicoService.cs` | `CrearAsync(Input)->(Id?,Errores)`, `ObtenerAsync(termino?)`, `ActualizarAsync(id,Input)->(bool,Errores)`, `EliminarAsync(id)`. Normaliza: trim, colapsa `\s+`, CI complemento a mayúsculas. Solo chequea CI duplicado si pasa `ValidacionMecanicos`. Dep: `IMecanicoRepository, ValidacionMecanicos`. |
 | `Services/ServicioService.cs` | `ObtenerTodos(), ObtenerPorId(), Crear(), Actualizar(), Eliminar()`. Valida vía `ServicioFormViewModel` + `ValidacionServicios` + checks de SQLite (nombre/descripción obligatorios, `Costo/Tiempo>0`, sin espacios inválidos ni caracteres no permitidos). Dep: `IServicioRepository`. |
-| `Services/VehiculoService.cs` + `IVehiculoService.cs` | Coordina normalización de placa (mayúsculas) + validación + `IVehiculoRepository`. (US03-Adrian.) Dep: `IVehiculoRepository`. |
+| `Services/VehiculoService.cs` | Coordina normalización de placa (mayúsculas) + validación + `IVehiculoRepository`. (US03-Adrian.) Dep: `IVehiculoRepository`. |
 | `Services/DashboardService.cs` | `GetDashboardData()->DashboardViewModel`. `Vehiculos=Count()` real y `Servicios=Count()` real; `Mecanicos=0` sigue hardcodeado (pendiente conectar). Dep: `IServicioRepository, IVehiculoRepository`. |
 | `Services/HistorialCostoServicioService.cs` + `IHistorialCostoServicioService.cs` | Fachada fina. `ObtenerHistorial()` → repo. |
 
@@ -80,14 +80,14 @@ Tablas:
   - Nombre `<=100`, Especialidad `<=60`, sin números, obligatorios.
   - Celular `==8 dígitos, solo [0-9], inicia 6|7`.
 - `Validators/ValidacionServicios.cs` – validación del catálogo (US04-Aldair, con `ServicioFormViewModel`).
-- Vehículos (US03-Adrian): validación como atributos del `VehiculoFormViewModel` (placa alfanumérica 6-8 sin guiones/símbolos, modelo obligatorio con límite, kilometraje no negativo, observaciones con máximo). Placa normalizada a mayúsculas, duplicado ignorando mayúsculas/minúsculas.
+- Vehiculos (US03-Adrian): `ValidacionVehiculos` normaliza y valida placa (3 o 4 numeros + 3 letras), marca/modelo del catalogo, kilometraje no negativo y observaciones (250 caracteres). Servicio concreto y repositorio con interfaz; duplicados excluyen el Id editado.
 
 ## ViewModels/ (DTOs binding)
 
 - `ViewModels/MecanicoInputModel.cs`: `Ci,NombreCompleto,Especialidad,Celular` plano (sin DataAnnotations).
 - `ViewModels/ServicioFormViewModel.cs`: `[Required]` Nombre/Descripcion, `[Range(0.01,double.MaxValue)]` Costo/Tiempo.
 - `ViewModels/ServicioTablaViewModel.cs`: DTO para la tabla/partials de servicios (US04-Aldair).
-- `ViewModels/VehiculoFormViewModel.cs`: `Placa,Modelo,Kilometraje,Observaciones` + validaciones como atributos (US03-Adrian).
+- `ViewModels/VehiculoFormViewModel.cs`: entrada `Id,Placa,Marca,Modelo,Kilometraje,Observaciones`; reglas en `ValidacionVehiculos`.
 - `ViewModels/DashboardViewModel.cs`: `MecanicosDisponibles, VehiculosRegistrados, ServiciosRegistrados:int`.
 
 ## Pages/**/*.cshtml.cs
@@ -96,7 +96,7 @@ Tablas:
 - `Pages/Mecanicos/Index.cshtml.cs`: CRUD por modales/handlers. `OnGetAsync()->ObtenerAsync(TerminoBusqueda)`, `OnPostCrearAsync()->CrearAsync`, `OnPostActualizarAsync()->ActualizarAsync`, `OnPostEliminarAsync()->EliminarAsync`. Usa `TempData MensajeExito/Error`, `FormularioActivo=crear/editar`.
 - `Pages/Servicios/Index.cshtml.cs`: `OnGet()->ObtenerTodos()`. Vistas independientes `Create/Edit/Delete` + `Control/Registros` y partials `_CamposServicio/_TablaServicios` (US04-Aldair).
 - `Pages/Servicios/Create/Edit/Delete.cshtml.cs`: `OnGet(id)`, `OnPost()->Crear/Actualizar/Eliminar()` con `ModelState.IsValid` + trim.
-- `Pages/Vehiculos/Index.cshtml(.cs)`: CRUD en 1 pantalla con 3 modales (registrar/editar/eliminar), buscador por placa o modelo, orden alfabético por placa (US03-Adrian). Dep: `IVehiculoService`.
+- `Pages/Vehiculos/Index.cshtml(.cs)`: CRUD en 1 pantalla con 3 modales (registrar/editar/eliminar), buscador por placa o modelo, orden alfabético por placa (US03-Adrian). Dep: `VehiculoService`.
 - `Pages/Historial/Index.cshtml.cs`: `OnGet()->ObtenerHistorial()`.
 - `Privacy, Error`: plantilla default.
 
@@ -122,7 +122,7 @@ Tablas:
 2. Servicios sigue el mismo patrón con interfaz: `ServicioFormViewModel + ValidacionServicios -> ServicioService -> IServicioRepository` (US04-Aldair).
 3. No usar EF Core. Todo SQL parametrizado directo.
 4. Histórico es automático por trigger, no meter lógica C# para eso.
-5. Vehículos replica el patrón con validación en el ViewModel: `VehiculoFormViewModel -> IVehiculoService -> VehiculoService -> IVehiculoRepository` (US03-Adrian).
+5. Vehiculos: `VehiculoFormViewModel -> VehiculoService -> ValidacionVehiculos / IVehiculoRepository`. El servidor valida antes de persistir; la pagina muestra errores por campo.
 
 ## Aportes por integrante (resúmenes del equipo, 10/09/2026 – insumo del informe Anexo 1)
 
@@ -141,13 +141,15 @@ Tablas:
 - SOLID/Clean Code/POO: SRP (validación / servicio / datos / presentación separados), DIP (`MecanicoService` depende de `IMecanicoRepository`); nombres claros, métodos pequeños, sin duplicación; clases separadas, encapsulación, interfaces + DI.
 - Dificultad: devolver varios errores de distintos campos sin mezclar lógica → resuelto con `Dictionary<campo,mensaje>` centralizado en `ValidacionMecanicos`, cada error se muestra en su campo. Rama: `dev2/crud-mecanicos`.
 
-### US03 – CRUD de Vehículos – Adrian
-- Como recepcionista, registrar vehículos: `Id` (PK), `Placa` (única), `Modelo, Kilometraje, Observaciones`. Todo en 1 pantalla con 3 modales (registrar/editar/eliminar, diseño Figma) + buscador por placa o modelo. Conectó el contador de vehículos del panel (estaba fijo en cero).
-- Clases: `Vehiculo.cs`, `VehiculoFormViewModel.cs` (formulario + validaciones), `IVehiculoRepository.cs` + `VehiculoRepository.cs` (ADO.NET parametrizado), `IVehiculoService.cs` + `VehiculoService.cs` (normalización de placa + repositorio), `DatabaseInitializer.cs` (tabla `Vehiculos`, placa `UNIQUE`), `Pages/Vehiculos/Index.cshtml(.cs)`.
-- Flujo: Vista Razor → IndexModel → IVehiculoService → VehiculoService → IVehiculoRepository → VehiculoRepository → BD.
-- Validaciones: placa obligatoria alfanumérica 6-8 sin guiones/símbolos (campo en rojo + mensaje naranja "Formato alfanumérico requerido" mientras se escribe); placa normalizada [texto original incompleto: "automáticamente ao esté duplicada, ignorando mayúsculas y minúsculas"]; modelo obligatorio con límite; kilometraje no negativo; observaciones con máximo [texto original incompleto]; si falla, el modal se reabre conservando datos y mostrando el error en su campo.
-- SOLID/Clean Code: SRP + DIP (IndexModel→`IVehiculoService`, Service→`IVehiculoRepository`, todo registrado en `Program.cs`; el merge que cambió `ServicioRepository`→`IServicioRepository` no afectó a Vehículos); interfaces pequeñas (ISP) y OCP con reglas como atributos del ViewModel; nombres descriptivos y reutilización de estilos sin duplicar CSS.
-- Pruebas: registro/consulta/edición/eliminación, orden alfabético por placa, filtrado, placa inválida y duplicada sin error 500, Servicios/Mecánicos/Historial no afectados por estilos nuevos, `dotnet build` sin errores. Rama: `feature/us03-crud-vehiculos` (mergeada a `main`, PR #11).
+### US03 - CRUD de Vehiculos - Adrian
+- Campos: `Id`, `Placa` unica, `Marca`, `Modelo`, `Kilometraje`, `Observaciones`. Tres modales y busqueda por placa, marca o modelo.
+- Flujo: Razor Page -> `VehiculoService` concreto -> `ValidacionVehiculos` y `IVehiculoRepository` -> SQLite. Se elimina la interfaz del servicio siguiendo el patron de los otros CRUD.
+- `ValidacionVehiculos` limpia espacios y capitalizacion antes de comprobar las reglas. Placa: 3 o 4 numeros y exactamente 3 letras ASCII, guardada en mayusculas. Marca/modelo: nombres canonicos de `CatalogoVehiculos`, sin aceptar combinaciones inexistentes. Observaciones: trim y espacios repetidos reducidos, preservando saltos de linea.
+- Catalogo fijo compartido entre servidor y desplegables Marca -> Modelo. Ampliable en `Models/CatalogoVehiculos.cs`. Modelo maximo 60, observaciones 250, kilometraje no negativo y vacio equivalente a cero.
+- El servicio comprueba duplicados excluyendo el vehiculo editado y devuelve errores por campo. Los errores de conversion numerica impiden guardar. Los modales conservan las selecciones tras errores.
+- SQLite incorpora `Marca` de forma idempotente. Los datos anteriores se conservan, muestran marca pendiente y exigen seleccionar marca/modelo y corregir la placa al editar.
+- SRP: presentacion, reglas, coordinacion y persistencia separadas. DIP: el servicio depende de `IVehiculoRepository`. No se agregan interfaces que repitan el CRUD.
+- Verificacion reproducible: `dotnet build` y `python tests/vehiculos_smoke.py`. Las pruebas usan bases temporales, verifican CRUD, normalizacion, errores, busqueda y migracion sin tocar los datos del taller.
 
 ### US04 – Catálogo de Servicios – Aldair
 - CRUD de Servicios: `Nombre, Descripción, Costo, Tiempo estimado`. Stack Razor Pages + C# + ADO.NET + SQLite, verificado en código: `IServicioRepository`, `ValidacionServicios`, partials `_CamposServicio/_TablaServicios`, `ServicioTablaViewModel`, páginas `Control/Registros`.
