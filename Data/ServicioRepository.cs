@@ -1,23 +1,24 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Data.Common;
+using TallerMecanico.Data.Factories;
 using TallerMecanico.Models;
 
 namespace TallerMecanico.Data;
 
 public class ServicioRepository : IRepository<Servicio>
 {
-    private readonly DatabaseConnection _databaseConnection;
+    private readonly DatabaseConnectionFactory _connectionFactory;
 
-    public ServicioRepository(DatabaseConnection databaseConnection)
+    public ServicioRepository(DatabaseConnectionFactory connectionFactory)
     {
-        _databaseConnection = databaseConnection;
+        _connectionFactory = connectionFactory;
     }
 
     public List<Servicio> GetAll()
     {
         List<Servicio> servicios = [];
 
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
@@ -27,10 +28,10 @@ public class ServicioRepository : IRepository<Servicio>
             ORDER BY Nombre;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
-        using SqliteDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
 
         while (reader.Read())
         {
@@ -42,8 +43,8 @@ public class ServicioRepository : IRepository<Servicio>
 
     public Servicio? GetById(int id)
     {
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
@@ -53,11 +54,12 @@ public class ServicioRepository : IRepository<Servicio>
             WHERE Id = @Id;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
-        command.Parameters.AddWithValue("@Id", id);
 
-        using SqliteDataReader reader = command.ExecuteReader();
+        AddParameter(command, "@Id", id);
+
+        using DbDataReader reader = command.ExecuteReader();
 
         if (!reader.Read())
         {
@@ -69,8 +71,8 @@ public class ServicioRepository : IRepository<Servicio>
 
     public void Add(Servicio servicio)
     {
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
@@ -81,7 +83,7 @@ public class ServicioRepository : IRepository<Servicio>
                 (@Nombre, @Descripcion, @Costo, @TiempoEstimadoHoras);
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
         AddParameters(command, servicio);
@@ -91,8 +93,8 @@ public class ServicioRepository : IRepository<Servicio>
 
     public void Update(Servicio servicio)
     {
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
@@ -105,19 +107,19 @@ public class ServicioRepository : IRepository<Servicio>
             WHERE Id = @Id;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
         AddParameters(command, servicio);
-        command.Parameters.AddWithValue("@Id", servicio.Id);
+        AddParameter(command, "@Id", servicio.Id);
 
         command.ExecuteNonQuery();
     }
 
     public void Delete(int id)
     {
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
@@ -126,17 +128,18 @@ public class ServicioRepository : IRepository<Servicio>
             WHERE Id = @Id;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
-        command.Parameters.AddWithValue("@Id", id);
+
+        AddParameter(command, "@Id", id);
 
         command.ExecuteNonQuery();
     }
 
     public int Count()
     {
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
@@ -145,34 +148,39 @@ public class ServicioRepository : IRepository<Servicio>
             FROM Servicios;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
     private static void AddParameters(
-        SqliteCommand command,
+        DbCommand command,
         Servicio servicio)
     {
-        command.Parameters.AddWithValue(
-            "@Nombre",
-            servicio.Nombre);
-
-        command.Parameters.AddWithValue(
-            "@Descripcion",
-            servicio.Descripcion);
-
-        command.Parameters.AddWithValue(
-            "@Costo",
-            servicio.Costo);
-
-        command.Parameters.AddWithValue(
+        AddParameter(command, "@Nombre", servicio.Nombre);
+        AddParameter(command, "@Descripcion", servicio.Descripcion);
+        AddParameter(command, "@Costo", servicio.Costo);
+        AddParameter(
+            command,
             "@TiempoEstimadoHoras",
             servicio.TiempoEstimadoHoras);
     }
 
-    private static Servicio MapServicio(SqliteDataReader reader)
+    private static void AddParameter(
+        DbCommand command,
+        string nombre,
+        object valor)
+    {
+        DbParameter parameter = command.CreateParameter();
+
+        parameter.ParameterName = nombre;
+        parameter.Value = valor;
+
+        command.Parameters.Add(parameter);
+    }
+
+    private static Servicio MapServicio(DbDataReader reader)
     {
         return new Servicio
         {
