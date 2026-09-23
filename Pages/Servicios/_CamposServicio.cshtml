@@ -7,6 +7,7 @@
 
     <input asp-for="Nombre"
            class="service-input"
+           data-espacios-controlados
            placeholder="Ej. Cambio de aceite" />
 
     <span asp-validation-for="Nombre"
@@ -21,6 +22,7 @@
 
     <textarea asp-for="Descripcion"
               class="service-input service-textarea"
+              data-espacios-controlados
               rows="4"
               placeholder="Describe brevemente el servicio"></textarea>
 
