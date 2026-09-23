@@ -1,6 +1,7 @@
 using TallerMecanico.Data;
 using TallerMecanico.Data.Factories;
 using TallerMecanico.Models;
+using TallerMecanico.Patterns.FactoryMethod;
 using TallerMecanico.Services;
 using TallerMecanico.Validators;
 
@@ -14,7 +15,12 @@ builder.Services.AddScoped<DatabaseConnection>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<DatabaseConnectionFactory,MySqlConnectionFactory>();
 
-builder.Services.AddScoped<IMecanicoRepository, MecanicoRepository>();
+builder.Services.AddScoped<CreadorMecanico>();
+builder.Services.AddScoped<IMecanicoRepository>(serviceProvider =>
+{
+    var creador = serviceProvider.GetRequiredService<CreadorMecanico>();
+    return (IMecanicoRepository)creador.CrearRepositorio();
+});
 builder.Services.AddScoped<ValidacionMecanicos>();
 builder.Services.AddScoped<MecanicoService>();
 
