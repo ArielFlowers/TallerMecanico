@@ -27,7 +27,8 @@ builder.Services.AddScoped<
     HistorialCostoServicioService>();
 
 builder.Services.AddScoped<IVehiculoRepository, VehiculoRepository>();
-builder.Services.AddScoped<IVehiculoService, VehiculoService>();
+builder.Services.AddScoped<VehiculoService>();
+builder.Services.AddScoped<ValidacionVehiculos>();
 
 builder.Services.AddScoped<DashboardService>();
 

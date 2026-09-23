@@ -1,49 +1,88 @@
+using Microsoft.Data.Sqlite;
 using TallerMecanico.Data;
 using TallerMecanico.Models;
+using TallerMecanico.Validators;
+using TallerMecanico.ViewModels;
 
 namespace TallerMecanico.Services;
 
-public class VehiculoService : IVehiculoService
+public class VehiculoService
 {
+    private const string MensajePlacaDuplicada = "Esta placa ya está registrada.";
     private readonly IVehiculoRepository _vehiculoRepository;
+    private readonly ValidacionVehiculos _validacionVehiculos;
 
-    public VehiculoService(IVehiculoRepository vehiculoRepository)
+    public VehiculoService(
+        IVehiculoRepository vehiculoRepository,
+        ValidacionVehiculos validacionVehiculos)
     {
         _vehiculoRepository = vehiculoRepository;
+        _validacionVehiculos = validacionVehiculos;
     }
 
-    public List<Vehiculo> GetAll()
-    {
-        return _vehiculoRepository.GetAll();
-    }
+    public List<Vehiculo> GetAll() => _vehiculoRepository.GetAll();
 
-    public List<Vehiculo> Search(string filtro)
-    {
-        return _vehiculoRepository.Search(filtro);
-    }
+    public List<Vehiculo> Search(string filtro) => _vehiculoRepository.Search(filtro.Trim());
 
-    public Vehiculo? GetById(int id)
-    {
-        return _vehiculoRepository.GetById(id);
-    }
+    public Vehiculo? GetById(int id) => _vehiculoRepository.GetById(id);
 
-    public void Create(Vehiculo vehiculo)
-    {
-        _vehiculoRepository.Add(vehiculo);
-    }
+    public void Delete(int id) => _vehiculoRepository.Delete(id);
 
-    public void Update(Vehiculo vehiculo)
-    {
-        _vehiculoRepository.Update(vehiculo);
-    }
+    public (VehiculoFormViewModel Formulario, IReadOnlyDictionary<string, string> Errores)
+        Create(VehiculoFormViewModel formulario) => Guardar(formulario, 0);
 
-    public void Delete(int id)
-    {
-        _vehiculoRepository.Delete(id);
-    }
+    public (VehiculoFormViewModel Formulario, IReadOnlyDictionary<string, string> Errores)
+        Update(VehiculoFormViewModel formulario) => Guardar(formulario, formulario.Id, actualizar: true);
 
-    public bool PlacaRegistrada(string placa, int idExcluido)
+    private (VehiculoFormViewModel Formulario, IReadOnlyDictionary<string, string> Errores)
+        Guardar(VehiculoFormViewModel formulario, int id, bool actualizar = false)
     {
-        return _vehiculoRepository.ExistsByPlaca(placa, idExcluido);
+        var normalizado = _validacionVehiculos.Normalizar(formulario);
+        normalizado.Id = id;
+        var errores = new Dictionary<string, string>(_validacionVehiculos.Validar(normalizado));
+
+        if (actualizar && (id <= 0 || _vehiculoRepository.GetById(id) is null))
+        {
+            errores[string.Empty] = "El vehículo que intentas editar ya no existe.";
+        }
+
+        if (!errores.ContainsKey(nameof(formulario.Placa)) &&
+            _vehiculoRepository.ExistsByPlaca(normalizado.Placa ?? string.Empty, id))
+        {
+            errores[nameof(formulario.Placa)] = MensajePlacaDuplicada;
+        }
+
+        if (errores.Count > 0)
+        {
+            return (normalizado, errores);
+        }
+
+        var vehiculo = new Vehiculo
+        {
+            Id = id,
+            Placa = normalizado.Placa ?? string.Empty,
+            Marca = normalizado.Marca ?? string.Empty,
+            Modelo = normalizado.Modelo ?? string.Empty,
+            Kilometraje = normalizado.Kilometraje ?? 0,
+            Observaciones = normalizado.Observaciones ?? string.Empty
+        };
+
+        try
+        {
+            if (actualizar)
+            {
+                _vehiculoRepository.Update(vehiculo);
+            }
+            else
+            {
+                _vehiculoRepository.Add(vehiculo);
+            }
+        }
+        catch (SqliteException exception) when (exception.SqliteExtendedErrorCode == 2067)
+        {
+            errores[nameof(formulario.Placa)] = MensajePlacaDuplicada;
+        }
+
+        return (normalizado, errores);
     }
 }

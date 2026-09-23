@@ -20,7 +20,7 @@ public class VehiculoRepository : IVehiculoRepository
         connection.Open();
 
         const string query = """
-            SELECT Id, Placa, Modelo, Kilometraje, Observaciones
+            SELECT Id, Placa, Modelo, Kilometraje, Observaciones, Marca
             FROM Vehiculos
             ORDER BY Placa;
             """;
@@ -46,10 +46,11 @@ public class VehiculoRepository : IVehiculoRepository
         connection.Open();
 
         const string query = """
-            SELECT Id, Placa, Modelo, Kilometraje, Observaciones
+            SELECT Id, Placa, Modelo, Kilometraje, Observaciones, Marca
             FROM Vehiculos
             WHERE Placa LIKE @Filtro
                OR Modelo LIKE @Filtro
+               OR Marca LIKE @Filtro
             ORDER BY Placa;
             """;
 
@@ -73,7 +74,7 @@ public class VehiculoRepository : IVehiculoRepository
         connection.Open();
 
         const string query = """
-            SELECT Id, Placa, Modelo, Kilometraje, Observaciones
+            SELECT Id, Placa, Modelo, Kilometraje, Observaciones, Marca
             FROM Vehiculos
             WHERE Id = @Id;
             """;
@@ -98,8 +99,8 @@ public class VehiculoRepository : IVehiculoRepository
         connection.Open();
 
         const string query = """
-            INSERT INTO Vehiculos (Placa, Modelo, Kilometraje, Observaciones)
-            VALUES (@Placa, @Modelo, @Kilometraje, @Observaciones);
+            INSERT INTO Vehiculos (Placa, Modelo, Kilometraje, Observaciones, Marca)
+            VALUES (@Placa, @Modelo, @Kilometraje, @Observaciones, @Marca);
             """;
 
         using SqliteCommand command = connection.CreateCommand();
@@ -116,6 +117,7 @@ public class VehiculoRepository : IVehiculoRepository
         const string query = """
             UPDATE Vehiculos
             SET Placa = @Placa,
+                Marca = @Marca,
                 Modelo = @Modelo,
                 Kilometraje = @Kilometraje,
                 Observaciones = @Observaciones
@@ -153,7 +155,7 @@ public class VehiculoRepository : IVehiculoRepository
         const string query = """
             SELECT COUNT(*)
             FROM Vehiculos
-            WHERE Placa = @Placa
+            WHERE Placa = @Placa COLLATE NOCASE
               AND Id <> @IdExcluido;
             """;
 
@@ -185,6 +187,7 @@ public class VehiculoRepository : IVehiculoRepository
     {
         command.Parameters.AddWithValue("@Placa", vehiculo.Placa);
         command.Parameters.AddWithValue("@Modelo", vehiculo.Modelo);
+        command.Parameters.AddWithValue("@Marca", vehiculo.Marca);
         command.Parameters.AddWithValue("@Kilometraje", vehiculo.Kilometraje);
         command.Parameters.AddWithValue("@Observaciones", vehiculo.Observaciones);
     }
@@ -197,7 +200,8 @@ public class VehiculoRepository : IVehiculoRepository
             Placa = reader.GetString(1),
             Modelo = reader.GetString(2),
             Kilometraje = reader.GetInt32(3),
-            Observaciones = reader.GetString(4)
+            Observaciones = reader.GetString(4),
+            Marca = reader.GetString(5)
         };
     }
 }

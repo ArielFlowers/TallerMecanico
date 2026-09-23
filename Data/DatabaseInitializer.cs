@@ -23,6 +23,7 @@ public class DatabaseInitializer
         CreateHistorialCostoServiciosTable(connection);
         CreateHistorialCostoServicioTrigger(connection);
         CreateVehiculosTable(connection);
+        EnsureVehiculosMarcaColumn(connection);
     }
 
     private static void CreateMecanicosTable(SqliteConnection connection)
@@ -120,6 +121,7 @@ public class DatabaseInitializer
             CREATE TABLE IF NOT EXISTS Vehiculos (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Placa TEXT NOT NULL UNIQUE,
+                Marca TEXT NOT NULL DEFAULT '',
                 Modelo TEXT NOT NULL,
                 Kilometraje INTEGER NOT NULL CHECK (Kilometraje >= 0),
                 Observaciones TEXT NOT NULL DEFAULT ''
@@ -127,6 +129,24 @@ public class DatabaseInitializer
             """;
 
         ExecuteCommand(connection, query);
+    }
+
+    private static void EnsureVehiculosMarcaColumn(SqliteConnection connection)
+    {
+        using (SqliteCommand command = connection.CreateCommand())
+        {
+            command.CommandText = "PRAGMA table_info(Vehiculos);";
+            using SqliteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                if (string.Equals(reader.GetString(1), "Marca", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+        }
+
+        ExecuteCommand(connection, "ALTER TABLE Vehiculos ADD COLUMN Marca TEXT NOT NULL DEFAULT '';");
     }
 
     private static void ExecuteCommand(
