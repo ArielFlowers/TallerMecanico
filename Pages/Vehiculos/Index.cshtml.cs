@@ -8,9 +8,9 @@ namespace TallerMecanico.Pages.Vehiculos;
 
 public class IndexModel : PageModel
 {
-    private readonly IVehiculoService _vehiculoService;
+    private readonly VehiculoService _vehiculoService;
 
-    public IndexModel(IVehiculoService vehiculoService)
+    public IndexModel(VehiculoService vehiculoService)
     {
         _vehiculoService = vehiculoService;
     }
@@ -25,55 +25,39 @@ public class IndexModel : PageModel
 
     public string? ModalAbierto { get; private set; }
 
+    public string? ModeloAnterior { get; private set; }
+
     public void OnGet()
     {
         CargarVehiculos();
     }
 
-    public IActionResult OnPostCreate()
+    public IActionResult OnPostCreate() => GuardarFormulario(actualizar: false);
+
+    public IActionResult OnPostUpdate() => GuardarFormulario(actualizar: true);
+
+    private IActionResult GuardarFormulario(bool actualizar)
     {
+        string modal = actualizar ? "editar" : "crear";
+        // Los errores de conversión (por ejemplo, kilometraje no numérico) impiden guardar.
         if (!ModelState.IsValid)
         {
-            return MostrarModal("crear");
+            return MostrarModal(modal);
         }
 
-        Vehiculo vehiculo = MapearVehiculo(0);
+        var resultado = actualizar
+            ? _vehiculoService.Update(Formulario)
+            : _vehiculoService.Create(Formulario);
+        Formulario = resultado.Formulario;
+        ModelState.Clear();
 
-        if (_vehiculoService.PlacaRegistrada(vehiculo.Placa, vehiculo.Id))
+        foreach (var error in resultado.Errores)
         {
-            ModelState.AddModelError(
-                "Formulario.Placa",
-                "Esta placa ya está registrada.");
-
-            return MostrarModal("crear");
+            string campo = string.IsNullOrEmpty(error.Key) ? string.Empty : $"Formulario.{error.Key}";
+            ModelState.AddModelError(campo, error.Value);
         }
 
-        _vehiculoService.Create(vehiculo);
-
-        return RedirectToPage();
-    }
-
-    public IActionResult OnPostUpdate()
-    {
-        if (!ModelState.IsValid)
-        {
-            return MostrarModal("editar");
-        }
-
-        Vehiculo vehiculo = MapearVehiculo(Formulario.Id);
-
-        if (_vehiculoService.PlacaRegistrada(vehiculo.Placa, vehiculo.Id))
-        {
-            ModelState.AddModelError(
-                "Formulario.Placa",
-                "Esta placa ya está registrada.");
-
-            return MostrarModal("editar");
-        }
-
-        _vehiculoService.Update(vehiculo);
-
-        return RedirectToPage();
+        return ModelState.IsValid ? RedirectToPage() : MostrarModal(modal);
     }
 
     public IActionResult OnPostDelete(int id)
@@ -86,6 +70,13 @@ public class IndexModel : PageModel
     private IActionResult MostrarModal(string modal)
     {
         ModalAbierto = modal;
+
+        if (modal == "editar")
+        {
+            var anterior = _vehiculoService.GetById(Formulario.Id);
+            ModeloAnterior = string.IsNullOrWhiteSpace(anterior?.Marca) ? anterior?.Modelo : null;
+        }
+
         CargarVehiculos();
 
         return Page();
@@ -100,17 +91,5 @@ public class IndexModel : PageModel
         }
 
         Vehiculos = _vehiculoService.Search(Buscar.Trim());
-    }
-
-    private Vehiculo MapearVehiculo(int id)
-    {
-        return new Vehiculo
-        {
-            Id = id,
-            Placa = Formulario.Placa.Trim().ToUpperInvariant(),
-            Modelo = Formulario.Modelo.Trim(),
-            Kilometraje = Formulario.Kilometraje ?? 0,
-            Observaciones = Formulario.Observaciones?.Trim() ?? string.Empty
-        };
     }
 }

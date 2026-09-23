@@ -113,14 +113,6 @@
                 return;
             }
 
-            if (modal.id === "modal-editar") {
-                asignarValor("editar-id", boton.dataset.id);
-                asignarValor("editar-placa", boton.dataset.placa);
-                asignarValor("editar-modelo", boton.dataset.modelo);
-                asignarValor("editar-kilometraje", boton.dataset.kilometraje);
-                asignarValor("editar-observaciones", boton.dataset.observaciones);
-            }
-
             if (modal.id === "modal-eliminar") {
 
                 asignarValor("eliminar-id", boton.dataset.id);
@@ -167,35 +159,5 @@
         document.body.classList.add("modal-open");
     }
 
-
-    // ===== VALIDACION EN VIVO DE LA PLACA =====
-
-    const formatoPlaca = /^[A-Za-z0-9]{6,8}$/;
-
-    document.querySelectorAll("[data-placa-input]").forEach(input => {
-
-        const aviso =
-            input.parentElement.querySelector("[data-placa-aviso]");
-
-        if (!aviso) {
-            return;
-        }
-
-        input.addEventListener("input", () => {
-
-            input.value = input.value.toUpperCase();
-
-            const invalido =
-                input.value.length > 0 && !formatoPlaca.test(input.value);
-
-            aviso.textContent =
-                invalido ? "⚠ Formato alfanumérico requerido" : "";
-
-            aviso.classList.toggle("is-visible", invalido);
-            input.classList.toggle("input-error", invalido);
-
-        });
-
-    });
 
 });
