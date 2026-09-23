@@ -9,11 +9,11 @@ namespace TallerMecanico.Pages.Servicios;
 
 public class EditModel : PageModel
 {
-    private readonly ServicioService _servicioService;
+    private readonly IServicioService _servicioService;
     private readonly ValidacionServicios _validacionServicios;
 
     public EditModel(
-        ServicioService servicioService,
+        IServicioService servicioService,
         ValidacionServicios validacionServicios)
     {
         _servicioService = servicioService;

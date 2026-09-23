@@ -3,7 +3,7 @@ using TallerMecanico.Models;
 
 namespace TallerMecanico.Services;
 
-public class ServicioService
+public class ServicioService : IServicioService
 {
     private readonly IServicioRepository _servicioRepository;
 

@@ -15,7 +15,7 @@ builder.Services.AddScoped<ValidacionMecanicos>();
 builder.Services.AddScoped<MecanicoService>();
 
 builder.Services.AddScoped<IServicioRepository, ServicioRepository>();
-builder.Services.AddScoped<ServicioService>();
+builder.Services.AddScoped<IServicioService, ServicioService>();
 builder.Services.AddScoped<ValidacionServicios>();
 
 builder.Services.AddScoped<

@@ -7,9 +7,9 @@ namespace TallerMecanico.Pages.Servicios;
 
 public class DeleteModel : PageModel
 {
-    private readonly ServicioService _servicioService;
+    private readonly IServicioService _servicioService;
 
-    public DeleteModel(ServicioService servicioService)
+    public DeleteModel(IServicioService servicioService)
     {
         _servicioService = servicioService;
     }
