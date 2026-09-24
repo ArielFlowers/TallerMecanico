@@ -53,12 +53,23 @@ public class HistorialCostoServicioRepository
     {
         return new HistorialCostoServicio
         {
-            Id = reader.GetInt32(0),
-            ServicioId = reader.GetInt32(1),
-            NombreServicio = reader.GetString(2),
-            CostoAnterior = reader.GetDecimal(3),
-            CostoNuevo = reader.GetDecimal(4),
-            FechaCambio = reader.GetDateTime(5)
+            Id = reader.GetInt32(
+                reader.GetOrdinal("Id")),
+
+            ServicioId = reader.GetInt32(
+                reader.GetOrdinal("ServicioId")),
+
+            NombreServicio = reader.GetString(
+                reader.GetOrdinal("NombreServicio")),
+
+            CostoAnterior = reader.GetDecimal(
+                reader.GetOrdinal("CostoAnterior")),
+
+            CostoNuevo = reader.GetDecimal(
+                reader.GetOrdinal("CostoNuevo")),
+
+            FechaCambio = reader.GetDateTime(
+                reader.GetOrdinal("FechaCambio"))
         };
     }
 }
