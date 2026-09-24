@@ -36,7 +36,12 @@ builder.Services.AddScoped<
     IHistorialCostoServicioService,
     HistorialCostoServicioService>();
 
-builder.Services.AddScoped<IVehiculoRepository, VehiculoRepository>();
+builder.Services.AddScoped<CreadorVehiculos>();
+builder.Services.AddScoped<IVehiculoRepository>(serviceProvider =>
+{
+    var creador = serviceProvider.GetRequiredService<CreadorVehiculos>();
+    return (IVehiculoRepository)creador.CrearRepositorio();
+});
 builder.Services.AddScoped<VehiculoService>();
 builder.Services.AddScoped<ValidacionVehiculos>();
 
