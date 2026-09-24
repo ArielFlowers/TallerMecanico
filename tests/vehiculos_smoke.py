@@ -1,5 +1,6 @@
 """Run after dotnet build: python tests/vehiculos_smoke.py (isolated SQLite databases)."""
 import html
+import argparse
 import http.cookiejar
 import os
 from pathlib import Path
@@ -76,7 +77,7 @@ def rows(database):
             "SELECT Id,Placa,Marca,Modelo,Kilometraje,Observaciones FROM Vehiculos ORDER BY Id").fetchall()
 
 
-def run():
+def run(include_mysql_pages=False):
     with tempfile.TemporaryDirectory(prefix="vehiculos-tests-") as directory:
         database = Path(directory) / "new.db"
         with application(database) as client:
@@ -127,7 +128,10 @@ def run():
             assert rows(database) == before
             assert "Land Cruiser" in get(client, "/Vehiculos?Buscar=Toyota")
             assert "Swift" not in get(client, "/Vehiculos?Buscar=Toyota").split('id="modal-crear"')[0]
-            for path in ("/", "/Mecanicos", "/Servicios", "/Historial"):
+            paths = ["/Mecanicos", "/Historial"]
+            if include_mysql_pages:
+                paths.extend(["/", "/Servicios"])
+            for path in paths:
                 assert "<!DOCTYPE html>" in get(client, path)
             post(client, "Delete", Id=2)
             assert len(rows(database)) == 1
@@ -166,4 +170,8 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--include-mysql-pages", action="store_true",
+                        help="Also check dashboard and services using a configured MySQL test database.")
+    arguments = parser.parse_args()
+    run(arguments.include_mysql_pages)
