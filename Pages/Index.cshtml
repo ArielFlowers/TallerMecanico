@@ -43,7 +43,7 @@
 
             <div class="dashboard-date">
                 <span>Hoy</span>
-                <strong>@DateTime.Now.ToString("dd/MM/yyyy")</strong>
+                <strong>@DateTime.Now.ToString(TallerMecanico.Services.ConfiguracionTaller.Instancia.FormatoFecha)</strong>
             </div>
         </div>
 
@@ -83,6 +83,6 @@
     </section>
 
     <footer class="home-footer">
-        <span>AutoTaller Pro - v1.0</span>
+        <span>@TallerMecanico.Services.ConfiguracionTaller.Instancia.NombreTaller - @TallerMecanico.Services.ConfiguracionTaller.Instancia.Version</span>
     </footer>
 </div>

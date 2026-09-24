@@ -7,11 +7,11 @@ namespace TallerMecanico.Services;
 public class DashboardService
 {
     private readonly IRepository<Servicio> _servicioRepository;
-    private readonly IVehiculoRepository _vehiculoRepository;
+    private readonly IRepository<Vehiculo> _vehiculoRepository;
 
     public DashboardService(
         IRepository<Servicio> servicioRepository,
-        IVehiculoRepository vehiculoRepository)
+        IRepository<Vehiculo> vehiculoRepository)
     {
         _servicioRepository = servicioRepository;
         _vehiculoRepository = vehiculoRepository;

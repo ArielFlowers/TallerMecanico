@@ -15,7 +15,12 @@ public class IndexModel : PageModel
     }
 
     public IReadOnlyList<HistorialCostoServicio> Historial
-        { get; private set; } = [];
+    {
+        get;
+        private set;
+    } = [];
+
+    public bool TieneRegistros => Historial.Count > 0;
 
     public void OnGet()
     {

@@ -4,17 +4,17 @@ using TallerMecanico.Models;
 
 namespace TallerMecanico.Patterns.FactoryMethod;
 
-public class CreadorMecanico : CreadorRepositorio<Mecanico>
+public class CreadorServicio : CreadorRepositorio<Servicio>
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
 
-    public CreadorMecanico(DatabaseConnectionFactory connectionFactory)
+    public CreadorServicio(DatabaseConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }
 
-    public override IRepository<Mecanico> CrearRepositorio()
+    public override IRepository<Servicio> CrearRepositorio()
     {
-        return new MecanicoRepository(_connectionFactory);
+        return new ServicioRepository(_connectionFactory);
     }
 }

@@ -1,22 +1,25 @@
-using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using TallerMecanico.Data.Factories;
 using TallerMecanico.Models;
 
 namespace TallerMecanico.Data;
 
-public class VehiculoRepository : IVehiculoRepository
+public class VehiculoRepository : IRepository<Vehiculo>
 {
-    private readonly DatabaseConnection _databaseConnection;
+    private readonly DatabaseConnectionFactory _connectionFactory;
 
-    public VehiculoRepository(DatabaseConnection databaseConnection)
+    public VehiculoRepository(DatabaseConnectionFactory connectionFactory)
     {
-        _databaseConnection = databaseConnection;
+        _connectionFactory = connectionFactory;
     }
 
     public List<Vehiculo> GetAll()
     {
         List<Vehiculo> vehiculos = [];
 
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -25,10 +28,10 @@ public class VehiculoRepository : IVehiculoRepository
             ORDER BY Placa;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
-        using SqliteDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
 
         while (reader.Read())
         {
@@ -42,23 +45,25 @@ public class VehiculoRepository : IVehiculoRepository
     {
         List<Vehiculo> vehiculos = [];
 
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
             SELECT Id, Placa, Modelo, Kilometraje, Observaciones, Marca
             FROM Vehiculos
-            WHERE Placa LIKE @Filtro
-               OR Modelo LIKE @Filtro
-               OR Marca LIKE @Filtro
+            WHERE Placa LIKE @Filtro ESCAPE '!'
+               OR Modelo LIKE @Filtro ESCAPE '!'
+               OR Marca LIKE @Filtro ESCAPE '!'
             ORDER BY Placa;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
-        command.Parameters.AddWithValue("@Filtro", $"%{filtro}%");
+        AddParameter(command, "@Filtro", $"%{EscaparPatron(filtro)}%");
 
-        using SqliteDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
 
         while (reader.Read())
         {
@@ -70,7 +75,9 @@ public class VehiculoRepository : IVehiculoRepository
 
     public Vehiculo? GetById(int id)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -79,11 +86,11 @@ public class VehiculoRepository : IVehiculoRepository
             WHERE Id = @Id;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
-        command.Parameters.AddWithValue("@Id", id);
+        AddParameter(command, "@Id", id);
 
-        using SqliteDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
 
         if (!reader.Read())
         {
@@ -95,7 +102,9 @@ public class VehiculoRepository : IVehiculoRepository
 
     public void Add(Vehiculo vehiculo)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -103,7 +112,7 @@ public class VehiculoRepository : IVehiculoRepository
             VALUES (@Placa, @Modelo, @Kilometraje, @Observaciones, @Marca);
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
         AddParameters(command, vehiculo);
         command.ExecuteNonQuery();
@@ -111,7 +120,9 @@ public class VehiculoRepository : IVehiculoRepository
 
     public void Update(Vehiculo vehiculo)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -124,16 +135,18 @@ public class VehiculoRepository : IVehiculoRepository
             WHERE Id = @Id;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
         AddParameters(command, vehiculo);
-        command.Parameters.AddWithValue("@Id", vehiculo.Id);
+        AddParameter(command, "@Id", vehiculo.Id);
         command.ExecuteNonQuery();
     }
 
     public void Delete(int id)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -141,35 +154,39 @@ public class VehiculoRepository : IVehiculoRepository
             WHERE Id = @Id;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
-        command.Parameters.AddWithValue("@Id", id);
+        AddParameter(command, "@Id", id);
         command.ExecuteNonQuery();
     }
 
     public bool ExistsByPlaca(string placa, int idExcluido)
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
             SELECT COUNT(*)
             FROM Vehiculos
-            WHERE Placa = @Placa COLLATE NOCASE
+            WHERE Placa = @Placa
               AND Id <> @IdExcluido;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
-        command.Parameters.AddWithValue("@Placa", placa);
-        command.Parameters.AddWithValue("@IdExcluido", idExcluido);
+        AddParameter(command, "@Placa", placa);
+        AddParameter(command, "@IdExcluido", idExcluido);
 
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
     public int Count()
     {
-        using SqliteConnection connection = _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
         connection.Open();
 
         const string query = """
@@ -177,22 +194,35 @@ public class VehiculoRepository : IVehiculoRepository
             FROM Vehiculos;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    private static void AddParameters(SqliteCommand command, Vehiculo vehiculo)
+    private static void AddParameters(DbCommand command, Vehiculo vehiculo)
     {
-        command.Parameters.AddWithValue("@Placa", vehiculo.Placa);
-        command.Parameters.AddWithValue("@Modelo", vehiculo.Modelo);
-        command.Parameters.AddWithValue("@Marca", vehiculo.Marca);
-        command.Parameters.AddWithValue("@Kilometraje", vehiculo.Kilometraje);
-        command.Parameters.AddWithValue("@Observaciones", vehiculo.Observaciones);
+        AddParameter(command, "@Placa", vehiculo.Placa);
+        AddParameter(command, "@Modelo", vehiculo.Modelo);
+        AddParameter(command, "@Marca", vehiculo.Marca);
+        AddParameter(command, "@Kilometraje", vehiculo.Kilometraje);
+        AddParameter(command, "@Observaciones", vehiculo.Observaciones);
     }
 
-    private static Vehiculo MapVehiculo(SqliteDataReader reader)
+    private static void AddParameter(
+        DbCommand command,
+        string nombre,
+        object valor)
+    {
+        DbParameter parameter = command.CreateParameter();
+
+        parameter.ParameterName = nombre;
+        parameter.Value = valor;
+
+        command.Parameters.Add(parameter);
+    }
+
+    private static Vehiculo MapVehiculo(DbDataReader reader)
     {
         return new Vehiculo
         {
@@ -203,5 +233,14 @@ public class VehiculoRepository : IVehiculoRepository
             Observaciones = reader.GetString(4),
             Marca = reader.GetString(5)
         };
+    }
+
+    private static string EscaparPatron(string filtro)
+    {
+        return filtro
+            .Trim()
+            .Replace("!", "!!", StringComparison.Ordinal)
+            .Replace("%", "!%", StringComparison.Ordinal)
+            .Replace("_", "!_", StringComparison.Ordinal);
     }
 }

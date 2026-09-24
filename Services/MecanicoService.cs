@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using TallerMecanico.Data;
 using TallerMecanico.Models;
+using TallerMecanico.Patterns.FactoryMethod;
 using TallerMecanico.Validators;
 using TallerMecanico.ViewModels;
 
@@ -9,55 +10,61 @@ namespace TallerMecanico.Services;
 public class MecanicoService
 {
     private const char SeparadorComplementoCi = '-';
-    private const string MensajeCiDuplicado = 
+    private const string MensajeCiDuplicado =
         "Ya existe un mecánico registrado con este CI.";
 
     private static readonly Regex EspaciosConsecutivos = new(@"\s+", RegexOptions.Compiled);
 
-    private readonly IMecanicoRepository _mecanicoRepository;
+    private readonly MecanicoRepository _mecanicoRepository;
     private readonly ValidacionMecanicos _validacionMecanicos;
 
     public MecanicoService(
-        IMecanicoRepository mecanicoRepository,
+        CreadorMecanico creadorMecanico,
         ValidacionMecanicos validacionMecanicos)
     {
-        _mecanicoRepository = mecanicoRepository;
+        _mecanicoRepository = (MecanicoRepository)creadorMecanico.CrearRepositorio();
         _validacionMecanicos = validacionMecanicos;
     }
 
-    public async Task<(
-        int? IdMecanico,
-        IReadOnlyDictionary<string, string> Errores)> CrearAsync(
-            MecanicoInputModel mecanicoInput)
+    public IReadOnlyDictionary<string, string> Crear(
+        MecanicoInputModel mecanicoInput)
     {
         var mecanicoNormalizado = NormalizarEntrada(mecanicoInput);
-        var errores = await ObtenerErroresAsync(mecanicoNormalizado);
+        var errores = ObtenerErrores(mecanicoNormalizado);
 
         if (errores.Count > 0)
         {
-            return (null, errores);
+            return errores;
         }
 
-        var mecanico = CrearMecanico(mecanicoNormalizado);
-        var idMecanico = await _mecanicoRepository.CrearAsync(mecanico);
+        _mecanicoRepository.Add(CrearMecanico(mecanicoNormalizado));
 
-        return (idMecanico, errores);
+        return errores;
     }
 
-    public Task<IReadOnlyList<Mecanico>> ObtenerAsync(
-        string? terminoBusqueda = null)
+    public IReadOnlyList<Mecanico> Obtener(string? terminoBusqueda = null)
     {
-        return _mecanicoRepository.ObtenerAsync(terminoBusqueda);
+        if (string.IsNullOrWhiteSpace(terminoBusqueda))
+        {
+            return _mecanicoRepository.GetAll();
+        }
+
+        return _mecanicoRepository.Search(terminoBusqueda);
     }
 
-    public async Task<(
+    public (
         bool Actualizado,
-        IReadOnlyDictionary<string, string> Errores)> ActualizarAsync(
+        IReadOnlyDictionary<string, string> Errores) Actualizar(
             int id,
             MecanicoInputModel mecanicoInput)
     {
+        if (_mecanicoRepository.GetById(id) is null)
+        {
+            return (false, new Dictionary<string, string>());
+        }
+
         var mecanicoNormalizado = NormalizarEntrada(mecanicoInput);
-        var errores = await ObtenerErroresAsync(mecanicoNormalizado, id);
+        var errores = ObtenerErrores(mecanicoNormalizado, id);
 
         if (errores.Count > 0)
         {
@@ -67,18 +74,24 @@ public class MecanicoService
         var mecanico = CrearMecanico(mecanicoNormalizado);
         mecanico.Id = id;
 
-        var actualizado = await _mecanicoRepository.ActualizarAsync(mecanico);
-        return (actualizado, errores);
+        _mecanicoRepository.Update(mecanico);
+        return (true, errores);
     }
 
-    public Task<bool> EliminarAsync(int id)
+    public bool Eliminar(int id)
     {
-        return _mecanicoRepository.EliminarAsync(id);
+        if (_mecanicoRepository.GetById(id) is null)
+        {
+            return false;
+        }
+
+        _mecanicoRepository.Delete(id);
+        return true;
     }
 
-    private async Task<Dictionary<string, string>> ObtenerErroresAsync(
+    private Dictionary<string, string> ObtenerErrores(
         MecanicoInputModel mecanico,
-        int? idExcluido = null)
+        int idExcluido = 0)
     {
         var errores = new Dictionary<string, string>(
             _validacionMecanicos.Validar(mecanico));
@@ -88,11 +101,7 @@ public class MecanicoService
             return errores;
         }
 
-        var existeCi = idExcluido.HasValue
-            ? await _mecanicoRepository.ExisteCiAsync(mecanico.Ci, idExcluido.Value)
-            : await _mecanicoRepository.ExisteCiAsync(mecanico.Ci);
-
-        if (existeCi)
+        if (_mecanicoRepository.ExistsByCi(mecanico.Ci, idExcluido))
         {
             errores[nameof(MecanicoInputModel.Ci)] = MensajeCiDuplicado;
         }

@@ -1,6 +1,7 @@
-using Microsoft.Data.Sqlite;
+using MySqlConnector;
 using TallerMecanico.Data;
 using TallerMecanico.Models;
+using TallerMecanico.Patterns.FactoryMethod;
 using TallerMecanico.Validators;
 using TallerMecanico.ViewModels;
 
@@ -9,14 +10,14 @@ namespace TallerMecanico.Services;
 public class VehiculoService
 {
     private const string MensajePlacaDuplicada = "Esta placa ya está registrada.";
-    private readonly IVehiculoRepository _vehiculoRepository;
+    private readonly VehiculoRepository _vehiculoRepository;
     private readonly ValidacionVehiculos _validacionVehiculos;
 
     public VehiculoService(
-        IVehiculoRepository vehiculoRepository,
+        CreadorVehiculo creadorVehiculo,
         ValidacionVehiculos validacionVehiculos)
     {
-        _vehiculoRepository = vehiculoRepository;
+        _vehiculoRepository = (VehiculoRepository)creadorVehiculo.CrearRepositorio();
         _validacionVehiculos = validacionVehiculos;
     }
 
@@ -78,7 +79,7 @@ public class VehiculoService
                 _vehiculoRepository.Add(vehiculo);
             }
         }
-        catch (SqliteException exception) when (exception.SqliteExtendedErrorCode == 2067)
+        catch (MySqlException exception) when (exception.Number == 1062)
         {
             errores[nameof(formulario.Placa)] = MensajePlacaDuplicada;
         }
