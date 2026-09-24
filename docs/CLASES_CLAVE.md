@@ -144,6 +144,9 @@ Tablas:
 ### US03 - CRUD de Vehiculos - Adrian
 - Campos: `Id`, `Placa` unica, `Marca`, `Modelo`, `Kilometraje`, `Observaciones`. Tres modales y busqueda por placa, marca o modelo.
 - Flujo: Razor Page -> `VehiculoService` concreto -> `ValidacionVehiculos` y `IVehiculoRepository` -> SQLite. Se elimina la interfaz del servicio siguiendo el patron de los otros CRUD.
+- Factory Method: `CreadorVehiculos` hereda de `CreadorRepositorio` y su método `CrearRepositorio()` devuelve un `VehiculoRepository` como `IRepository`. Recibe `DatabaseConnection` por constructor, igual que el creador de mecánicos.
+- Contrato: `IVehiculoRepository` hereda de `IRepository<Vehiculo>`, que hereda de `IRepository`. El CRUD y `Count` se heredan; únicamente `Search` y `ExistsByPlaca` se declaran en la interfaz específica.
+- Inyección: `Program.cs` registra el creador y resuelve `IVehiculoRepository` mediante él, ambos con duración `Scoped`. El servicio y el dashboard siguen recibiendo la interfaz específica. La persistencia de vehículos continúa en SQLite.
 - `ValidacionVehiculos` limpia espacios y capitalizacion antes de comprobar las reglas. Placa: 3 o 4 numeros y exactamente 3 letras ASCII, guardada en mayusculas. Marca/modelo: nombres canonicos de `CatalogoVehiculos`, sin aceptar combinaciones inexistentes. Observaciones: trim y espacios repetidos reducidos, preservando saltos de linea.
 - Catalogo fijo compartido entre servidor y desplegables Marca -> Modelo. Ampliable en `Models/CatalogoVehiculos.cs`. Modelo maximo 60, observaciones 250, kilometraje no negativo y vacio equivalente a cero.
 - El servicio comprueba duplicados excluyendo el vehiculo editado y devuelve errores por campo. Los errores de conversion numerica impiden guardar. Los modales conservan las selecciones tras errores.
