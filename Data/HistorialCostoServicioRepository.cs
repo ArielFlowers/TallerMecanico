@@ -1,4 +1,5 @@
-using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using TallerMecanico.Data.Factories;
 using TallerMecanico.Models;
 
 namespace TallerMecanico.Data;
@@ -6,20 +7,20 @@ namespace TallerMecanico.Data;
 public class HistorialCostoServicioRepository
     : IHistorialCostoServicioRepository
 {
-    private readonly DatabaseConnection _databaseConnection;
+    private readonly DatabaseConnectionFactory _connectionFactory;
 
     public HistorialCostoServicioRepository(
-        DatabaseConnection databaseConnection)
+        DatabaseConnectionFactory connectionFactory)
     {
-        _databaseConnection = databaseConnection;
+        _connectionFactory = connectionFactory;
     }
 
     public IReadOnlyList<HistorialCostoServicio> GetAll()
     {
         List<HistorialCostoServicio> historial = [];
 
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
@@ -34,10 +35,10 @@ public class HistorialCostoServicioRepository
             ORDER BY FechaCambio DESC, Id DESC;
             """;
 
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
 
-        using SqliteDataReader reader = command.ExecuteReader();
+        using DbDataReader reader = command.ExecuteReader();
 
         while (reader.Read())
         {
@@ -48,7 +49,7 @@ public class HistorialCostoServicioRepository
     }
 
     private static HistorialCostoServicio MapHistorialCostoServicio(
-        SqliteDataReader reader)
+        DbDataReader reader)
     {
         return new HistorialCostoServicio
         {

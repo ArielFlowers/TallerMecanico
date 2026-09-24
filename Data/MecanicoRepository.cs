@@ -1,241 +1,293 @@
-using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using TallerMecanico.Data.Factories;
 using TallerMecanico.Models;
 
 namespace TallerMecanico.Data;
 
-public class MecanicoRepository : IMecanicoRepository
+public class MecanicoRepository : IRepository<Mecanico>
 {
-    private const string CrearMecanicoSql = """
-        INSERT INTO Mecanicos
-        (
-            Ci,
-            Nombres,
-            Apellidos,
-            Genero,
-            Especialidad,
-            Celular
-        )
-        VALUES
-        (
-            @Ci,
-            @Nombres,
-            @Apellidos,
-            @Genero,
-            @Especialidad,
-            @Celular
-        )
-        RETURNING Id;
-        """;
+    private readonly DatabaseConnectionFactory _connectionFactory;
 
-    private const string ObtenerMecanicosSql = """
-        SELECT
-            Id,
-            Ci,
-            Nombres,
-            Apellidos,
-            Genero,
-            Especialidad,
-            Celular
-        FROM Mecanicos
-        ORDER BY
-            Apellidos COLLATE NOCASE ASC,
-            Nombres COLLATE NOCASE ASC,
-            Ci COLLATE NOCASE ASC;
-        """;
+    public MecanicoRepository(DatabaseConnectionFactory connectionFactory)
+    {
+        _connectionFactory = connectionFactory;
+    }
 
-    private const string BuscarMecanicosSql = """
-        SELECT
-            Id,
-            Ci,
-            Nombres,
-            Apellidos,
-            Genero,
-            Especialidad,
-            Celular
-        FROM Mecanicos
-        WHERE
-            Ci COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
-            OR Nombres COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
-            OR Apellidos COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
-            OR Genero COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
-            OR Especialidad COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
-            OR Celular COLLATE NOCASE LIKE @PatronBusqueda ESCAPE '\'
-        ORDER BY
-            Apellidos COLLATE NOCASE ASC,
-            Nombres COLLATE NOCASE ASC,
-            Ci COLLATE NOCASE ASC;
-        """;
+    public List<Mecanico> GetAll()
+    {
+        List<Mecanico> mecanicos = [];
 
-    private const string ActualizarMecanicoSql = """
-        UPDATE Mecanicos
-        SET
-            Ci = @Ci,
-            Nombres = @Nombres,
-            Apellidos = @Apellidos,
-            Genero = @Genero,
-            Especialidad = @Especialidad,
-            Celular = @Celular
-        WHERE Id = @Id;
-        """;
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
-    private const string EliminarMecanicoSql = """
-        DELETE FROM Mecanicos
-        WHERE Id = @Id;
-        """;
+        connection.Open();
 
-    private const string ExisteCiSql = """
-        SELECT EXISTS
-        (
-            SELECT 1
+        const string query = """
+            SELECT Id,
+                   Ci,
+                   Nombres,
+                   Apellidos,
+                   Genero,
+                   Especialidad,
+                   Celular
             FROM Mecanicos
-            WHERE Ci = @Ci
-              AND (@IdExcluido IS NULL OR Id <> @IdExcluido)
-        );
-        """;
+            ORDER BY Apellidos ASC,
+                     Nombres ASC,
+                     Ci ASC;
+            """;
 
-    private readonly DatabaseConnection _databaseConnection;
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
 
-    public MecanicoRepository(DatabaseConnection databaseConnection)
-    {
-        _databaseConnection = databaseConnection;
-    }
+        using DbDataReader reader = command.ExecuteReader();
 
-    public async Task<int> CrearAsync(Mecanico mecanico)
-    {
-        await using var connection = _databaseConnection.CreateConnection();
-        await connection.OpenAsync();
-
-        await using var command = new SqliteCommand(CrearMecanicoSql, connection);
-        AgregarParametrosMecanico(command, mecanico);
-
-        var resultado = await command.ExecuteScalarAsync();
-        if (resultado is not long idGenerado)
+        while (reader.Read())
         {
-            throw new InvalidOperationException(
-                "SQLite no devolvió el identificador del mecánico creado.");
-        }
-
-        return checked((int)idGenerado);
-    }
-
-    public async Task<IReadOnlyList<Mecanico>> ObtenerAsync(
-        string? terminoBusqueda = null)
-    {
-        var tieneTerminoBusqueda = !string.IsNullOrWhiteSpace(terminoBusqueda);
-        var consultaSql = tieneTerminoBusqueda
-            ? BuscarMecanicosSql
-            : ObtenerMecanicosSql;
-
-        await using var connection = _databaseConnection.CreateConnection();
-        await connection.OpenAsync();
-
-        await using var command = new SqliteCommand(consultaSql, connection);
-        if (tieneTerminoBusqueda)
-        {
-            command.Parameters.Add("@PatronBusqueda", SqliteType.Text).Value =
-                CrearPatronBusqueda(terminoBusqueda!);
-        }
-
-        var mecanicos = new List<Mecanico>();
-        await using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
-        {
-            mecanicos.Add(MapearMecanico(reader));
+            mecanicos.Add(MapMecanico(reader));
         }
 
         return mecanicos;
     }
 
-    public async Task<bool> ActualizarAsync(Mecanico mecanico)
+    public List<Mecanico> Search(string terminoBusqueda)
     {
-        await using var connection = _databaseConnection.CreateConnection();
-        await connection.OpenAsync();
+        List<Mecanico> mecanicos = [];
 
-        await using var command = new SqliteCommand(ActualizarMecanicoSql, connection);
-        AgregarParametrosMecanico(command, mecanico);
-        command.Parameters.Add("@Id", SqliteType.Integer).Value = mecanico.Id;
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
-        var filasAfectadas = await command.ExecuteNonQueryAsync();
-        return filasAfectadas == 1;
-    }
+        connection.Open();
 
-    public async Task<bool> EliminarAsync(int id)
-    {
-        await using var connection = _databaseConnection.CreateConnection();
-        await connection.OpenAsync();
+        const string query = """
+            SELECT Id,
+                   Ci,
+                   Nombres,
+                   Apellidos,
+                   Genero,
+                   Especialidad,
+                   Celular
+            FROM Mecanicos
+            WHERE Ci LIKE @PatronBusqueda ESCAPE '!'
+               OR Nombres LIKE @PatronBusqueda ESCAPE '!'
+               OR Apellidos LIKE @PatronBusqueda ESCAPE '!'
+               OR Genero LIKE @PatronBusqueda ESCAPE '!'
+               OR Especialidad LIKE @PatronBusqueda ESCAPE '!'
+               OR Celular LIKE @PatronBusqueda ESCAPE '!'
+            ORDER BY Apellidos ASC,
+                     Nombres ASC,
+                     Ci ASC;
+            """;
 
-        await using var command = new SqliteCommand(EliminarMecanicoSql, connection);
-        command.Parameters.Add("@Id", SqliteType.Integer).Value = id;
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(
+            command,
+            "@PatronBusqueda",
+            $"%{EscaparPatron(terminoBusqueda)}%");
 
-        var filasAfectadas = await command.ExecuteNonQueryAsync();
-        return filasAfectadas == 1;
-    }
+        using DbDataReader reader = command.ExecuteReader();
 
-    public async Task<bool> ExisteCiAsync(
-        string ci,
-        int? idExcluido = null)
-    {
-        await using var connection = _databaseConnection.CreateConnection();
-        await connection.OpenAsync();
-
-        await using var command = new SqliteCommand(ExisteCiSql, connection);
-        command.Parameters.Add("@Ci", SqliteType.Text).Value = ci;
-
-        var idExcluidoParameter =
-            command.Parameters.Add("@IdExcluido", SqliteType.Integer);
-        idExcluidoParameter.Value = idExcluido.HasValue
-            ? idExcluido.Value
-            : DBNull.Value;
-
-        var resultado = await command.ExecuteScalarAsync();
-        if (resultado is not long existeCi)
+        while (reader.Read())
         {
-            throw new InvalidOperationException(
-                "SQLite no devolvió el resultado de la verificación del CI.");
+            mecanicos.Add(MapMecanico(reader));
         }
 
-        return existeCi == 1;
+        return mecanicos;
     }
 
-    private static void AgregarParametrosMecanico(
-        SqliteCommand command,
-        Mecanico mecanico)
+    public Mecanico? GetById(int id)
     {
-        command.Parameters.Add("@Ci", SqliteType.Text).Value = mecanico.Ci;
-        command.Parameters.Add("@Nombres", SqliteType.Text).Value = mecanico.Nombres;
-        command.Parameters.Add("@Apellidos", SqliteType.Text).Value =
-            mecanico.Apellidos;
-        command.Parameters.Add("@Genero", SqliteType.Text).Value = mecanico.Genero;
-        command.Parameters.Add("@Especialidad", SqliteType.Text).Value =
-            mecanico.Especialidad;
-        command.Parameters.Add("@Celular", SqliteType.Text).Value = mecanico.Celular;
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            SELECT Id,
+                   Ci,
+                   Nombres,
+                   Apellidos,
+                   Genero,
+                   Especialidad,
+                   Celular
+            FROM Mecanicos
+            WHERE Id = @Id;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@Id", id);
+
+        using DbDataReader reader = command.ExecuteReader();
+
+        if (!reader.Read())
+        {
+            return null;
+        }
+
+        return MapMecanico(reader);
     }
 
-    private static Mecanico MapearMecanico(SqliteDataReader reader)
+    public void Add(Mecanico mecanico)
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            INSERT INTO Mecanicos
+            (
+                Ci,
+                Nombres,
+                Apellidos,
+                Genero,
+                Especialidad,
+                Celular
+            )
+            VALUES
+            (
+                @Ci,
+                @Nombres,
+                @Apellidos,
+                @Genero,
+                @Especialidad,
+                @Celular
+            );
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameters(command, mecanico);
+        command.ExecuteNonQuery();
+    }
+
+    public void Update(Mecanico mecanico)
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            UPDATE Mecanicos
+            SET Ci = @Ci,
+                Nombres = @Nombres,
+                Apellidos = @Apellidos,
+                Genero = @Genero,
+                Especialidad = @Especialidad,
+                Celular = @Celular
+            WHERE Id = @Id;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameters(command, mecanico);
+        AddParameter(command, "@Id", mecanico.Id);
+        command.ExecuteNonQuery();
+    }
+
+    public void Delete(int id)
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            DELETE FROM Mecanicos
+            WHERE Id = @Id;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@Id", id);
+        command.ExecuteNonQuery();
+    }
+
+    public bool ExistsByCi(string ci, int idExcluido = 0)
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            SELECT COUNT(*)
+            FROM Mecanicos
+            WHERE Ci = @Ci
+              AND Id <> @IdExcluido;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@Ci", ci);
+        AddParameter(command, "@IdExcluido", idExcluido);
+
+        return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
+    public int Count()
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            SELECT COUNT(*)
+            FROM Mecanicos;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        return Convert.ToInt32(command.ExecuteScalar());
+    }
+
+    private static void AddParameters(DbCommand command, Mecanico mecanico)
+    {
+        AddParameter(command, "@Ci", mecanico.Ci);
+        AddParameter(command, "@Nombres", mecanico.Nombres);
+        AddParameter(command, "@Apellidos", mecanico.Apellidos);
+        AddParameter(command, "@Genero", mecanico.Genero);
+        AddParameter(command, "@Especialidad", mecanico.Especialidad);
+        AddParameter(command, "@Celular", mecanico.Celular);
+    }
+
+    private static void AddParameter(
+        DbCommand command,
+        string nombre,
+        object valor)
+    {
+        DbParameter parameter = command.CreateParameter();
+
+        parameter.ParameterName = nombre;
+        parameter.Value = valor;
+
+        command.Parameters.Add(parameter);
+    }
+
+    private static Mecanico MapMecanico(DbDataReader reader)
     {
         return new Mecanico
         {
-            Id = reader.GetInt32(reader.GetOrdinal(nameof(Mecanico.Id))),
-            Ci = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Ci))),
-            Nombres = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Nombres))),
-            Apellidos = reader.GetString(
-                reader.GetOrdinal(nameof(Mecanico.Apellidos))),
-            Genero = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Genero))),
-            Especialidad = reader.GetString(
-                reader.GetOrdinal(nameof(Mecanico.Especialidad))),
-            Celular = reader.GetString(reader.GetOrdinal(nameof(Mecanico.Celular)))
+            Id = reader.GetInt32(0),
+            Ci = reader.GetString(1),
+            Nombres = reader.GetString(2),
+            Apellidos = reader.GetString(3),
+            Genero = reader.GetString(4),
+            Especialidad = reader.GetString(5),
+            Celular = reader.GetString(6)
         };
     }
 
-    private static string CrearPatronBusqueda(string terminoBusqueda)
+    private static string EscaparPatron(string terminoBusqueda)
     {
-        var terminoEscapado = terminoBusqueda
+        return terminoBusqueda
             .Trim()
-            .Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace("%", "\\%", StringComparison.Ordinal)
-            .Replace("_", "\\_", StringComparison.Ordinal);
-
-        return $"%{terminoEscapado}%";
+            .Replace("!", "!!", StringComparison.Ordinal)
+            .Replace("%", "!%", StringComparison.Ordinal)
+            .Replace("_", "!_", StringComparison.Ordinal);
     }
 }

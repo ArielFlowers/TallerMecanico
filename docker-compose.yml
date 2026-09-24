@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: taller-mecanico-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: taller_mecanico
+      MYSQL_USER: taller
+      MYSQL_PASSWORD: taller123
+    ports:
+      - "3306:3306"
+    command: --log-bin-trust-function-creators=1
+    volumes:
+      - taller-mysql-data:/var/lib/mysql
+
+volumes:
+  taller-mysql-data:

@@ -1,5 +1,6 @@
 ﻿using TallerMecanico.Data;
 using TallerMecanico.Models;
+using TallerMecanico.Patterns.FactoryMethod;
 
 namespace TallerMecanico.Services;
 
@@ -7,9 +8,9 @@ public class ServicioService : IServicioService
 {
     private readonly IRepository<Servicio> _servicioRepository;
 
-    public ServicioService(IRepository<Servicio> servicioRepository)
+    public ServicioService(CreadorServicio creadorServicio)
     {
-        _servicioRepository = servicioRepository;
+        _servicioRepository = creadorServicio.CrearRepositorio();
     }
 
     public List<Servicio> ObtenerTodos()

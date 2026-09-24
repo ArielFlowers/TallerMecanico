@@ -1,7 +1,7 @@
 # Clases Clave – TallerMecanico
 
 > Memoria técnica para futuras sesiones. No tocar código de compañeros sin avisar.
-> Stack: ASP.NET Core Razor Pages .NET 10 + ADO.NET (`Microsoft.Data.Sqlite` 10.0.11) + SQLite archivo `TallerMecanico.db`.
+> Stack: ASP.NET Core Razor Pages .NET 10 + ADO.NET (`MySqlConnector` 2.6.2) + MySQL 8 (ver `README.md`: `docker compose up -d`, BD `taller_mecanico`). Patrón Factory Method en `Data/` + creadores en `Patterns/FactoryMethod/`. Rama: `feature/mysql-factory-method`.
 > No hay backend/frontend separados. Todo es monolito: `Pages/*.cshtml` + `wwwroot/`.
 
 ## Cómo correr (verificado 09/09/2026)
@@ -17,9 +17,9 @@ dotnet build
 dotnet watch run   # http://localhost:5196 | https://localhost:7043
 ```
 
-- `appsettings.json`: `ConnectionStrings:DefaultConnection = "Data Source=TallerMecanico.db"`.
-- La DB se autocrea al arrancar vía `Program.cs -> DatabaseInitializer.Initialize()`.
-- Reset DB = borrar `TallerMecanico.db` y reiniciar.
+- `appsettings.json`: `ConnectionStrings:MySqlConnection` (ver `docker-compose.yml`).
+- La DB se autocrea al arrancar vía `Program.cs -> DatabaseInitializer.Initialize()` (4 tablas + trigger MySQL).
+- Reset DB = `docker compose down -v` (borra el volumen) y reiniciar.
 - Puertos en `Properties/launchSettings.json`.
 
 ## Arquitectura / Flujo
@@ -48,12 +48,15 @@ Rutas: `/` Inicio/Dashboard, `/Mecanicos` (CRUD en 1 página con handlers), `/Ve
 
 | Archivo | Responsabilidad / Métodos |
 |---|---|
-| `Data/DatabaseConnection.cs` | Factory. `CreateConnection(): SqliteConnection`. Lee `DefaultConnection`, lanza si falta. Dep: `IConfiguration`. |
-| `Data/DatabaseInitializer.cs` | Migración al arranque. `Initialize()`, `CreateMecanicosTable()`, `CreateServiciosTable()`, `CreateVehiculosTable()`, `CreateHistorialCostoServiciosTable()`, `CreateHistorialCostoServicioTrigger()`, `ExecuteCommand()`. Todo `IF NOT EXISTS`. |
-| `Data/MecanicoRepository.cs` + `IMecanicoRepository.cs` | CRUD async. `CrearAsync()->int (RETURNING Id)`, `ObtenerAsync(termino?)`, `ActualizarAsync()->bool`, `EliminarAsync()->bool`, `ExisteCiAsync(ci,idExcluido?)->bool`. Búsqueda `LIKE ESCAPE '\' COLLATE NOCASE` en 4 campos. |
-| `Data/ServicioRepository.cs` + `IServicioRepository.cs` | CRUD. `GetAll(), GetById(id), Add(), Update(), Delete(), Count()`, helpers `AddParameters(), MapServicio()`. Listado `ORDER BY Nombre`. (US04-Aldair agregó la interfaz; antes era repo sync sin interfaz.) |
-| `Data/VehiculoRepository.cs` + `IVehiculoRepository.cs` | CRUD con ADO.NET parametrizado. Placa `UNIQUE`, `Count()` para el Dashboard. (US03-Adrian.) |
-| `Data/HistorialCostoServicioRepository.cs` + `IHistorialCostoServicioRepository.cs` | Solo lectura. `GetAll()->IReadOnlyList` orden `FechaCambio DESC, Id DESC`. |
+| `Data/Factories/DatabaseConnectionFactory.cs` | Abstracta. Lee `MySqlConnection`, `CreateConnection(): DbConnection`. Dep: `IConfiguration`. |
+| `Data/Factories/MySqlConnectionFactory.cs` | Concreta. Retorna `MySqlConnection`. Registrada en `Program.cs`. |
+| `Data/DatabaseInitializer.cs` | Migración al arranque sobre la factory. Crea `Mecanicos/Servicios/Vehiculos/HistorialCostoServicios` + trigger `TRG_Servicios_HistorialCosto` (vía `INFORMATION_SCHEMA`). Todo `IF NOT EXISTS`. |
+| `Patterns/FactoryMethod/CreadorRepositorio.cs` | Creador genérico abstracto `CreadorRepositorio<T>`: `CrearRepositorio(): IRepository<T>` + `SomeOperation()` (template que usa el factory). |
+| `Patterns/FactoryMethod/CreadorMecanico/CreadorVehiculo/CreadorServicio.cs` | Creadores concretos. Reciben `DatabaseConnectionFactory`, retornan su repo concreto (retorno covariante, sin casts). |
+| `Data/MecanicoRepository.cs` : `IRepository<Mecanico>` | CRUD sync + extras `Search(termino)`, `ExistsByCi(ci,idExcluido)`. `LIKE ... ESCAPE '!'`, `=` con collation CI de MySQL. |
+| `Data/ServicioRepository.cs` : `IRepository<Servicio>` | CRUD. `GetAll(), GetById(id), Add(), Update(), Delete(), Count()`, helpers `AddParameters(), MapServicio()`. Listado `ORDER BY Nombre`. |
+| `Data/VehiculoRepository.cs` : `IRepository<Vehiculo>` | CRUD + extras `Search(filtro)`, `ExistsByPlaca(placa,idExcluido)`. `Count()` para el Dashboard. |
+| `Data/HistorialCostoServicioRepository.cs` + `IHistorialCostoServicioRepository.cs` | Solo lectura (fuera del Factory por rúbrica). `GetAll()->IReadOnlyList` orden `FechaCambio DESC, Id DESC`. |
 
 Tablas:
 - `Mecanicos(Id PK AI, Ci TEXT UNIQUE NOT NULL, NombreCompleto, Especialidad, Celular)`.
@@ -66,10 +69,10 @@ Tablas:
 
 | Archivo | Métodos / Notas |
 |---|---|
-| `Services/MecanicoService.cs` | `CrearAsync(Input)->(Id?,Errores)`, `ObtenerAsync(termino?)`, `ActualizarAsync(id,Input)->(bool,Errores)`, `EliminarAsync(id)`. Normaliza: trim, colapsa `\s+`, CI complemento a mayúsculas. Solo chequea CI duplicado si pasa `ValidacionMecanicos`. Dep: `IMecanicoRepository, ValidacionMecanicos`. |
-| `Services/ServicioService.cs` | `ObtenerTodos(), ObtenerPorId(), Crear(), Actualizar(), Eliminar()`. Valida vía `ServicioFormViewModel` + `ValidacionServicios` + checks de SQLite (nombre/descripción obligatorios, `Costo/Tiempo>0`, sin espacios inválidos ni caracteres no permitidos). Dep: `IServicioRepository`. |
-| `Services/VehiculoService.cs` | Coordina normalización de placa (mayúsculas) + validación + `IVehiculoRepository`. (US03-Adrian.) Dep: `IVehiculoRepository`. |
-| `Services/DashboardService.cs` | `GetDashboardData()->DashboardViewModel`. `Vehiculos=Count()` real y `Servicios=Count()` real; `Mecanicos=0` sigue hardcodeado (pendiente conectar). Dep: `IServicioRepository, IVehiculoRepository`. |
+| `Services/MecanicoService.cs` | `Crear(Input)->Errores`, `Obtener(termino?)`, `Actualizar(id,Input)->(bool,Errores)`, `Eliminar(id)->bool` (sync). Normaliza: trim, colapsa `\s+`, CI complemento a mayúsculas. Solo chequea CI duplicado si pasa `ValidacionMecanicos`. Dep: `CreadorMecanico` (Factory Method) `+ ValidacionMecanicos`. |
+| `Services/ServicioService.cs` | `ObtenerTodos(), ObtenerPorId(), Crear(), Actualizar(), Eliminar()`. Valida vía `ServicioFormViewModel` + `ValidacionServicios` + checks (nombre/descripción obligatorios, `Costo/Tiempo>0`). Dep: `CreadorServicio` (Factory Method). |
+| `Services/VehiculoService.cs` | Coordina normalización de placa (mayúsculas) + validación + repo. Duplicado de placa: pre-chequeo `ExistsByPlaca` + red `MySqlException` 1062. Dep: `CreadorVehiculo` (Factory Method) `+ ValidacionVehiculos`. |
+| `Services/DashboardService.cs` | `GetDashboardData()->DashboardViewModel`. `Vehiculos/Servicios=Count()` reales; `Mecanicos=0` sigue hardcodeado (pendiente conectar). Dep: `IRepository<Servicio> + IRepository<Vehiculo>` (resueltos vía creadores en `Program.cs`). |
 | `Services/HistorialCostoServicioService.cs` + `IHistorialCostoServicioService.cs` | Fachada fina. `ObtenerHistorial()` → repo. |
 
 ## Validators/
@@ -118,9 +121,9 @@ Tablas:
 
 ## Convenciones para continuar
 
-1. Mecánicos = patrón ideal: `InputModel -> ValidacionMecanicos -> MecanicoService (normaliza) -> IMecanicoRepository (async)`.
-2. Servicios sigue el mismo patrón con interfaz: `ServicioFormViewModel + ValidacionServicios -> ServicioService -> IServicioRepository` (US04-Aldair).
-3. No usar EF Core. Todo SQL parametrizado directo.
+1. Mecánicos = patrón ideal: `InputModel -> ValidacionMecanicos -> MecanicoService (normaliza) -> CreadorMecanico.CrearRepositorio() -> MecanicoRepository : IRepository<Mecanico>`.
+2. Servicios y Vehículos igual: `Service -> CreadorX.CrearRepositorio() -> Repo : IRepository<T>`. Extras (`Search`, `ExistsBy*`) en la clase concreta, accesibles por retorno covariante.
+3. No usar EF Core. Todo SQL parametrizado directo vía `DatabaseConnectionFactory` (MySQL).
 4. Histórico es automático por trigger, no meter lógica C# para eso.
 5. Vehiculos: `VehiculoFormViewModel -> VehiculoService -> ValidacionVehiculos / IVehiculoRepository`. El servidor valida antes de persistir; la pagina muestra errores por campo.
 

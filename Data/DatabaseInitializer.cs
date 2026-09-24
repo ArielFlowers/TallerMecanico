@@ -1,160 +1,205 @@
-using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using TallerMecanico.Data.Factories;
 
 namespace TallerMecanico.Data;
 
 public class DatabaseInitializer
 {
-    private readonly DatabaseConnection _databaseConnection;
+    private const string NombreTriggerHistorialCosto =
+        "TRG_Servicios_HistorialCosto";
 
-    public DatabaseInitializer(DatabaseConnection databaseConnection)
+    private readonly DatabaseConnectionFactory _connectionFactory;
+
+    public DatabaseInitializer(DatabaseConnectionFactory connectionFactory)
     {
-        _databaseConnection = databaseConnection;
+        _connectionFactory = connectionFactory;
     }
 
     public void Initialize()
     {
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
         CreateMecanicosTable(connection);
         CreateServiciosTable(connection);
         CreateHistorialCostoServiciosTable(connection);
-        CreateHistorialCostoServicioTrigger(connection);
+        EnsureHistorialCostoServicioTrigger(connection);
         CreateVehiculosTable(connection);
-        EnsureVehiculosMarcaColumn(connection);
     }
 
-    private static void CreateMecanicosTable(SqliteConnection connection)
+    private static void CreateMecanicosTable(DbConnection connection)
     {
         const string query = """
-            CREATE TABLE IF NOT EXISTS Mecanicos
-            (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Ci TEXT NOT NULL UNIQUE,
-                Nombres TEXT NOT NULL,
-                Apellidos TEXT NOT NULL,
-                Genero TEXT NOT NULL CHECK (Genero IN ('Masculino', 'Femenino')),
-                Especialidad TEXT NOT NULL CHECK
-                (
-                    Especialidad IN
-                    (
+            CREATE TABLE IF NOT EXISTS Mecanicos (
+                Id INT NOT NULL AUTO_INCREMENT,
+                Ci VARCHAR(20) NOT NULL UNIQUE,
+                Nombres VARCHAR(100) NOT NULL,
+                Apellidos VARCHAR(100) NOT NULL,
+                Genero VARCHAR(20) NOT NULL,
+                Especialidad VARCHAR(60) NOT NULL,
+                Celular VARCHAR(20) NOT NULL,
+
+                CONSTRAINT PK_Mecanicos
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT CK_Mecanicos_Genero
+                    CHECK (Genero IN ('Masculino', 'Femenino')),
+
+                CONSTRAINT CK_Mecanicos_Especialidad
+                    CHECK (Especialidad IN (
                         'Mecánica Automotriz General',
                         'Motores',
                         'Electricidad Automotriz',
                         'Carrocería Automotriz',
                         'Climatización Automotriz',
                         'Sin Especialidad'
-                    )
-                ),
-                Celular TEXT NOT NULL
-            );
+                    ))
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void CreateServiciosTable(SqliteConnection connection)
+    private static void CreateServiciosTable(DbConnection connection)
     {
         const string query = """
             CREATE TABLE IF NOT EXISTS Servicios (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Nombre TEXT NOT NULL,
-                Descripcion TEXT NOT NULL,
-                Costo REAL NOT NULL CHECK (Costo > 0),
-                TiempoEstimadoHoras REAL NOT NULL CHECK (TiempoEstimadoHoras > 0)
-            );
+                Id INT NOT NULL AUTO_INCREMENT,
+                Nombre VARCHAR(100) NOT NULL,
+                Descripcion VARCHAR(300) NOT NULL,
+                Costo DECIMAL(10,2) NOT NULL,
+                TiempoEstimadoHoras DECIMAL(6,2) NOT NULL,
+
+                CONSTRAINT PK_Servicios
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT CK_Servicios_Costo
+                    CHECK (Costo > 0),
+
+                CONSTRAINT CK_Servicios_TiempoEstimadoHoras
+                    CHECK (TiempoEstimadoHoras > 0)
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
     private static void CreateHistorialCostoServiciosTable(
-        SqliteConnection connection)
+        DbConnection connection)
     {
         const string query = """
             CREATE TABLE IF NOT EXISTS HistorialCostoServicios (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ServicioId INTEGER NOT NULL,
-                NombreServicio TEXT NOT NULL,
-                CostoAnterior REAL NOT NULL,
-                CostoNuevo REAL NOT NULL,
-                FechaCambio TEXT NOT NULL
-            );
+                Id INT NOT NULL AUTO_INCREMENT,
+                ServicioId INT NOT NULL,
+                NombreServicio VARCHAR(100) NOT NULL,
+                CostoAnterior DECIMAL(10,2) NOT NULL,
+                CostoNuevo DECIMAL(10,2) NOT NULL,
+                FechaCambio DATETIME NOT NULL,
+
+                CONSTRAINT PK_HistorialCostoServicios
+                    PRIMARY KEY (Id)
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void CreateHistorialCostoServicioTrigger(
-        SqliteConnection connection)
+    private static void EnsureHistorialCostoServicioTrigger(
+        DbConnection connection)
     {
+        if (TriggerExiste(connection, NombreTriggerHistorialCosto))
+        {
+            return;
+        }
+
         const string query = """
-            CREATE TRIGGER IF NOT EXISTS TRG_Servicios_HistorialCosto
-            AFTER UPDATE OF Costo ON Servicios
-            WHEN OLD.Costo <> NEW.Costo
+            CREATE TRIGGER TRG_Servicios_HistorialCosto
+            AFTER UPDATE ON Servicios
+            FOR EACH ROW
             BEGIN
-                INSERT INTO HistorialCostoServicios (
-                    ServicioId,
-                    NombreServicio,
-                    CostoAnterior,
-                    CostoNuevo,
-                    FechaCambio
-                )
-                VALUES (
-                    NEW.Id,
-                    NEW.Nombre,
-                    OLD.Costo,
-                    NEW.Costo,
-                    datetime('now', 'localtime')
-                );
+                IF OLD.Costo <> NEW.Costo THEN
+                    INSERT INTO HistorialCostoServicios (
+                        ServicioId,
+                        NombreServicio,
+                        CostoAnterior,
+                        CostoNuevo,
+                        FechaCambio
+                    )
+                    VALUES (
+                        NEW.Id,
+                        NEW.Nombre,
+                        OLD.Costo,
+                        NEW.Costo,
+                        NOW()
+                    );
+                END IF;
             END;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void CreateVehiculosTable(SqliteConnection connection)
+    private static bool TriggerExiste(
+        DbConnection connection,
+        string nombreTrigger)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TRIGGERS
+            WHERE TRIGGER_SCHEMA = DATABASE()
+              AND TRIGGER_NAME = @NombreTrigger;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@NombreTrigger", nombreTrigger);
+
+        return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
+    private static void CreateVehiculosTable(DbConnection connection)
     {
         const string query = """
             CREATE TABLE IF NOT EXISTS Vehiculos (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Placa TEXT NOT NULL UNIQUE,
-                Marca TEXT NOT NULL DEFAULT '',
-                Modelo TEXT NOT NULL,
-                Kilometraje INTEGER NOT NULL CHECK (Kilometraje >= 0),
-                Observaciones TEXT NOT NULL DEFAULT ''
-            );
+                Id INT NOT NULL AUTO_INCREMENT,
+                Placa VARCHAR(10) NOT NULL UNIQUE,
+                Marca VARCHAR(60) NOT NULL DEFAULT '',
+                Modelo VARCHAR(100) NOT NULL,
+                Kilometraje INT NOT NULL,
+                Observaciones VARCHAR(300) NOT NULL DEFAULT '',
+
+                CONSTRAINT PK_Vehiculos
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT CK_Vehiculos_Kilometraje
+                    CHECK (Kilometraje >= 0)
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void EnsureVehiculosMarcaColumn(SqliteConnection connection)
-    {
-        using (SqliteCommand command = connection.CreateCommand())
-        {
-            command.CommandText = "PRAGMA table_info(Vehiculos);";
-            using SqliteDataReader reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                if (string.Equals(reader.GetString(1), "Marca", StringComparison.OrdinalIgnoreCase))
-                {
-                    return;
-                }
-            }
-        }
-
-        ExecuteCommand(connection, "ALTER TABLE Vehiculos ADD COLUMN Marca TEXT NOT NULL DEFAULT '';");
-    }
-
     private static void ExecuteCommand(
-        SqliteConnection connection,
+        DbConnection connection,
         string query)
     {
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
         command.ExecuteNonQuery();
+    }
+
+    private static void AddParameter(
+        DbCommand command,
+        string nombre,
+        object valor)
+    {
+        DbParameter parameter = command.CreateParameter();
+
+        parameter.ParameterName = nombre;
+        parameter.Value = valor;
+
+        command.Parameters.Add(parameter);
     }
 }
