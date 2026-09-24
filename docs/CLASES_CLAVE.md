@@ -165,9 +165,11 @@ Tablas (MySQL 8, `DEFAULT CHARSET=utf8mb4`, DDL en `Data/Scripts/MySql/`):
 - `ValidacionVehiculos` limpia espacios y capitalizacion antes de comprobar las reglas. Placa: 3 o 4 numeros y exactamente 3 letras ASCII, guardada en mayusculas. Marca/modelo: nombres canonicos de `CatalogoVehiculos`, sin aceptar combinaciones inexistentes. Observaciones: trim y espacios repetidos reducidos, preservando saltos de linea.
 - Catalogo fijo compartido entre servidor y desplegables Marca -> Modelo. Ampliable en `Models/CatalogoVehiculos.cs`. Modelo maximo 60, observaciones 250, kilometraje no negativo y vacio equivalente a cero.
 - El servicio comprueba duplicados excluyendo el vehiculo editado y devuelve errores por campo. Los errores de conversion numerica impiden guardar. Los modales conservan las selecciones tras errores.
-- SQLite incorpora `Marca` de forma idempotente. Los datos anteriores se conservan, muestran marca pendiente y exigen seleccionar marca/modelo y corregir la placa al editar.
-- SRP: presentacion, reglas, coordinacion y persistencia separadas. DIP: el servicio depende de `IVehiculoRepository`. No se agregan interfaces que repitan el CRUD.
-- Verificacion reproducible: `dotnet build` y `python tests/vehiculos_smoke.py`. Las pruebas usan bases temporales, verifican CRUD, normalizacion, errores, busqueda y migracion sin tocar los datos del taller.
+- Factory Method actual: `CreadorVehiculo : CreadorRepositorio<Vehiculo>` construye `VehiculoRepository` mediante `DatabaseConnectionFactory`. El repositorio implementa `IRepository<Vehiculo>` y conserva `Search` y `ExistsByPlaca` como métodos concretos.
+- Inyección: `Program.cs` registra `CreadorVehiculo` e `IRepository<Vehiculo>` con duración `Scoped`. `VehiculoService` recibe el creador y convierte su resultado a `VehiculoRepository`; el dashboard recibe la interfaz genérica.
+- Persistencia actual: MySQL, con `Marca` incluida en la creación de la tabla. La migración de columna SQLite correspondía al sprint anterior; no es una migración de datos entre motores.
+- SRP: presentación, reglas, coordinación y persistencia separadas. El servicio aún depende del repositorio concreto para sus operaciones específicas.
+- Verificación: `dotnet build`. Los scripts de vehículos de `tests/` corresponden a la etapa SQLite y deben adaptarse antes de ejecutarse sobre esta rama MySQL; ver `tests/README.md`.
 
 ### US04 – Catálogo de Servicios – Aldair
 - CRUD de Servicios: `Nombre, Descripción, Costo, Tiempo estimado`. Stack Razor Pages + C# + ADO.NET (SQLite en su sprint; **MySQL desde sprint 2**), verificado en código: `ValidacionServicios`, partials `_CamposServicio/_TablaServicios`, `ServicioTablaViewModel`, páginas `Control/Registros`.
