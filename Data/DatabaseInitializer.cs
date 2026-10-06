@@ -34,6 +34,8 @@ public class DatabaseInitializer
 
         CreateVehiculosTable(connection);
         EnsureVehiculosClienteSchema(connection);
+
+        CreateProductosTable(connection);
     }
 
     // =====================================================
@@ -375,7 +377,7 @@ public class DatabaseInitializer
                 command.ExecuteScalar()) > 0)
         {
             throw new InvalidOperationException(
-                "No se puede migrar Mecanicos: existen combinaciones duplicadas de " +
+                "No se puede migrar Mecanicos: existen combinaciones duplicadas de" +
                 "(Ci, ComplementoCi), considerando también los CI antiguos separados. " +
                 "Resuelva los duplicados manualmente; no se han eliminado ni modificado registros.");
         }
@@ -413,7 +415,7 @@ public class DatabaseInitializer
                     nombreIndiceCompuesto))
             {
                 throw new InvalidOperationException(
-                    $"El índice {nombreIndiceCompuesto} de Mecanicos ya existe con otra definición. " +
+                    $"El índice {nombreIndiceCompuesto} de Mecanicos ya existe conotra definición. " +
                     "Revise su definición manualmente antes de migrar.");
             }
 
@@ -963,6 +965,46 @@ public class DatabaseInitializer
                 FOREIGN KEY (ClienteId)
                 REFERENCES Clientes(Id);
             """);
+    }
+
+    // =====================================================
+    // PRODUCTOS
+    // =====================================================
+
+    private static void CreateProductosTable(
+        DbConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS Productos (
+                Id INT NOT NULL AUTO_INCREMENT,
+                Codigo VARCHAR(50) NOT NULL,
+                Nombre VARCHAR(100) NOT NULL,
+                Precio DECIMAL(10,2) NOT NULL,
+                Stock INT NOT NULL,
+                StockMinimo INT NOT NULL,
+                CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema',
+                FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                CONSTRAINT PK_Productos
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT UQ_Productos_Codigo
+                    UNIQUE (Codigo),
+
+                CONSTRAINT CK_Productos_Precio
+                    CHECK (Precio > 0),
+
+                CONSTRAINT CK_Productos_Stock
+                    CHECK (Stock >= 0),
+
+                CONSTRAINT CK_Productos_StockMinimo
+                    CHECK (StockMinimo >= 0)
+            ) DEFAULT CHARSET = utf8mb4;
+            """;
+
+        ExecuteCommand(
+            connection,
+            query);
     }
 
     // =====================================================

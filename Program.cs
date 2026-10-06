@@ -26,6 +26,7 @@ builder.Services.AddScoped<CreadorMecanico>();
 builder.Services.AddScoped<CreadorVehiculo>();
 builder.Services.AddScoped<CreadorServicio>();
 builder.Services.AddScoped<CreadorCliente>();
+builder.Services.AddScoped<CreadorProducto>();
 
 builder.Services.AddScoped<IRepository<Mecanico>>(
     serviceProvider =>
@@ -51,6 +52,12 @@ builder.Services.AddScoped<IRepository<Cliente>>(
             .GetRequiredService<CreadorCliente>()
             .CrearRepositorio());
 
+builder.Services.AddScoped<IRepository<Producto>>(
+    serviceProvider =>
+        serviceProvider
+            .GetRequiredService<CreadorProducto>()
+            .CrearRepositorio());
+
 // =====================================================
 // PUERTOS HEXAGONALES
 // =====================================================
@@ -59,25 +66,26 @@ builder.Services.AddScoped<IClientePort>(
     serviceProvider =>
         (IClientePort)
         serviceProvider
-            .GetRequiredService<
-                IRepository<Cliente>>());
+            .GetRequiredService<IRepository<Cliente>>());
 
 builder.Services.AddScoped<IVehiculoPort>(
     serviceProvider =>
         (IVehiculoPort)
         serviceProvider
-            .GetRequiredService<
-                IRepository<Vehiculo>>());
+            .GetRequiredService<IRepository<Vehiculo>>());
+
+builder.Services.AddScoped<IProductoPort>(
+    serviceProvider =>
+        (IProductoPort)
+        serviceProvider
+            .GetRequiredService<IRepository<Producto>>());
 
 // =====================================================
 // MECÁNICOS
 // =====================================================
 
-builder.Services.AddScoped<
-    ValidacionMecanicos>();
-
-builder.Services.AddScoped<
-    MecanicoService>();
+builder.Services.AddScoped<ValidacionMecanicos>();
+builder.Services.AddScoped<MecanicoService>();
 
 // =====================================================
 // SERVICIOS
@@ -123,6 +131,16 @@ builder.Services.AddScoped<
     ClienteService>();
 
 // =====================================================
+// PRODUCTOS
+// =====================================================
+
+builder.Services.AddScoped<
+    ValidacionProductos>();
+
+builder.Services.AddScoped<
+    ProductoService>();
+
+// =====================================================
 // DASHBOARD
 // =====================================================
 
@@ -137,8 +155,7 @@ using (IServiceScope scope =
 {
     DatabaseInitializer databaseInitializer =
         scope.ServiceProvider
-            .GetRequiredService<
-                DatabaseInitializer>();
+            .GetRequiredService<DatabaseInitializer>();
 
     databaseInitializer.Initialize();
 }
