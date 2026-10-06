@@ -10,8 +10,9 @@ public class ValidacionMecanicos
     private const int LongitudMaximaNombresYApellidos = 100;
     private const int LongitudCelular = 8;
 
-    private const char PrimerPrefijoCelularPermitido = '6';
-    private const char SegundoPrefijoCelularPermitido = '7';
+    private const char PrimerPrefijoCelularPermitido = '5';
+    private const char SegundoPrefijoCelularPermitido = '6';
+    private const char TercerPrefijoCelularPermitido = '7';
 
     public IReadOnlyDictionary<string, string> Validar(MecanicoInputModel mecanico)
     {
@@ -182,14 +183,15 @@ public class ValidacionMecanicos
         if (!TienePrefijoCelularValido(celular))
         {
             errores[nameof(MecanicoInputModel.Celular)] =
-                $"El celular debe comenzar con {PrimerPrefijoCelularPermitido} o {SegundoPrefijoCelularPermitido}.";
+                $"El celular debe comenzar en {PrimerPrefijoCelularPermitido}, {SegundoPrefijoCelularPermitido} o {TercerPrefijoCelularPermitido}.";
         }
     }
 
     private static bool TienePrefijoCelularValido(string celular)
     {
         return celular[0] == PrimerPrefijoCelularPermitido ||
-               celular[0] == SegundoPrefijoCelularPermitido;
+               celular[0] == SegundoPrefijoCelularPermitido ||
+               celular[0] == TercerPrefijoCelularPermitido;
     }
 
 }
