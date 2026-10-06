@@ -1,20 +1,25 @@
 using TallerMecanico.Data;
 using TallerMecanico.Data.Factories;
+using TallerMecanico.Infraestructura.Adapters.MySql;
 using TallerMecanico.Models;
 
 namespace TallerMecanico.Patterns.FactoryMethod;
 
-public class CreadorVehiculo : CreadorRepositorio<Vehiculo>
+public class CreadorVehiculo :
+    CreadorRepositorio<Vehiculo>
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
 
-    public CreadorVehiculo(DatabaseConnectionFactory connectionFactory)
+    public CreadorVehiculo(
+        DatabaseConnectionFactory connectionFactory)
     {
-        _connectionFactory = connectionFactory;
+        _connectionFactory =
+            connectionFactory;
     }
 
     public override IRepository<Vehiculo> CrearRepositorio()
     {
-        return new VehiculoRepository(_connectionFactory);
+        return new VehiculoRepository(
+            _connectionFactory);
     }
 }
