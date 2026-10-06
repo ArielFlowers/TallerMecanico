@@ -1,0 +1,752 @@
+@page
+@model TallerMecanico.Pages.Productos.IndexModel
+
+@{
+    ViewData["Title"] = "Gestión de Productos";
+}
+
+<div class="dashboard">
+
+    <div class="dashboard-header">
+
+        <div>
+            <h1>Gestión de Productos</h1>
+
+            <p>
+                Administra los productos y repuestos disponibles
+                en el inventario del taller.
+            </p>
+        </div>
+
+        <button type="button"
+                class="services-btn services-btn-primary"
+                id="abrir-crear-producto">
+            + Nuevo Producto
+        </button>
+
+    </div>
+
+
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito))
+    {
+        <div class="service-validation"
+             style="margin-bottom: 16px;"
+             role="status">
+            @Model.MensajeExito
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
+    {
+        <div class="service-validation"
+             style="margin-bottom: 16px;"
+             role="alert">
+            @Model.MensajeError
+        </div>
+    }
+
+
+    <div class="services-actions"
+         style="margin-bottom: 20px;">
+
+        <form method="get"
+              class="buscador"
+              role="search">
+
+            <span class="buscador-icono"
+                  aria-hidden="true">
+                🔍
+            </span>
+
+            <label asp-for="TerminoBusqueda"
+                   class="visually-hidden">
+                Buscar productos
+            </label>
+
+            <input asp-for="TerminoBusqueda"
+                   class="service-input buscador-input"
+                   placeholder="Buscar por código o nombre"
+                   autocomplete="off" />
+
+            <button type="submit"
+                    class="services-btn services-btn-secondary">
+                Buscar
+            </button>
+
+            @if (!string.IsNullOrWhiteSpace(
+                    Model.TerminoBusqueda))
+            {
+                <a asp-page="./Index"
+                   class="services-btn services-btn-secondary">
+                    Limpiar
+                </a>
+            }
+
+        </form>
+
+        <a asp-page="./Index"
+           class="services-btn services-btn-secondary">
+            Refrescar
+        </a>
+
+    </div>
+
+
+    <section class="recent-orders">
+
+        <div class="section-header">
+
+            <div>
+                <h2>
+                    Productos Registrados
+                    (@Model.Productos.Count)
+                </h2>
+            </div>
+
+        </div>
+
+
+        @if (Model.Productos.Count == 0)
+        {
+            <div class="services-empty">
+
+                <div class="services-empty-icon">
+                    📦
+                </div>
+
+                <strong>
+                    @(string.IsNullOrWhiteSpace(
+                        Model.TerminoBusqueda)
+                        ? "No existen productos registrados"
+                        : "No se encontraron coincidencias")
+                </strong>
+
+                <span>
+                    @(string.IsNullOrWhiteSpace(
+                        Model.TerminoBusqueda)
+                        ? "Registra un producto para comenzar a controlar el inventario."
+                        : "Prueba con otro código o nombre.")
+                </span>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+
+                <table class="orders-table services-table">
+
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Stock mínimo</th>
+                            <th>Estado</th>
+                            <th>Creado por</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var producto in Model.Productos)
+                        {
+                            <tr>
+
+                                <td class="service-name">
+                                    @producto.Codigo
+                                </td>
+
+                                <td>
+                                    @producto.Nombre
+                                </td>
+
+                                <td>
+                                    Bs. @producto.Precio.ToString("0.00")
+                                </td>
+
+                                <td>
+                                    @producto.Stock
+                                </td>
+
+                                <td>
+                                    @producto.StockMinimo
+                                </td>
+
+                                <td>
+                                    @if (producto.Stock == 0)
+                                    {
+                                        <strong>
+                                            Sin stock
+                                        </strong>
+                                    }
+                                    else if (producto.Stock <= producto.StockMinimo)
+                                    {
+                                        <strong>
+                                            Stock bajo
+                                        </strong>
+                                    }
+                                    else
+                                    {
+                                        <span>
+                                            Disponible
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @producto.CreadoPor
+                                </td>
+
+                                <td>
+                                    @producto.FechaCreacion.ToString(
+                                        "dd/MM/yyyy HH:mm")
+                                </td>
+
+                                <td>
+
+                                    <div class="services-row-actions">
+
+                                        <button type="button"
+                                                class="service-action service-action-icon service-action-edit"
+                                                title="Editar producto"
+                                                data-editar-producto
+                                                data-id="@producto.Id"
+                                                data-codigo="@producto.Codigo"
+                                                data-nombre="@producto.Nombre"
+                                                data-precio="@producto.Precio.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                                data-stock="@producto.Stock"
+                                                data-stock-minimo="@producto.StockMinimo">
+                                            ✎
+                                        </button>
+
+                                        <button type="button"
+                                                class="service-action service-action-icon service-action-delete"
+                                                title="Eliminar producto"
+                                                data-eliminar-producto
+                                                data-id="@producto.Id"
+                                                data-nombre="@producto.Nombre"
+                                                data-codigo="@producto.Codigo">
+                                            🗑
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </section>
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- MODAL CREAR / EDITAR PRODUCTO                     -->
+<!-- ================================================= -->
+
+<dialog id="producto-form-dialog"
+        class="modal-dialog"
+        data-open-mode="@Model.FormularioActivo">
+
+    <div class="service-form-header">
+
+        <div>
+            <h2 id="producto-form-title">
+                Nuevo Producto
+            </h2>
+
+            <p id="producto-form-description">
+                Completa los datos para registrar un producto.
+            </p>
+        </div>
+
+        <button type="button"
+                class="modal-close"
+                data-cerrar-producto
+                aria-label="Cerrar">
+            &times;
+        </button>
+
+    </div>
+
+
+    <form method="post"
+          class="service-form"
+          id="producto-form">
+
+        <input asp-for="ProductoId"
+               type="hidden"
+               id="producto-id" />
+
+        <input type="hidden"
+               name="TerminoBusqueda"
+               value="@Model.TerminoBusqueda" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="service-validation">
+        </div>
+
+
+        <div class="service-form-group">
+
+            <label asp-for="ProductoInput.Codigo">
+                Código
+                <span class="campo-obligatorio">*</span>
+            </label>
+
+            <input asp-for="ProductoInput.Codigo"
+                   id="producto-codigo"
+                   class="service-input"
+                   maxlength="50"
+                   autocomplete="off"
+                   placeholder="Ej. FIL-001"
+                   required />
+
+            <span asp-validation-for="ProductoInput.Codigo"
+                  class="service-validation">
+            </span>
+
+        </div>
+
+
+        <div class="service-form-group">
+
+            <label asp-for="ProductoInput.Nombre">
+                Nombre
+                <span class="campo-obligatorio">*</span>
+            </label>
+
+            <input asp-for="ProductoInput.Nombre"
+                   id="producto-nombre"
+                   class="service-input"
+                   maxlength="100"
+                   autocomplete="off"
+                   placeholder="Ej. Filtro de aceite"
+                   required />
+
+            <span asp-validation-for="ProductoInput.Nombre"
+                  class="service-validation">
+            </span>
+
+        </div>
+
+
+        <div class="service-form-group">
+
+            <label asp-for="ProductoInput.Precio">
+                Precio (Bs.)
+                <span class="campo-obligatorio">*</span>
+            </label>
+
+            <input asp-for="ProductoInput.Precio"
+                   id="producto-precio"
+                   class="service-input"
+                   type="number"
+                   min="0.01"
+                   step="0.01"
+                   placeholder="Ej. 85.50"
+                   required />
+
+            <span asp-validation-for="ProductoInput.Precio"
+                  class="service-validation">
+            </span>
+
+        </div>
+
+
+        <div class="service-form-group">
+
+            <label asp-for="ProductoInput.Stock">
+                Stock
+                <span class="campo-obligatorio">*</span>
+            </label>
+
+            <input asp-for="ProductoInput.Stock"
+                   id="producto-stock"
+                   class="service-input"
+                   type="number"
+                   min="0"
+                   step="1"
+                   placeholder="Ej. 20"
+                   required />
+
+            <span asp-validation-for="ProductoInput.Stock"
+                  class="service-validation">
+            </span>
+
+        </div>
+
+
+        <div class="service-form-group">
+
+            <label asp-for="ProductoInput.StockMinimo">
+                Stock mínimo
+                <span class="campo-obligatorio">*</span>
+            </label>
+
+            <input asp-for="ProductoInput.StockMinimo"
+                   id="producto-stock-minimo"
+                   class="service-input"
+                   type="number"
+                   min="0"
+                   step="1"
+                   placeholder="Ej. 5"
+                   required />
+
+            <span asp-validation-for="ProductoInput.StockMinimo"
+                  class="service-validation">
+            </span>
+
+        </div>
+
+
+        <div class="service-form-actions">
+
+            <button type="button"
+                    class="services-btn services-btn-secondary"
+                    data-cerrar-producto>
+                Cancelar
+            </button>
+
+            <button type="submit"
+                    asp-page-handler="Crear"
+                    class="services-btn services-btn-primary"
+                    id="producto-boton-crear">
+                Guardar Producto
+            </button>
+
+            <button type="submit"
+                    asp-page-handler="Actualizar"
+                    class="services-btn services-btn-primary"
+                    id="producto-boton-actualizar"
+                    hidden>
+                Guardar Cambios
+            </button>
+
+        </div>
+
+    </form>
+
+</dialog>
+
+
+<!-- ================================================= -->
+<!-- MODAL ELIMINAR                                   -->
+<!-- ================================================= -->
+
+<dialog id="producto-delete-dialog"
+        class="modal-dialog">
+
+    <div class="service-form-header">
+
+        <div>
+            <h2>
+                Eliminar Producto
+            </h2>
+
+            <p>
+                Confirma la eliminación del producto seleccionado.
+            </p>
+        </div>
+
+        <button type="button"
+                class="modal-close"
+                data-cerrar-eliminar-producto
+                aria-label="Cerrar">
+            &times;
+        </button>
+
+    </div>
+
+
+    <form method="post"
+          asp-page-handler="Eliminar"
+          class="service-form">
+
+        <input type="hidden"
+               name="ProductoId"
+               id="producto-eliminar-id" />
+
+        <input type="hidden"
+               name="TerminoBusqueda"
+               value="@Model.TerminoBusqueda" />
+
+
+        <div class="service-delete-warning">
+
+            <strong id="producto-eliminar-nombre">
+            </strong>
+
+            <span id="producto-eliminar-codigo">
+            </span>
+
+            <span>
+                Este registro será eliminado del inventario.
+            </span>
+
+        </div>
+
+
+        <div class="service-form-actions">
+
+            <button type="button"
+                    class="services-btn services-btn-secondary"
+                    data-cerrar-eliminar-producto>
+                Cancelar
+            </button>
+
+            <button type="submit"
+                    class="services-btn services-btn-danger">
+                Eliminar Producto
+            </button>
+
+        </div>
+
+    </form>
+
+</dialog>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (() => {
+
+            const dialogFormulario =
+                document.getElementById(
+                    "producto-form-dialog");
+
+            const dialogEliminar =
+                document.getElementById(
+                    "producto-delete-dialog");
+
+            const botonNuevo =
+                document.getElementById(
+                    "abrir-crear-producto");
+
+            const tituloFormulario =
+                document.getElementById(
+                    "producto-form-title");
+
+            const descripcionFormulario =
+                document.getElementById(
+                    "producto-form-description");
+
+            const inputId =
+                document.getElementById(
+                    "producto-id");
+
+            const inputCodigo =
+                document.getElementById(
+                    "producto-codigo");
+
+            const inputNombre =
+                document.getElementById(
+                    "producto-nombre");
+
+            const inputPrecio =
+                document.getElementById(
+                    "producto-precio");
+
+            const inputStock =
+                document.getElementById(
+                    "producto-stock");
+
+            const inputStockMinimo =
+                document.getElementById(
+                    "producto-stock-minimo");
+
+            const botonCrear =
+                document.getElementById(
+                    "producto-boton-crear");
+
+            const botonActualizar =
+                document.getElementById(
+                    "producto-boton-actualizar");
+
+
+            function abrirCrear() {
+
+                inputId.value = "0";
+                inputCodigo.value = "";
+                inputNombre.value = "";
+                inputPrecio.value = "";
+                inputStock.value = "";
+                inputStockMinimo.value = "";
+
+                tituloFormulario.textContent =
+                    "Nuevo Producto";
+
+                descripcionFormulario.textContent =
+                    "Completa los datos para registrar un producto.";
+
+                botonCrear.hidden =
+                    false;
+
+                botonActualizar.hidden =
+                    true;
+
+                dialogFormulario.showModal();
+            }
+
+
+            function abrirEditar(boton) {
+
+                inputId.value =
+                    boton.dataset.id ?? "";
+
+                inputCodigo.value =
+                    boton.dataset.codigo ?? "";
+
+                inputNombre.value =
+                    boton.dataset.nombre ?? "";
+
+                inputPrecio.value =
+                    boton.dataset.precio ?? "";
+
+                inputStock.value =
+                    boton.dataset.stock ?? "";
+
+                inputStockMinimo.value =
+                    boton.dataset.stockMinimo ?? "";
+
+                tituloFormulario.textContent =
+                    "Editar Producto";
+
+                descripcionFormulario.textContent =
+                    "Modifica los datos del producto y guarda los cambios.";
+
+                botonCrear.hidden =
+                    true;
+
+                botonActualizar.hidden =
+                    false;
+
+                dialogFormulario.showModal();
+            }
+
+
+            botonNuevo?.addEventListener(
+                "click",
+                abrirCrear);
+
+
+            document
+                .querySelectorAll(
+                    "[data-editar-producto]")
+                .forEach(boton => {
+
+                    boton.addEventListener(
+                        "click",
+                        () => abrirEditar(boton));
+
+                });
+
+
+            document
+                .querySelectorAll(
+                    "[data-cerrar-producto]")
+                .forEach(boton => {
+
+                    boton.addEventListener(
+                        "click",
+                        () =>
+                            dialogFormulario.close());
+
+                });
+
+
+            document
+                .querySelectorAll(
+                    "[data-eliminar-producto]")
+                .forEach(boton => {
+
+                    boton.addEventListener(
+                        "click",
+                        () => {
+
+                            document.getElementById(
+                                "producto-eliminar-id"
+                            ).value =
+                                boton.dataset.id ?? "";
+
+                            document.getElementById(
+                                "producto-eliminar-nombre"
+                            ).textContent =
+                                boton.dataset.nombre ?? "";
+
+                            document.getElementById(
+                                "producto-eliminar-codigo"
+                            ).textContent =
+                                `Código: ${boton.dataset.codigo ?? ""}`;
+
+                            dialogEliminar.showModal();
+                        });
+
+                });
+
+
+            document
+                .querySelectorAll(
+                    "[data-cerrar-eliminar-producto]")
+                .forEach(boton => {
+
+                    boton.addEventListener(
+                        "click",
+                        () =>
+                            dialogEliminar.close());
+
+                });
+
+
+            const modoInicial =
+                dialogFormulario?.dataset.openMode;
+
+            if (modoInicial === "crear") {
+
+                tituloFormulario.textContent =
+                    "Nuevo Producto";
+
+                botonCrear.hidden =
+                    false;
+
+                botonActualizar.hidden =
+                    true;
+
+                dialogFormulario.showModal();
+            }
+
+            if (modoInicial === "editar") {
+
+                tituloFormulario.textContent =
+                    "Editar Producto";
+
+                descripcionFormulario.textContent =
+                    "Corrige los datos indicados y guarda los cambios.";
+
+                botonCrear.hidden =
+                    true;
+
+                botonActualizar.hidden =
+                    false;
+
+                dialogFormulario.showModal();
+            }
+
+        })();
+    </script>
+}}
