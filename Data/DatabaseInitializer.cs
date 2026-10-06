@@ -1,160 +1,494 @@
-using Microsoft.Data.Sqlite;
+using System.Data.Common;
+using TallerMecanico.Data.Factories;
 
 namespace TallerMecanico.Data;
 
 public class DatabaseInitializer
 {
-    private readonly DatabaseConnection _databaseConnection;
+    private const string NombreTriggerHistorialCosto =
+        "TRG_Servicios_HistorialCosto";
 
-    public DatabaseInitializer(DatabaseConnection databaseConnection)
+    private readonly DatabaseConnectionFactory _connectionFactory;
+
+    public DatabaseInitializer(DatabaseConnectionFactory connectionFactory)
     {
-        _databaseConnection = databaseConnection;
+        _connectionFactory = connectionFactory;
     }
 
     public void Initialize()
     {
-        using SqliteConnection connection =
-            _databaseConnection.CreateConnection();
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
 
         connection.Open();
 
         CreateMecanicosTable(connection);
+        EnsureMecanicosSchema(connection);
         CreateServiciosTable(connection);
         CreateHistorialCostoServiciosTable(connection);
-        CreateHistorialCostoServicioTrigger(connection);
+        EnsureHistorialCostoServicioTrigger(connection);
         CreateVehiculosTable(connection);
-        EnsureVehiculosMarcaColumn(connection);
     }
 
-    private static void CreateMecanicosTable(SqliteConnection connection)
+    private static void CreateMecanicosTable(DbConnection connection)
     {
         const string query = """
-            CREATE TABLE IF NOT EXISTS Mecanicos
-            (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Ci TEXT NOT NULL UNIQUE,
-                Nombres TEXT NOT NULL,
-                Apellidos TEXT NOT NULL,
-                Genero TEXT NOT NULL CHECK (Genero IN ('Masculino', 'Femenino')),
-                Especialidad TEXT NOT NULL CHECK
-                (
-                    Especialidad IN
-                    (
+            CREATE TABLE IF NOT EXISTS Mecanicos (
+                Id INT NOT NULL AUTO_INCREMENT,
+                Ci VARCHAR(8) NOT NULL,
+                ComplementoCi VARCHAR(2) NOT NULL DEFAULT '',
+                Nombres VARCHAR(100) NOT NULL,
+                Apellidos VARCHAR(100) NOT NULL,
+                Genero VARCHAR(20) NOT NULL,
+                Especialidad VARCHAR(60) NOT NULL,
+                Celular VARCHAR(20) NOT NULL,
+
+                CONSTRAINT PK_Mecanicos
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT UQ_Mecanicos_Ci_ComplementoCi
+                    UNIQUE (Ci, ComplementoCi),
+
+                CONSTRAINT CK_Mecanicos_ComplementoCi
+                    CHECK (
+                        CHAR_LENGTH(ComplementoCi) = 0
+                        OR (
+                            CHAR_LENGTH(ComplementoCi) = 2
+                            AND REGEXP_LIKE(ComplementoCi, '^[0-9][A-Z]$', 'c')
+                        )
+                    ),
+
+                CONSTRAINT CK_Mecanicos_Genero
+                    CHECK (Genero IN ('Masculino', 'Femenino')),
+
+                CONSTRAINT CK_Mecanicos_Especialidad
+                    CHECK (Especialidad IN (
                         'Mecánica Automotriz General',
                         'Motores',
                         'Electricidad Automotriz',
                         'Carrocería Automotriz',
                         'Climatización Automotriz',
                         'Sin Especialidad'
-                    )
-                ),
-                Celular TEXT NOT NULL
-            );
+                    ))
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void CreateServiciosTable(SqliteConnection connection)
+    private static void EnsureMecanicosSchema(DbConnection connection)
+    {
+        EnsureComplementoCiColumn(connection);
+        ValidateMecanicosMigrationValues(connection);
+        EnsureNoDuplicateMecanicosCi(connection);
+        EnsureMecanicosUniqueIndex(connection);
+        MigrateLegacyCiValues(connection);
+        EnsureComplementoCiCheck(connection);
+    }
+
+    private static void EnsureComplementoCiColumn(DbConnection connection)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'Mecanicos'
+              AND COLUMN_NAME = 'ComplementoCi';
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        if (Convert.ToInt32(command.ExecuteScalar()) > 0)
+        {
+            return;
+        }
+
+        ExecuteCommand(connection, """
+            ALTER TABLE Mecanicos
+            ADD COLUMN ComplementoCi VARCHAR(2) NOT NULL DEFAULT '' AFTER Ci;
+            """);
+    }
+
+    private static void ValidateMecanicosMigrationValues(DbConnection connection)
+    {
+        const string query = """
+            SELECT Id, Ci, ComplementoCi
+            FROM Mecanicos
+            WHERE ComplementoCi IS NULL
+               OR (
+                   CHAR_LENGTH(ComplementoCi) > 0
+                   AND NOT (
+                       CHAR_LENGTH(ComplementoCi) = 2
+                       AND REGEXP_LIKE(ComplementoCi, '^[0-9][A-Z]$', 'c')
+                   )
+               )
+               OR (
+                   LOCATE('-', Ci) > 0
+                   AND CHAR_LENGTH(ComplementoCi) = 0
+                   AND NOT (
+                       CHAR_LENGTH(SUBSTRING(Ci, LOCATE('-', Ci) + 1)) = 2
+                       AND REGEXP_LIKE(Ci, '^[0-9]{5,8}-[0-9][A-Za-z]$', 'c')
+                   )
+               )
+            ORDER BY Id
+            LIMIT 1;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        using DbDataReader reader = command.ExecuteReader();
+
+        if (reader.Read())
+        {
+            var idMecanico = reader.GetInt32(0);
+            var ci = reader.GetString(1);
+            var complementoCi = reader.IsDBNull(2) ? "NULL" : $"'{reader.GetString(2)}'";
+
+            throw new InvalidOperationException(
+                $"No se puede actualizar el esquema de Mecanicos: el registro Id {idMecanico} " +
+                $"(Ci = '{ci}', ComplementoCi = {complementoCi}) tiene un formato incompatible. " +
+                "El complemento debe estar vacío o tener un número de 0 a 9 seguido de una letra de A a Z. " +
+                "Corrija ese registro manualmente; no se han modificado los CI existentes.");
+        }
+    }
+
+    private static void EnsureNoDuplicateMecanicosCi(DbConnection connection)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM (
+                SELECT
+                    CASE
+                        WHEN LOCATE('-', Ci) > 0 AND CHAR_LENGTH(ComplementoCi) = 0
+                        THEN SUBSTRING_INDEX(Ci, '-', 1)
+                        ELSE Ci
+                    END AS CiMigrado,
+                    CASE
+                        WHEN LOCATE('-', Ci) > 0 AND CHAR_LENGTH(ComplementoCi) = 0
+                        THEN UPPER(SUBSTRING(Ci, LOCATE('-', Ci) + 1))
+                        ELSE ComplementoCi
+                    END AS ComplementoMigrado
+                FROM Mecanicos
+                GROUP BY CiMigrado, ComplementoMigrado
+                HAVING COUNT(*) > 1
+            ) AS CombinacionesDuplicadas;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        if (Convert.ToInt32(command.ExecuteScalar()) > 0)
+        {
+            throw new InvalidOperationException(
+                "No se puede migrar Mecanicos: existen combinaciones duplicadas de " +
+                "(Ci, ComplementoCi), considerando también los CI antiguos separados. " +
+                "Resuelva los duplicados manualmente; no se han eliminado ni modificado registros.");
+        }
+    }
+
+    private static void EnsureMecanicosUniqueIndex(DbConnection connection)
+    {
+        const string nombreIndiceCompuesto = "UQ_Mecanicos_Ci_ComplementoCi";
+        var indicesCi = GetMecanicosUniqueCiIndexes(connection);
+        var tieneIndiceCompuesto = MecanicosCompositeUniqueIndexExists(connection);
+        var cambios = indicesCi.Select(nombreIndice =>
+            $"DROP INDEX `{nombreIndice.Replace("`", "``", StringComparison.Ordinal)}`")
+            .ToList();
+
+        if (!tieneIndiceCompuesto)
+        {
+            if (MecanicosIndexNameExists(connection, nombreIndiceCompuesto)
+                && !indicesCi.Contains(nombreIndiceCompuesto))
+            {
+                throw new InvalidOperationException(
+                    $"El índice {nombreIndiceCompuesto} de Mecanicos ya existe con otra definición. " +
+                    "Revise su definición manualmente antes de migrar.");
+            }
+
+            cambios.Add($"ADD CONSTRAINT {nombreIndiceCompuesto} UNIQUE (Ci, ComplementoCi)");
+        }
+
+        if (cambios.Count > 0)
+        {
+            ExecuteCommand(connection, $"ALTER TABLE Mecanicos {string.Join(", ", cambios)};");
+        }
+    }
+
+    private static List<string> GetMecanicosUniqueCiIndexes(DbConnection connection)
+    {
+        const string query = """
+            SELECT INDEX_NAME
+            FROM INFORMATION_SCHEMA.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'Mecanicos'
+              AND NON_UNIQUE = 0
+              AND INDEX_NAME <> 'PRIMARY'
+            GROUP BY INDEX_NAME
+            HAVING COUNT(*) = 1 AND MAX(COLUMN_NAME) = 'Ci';
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        using DbDataReader reader = command.ExecuteReader();
+        var nombresIndices = new List<string>();
+
+        while (reader.Read())
+        {
+            nombresIndices.Add(reader.GetString(0));
+        }
+
+        return nombresIndices;
+    }
+
+    private static bool MecanicosCompositeUniqueIndexExists(DbConnection connection)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM (
+                SELECT INDEX_NAME
+                FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'Mecanicos'
+                  AND NON_UNIQUE = 0
+                GROUP BY INDEX_NAME
+                HAVING COUNT(*) = 2
+                   AND MAX(CASE WHEN SEQ_IN_INDEX = 1 THEN COLUMN_NAME END) = 'Ci'
+                   AND MAX(CASE WHEN SEQ_IN_INDEX = 2 THEN COLUMN_NAME END) = 'ComplementoCi'
+                   AND COUNT(SUB_PART) = 0
+            ) AS IndicesCompuestos;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
+    private static bool MecanicosIndexNameExists(DbConnection connection, string nombreIndice)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'Mecanicos'
+              AND INDEX_NAME = @NombreIndice;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@NombreIndice", nombreIndice);
+        return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
+    private static void MigrateLegacyCiValues(DbConnection connection)
+    {
+        // MySQL evalúa las asignaciones de izquierda a derecha: leer el complemento antes de cambiar Ci.
+        const string query = """
+            UPDATE Mecanicos
+            SET ComplementoCi = UPPER(SUBSTRING(Ci, LOCATE('-', Ci) + 1)),
+                Ci = SUBSTRING_INDEX(Ci, '-', 1)
+            WHERE LOCATE('-', Ci) > 0
+              AND CHAR_LENGTH(ComplementoCi) = 0;
+            """;
+
+        ExecuteCommand(connection, query);
+    }
+
+    private static void EnsureComplementoCiCheck(DbConnection connection)
+    {
+        const string patronComplementoCi = "^[0-9][A-Z]$";
+        const string query = """
+            SELECT Restriccion.ENFORCED, Definicion.CHECK_CLAUSE
+            FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS Restriccion
+            JOIN INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS Definicion
+              ON Definicion.CONSTRAINT_SCHEMA = Restriccion.CONSTRAINT_SCHEMA
+             AND Definicion.CONSTRAINT_NAME = Restriccion.CONSTRAINT_NAME
+            WHERE Restriccion.CONSTRAINT_SCHEMA = DATABASE()
+              AND Restriccion.TABLE_NAME = 'Mecanicos'
+              AND Restriccion.CONSTRAINT_NAME = 'CK_Mecanicos_ComplementoCi'
+              AND Restriccion.CONSTRAINT_TYPE = 'CHECK';
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        string? estadoRestriccion = null;
+        string? definicionRestriccion = null;
+
+        using (DbDataReader reader = command.ExecuteReader())
+        {
+            if (reader.Read())
+            {
+                estadoRestriccion = reader.GetString(0);
+                definicionRestriccion = reader.GetString(1);
+            }
+        }
+
+        if (definicionRestriccion is null
+            || !definicionRestriccion.Contains(patronComplementoCi, StringComparison.Ordinal))
+        {
+            var eliminarRestriccionAnterior = definicionRestriccion is null
+                ? string.Empty
+                : "DROP CHECK CK_Mecanicos_ComplementoCi, ";
+
+            ExecuteCommand(connection, $"""
+                ALTER TABLE Mecanicos {eliminarRestriccionAnterior}
+                ADD CONSTRAINT CK_Mecanicos_ComplementoCi
+                CHECK (
+                    CHAR_LENGTH(ComplementoCi) = 0
+                    OR (
+                        CHAR_LENGTH(ComplementoCi) = 2
+                        AND REGEXP_LIKE(ComplementoCi, '{patronComplementoCi}', 'c')
+                    )
+                );
+                """);
+        }
+        else if (string.Equals(estadoRestriccion, "NO", StringComparison.OrdinalIgnoreCase))
+        {
+            ExecuteCommand(connection, """
+                ALTER TABLE Mecanicos
+                ALTER CHECK CK_Mecanicos_ComplementoCi ENFORCED;
+                """);
+        }
+    }
+
+    private static void CreateServiciosTable(DbConnection connection)
     {
         const string query = """
             CREATE TABLE IF NOT EXISTS Servicios (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Nombre TEXT NOT NULL,
-                Descripcion TEXT NOT NULL,
-                Costo REAL NOT NULL CHECK (Costo > 0),
-                TiempoEstimadoHoras REAL NOT NULL CHECK (TiempoEstimadoHoras > 0)
-            );
+                Id INT NOT NULL AUTO_INCREMENT,
+                Nombre VARCHAR(100) NOT NULL,
+                Descripcion VARCHAR(300) NOT NULL,
+                Costo DECIMAL(10,2) NOT NULL,
+                TiempoEstimadoHoras DECIMAL(6,2) NOT NULL,
+
+                CONSTRAINT PK_Servicios
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT CK_Servicios_Costo
+                    CHECK (Costo > 0),
+
+                CONSTRAINT CK_Servicios_TiempoEstimadoHoras
+                    CHECK (TiempoEstimadoHoras > 0)
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
     private static void CreateHistorialCostoServiciosTable(
-        SqliteConnection connection)
+        DbConnection connection)
     {
         const string query = """
             CREATE TABLE IF NOT EXISTS HistorialCostoServicios (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ServicioId INTEGER NOT NULL,
-                NombreServicio TEXT NOT NULL,
-                CostoAnterior REAL NOT NULL,
-                CostoNuevo REAL NOT NULL,
-                FechaCambio TEXT NOT NULL
-            );
+                Id INT NOT NULL AUTO_INCREMENT,
+                ServicioId INT NOT NULL,
+                NombreServicio VARCHAR(100) NOT NULL,
+                CostoAnterior DECIMAL(10,2) NOT NULL,
+                CostoNuevo DECIMAL(10,2) NOT NULL,
+                FechaCambio DATETIME NOT NULL,
+
+                CONSTRAINT PK_HistorialCostoServicios
+                    PRIMARY KEY (Id)
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void CreateHistorialCostoServicioTrigger(
-        SqliteConnection connection)
+    private static void EnsureHistorialCostoServicioTrigger(
+        DbConnection connection)
     {
+        if (TriggerExiste(connection, NombreTriggerHistorialCosto))
+        {
+            return;
+        }
+
         const string query = """
-            CREATE TRIGGER IF NOT EXISTS TRG_Servicios_HistorialCosto
-            AFTER UPDATE OF Costo ON Servicios
-            WHEN OLD.Costo <> NEW.Costo
+            CREATE TRIGGER TRG_Servicios_HistorialCosto
+            AFTER UPDATE ON Servicios
+            FOR EACH ROW
             BEGIN
-                INSERT INTO HistorialCostoServicios (
-                    ServicioId,
-                    NombreServicio,
-                    CostoAnterior,
-                    CostoNuevo,
-                    FechaCambio
-                )
-                VALUES (
-                    NEW.Id,
-                    NEW.Nombre,
-                    OLD.Costo,
-                    NEW.Costo,
-                    datetime('now', 'localtime')
-                );
+                IF OLD.Costo <> NEW.Costo THEN
+                    INSERT INTO HistorialCostoServicios (
+                        ServicioId,
+                        NombreServicio,
+                        CostoAnterior,
+                        CostoNuevo,
+                        FechaCambio
+                    )
+                    VALUES (
+                        NEW.Id,
+                        NEW.Nombre,
+                        OLD.Costo,
+                        NEW.Costo,
+                        NOW()
+                    );
+                END IF;
             END;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void CreateVehiculosTable(SqliteConnection connection)
+    private static bool TriggerExiste(
+        DbConnection connection,
+        string nombreTrigger)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TRIGGERS
+            WHERE TRIGGER_SCHEMA = DATABASE()
+              AND TRIGGER_NAME = @NombreTrigger;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@NombreTrigger", nombreTrigger);
+
+        return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
+    private static void CreateVehiculosTable(DbConnection connection)
     {
         const string query = """
             CREATE TABLE IF NOT EXISTS Vehiculos (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Placa TEXT NOT NULL UNIQUE,
-                Marca TEXT NOT NULL DEFAULT '',
-                Modelo TEXT NOT NULL,
-                Kilometraje INTEGER NOT NULL CHECK (Kilometraje >= 0),
-                Observaciones TEXT NOT NULL DEFAULT ''
-            );
+                Id INT NOT NULL AUTO_INCREMENT,
+                Placa VARCHAR(10) NOT NULL UNIQUE,
+                Marca VARCHAR(60) NOT NULL DEFAULT '',
+                Modelo VARCHAR(100) NOT NULL,
+                Kilometraje INT NOT NULL,
+                Observaciones VARCHAR(300) NOT NULL DEFAULT '',
+
+                CONSTRAINT PK_Vehiculos
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT CK_Vehiculos_Kilometraje
+                    CHECK (Kilometraje >= 0)
+            ) DEFAULT CHARSET = utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
     }
 
-    private static void EnsureVehiculosMarcaColumn(SqliteConnection connection)
-    {
-        using (SqliteCommand command = connection.CreateCommand())
-        {
-            command.CommandText = "PRAGMA table_info(Vehiculos);";
-            using SqliteDataReader reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                if (string.Equals(reader.GetString(1), "Marca", StringComparison.OrdinalIgnoreCase))
-                {
-                    return;
-                }
-            }
-        }
-
-        ExecuteCommand(connection, "ALTER TABLE Vehiculos ADD COLUMN Marca TEXT NOT NULL DEFAULT '';");
-    }
-
     private static void ExecuteCommand(
-        SqliteConnection connection,
+        DbConnection connection,
         string query)
     {
-        using SqliteCommand command = connection.CreateCommand();
+        using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
         command.ExecuteNonQuery();
+    }
+
+    private static void AddParameter(
+        DbCommand command,
+        string nombre,
+        object valor)
+    {
+        DbParameter parameter = command.CreateParameter();
+
+        parameter.ParameterName = nombre;
+        parameter.Value = valor;
+
+        command.Parameters.Add(parameter);
     }
 }

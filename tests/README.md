@@ -1,5 +1,11 @@
 # Pruebas de vehículos
 
+## Compatibilidad con esta rama MySQL
+
+Los scripts descritos a continuación se conservan de la etapa SQLite. **No deben ejecutarse sobre la aplicación actual sin adaptarlos a una base MySQL aislada.** Configuran `DefaultConnection` para SQLite, mientras la aplicación actual usa `MySqlConnection`; por ello no garantizan aislamiento de los datos de MySQL. La opción `--include-mysql-pages` también pertenece a la etapa anterior, cuando solo servicios y dashboard requerían MySQL.
+
+Para esta rama, `dotnet build` verifica la compilación. La prueba funcional requiere preparar explícitamente una base MySQL de pruebas y adaptar los scripts. Las instrucciones siguientes documentan su ejecución histórica con SQLite.
+
 Las pruebas arrancan la aplicación con bases SQLite temporales y eliminan esos datos al finalizar. No utilizan la base del taller.
 
 ## Servidor y persistencia

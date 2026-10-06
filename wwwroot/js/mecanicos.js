@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("mecanico-form");
     const mecanicoId = document.getElementById("MecanicoId");
     const ci = document.getElementById("MecanicoInput_Ci");
+    const complementoCi = document.getElementById("MecanicoInput_ComplementoCi");
     const nombres = document.getElementById("MecanicoInput_Nombres");
     const apellidos = document.getElementById("MecanicoInput_Apellidos");
     const genero = document.getElementById("MecanicoInput_Genero");
@@ -26,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
         form instanceof HTMLFormElement &&
         mecanicoId instanceof HTMLInputElement &&
         ci instanceof HTMLInputElement &&
+        complementoCi instanceof HTMLInputElement &&
         nombres instanceof HTMLInputElement &&
         apellidos instanceof HTMLInputElement &&
         genero instanceof HTMLSelectElement &&
@@ -49,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
             form.reset();
             mecanicoId.value = esEdicion && datos ? datos.id : "0";
             ci.value = esEdicion && datos ? datos.ci : "";
+            complementoCi.value = esEdicion && datos ? datos.complementoCi : "";
             nombres.value = esEdicion && datos ? datos.nombres : "";
             apellidos.value = esEdicion && datos ? datos.apellidos : "";
             genero.value = esEdicion && datos ? datos.genero : "";
@@ -74,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
             configurarFormulario("editar", {
                 id: button.dataset.id ?? "0",
                 ci: button.dataset.ci ?? "",
+                complementoCi: button.dataset.complementoCi ?? "",
                 nombres: button.dataset.nombres ?? "",
                 apellidos: button.dataset.apellidos ?? "",
                 genero: button.dataset.genero ?? "",

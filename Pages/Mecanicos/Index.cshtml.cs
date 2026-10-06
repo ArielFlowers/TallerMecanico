@@ -39,20 +39,20 @@ public class IndexModel : PageModel
     [TempData]
     public string? MensajeError { get; set; }
 
-    public async Task OnGetAsync()
+    public void OnGet()
     {
-        await CargarMecanicosAsync();
+        CargarMecanicos();
     }
 
-    public async Task<IActionResult> OnPostCrearAsync()
+    public IActionResult OnPostCrear()
     {
-        var (_, errores) = await _mecanicoService.CrearAsync(MecanicoInput);
+        var errores = _mecanicoService.Crear(MecanicoInput);
 
         if (errores.Count > 0)
         {
             AgregarErroresAlModelState(errores);
             FormularioActivo = FormularioCrear;
-            await CargarMecanicosAsync();
+            CargarMecanicos();
             return Page();
         }
 
@@ -60,16 +60,16 @@ public class IndexModel : PageModel
         return RedirigirAlListado();
     }
 
-    public async Task<IActionResult> OnPostActualizarAsync()
+    public IActionResult OnPostActualizar()
     {
         var (actualizado, errores) =
-            await _mecanicoService.ActualizarAsync(MecanicoId, MecanicoInput);
+            _mecanicoService.Actualizar(MecanicoId, MecanicoInput);
 
         if (errores.Count > 0)
         {
             AgregarErroresAlModelState(errores);
             FormularioActivo = FormularioEditar;
-            await CargarMecanicosAsync();
+            CargarMecanicos();
             return Page();
         }
 
@@ -77,7 +77,7 @@ public class IndexModel : PageModel
         {
             ModelState.AddModelError(string.Empty, MensajeRegistroNoEncontrado);
             FormularioActivo = FormularioEditar;
-            await CargarMecanicosAsync();
+            CargarMecanicos();
             return Page();
         }
 
@@ -85,9 +85,9 @@ public class IndexModel : PageModel
         return RedirigirAlListado();
     }
 
-    public async Task<IActionResult> OnPostEliminarAsync()
+    public IActionResult OnPostEliminar()
     {
-        var eliminado = await _mecanicoService.EliminarAsync(MecanicoId);
+        var eliminado = _mecanicoService.Eliminar(MecanicoId);
 
         if (!eliminado)
         {
@@ -99,9 +99,9 @@ public class IndexModel : PageModel
         return RedirigirAlListado();
     }
 
-    private async Task CargarMecanicosAsync()
+    private void CargarMecanicos()
     {
-        Mecanicos = await _mecanicoService.ObtenerAsync(TerminoBusqueda);
+        Mecanicos = _mecanicoService.Obtener(TerminoBusqueda);
     }
 
     private void AgregarErroresAlModelState(

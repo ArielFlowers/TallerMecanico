@@ -1,10 +1,6 @@
 ﻿namespace TallerMecanico.Data;
 
-public interface IRepository
-{
-}
-
-public interface IRepository<T> : IRepository
+public interface IRepository<T>
 {
     List<T> GetAll();
 

@@ -11,20 +11,25 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 
-builder.Services.AddScoped<DatabaseConnection>();
+builder.Services.AddScoped<DatabaseConnectionFactory, MySqlConnectionFactory>();
 builder.Services.AddScoped<DatabaseInitializer>();
-builder.Services.AddScoped<DatabaseConnectionFactory,MySqlConnectionFactory>();
 
 builder.Services.AddScoped<CreadorMecanico>();
-builder.Services.AddScoped<IMecanicoRepository>(serviceProvider =>
-{
-    var creador = serviceProvider.GetRequiredService<CreadorMecanico>();
-    return (IMecanicoRepository)creador.CrearRepositorio();
-});
+builder.Services.AddScoped<CreadorVehiculo>();
+builder.Services.AddScoped<CreadorServicio>();
+
+builder.Services.AddScoped<IRepository<Servicio>>(
+    serviceProvider => serviceProvider
+        .GetRequiredService<CreadorServicio>()
+        .CrearRepositorio());
+builder.Services.AddScoped<IRepository<Vehiculo>>(
+    serviceProvider => serviceProvider
+        .GetRequiredService<CreadorVehiculo>()
+        .CrearRepositorio());
+
 builder.Services.AddScoped<ValidacionMecanicos>();
 builder.Services.AddScoped<MecanicoService>();
 
-builder.Services.AddScoped<IRepository<Servicio>, ServicioRepository>();
 builder.Services.AddScoped<IServicioService, ServicioService>();
 builder.Services.AddScoped<ValidacionServicios>();
 
@@ -36,12 +41,6 @@ builder.Services.AddScoped<
     IHistorialCostoServicioService,
     HistorialCostoServicioService>();
 
-builder.Services.AddScoped<CreadorVehiculos>();
-builder.Services.AddScoped<IVehiculoRepository>(serviceProvider =>
-{
-    var creador = serviceProvider.GetRequiredService<CreadorVehiculos>();
-    return (IVehiculoRepository)creador.CrearRepositorio();
-});
 builder.Services.AddScoped<VehiculoService>();
 builder.Services.AddScoped<ValidacionVehiculos>();
 
