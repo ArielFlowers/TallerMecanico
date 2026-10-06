@@ -13,4 +13,6 @@ public class Vehiculo
     public int Kilometraje { get; set; }
 
     public string Observaciones { get; set; } = string.Empty;
+
+    public int? ClienteId { get; set; }
 }
