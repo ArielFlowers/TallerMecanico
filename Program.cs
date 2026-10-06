@@ -5,7 +5,6 @@ using TallerMecanico.Patterns.FactoryMethod;
 using TallerMecanico.Services;
 using TallerMecanico.Validators;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,10 +17,16 @@ builder.Services.AddScoped<CreadorMecanico>();
 builder.Services.AddScoped<CreadorVehiculo>();
 builder.Services.AddScoped<CreadorServicio>();
 
+builder.Services.AddScoped<IRepository<Mecanico>>(
+    serviceProvider => serviceProvider
+        .GetRequiredService<CreadorMecanico>()
+        .CrearRepositorio());
+
 builder.Services.AddScoped<IRepository<Servicio>>(
     serviceProvider => serviceProvider
         .GetRequiredService<CreadorServicio>()
         .CrearRepositorio());
+
 builder.Services.AddScoped<IRepository<Vehiculo>>(
     serviceProvider => serviceProvider
         .GetRequiredService<CreadorVehiculo>()
@@ -60,7 +65,6 @@ using (IServiceScope scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -71,7 +75,8 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
 app.MapRazorPages()
-   .WithStaticAssets();
+    .WithStaticAssets();
 
 app.Run();
