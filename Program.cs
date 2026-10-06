@@ -1,3 +1,4 @@
+using TallerMecanico.Application.Ports;
 using TallerMecanico.Data;
 using TallerMecanico.Data.Factories;
 using TallerMecanico.Models;
@@ -10,33 +11,84 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 
-builder.Services.AddScoped<DatabaseConnectionFactory, MySqlConnectionFactory>();
+// Base de datos
+builder.Services.AddScoped<
+    DatabaseConnectionFactory,
+    MySqlConnectionFactory>();
+
 builder.Services.AddScoped<DatabaseInitializer>();
+
+// ======================================================
+// FACTORY METHOD - CREADORES CONCRETOS
+// ======================================================
 
 builder.Services.AddScoped<CreadorMecanico>();
 builder.Services.AddScoped<CreadorVehiculo>();
 builder.Services.AddScoped<CreadorServicio>();
+builder.Services.AddScoped<CreadorCliente>();
 
+// ======================================================
+// REPOSITORIOS CREADOS MEDIANTE FACTORY METHOD
+// ======================================================
+
+// Mecánicos
 builder.Services.AddScoped<IRepository<Mecanico>>(
-    serviceProvider => serviceProvider
-        .GetRequiredService<CreadorMecanico>()
-        .CrearRepositorio());
+    serviceProvider =>
+        serviceProvider
+            .GetRequiredService<CreadorMecanico>()
+            .CrearRepositorio());
 
+// Servicios
 builder.Services.AddScoped<IRepository<Servicio>>(
-    serviceProvider => serviceProvider
-        .GetRequiredService<CreadorServicio>()
-        .CrearRepositorio());
+    serviceProvider =>
+        serviceProvider
+            .GetRequiredService<CreadorServicio>()
+            .CrearRepositorio());
 
+// Vehículos
 builder.Services.AddScoped<IRepository<Vehiculo>>(
-    serviceProvider => serviceProvider
-        .GetRequiredService<CreadorVehiculo>()
-        .CrearRepositorio());
+    serviceProvider =>
+        serviceProvider
+            .GetRequiredService<CreadorVehiculo>()
+            .CrearRepositorio());
+
+// Clientes
+builder.Services.AddScoped<IRepository<Cliente>>(
+    serviceProvider =>
+        serviceProvider
+            .GetRequiredService<CreadorCliente>()
+            .CrearRepositorio());
+
+// ======================================================
+// PUERTOS HEXAGONALES
+// ======================================================
+
+// ClienteService dependerá del puerto y no de ClienteRepository.
+builder.Services.AddScoped<IClientePort>(
+    serviceProvider =>
+        (IClientePort)serviceProvider
+            .GetRequiredService<IRepository<Cliente>>());
+
+// ======================================================
+// MECÁNICOS
+// ======================================================
 
 builder.Services.AddScoped<ValidacionMecanicos>();
 builder.Services.AddScoped<MecanicoService>();
 
-builder.Services.AddScoped<IServicioService, ServicioService>();
+// ======================================================
+// SERVICIOS DEL TALLER
+// ======================================================
+
+builder.Services.AddScoped<
+    IServicioService,
+    ServicioService>();
+
 builder.Services.AddScoped<ValidacionServicios>();
+
+// ======================================================
+// HISTORIAL DE COSTOS
+// ======================================================
 
 builder.Services.AddScoped<
     IHistorialCostoServicioRepository,
@@ -46,22 +98,45 @@ builder.Services.AddScoped<
     IHistorialCostoServicioService,
     HistorialCostoServicioService>();
 
-builder.Services.AddScoped<VehiculoService>();
+// ======================================================
+// VEHÍCULOS
+// ======================================================
+
 builder.Services.AddScoped<ValidacionVehiculos>();
+builder.Services.AddScoped<VehiculoService>();
+
+// ======================================================
+// CLIENTES
+// ======================================================
+
+builder.Services.AddScoped<ValidacionClientes>();
+builder.Services.AddScoped<ClienteService>();
+
+// ======================================================
+// DASHBOARD
+// ======================================================
 
 builder.Services.AddScoped<DashboardService>();
 
 var app = builder.Build();
 
+// ======================================================
+// INICIALIZACIÓN DE BASE DE DATOS
+// ======================================================
+
 using (IServiceScope scope = app.Services.CreateScope())
 {
     DatabaseInitializer databaseInitializer =
-        scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+        scope.ServiceProvider
+            .GetRequiredService<DatabaseInitializer>();
 
     databaseInitializer.Initialize();
 }
 
-// Configure the HTTP request pipeline.
+// ======================================================
+// HTTP PIPELINE
+// ======================================================
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
