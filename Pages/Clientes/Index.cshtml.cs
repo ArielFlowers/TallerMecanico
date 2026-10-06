@@ -8,150 +8,202 @@ namespace TallerMecanico.Pages.Clientes;
 
 public class IndexModel : PageModel
 {
-    private const string FormularioCrear = "crear";
-    private const string FormularioEditar = "editar";
-
-    private const string MensajeRegistroNoEncontrado =
-        "El cliente seleccionado ya no existe.";
-
     private readonly ClienteService _clienteService;
 
-    public IndexModel(ClienteService clienteService)
+    public IndexModel(
+        ClienteService clienteService)
     {
-        _clienteService = clienteService;
+        _clienteService =
+            clienteService;
     }
 
-    public IReadOnlyList<Cliente> Clientes { get; private set; } = [];
-
-    [BindProperty(SupportsGet = true)]
-    public string? TerminoBusqueda { get; set; }
-
     [BindProperty]
-    public ClienteFormViewModel ClienteInput { get; set; } = new();
+    public ClienteFormViewModel ClienteInput { get; set; } =
+        new();
 
     [BindProperty]
     public int ClienteId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? TerminoBusqueda { get; set; }
+
+    public IReadOnlyList<Cliente> Clientes { get; private set; } =
+        [];
+
     public string? FormularioActivo { get; private set; }
 
-    [TempData]
-    public string? MensajeExito { get; set; }
+    public string? MensajeExito { get; private set; }
 
-    [TempData]
-    public string? MensajeError { get; set; }
+    public string? MensajeError { get; private set; }
 
     public void OnGet()
     {
+        CargarMensajes();
         CargarClientes();
     }
 
     public IActionResult OnPostCrear()
     {
-        var errores =
-            _clienteService.Crear(ClienteInput);
-
-        if (errores.Count > 0)
+        if (!ModelState.IsValid)
         {
-            AgregarErroresAlModelState(errores);
-
-            FormularioActivo = FormularioCrear;
+            FormularioActivo =
+                "crear";
 
             CargarClientes();
 
             return Page();
         }
 
-        MensajeExito =
+        var resultado =
+            _clienteService.Crear(
+                ClienteInput);
+
+        ClienteInput =
+            resultado.Formulario;
+
+        ModelState.Clear();
+
+        AgregarErrores(
+            resultado.Errores);
+
+        if (!ModelState.IsValid)
+        {
+            FormularioActivo =
+                "crear";
+
+            CargarClientes();
+
+            return Page();
+        }
+
+        TempData["ClienteExito"] =
             "Cliente registrado correctamente.";
 
-        return RedirigirAlListado();
+        return RedirectToPage(
+            new
+            {
+                TerminoBusqueda
+            });
     }
 
     public IActionResult OnPostActualizar()
     {
-        var (actualizado, errores) =
+        ClienteInput.Id =
+            ClienteId;
+
+        if (!ModelState.IsValid)
+        {
+            FormularioActivo =
+                "editar";
+
+            CargarClientes();
+
+            return Page();
+        }
+
+        var resultado =
             _clienteService.Actualizar(
-                ClienteId,
                 ClienteInput);
 
-        if (errores.Count > 0)
+        ClienteInput =
+            resultado.Formulario;
+
+        ModelState.Clear();
+
+        AgregarErrores(
+            resultado.Errores);
+
+        if (!ModelState.IsValid)
         {
-            AgregarErroresAlModelState(errores);
-
-            FormularioActivo = FormularioEditar;
-
-            CargarClientes();
-
-            return Page();
-        }
-
-        if (!actualizado)
-        {
-            ModelState.AddModelError(
-                string.Empty,
-                MensajeRegistroNoEncontrado);
-
             FormularioActivo =
-                FormularioEditar;
+                "editar";
+
+            ClienteId =
+                ClienteInput.Id;
 
             CargarClientes();
 
             return Page();
         }
 
-        MensajeExito =
+        TempData["ClienteExito"] =
             "Cliente actualizado correctamente.";
 
-        return RedirigirAlListado();
+        return RedirectToPage(
+            new
+            {
+                TerminoBusqueda
+            });
     }
 
     public IActionResult OnPostEliminar()
     {
-        bool eliminado =
-            _clienteService.Eliminar(ClienteId);
+        string? error =
+            _clienteService.Eliminar(
+                ClienteId);
 
-        if (!eliminado)
+        if (!string.IsNullOrWhiteSpace(
+                error))
         {
-            MensajeError =
-                MensajeRegistroNoEncontrado;
+            TempData["ClienteError"] =
+                error;
 
-            return RedirigirAlListado();
+            return RedirectToPage(
+                new
+                {
+                    TerminoBusqueda
+                });
         }
 
-        MensajeExito =
+        TempData["ClienteExito"] =
             "Cliente eliminado correctamente.";
 
-        return RedirigirAlListado();
+        return RedirectToPage(
+            new
+            {
+                TerminoBusqueda
+            });
     }
 
     private void CargarClientes()
     {
+        if (string.IsNullOrWhiteSpace(
+                TerminoBusqueda))
+        {
+            Clientes =
+                _clienteService.Obtener();
+
+            return;
+        }
+
         Clientes =
-            _clienteService.Obtener(
+            _clienteService.Buscar(
                 TerminoBusqueda);
     }
 
-    private void AgregarErroresAlModelState(
+    private void AgregarErrores(
         IReadOnlyDictionary<string, string> errores)
     {
-        foreach (var (campo, mensaje) in errores)
+        foreach (var error in errores)
         {
-            string claveModelState =
-                $"{nameof(ClienteInput)}.{campo}";
+            string campo =
+                string.IsNullOrWhiteSpace(
+                    error.Key)
+                    ? string.Empty
+                    : $"ClienteInput.{error.Key}";
 
             ModelState.AddModelError(
-                claveModelState,
-                mensaje);
+                campo,
+                error.Value);
         }
     }
 
-    private IActionResult RedirigirAlListado()
+    private void CargarMensajes()
     {
-        return RedirectToPage(
-            new
-            {
-                terminoBusqueda =
-                    TerminoBusqueda
-            });
+        MensajeExito =
+            TempData["ClienteExito"] as string;
+
+        MensajeError =
+            TempData["ClienteError"] as string;
     }
 }

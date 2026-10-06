@@ -12,295 +12,412 @@ public class ClienteService
     private const string MensajeCiDuplicado =
         "Ya existe un cliente registrado con este CI y complemento.";
 
+    private const string MensajeClienteNoExiste =
+        "El cliente solicitado no existe.";
+
+    private const string MensajeClienteConVehiculos =
+        "No se puede eliminar el cliente porque tiene vehículos asociados.";
+
     private const string UsuarioTemporal =
         "sistema";
 
-    private static readonly Regex EspaciosConsecutivos =
-        new(@"\s+", RegexOptions.Compiled);
-
     private readonly IClientePort _clientePort;
+    private readonly IVehiculoPort _vehiculoPort;
     private readonly ValidacionClientes _validacionClientes;
 
     public ClienteService(
         IClientePort clientePort,
+        IVehiculoPort vehiculoPort,
         ValidacionClientes validacionClientes)
     {
-        _clientePort = clientePort;
-        _validacionClientes = validacionClientes;
+        _clientePort =
+            clientePort;
+
+        _vehiculoPort =
+            vehiculoPort;
+
+        _validacionClientes =
+            validacionClientes;
     }
 
-    public IReadOnlyList<Cliente> Obtener(
-        string? terminoBusqueda = null)
+    public IReadOnlyList<Cliente> Obtener()
     {
-        if (string.IsNullOrWhiteSpace(terminoBusqueda))
+        return _clientePort.GetAll();
+    }
+
+    public IReadOnlyList<Cliente> Buscar(
+        string terminoBusqueda)
+    {
+        if (string.IsNullOrWhiteSpace(
+                terminoBusqueda))
         {
-            return _clientePort.GetAll();
+            return Obtener();
         }
 
         return _clientePort.Search(
             terminoBusqueda.Trim());
     }
 
-    public Cliente? ObtenerPorId(int id)
+    public Cliente? ObtenerPorId(
+        int id)
     {
+        if (id <= 0)
+        {
+            return null;
+        }
+
         return _clientePort.GetById(id);
     }
 
-    public IReadOnlyDictionary<string, string> Crear(
-        ClienteFormViewModel clienteInput)
+    public (
+        ClienteFormViewModel Formulario,
+        IReadOnlyDictionary<string, string> Errores)
+        Crear(
+            ClienteFormViewModel formulario)
     {
-        ClienteFormViewModel clienteNormalizado =
-            NormalizarEntrada(clienteInput);
+        ClienteFormViewModel normalizado =
+            NormalizarEntrada(
+                formulario);
 
-        Dictionary<string, string> errores =
-            ObtenerErrores(clienteNormalizado);
+        var errores =
+            new Dictionary<string, string>(
+                _validacionClientes.Validar(
+                    normalizado));
+
+        ValidarCiDuplicado(
+            normalizado,
+            0,
+            errores);
 
         if (errores.Count > 0)
         {
-            return errores;
+            return (
+                normalizado,
+                errores);
         }
 
         Cliente cliente =
-            CrearCliente(clienteNormalizado);
+            CrearCliente(
+                normalizado);
 
         try
         {
-            _clientePort.Add(cliente);
+            _clientePort.Add(
+                cliente);
         }
         catch (MySqlException exception)
             when (exception.Number == 1062)
         {
-            errores[nameof(ClienteFormViewModel.Ci)] =
+            errores[
+                nameof(
+                    ClienteFormViewModel.Ci)] =
                 MensajeCiDuplicado;
         }
 
-        return errores;
+        return (
+            normalizado,
+            errores);
     }
 
     public (
-        bool Actualizado,
+        ClienteFormViewModel Formulario,
         IReadOnlyDictionary<string, string> Errores)
         Actualizar(
-            int id,
-            ClienteFormViewModel clienteInput)
+            ClienteFormViewModel formulario)
     {
-        Cliente? clienteExistente =
-            _clientePort.GetById(id);
+        ClienteFormViewModel normalizado =
+            NormalizarEntrada(
+                formulario);
 
-        if (id <= 0 || clienteExistente is null)
+        var errores =
+            new Dictionary<string, string>(
+                _validacionClientes.Validar(
+                    normalizado));
+
+        if (normalizado.Id <= 0)
         {
+            errores[string.Empty] =
+                MensajeClienteNoExiste;
+
             return (
-                false,
-                new Dictionary<string, string>());
+                normalizado,
+                errores);
         }
 
-        ClienteFormViewModel clienteNormalizado =
-            NormalizarEntrada(clienteInput);
+        Cliente? existente =
+            _clientePort.GetById(
+                normalizado.Id);
 
-        Dictionary<string, string> errores =
-            ObtenerErrores(
-                clienteNormalizado,
-                id);
+        if (existente is null)
+        {
+            errores[string.Empty] =
+                MensajeClienteNoExiste;
+
+            return (
+                normalizado,
+                errores);
+        }
+
+        ValidarCiDuplicado(
+            normalizado,
+            normalizado.Id,
+            errores);
 
         if (errores.Count > 0)
         {
-            return (false, errores);
+            return (
+                normalizado,
+                errores);
         }
 
         Cliente cliente =
-            CrearCliente(clienteNormalizado);
+            new()
+            {
+                Id =
+                    normalizado.Id,
 
-        cliente.Id = id;
+                Ci =
+                    normalizado.Ci ??
+                    string.Empty,
 
-        // Se conservan los datos originales de auditoría.
-        cliente.CreadoPor =
-            clienteExistente.CreadoPor;
+                ComplementoCi =
+                    normalizado.ComplementoCi ??
+                    string.Empty,
 
-        cliente.FechaCreacion =
-            clienteExistente.FechaCreacion;
+                Nombres =
+                    normalizado.Nombres ??
+                    string.Empty,
+
+                PrimerApellido =
+                    normalizado.PrimerApellido ??
+                    string.Empty,
+
+                SegundoApellido =
+                    normalizado.SegundoApellido ??
+                    string.Empty,
+
+                Celular =
+                    normalizado.Celular ??
+                    string.Empty,
+
+                CreadoPor =
+                    existente.CreadoPor,
+
+                FechaCreacion =
+                    existente.FechaCreacion
+            };
 
         try
         {
-            _clientePort.Update(cliente);
+            _clientePort.Update(
+                cliente);
         }
         catch (MySqlException exception)
             when (exception.Number == 1062)
         {
-            errores[nameof(ClienteFormViewModel.Ci)] =
+            errores[
+                nameof(
+                    ClienteFormViewModel.Ci)] =
                 MensajeCiDuplicado;
-
-            return (false, errores);
         }
 
-        return (true, errores);
+        return (
+            normalizado,
+            errores);
     }
 
-    public bool Eliminar(int id)
+    public string? Eliminar(
+        int id)
     {
-        if (id <= 0 ||
-            _clientePort.GetById(id) is null)
+        if (id <= 0)
         {
-            return false;
+            return MensajeClienteNoExiste;
         }
 
-        _clientePort.Delete(id);
+        Cliente? cliente =
+            _clientePort.GetById(
+                id);
 
-        return true;
+        if (cliente is null)
+        {
+            return MensajeClienteNoExiste;
+        }
+
+        // Regla de negocio:
+        // un cliente con vehículos relacionados
+        // no puede ser eliminado.
+        if (_vehiculoPort.ExistsPorCliente(
+                id))
+        {
+            return MensajeClienteConVehiculos;
+        }
+
+        try
+        {
+            _clientePort.Delete(
+                id);
+        }
+        catch (MySqlException exception)
+            when (exception.Number == 1451)
+        {
+            // Protección adicional por FK en caso de que
+            // aparezca una relación entre la validación
+            // y el DELETE.
+            return MensajeClienteConVehiculos;
+        }
+
+        return null;
     }
 
-    private Dictionary<string, string> ObtenerErrores(
-        ClienteFormViewModel cliente,
-        int idExcluido = 0)
+    private void ValidarCiDuplicado(
+        ClienteFormViewModel formulario,
+        int idExcluido,
+        IDictionary<string, string> errores)
     {
-        var errores =
-            new Dictionary<string, string>(
-                _validacionClientes.Validar(cliente));
-
-        if (errores.Count > 0)
+        if (errores.ContainsKey(
+                nameof(
+                    ClienteFormViewModel.Ci))
+            ||
+            errores.ContainsKey(
+                nameof(
+                    ClienteFormViewModel.ComplementoCi)))
         {
-            return errores;
+            return;
         }
 
         if (_clientePort.ExistsByCi(
-                cliente.Ci ?? string.Empty,
-                cliente.ComplementoCi ?? string.Empty,
+                formulario.Ci ??
+                string.Empty,
+                formulario.ComplementoCi ??
+                string.Empty,
                 idExcluido))
         {
-            errores[nameof(ClienteFormViewModel.Ci)] =
+            errores[
+                nameof(
+                    ClienteFormViewModel.Ci)] =
                 MensajeCiDuplicado;
         }
-
-        return errores;
-    }
-
-    private static ClienteFormViewModel NormalizarEntrada(
-        ClienteFormViewModel clienteInput)
-    {
-        return new ClienteFormViewModel
-        {
-            Id = clienteInput.Id,
-
-            Ci = NormalizarCi(
-                clienteInput.Ci),
-
-            ComplementoCi =
-                NormalizarComplementoCi(
-                    clienteInput.ComplementoCi),
-
-            Nombres =
-                NormalizarNombre(
-                    clienteInput.Nombres),
-
-            PrimerApellido =
-                NormalizarNombre(
-                    clienteInput.PrimerApellido),
-
-            SegundoApellido =
-                NormalizarNombre(
-                    clienteInput.SegundoApellido),
-
-            Celular =
-                (clienteInput.Celular ?? string.Empty)
-                    .Trim()
-        };
-    }
-
-    private static string NormalizarCi(
-        string? ci)
-    {
-        return (ci ?? string.Empty)
-            .Trim();
-    }
-
-    private static string NormalizarComplementoCi(
-        string? complementoCi)
-    {
-        return (complementoCi ?? string.Empty)
-            .Trim()
-            .ToUpperInvariant();
-    }
-
-    private static string NormalizarNombre(
-        string? nombre)
-    {
-        string nombreSinEspaciosInnecesarios =
-            NormalizarEspacios(nombre);
-
-        if (string.IsNullOrEmpty(
-                nombreSinEspaciosInnecesarios))
-        {
-            return string.Empty;
-        }
-
-        string[] palabras =
-            nombreSinEspaciosInnecesarios.Split(
-                ' ',
-                StringSplitOptions.RemoveEmptyEntries);
-
-        return string.Join(
-            " ",
-            palabras.Select(FormatearPalabra));
-    }
-
-    private static string NormalizarEspacios(
-        string? texto)
-    {
-        string textoSinEspaciosExternos =
-            (texto ?? string.Empty).Trim();
-
-        return EspaciosConsecutivos.Replace(
-            textoSinEspaciosExternos,
-            " ");
-    }
-
-    private static string FormatearPalabra(
-        string palabra)
-    {
-        if (palabra.Length == 1)
-        {
-            return palabra.ToUpperInvariant();
-        }
-
-        return
-            $"{char.ToUpperInvariant(palabra[0])}" +
-            palabra[1..].ToLowerInvariant();
     }
 
     private static Cliente CrearCliente(
-        ClienteFormViewModel clienteInput)
+        ClienteFormViewModel formulario)
     {
         return new Cliente
         {
             Ci =
-                clienteInput.Ci ??
+                formulario.Ci ??
                 string.Empty,
 
             ComplementoCi =
-                clienteInput.ComplementoCi ??
+                formulario.ComplementoCi ??
                 string.Empty,
 
             Nombres =
-                clienteInput.Nombres ??
+                formulario.Nombres ??
                 string.Empty,
 
             PrimerApellido =
-                clienteInput.PrimerApellido ??
+                formulario.PrimerApellido ??
                 string.Empty,
 
             SegundoApellido =
-                clienteInput.SegundoApellido ??
+                formulario.SegundoApellido ??
                 string.Empty,
 
             Celular =
-                clienteInput.Celular ??
+                formulario.Celular ??
                 string.Empty,
 
-            // Temporal hasta integrar Login/Sesión de Tarjeta 1.
             CreadoPor =
                 UsuarioTemporal,
 
             FechaCreacion =
                 DateTime.Now
         };
+    }
+
+    private static ClienteFormViewModel NormalizarEntrada(
+        ClienteFormViewModel formulario)
+    {
+        return new ClienteFormViewModel
+        {
+            Id =
+                formulario.Id,
+
+            Ci =
+                (formulario.Ci ??
+                 string.Empty)
+                .Trim(),
+
+            ComplementoCi =
+                (formulario.ComplementoCi ??
+                 string.Empty)
+                .Trim()
+                .ToUpperInvariant(),
+
+            Nombres =
+                NormalizarNombre(
+                    formulario.Nombres),
+
+            PrimerApellido =
+                NormalizarNombre(
+                    formulario.PrimerApellido),
+
+            SegundoApellido =
+                NormalizarNombre(
+                    formulario.SegundoApellido),
+
+            Celular =
+                (formulario.Celular ??
+                 string.Empty)
+                .Trim()
+        };
+    }
+
+    private static string NormalizarNombre(
+        string? valor)
+    {
+        string limpio =
+            Regex.Replace(
+                (valor ?? string.Empty).Trim(),
+                @"\s+",
+                " ");
+
+        if (string.IsNullOrWhiteSpace(
+                limpio))
+        {
+            return string.Empty;
+        }
+
+        return string.Join(
+            " ",
+            limpio
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries)
+                .Select(
+                    FormatearPalabra));
+    }
+
+    private static string FormatearPalabra(
+        string palabra)
+    {
+        if (string.IsNullOrEmpty(
+                palabra))
+        {
+            return string.Empty;
+        }
+
+        if (palabra.Length == 1)
+        {
+            return palabra.ToUpperInvariant();
+        }
+
+        return
+            char.ToUpperInvariant(
+                palabra[0])
+            +
+            palabra[1..]
+                .ToLowerInvariant();
     }
 }
