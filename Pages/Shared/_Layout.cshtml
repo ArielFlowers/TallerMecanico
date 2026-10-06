@@ -6,60 +6,116 @@
 
     <title>@ViewData["Title"] - Taller Mecánico</title>
 
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    @await RenderSectionAsync(
+        "Styles",
+        required: false)
 </head>
 
 <body>
+
     <div class="app-container">
 
         <aside class="sidebar">
 
             <div class="brand">
+
                 <div class="brand-icon">
                     🔧
                 </div>
 
                 <div class="brand-text">
-                    <span class="brand-title">TALLER</span>
-                    <span class="brand-subtitle">MECÁNICO</span>
+                    <span class="brand-title">
+                        TALLER
+                    </span>
+
+                    <span class="brand-subtitle">
+                        MECÁNICO
+                    </span>
                 </div>
+
             </div>
+
 
             <nav class="sidebar-menu">
 
-                <!-- INICIO -->
+                <!-- ===================================== -->
+                <!-- INICIO                                -->
+                <!-- ===================================== -->
+
                 <a class="menu-item @(Context.Request.Path == "/" ? "active" : "")"
                    asp-page="/Index">
-                    <span class="menu-icon">⌂</span>
-                    <span>Inicio</span>
+
+                    <span class="menu-icon">
+                        ⌂
+                    </span>
+
+                    <span>
+                        Inicio
+                    </span>
+
                 </a>
 
 
-                <!-- PERSONAL -->
+                <!-- ===================================== -->
+                <!-- PERSONAL                              -->
+                <!-- ===================================== -->
+
                 <div class="menu-group">
 
-                    <button class="menu-item menu-toggle" type="button"
+                    <button class="menu-item menu-toggle"
+                            type="button"
                             aria-expanded="false"
                             aria-controls="personal-menu">
-                        <span class="menu-icon">👤</span>
-                        <span>Personal</span>
-                        <span class="menu-chevron">›</span>
+
+                        <span class="menu-icon">
+                            👤
+                        </span>
+
+                        <span>
+                            Personal
+                        </span>
+
+                        <span class="menu-chevron">
+                            ›
+                        </span>
+
                     </button>
 
-                    <div class="submenu" id="personal-menu">
+
+                    <div class="submenu"
+                         id="personal-menu">
 
                         <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Mecanicos") ? "active" : "")"
                            asp-page="/Mecanicos/Index">
-                            <span>Mecánicos</span>
+
+                            <span>
+                                Mecánicos
+                            </span>
+
                         </a>
 
-                        <a class="submenu-item" href="#">
-                            <span>Usuarios</span>
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Usuarios
+                            </span>
+
                         </a>
 
-                        <a class="submenu-item" href="#">
-                            <span>Roles</span>
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Roles
+                            </span>
+
                         </a>
 
                     </div>
@@ -67,26 +123,52 @@
                 </div>
 
 
-                <!-- CLIENTES Y VEHÍCULOS -->
+                <!-- ===================================== -->
+                <!-- CLIENTES Y VEHÍCULOS                  -->
+                <!-- ===================================== -->
+
                 <div class="menu-group">
 
-                    <button class="menu-item menu-toggle" type="button"
+                    <button class="menu-item menu-toggle"
+                            type="button"
                             aria-expanded="false"
                             aria-controls="clientes-menu">
-                        <span class="menu-icon">👥</span>
-                        <span>Clientes y Vehículos</span>
-                        <span class="menu-chevron">›</span>
+
+                        <span class="menu-icon">
+                            👥
+                        </span>
+
+                        <span>
+                            Clientes y Vehículos
+                        </span>
+
+                        <span class="menu-chevron">
+                            ›
+                        </span>
+
                     </button>
 
-                    <div class="submenu" id="clientes-menu">
 
-                        <a class="submenu-item" href="#">
-                            <span>Clientes</span>
+                    <div class="submenu"
+                         id="clientes-menu">
+
+                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Clientes") ? "active" : "")"
+                           asp-page="/Clientes/Index">
+
+                            <span>
+                                Clientes
+                            </span>
+
                         </a>
+
 
                         <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Vehiculos") ? "active" : "")"
                            asp-page="/Vehiculos/Index">
-                            <span>Vehículos</span>
+
+                            <span>
+                                Vehículos
+                            </span>
+
                         </a>
 
                     </div>
@@ -94,31 +176,62 @@
                 </div>
 
 
-                <!-- OPERACIONES DEL TALLER -->
+                <!-- ===================================== -->
+                <!-- OPERACIONES DEL TALLER                -->
+                <!-- ===================================== -->
+
                 <div class="menu-group">
 
-                    <button class="menu-item menu-toggle" type="button"
+                    <button class="menu-item menu-toggle"
+                            type="button"
                             aria-expanded="false"
                             aria-controls="taller-menu">
-                        <span class="menu-icon">🔧</span>
-                        <span>Operaciones del Taller</span>
-                        <span class="menu-chevron">›</span>
+
+                        <span class="menu-icon">
+                            🔧
+                        </span>
+
+                        <span>
+                            Operaciones del Taller
+                        </span>
+
+                        <span class="menu-chevron">
+                            ›
+                        </span>
+
                     </button>
 
-                    <div class="submenu" id="taller-menu">
+
+                    <div class="submenu"
+                         id="taller-menu">
 
                         <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Servicios") ? "active" : "")"
                            asp-page="/Servicios/Index">
-                            <span>Servicios</span>
+
+                            <span>
+                                Servicios
+                            </span>
+
                         </a>
 
-                        <a class="submenu-item" href="#">
-                            <span>Órdenes de trabajo</span>
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Órdenes de trabajo
+                            </span>
+
                         </a>
+
 
                         <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Historial") ? "active" : "")"
-                            asp-page="/Historial/Index">
-                            <span>Historial</span>
+                           asp-page="/Historial/Index">
+
+                            <span>
+                                Historial
+                            </span>
+
                         </a>
 
                     </div>
@@ -126,25 +239,52 @@
                 </div>
 
 
-                <!-- INVENTARIO -->
+                <!-- ===================================== -->
+                <!-- INVENTARIO                            -->
+                <!-- ===================================== -->
+
                 <div class="menu-group">
 
-                    <button class="menu-item menu-toggle" type="button"
+                    <button class="menu-item menu-toggle"
+                            type="button"
                             aria-expanded="false"
                             aria-controls="inventario-menu">
-                        <span class="menu-icon">📦</span>
-                        <span>Inventario</span>
-                        <span class="menu-chevron">›</span>
+
+                        <span class="menu-icon">
+                            📦
+                        </span>
+
+                        <span>
+                            Inventario
+                        </span>
+
+                        <span class="menu-chevron">
+                            ›
+                        </span>
+
                     </button>
 
-                    <div class="submenu" id="inventario-menu">
 
-                        <a class="submenu-item" href="#">
-                            <span>Repuestos</span>
+                    <div class="submenu"
+                         id="inventario-menu">
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Repuestos
+                            </span>
+
                         </a>
 
-                        <a class="submenu-item" href="#">
-                            <span>Proveedores</span>
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Proveedores
+                            </span>
+
                         </a>
 
                     </div>
@@ -152,29 +292,62 @@
                 </div>
 
 
-                <!-- ADMINISTRACIÓN -->
+                <!-- ===================================== -->
+                <!-- ADMINISTRACIÓN                        -->
+                <!-- ===================================== -->
+
                 <div class="menu-group">
 
-                    <button class="menu-item menu-toggle" type="button"
+                    <button class="menu-item menu-toggle"
+                            type="button"
                             aria-expanded="false"
                             aria-controls="administracion-menu">
-                        <span class="menu-icon">💼</span>
-                        <span>Administración</span>
-                        <span class="menu-chevron">›</span>
+
+                        <span class="menu-icon">
+                            💼
+                        </span>
+
+                        <span>
+                            Administración
+                        </span>
+
+                        <span class="menu-chevron">
+                            ›
+                        </span>
+
                     </button>
 
-                    <div class="submenu" id="administracion-menu">
 
-                        <a class="submenu-item" href="#">
-                            <span>Facturación</span>
+                    <div class="submenu"
+                         id="administracion-menu">
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Facturación
+                            </span>
+
                         </a>
 
-                        <a class="submenu-item" href="#">
-                            <span>Pagos</span>
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Pagos
+                            </span>
+
                         </a>
 
-                        <a class="submenu-item" href="#">
-                            <span>Reportes</span>
+
+                        <a class="submenu-item"
+                           href="#">
+
+                            <span>
+                                Reportes
+                            </span>
+
                         </a>
 
                     </div>
@@ -184,36 +357,68 @@
             </nav>
 
 
-            <!-- CONFIGURACIÓN -->
+            <!-- ========================================= -->
+            <!-- CONFIGURACIÓN                             -->
+            <!-- ========================================= -->
+
             <div class="sidebar-bottom">
 
-                <a class="menu-item" href="#">
-                    <span class="menu-icon">⚙</span>
-                    <span>Configuración</span>
+                <a class="menu-item"
+                   href="#">
+
+                    <span class="menu-icon">
+                        ⚙
+                    </span>
+
+                    <span>
+                        Configuración
+                    </span>
+
                 </a>
 
             </div>
 
 
             <div class="sidebar-footer">
-                <span>Sistema de Gestión</span>
-                <small>© 2026 Taller Mecánico</small>
+
+                <span>
+                    Sistema de Gestión
+                </span>
+
+                <small>
+                    © 2026 Taller Mecánico
+                </small>
+
             </div>
 
         </aside>
 
+
+        <!-- ============================================= -->
+        <!-- CONTENIDO PRINCIPAL                           -->
+        <!-- ============================================= -->
 
         <main class="main-content">
 
             <header class="topbar">
 
                 <div>
-                    <span class="topbar-label">GESTIÓN DEL TALLER</span>
+                    <span class="topbar-label">
+                        GESTIÓN DEL TALLER
+                    </span>
                 </div>
 
+
                 <div class="topbar-user">
-                    <span class="user-icon">👤</span>
-                    <span>Administrador</span>
+
+                    <span class="user-icon">
+                        👤
+                    </span>
+
+                    <span>
+                        Administrador
+                    </span>
+
                 </div>
 
             </header>
@@ -228,9 +433,13 @@
     </div>
 
 
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/site.js"
+            asp-append-version="true">
+    </script>
 
-    @await RenderSectionAsync("Scripts", required: false)
+    @await RenderSectionAsync(
+        "Scripts",
+        required: false)
 
 </body>
 </html>
