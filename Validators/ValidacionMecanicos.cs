@@ -6,22 +6,23 @@ public class ValidacionMecanicos
 {
     private const int LongitudMinimaBaseCi = 5;
     private const int LongitudMaximaBaseCi = 8;
-    private const int LongitudMinimaComplementoCi = 1;
-    private const int LongitudMaximaComplementoCi = 2;
+    private const int LongitudComplementoCi = 2;
     private const int LongitudMaximaNombresYApellidos = 100;
     private const int LongitudCelular = 8;
 
-    private const char SeparadorComplementoCi = '-';
-    private const char PrimerPrefijoCelularPermitido = '6';
-    private const char SegundoPrefijoCelularPermitido = '7';
+    private const char PrimerPrefijoCelularPermitido = '5';
+    private const char SegundoPrefijoCelularPermitido = '6';
+    private const char TercerPrefijoCelularPermitido = '7';
 
     public IReadOnlyDictionary<string, string> Validar(MecanicoInputModel mecanico)
     {
         var errores = new Dictionary<string, string>();
 
         ValidarCi(mecanico.Ci, errores);
+        ValidarComplementoCi(mecanico.ComplementoCi, errores);
         ValidarNombres(mecanico.Nombres, errores);
-        ValidarApellidos(mecanico.Apellidos, errores);
+        ValidarPrimerApellido(mecanico.PrimerApellido, errores);
+        ValidarSegundoApellido(mecanico.SegundoApellido, errores);
         ValidarCelular(mecanico.Celular, errores);
 
         return errores;
@@ -42,38 +43,53 @@ public class ValidacionMecanicos
             return;
         }
 
-        if (!TieneFormatoCiValido(ci))
+        if (ci.Length < LongitudMinimaBaseCi || ci.Length > LongitudMaximaBaseCi)
         {
             errores[nameof(MecanicoInputModel.Ci)] =
-                $"El CI debe tener entre {LongitudMinimaBaseCi} y {LongitudMaximaBaseCi} dígitos y puede incluir un complemento de {LongitudMinimaComplementoCi} a {LongitudMaximaComplementoCi} caracteres alfanuméricos separado por un guion.";
+                $"El CI debe tener entre {LongitudMinimaBaseCi} y {LongitudMaximaBaseCi} dígitos.";
+            return;
+        }
+
+        if (!ci.All(char.IsAsciiDigit))
+        {
+            errores[nameof(MecanicoInputModel.Ci)] =
+                "El CI debe contener únicamente números.";
         }
     }
 
-    private static bool TieneFormatoCiValido(string ci)
+    private static void ValidarComplementoCi(
+        string? complementoCi,
+        IDictionary<string, string> errores)
     {
-        var partes = ci.Split(SeparadorComplementoCi);
-
-        if (partes.Length is < 1 or > 2)
+        if (string.IsNullOrEmpty(complementoCi))
         {
-            return false;
+            return;
         }
 
-        var baseCi = partes[0];
-        if (baseCi.Length < LongitudMinimaBaseCi ||
-            baseCi.Length > LongitudMaximaBaseCi ||
-            !baseCi.All(char.IsAsciiDigit))
+        if (ContieneEspacios(complementoCi))
         {
-            return false;
+            errores[nameof(MecanicoInputModel.ComplementoCi)] =
+                "El complemento del CI no debe contener espacios.";
+            return;
         }
 
-        return partes.Length == 1 || TieneComplementoCiValido(partes[1]);
+        if (complementoCi.Length != LongitudComplementoCi)
+        {
+            errores[nameof(MecanicoInputModel.ComplementoCi)] =
+                $"El complemento del CI debe tener exactamente {LongitudComplementoCi} caracteres.";
+            return;
+        }
+
+        if (!TieneFormatoComplementoCiValido(complementoCi))
+        {
+            errores[nameof(MecanicoInputModel.ComplementoCi)] =
+                "El complemento debe tener el formato 1A: un número seguido de una letra.";
+        }
     }
 
-    private static bool TieneComplementoCiValido(string complemento)
+    private static bool TieneFormatoComplementoCiValido(string complementoCi)
     {
-        return complemento.Length >= LongitudMinimaComplementoCi &&
-               complemento.Length <= LongitudMaximaComplementoCi &&
-               complemento.All(char.IsAsciiLetterOrDigit);
+        return char.IsAsciiDigit(complementoCi[0]) && complementoCi[1] is >= 'A' and <= 'Z';
     }
 
     private static void ValidarNombres(
@@ -101,28 +117,53 @@ public class ValidacionMecanicos
         }
     }
 
-    private static void ValidarApellidos(
-        string? apellidos,
+    private static void ValidarPrimerApellido(
+        string? primerApellido,
         IDictionary<string, string> errores)
     {
-        if (string.IsNullOrWhiteSpace(apellidos))
+        if (string.IsNullOrWhiteSpace(primerApellido))
         {
-            errores[nameof(MecanicoInputModel.Apellidos)] =
-                "Los apellidos son obligatorios.";
+            errores[nameof(MecanicoInputModel.PrimerApellido)] =
+                "El primer apellido es obligatorio.";
             return;
         }
 
-        if (apellidos.Length > LongitudMaximaNombresYApellidos)
+        if (primerApellido.Length > LongitudMaximaNombresYApellidos)
         {
-            errores[nameof(MecanicoInputModel.Apellidos)] =
-                $"Los apellidos no pueden superar los {LongitudMaximaNombresYApellidos} caracteres.";
+            errores[nameof(MecanicoInputModel.PrimerApellido)] =
+                $"El primer apellido no puede superar los {LongitudMaximaNombresYApellidos} caracteres.";
             return;
         }
 
-        if (!SoloContieneLetrasYEspacios(apellidos))
+        if (!SoloContieneLetrasYEspacios(primerApellido))
         {
-            errores[nameof(MecanicoInputModel.Apellidos)] =
-                "Los apellidos solo pueden contener letras y espacios.";
+            errores[nameof(MecanicoInputModel.PrimerApellido)] =
+                "El primer apellido solo puede contener letras y espacios.";
+        }
+    }
+
+    private static void ValidarSegundoApellido(
+        string? segundoApellido,
+        IDictionary<string, string> errores)
+    {
+        if (string.IsNullOrWhiteSpace(segundoApellido))
+        {
+            errores[nameof(MecanicoInputModel.SegundoApellido)] =
+                "El segundo apellido es obligatorio.";
+            return;
+        }
+
+        if (segundoApellido.Length > LongitudMaximaNombresYApellidos)
+        {
+            errores[nameof(MecanicoInputModel.SegundoApellido)] =
+                $"El segundo apellido no puede superar los {LongitudMaximaNombresYApellidos} caracteres.";
+            return;
+        }
+
+        if (!SoloContieneLetrasYEspacios(segundoApellido))
+        {
+            errores[nameof(MecanicoInputModel.SegundoApellido)] =
+                "El segundo apellido solo puede contener letras y espacios.";
         }
     }
 
@@ -168,14 +209,15 @@ public class ValidacionMecanicos
         if (!TienePrefijoCelularValido(celular))
         {
             errores[nameof(MecanicoInputModel.Celular)] =
-                $"El celular debe comenzar con {PrimerPrefijoCelularPermitido} o {SegundoPrefijoCelularPermitido}.";
+                $"El celular debe comenzar en {PrimerPrefijoCelularPermitido}, {SegundoPrefijoCelularPermitido} o {TercerPrefijoCelularPermitido}.";
         }
     }
 
     private static bool TienePrefijoCelularValido(string celular)
     {
         return celular[0] == PrimerPrefijoCelularPermitido ||
-               celular[0] == SegundoPrefijoCelularPermitido;
+               celular[0] == SegundoPrefijoCelularPermitido ||
+               celular[0] == TercerPrefijoCelularPermitido;
     }
 
 }

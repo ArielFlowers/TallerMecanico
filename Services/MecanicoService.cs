@@ -9,7 +9,6 @@ namespace TallerMecanico.Services;
 
 public class MecanicoService
 {
-    private const char SeparadorComplementoCi = '-';
     private const string MensajeCiDuplicado =
         "Ya existe un mecánico registrado con este CI.";
 
@@ -101,7 +100,10 @@ public class MecanicoService
             return errores;
         }
 
-        if (_mecanicoRepository.ExistsByCi(mecanico.Ci, idExcluido))
+        if (_mecanicoRepository.ExistsByCi(
+                mecanico.Ci,
+                mecanico.ComplementoCi,
+                idExcluido))
         {
             errores[nameof(MecanicoInputModel.Ci)] = MensajeCiDuplicado;
         }
@@ -114,8 +116,10 @@ public class MecanicoService
         return new MecanicoInputModel
         {
             Ci = NormalizarCi(mecanicoInput.Ci),
+            ComplementoCi = NormalizarComplementoCi(mecanicoInput.ComplementoCi),
             Nombres = NormalizarNombre(mecanicoInput.Nombres),
-            Apellidos = NormalizarNombre(mecanicoInput.Apellidos),
+            PrimerApellido = NormalizarNombre(mecanicoInput.PrimerApellido),
+            SegundoApellido = NormalizarNombre(mecanicoInput.SegundoApellido),
             Genero = (mecanicoInput.Genero ?? string.Empty).Trim(),
             Especialidad = (mecanicoInput.Especialidad ?? string.Empty).Trim(),
             Celular = (mecanicoInput.Celular ?? string.Empty).Trim()
@@ -124,19 +128,12 @@ public class MecanicoService
 
     private static string NormalizarCi(string? ci)
     {
-        var ciSinEspaciosExternos = (ci ?? string.Empty).Trim();
-        var indiceSeparador = ciSinEspaciosExternos.IndexOf(SeparadorComplementoCi);
+        return (ci ?? string.Empty).Trim();
+    }
 
-        if (indiceSeparador < 0)
-        {
-            return ciSinEspaciosExternos;
-        }
-
-        var parteBaseConSeparador = ciSinEspaciosExternos[..(indiceSeparador + 1)];
-        var complemento = ciSinEspaciosExternos[(indiceSeparador + 1)..]
-            .ToUpperInvariant();
-
-        return $"{parteBaseConSeparador}{complemento}";
+    private static string NormalizarComplementoCi(string? complementoCi)
+    {
+        return (complementoCi ?? string.Empty).ToUpperInvariant();
     }
 
     private static string NormalizarEspacios(string? texto)
@@ -163,8 +160,10 @@ public class MecanicoService
         return new Mecanico
         {
             Ci = mecanicoInput.Ci,
+            ComplementoCi = mecanicoInput.ComplementoCi,
             Nombres = mecanicoInput.Nombres,
-            Apellidos = mecanicoInput.Apellidos,
+            PrimerApellido = mecanicoInput.PrimerApellido,
+            SegundoApellido = mecanicoInput.SegundoApellido,
             Genero = mecanicoInput.Genero,
             Especialidad = mecanicoInput.Especialidad,
             Celular = mecanicoInput.Celular

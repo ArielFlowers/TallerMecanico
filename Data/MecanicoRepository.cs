@@ -25,15 +25,19 @@ public class MecanicoRepository : IRepository<Mecanico>
         const string query = """
             SELECT Id,
                    Ci,
+                   ComplementoCi,
                    Nombres,
-                   Apellidos,
+                   PrimerApellido,
+                   SegundoApellido,
                    Genero,
                    Especialidad,
                    Celular
             FROM Mecanicos
-            ORDER BY Apellidos ASC,
+            ORDER BY PrimerApellido ASC,
+                     SegundoApellido ASC,
                      Nombres ASC,
-                     Ci ASC;
+                     Ci ASC,
+                     ComplementoCi ASC;
             """;
 
         using DbCommand command = connection.CreateCommand();
@@ -61,21 +65,28 @@ public class MecanicoRepository : IRepository<Mecanico>
         const string query = """
             SELECT Id,
                    Ci,
+                   ComplementoCi,
                    Nombres,
-                   Apellidos,
+                   PrimerApellido,
+                   SegundoApellido,
                    Genero,
                    Especialidad,
                    Celular
             FROM Mecanicos
             WHERE Ci LIKE @PatronBusqueda ESCAPE '!'
+               OR ComplementoCi LIKE @PatronBusqueda ESCAPE '!'
+               OR CONCAT(Ci, '-', ComplementoCi) LIKE @PatronBusqueda ESCAPE '!'
                OR Nombres LIKE @PatronBusqueda ESCAPE '!'
-               OR Apellidos LIKE @PatronBusqueda ESCAPE '!'
+               OR PrimerApellido LIKE @PatronBusqueda ESCAPE '!'
+               OR SegundoApellido LIKE @PatronBusqueda ESCAPE '!'
                OR Genero LIKE @PatronBusqueda ESCAPE '!'
                OR Especialidad LIKE @PatronBusqueda ESCAPE '!'
                OR Celular LIKE @PatronBusqueda ESCAPE '!'
-            ORDER BY Apellidos ASC,
+            ORDER BY PrimerApellido ASC,
+                     SegundoApellido ASC,
                      Nombres ASC,
-                     Ci ASC;
+                     Ci ASC,
+                     ComplementoCi ASC;
             """;
 
         using DbCommand command = connection.CreateCommand();
@@ -105,8 +116,10 @@ public class MecanicoRepository : IRepository<Mecanico>
         const string query = """
             SELECT Id,
                    Ci,
+                   ComplementoCi,
                    Nombres,
-                   Apellidos,
+                   PrimerApellido,
+                   SegundoApellido,
                    Genero,
                    Especialidad,
                    Celular
@@ -139,8 +152,10 @@ public class MecanicoRepository : IRepository<Mecanico>
             INSERT INTO Mecanicos
             (
                 Ci,
+                ComplementoCi,
                 Nombres,
-                Apellidos,
+                PrimerApellido,
+                SegundoApellido,
                 Genero,
                 Especialidad,
                 Celular
@@ -148,8 +163,10 @@ public class MecanicoRepository : IRepository<Mecanico>
             VALUES
             (
                 @Ci,
+                @ComplementoCi,
                 @Nombres,
-                @Apellidos,
+                @PrimerApellido,
+                @SegundoApellido,
                 @Genero,
                 @Especialidad,
                 @Celular
@@ -172,8 +189,10 @@ public class MecanicoRepository : IRepository<Mecanico>
         const string query = """
             UPDATE Mecanicos
             SET Ci = @Ci,
+                ComplementoCi = @ComplementoCi,
                 Nombres = @Nombres,
-                Apellidos = @Apellidos,
+                PrimerApellido = @PrimerApellido,
+                SegundoApellido = @SegundoApellido,
                 Genero = @Genero,
                 Especialidad = @Especialidad,
                 Celular = @Celular
@@ -205,7 +224,10 @@ public class MecanicoRepository : IRepository<Mecanico>
         command.ExecuteNonQuery();
     }
 
-    public bool ExistsByCi(string ci, int idExcluido = 0)
+    public bool ExistsByCi(
+        string ci,
+        string complementoCi,
+        int idExcluido = 0)
     {
         using DbConnection connection =
             _connectionFactory.CreateConnection();
@@ -216,12 +238,14 @@ public class MecanicoRepository : IRepository<Mecanico>
             SELECT COUNT(*)
             FROM Mecanicos
             WHERE Ci = @Ci
+              AND ComplementoCi = @ComplementoCi
               AND Id <> @IdExcluido;
             """;
 
         using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
         AddParameter(command, "@Ci", ci);
+        AddParameter(command, "@ComplementoCi", complementoCi);
         AddParameter(command, "@IdExcluido", idExcluido);
 
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
@@ -248,8 +272,10 @@ public class MecanicoRepository : IRepository<Mecanico>
     private static void AddParameters(DbCommand command, Mecanico mecanico)
     {
         AddParameter(command, "@Ci", mecanico.Ci);
+        AddParameter(command, "@ComplementoCi", mecanico.ComplementoCi);
         AddParameter(command, "@Nombres", mecanico.Nombres);
-        AddParameter(command, "@Apellidos", mecanico.Apellidos);
+        AddParameter(command, "@PrimerApellido", mecanico.PrimerApellido);
+        AddParameter(command, "@SegundoApellido", mecanico.SegundoApellido);
         AddParameter(command, "@Genero", mecanico.Genero);
         AddParameter(command, "@Especialidad", mecanico.Especialidad);
         AddParameter(command, "@Celular", mecanico.Celular);
@@ -274,11 +300,13 @@ public class MecanicoRepository : IRepository<Mecanico>
         {
             Id = reader.GetInt32(0),
             Ci = reader.GetString(1),
-            Nombres = reader.GetString(2),
-            Apellidos = reader.GetString(3),
-            Genero = reader.GetString(4),
-            Especialidad = reader.GetString(5),
-            Celular = reader.GetString(6)
+            ComplementoCi = reader.GetString(2),
+            Nombres = reader.GetString(3),
+            PrimerApellido = reader.GetString(4),
+            SegundoApellido = reader.GetString(5),
+            Genero = reader.GetString(6),
+            Especialidad = reader.GetString(7),
+            Celular = reader.GetString(8)
         };
     }
 
