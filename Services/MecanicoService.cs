@@ -118,7 +118,8 @@ public class MecanicoService
             Ci = NormalizarCi(mecanicoInput.Ci),
             ComplementoCi = NormalizarComplementoCi(mecanicoInput.ComplementoCi),
             Nombres = NormalizarNombre(mecanicoInput.Nombres),
-            Apellidos = NormalizarNombre(mecanicoInput.Apellidos),
+            PrimerApellido = NormalizarNombre(mecanicoInput.PrimerApellido),
+            SegundoApellido = NormalizarNombre(mecanicoInput.SegundoApellido),
             Genero = (mecanicoInput.Genero ?? string.Empty).Trim(),
             Especialidad = (mecanicoInput.Especialidad ?? string.Empty).Trim(),
             Celular = (mecanicoInput.Celular ?? string.Empty).Trim()
@@ -161,7 +162,8 @@ public class MecanicoService
             Ci = mecanicoInput.Ci,
             ComplementoCi = mecanicoInput.ComplementoCi,
             Nombres = mecanicoInput.Nombres,
-            Apellidos = mecanicoInput.Apellidos,
+            PrimerApellido = mecanicoInput.PrimerApellido,
+            SegundoApellido = mecanicoInput.SegundoApellido,
             Genero = mecanicoInput.Genero,
             Especialidad = mecanicoInput.Especialidad,
             Celular = mecanicoInput.Celular

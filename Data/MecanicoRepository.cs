@@ -27,12 +27,14 @@ public class MecanicoRepository : IRepository<Mecanico>
                    Ci,
                    ComplementoCi,
                    Nombres,
-                   Apellidos,
+                   PrimerApellido,
+                   SegundoApellido,
                    Genero,
                    Especialidad,
                    Celular
             FROM Mecanicos
-            ORDER BY Apellidos ASC,
+            ORDER BY PrimerApellido ASC,
+                     SegundoApellido ASC,
                      Nombres ASC,
                      Ci ASC,
                      ComplementoCi ASC;
@@ -65,7 +67,8 @@ public class MecanicoRepository : IRepository<Mecanico>
                    Ci,
                    ComplementoCi,
                    Nombres,
-                   Apellidos,
+                   PrimerApellido,
+                   SegundoApellido,
                    Genero,
                    Especialidad,
                    Celular
@@ -74,11 +77,13 @@ public class MecanicoRepository : IRepository<Mecanico>
                OR ComplementoCi LIKE @PatronBusqueda ESCAPE '!'
                OR CONCAT(Ci, '-', ComplementoCi) LIKE @PatronBusqueda ESCAPE '!'
                OR Nombres LIKE @PatronBusqueda ESCAPE '!'
-               OR Apellidos LIKE @PatronBusqueda ESCAPE '!'
+               OR PrimerApellido LIKE @PatronBusqueda ESCAPE '!'
+               OR SegundoApellido LIKE @PatronBusqueda ESCAPE '!'
                OR Genero LIKE @PatronBusqueda ESCAPE '!'
                OR Especialidad LIKE @PatronBusqueda ESCAPE '!'
                OR Celular LIKE @PatronBusqueda ESCAPE '!'
-            ORDER BY Apellidos ASC,
+            ORDER BY PrimerApellido ASC,
+                     SegundoApellido ASC,
                      Nombres ASC,
                      Ci ASC,
                      ComplementoCi ASC;
@@ -113,7 +118,8 @@ public class MecanicoRepository : IRepository<Mecanico>
                    Ci,
                    ComplementoCi,
                    Nombres,
-                   Apellidos,
+                   PrimerApellido,
+                   SegundoApellido,
                    Genero,
                    Especialidad,
                    Celular
@@ -148,7 +154,8 @@ public class MecanicoRepository : IRepository<Mecanico>
                 Ci,
                 ComplementoCi,
                 Nombres,
-                Apellidos,
+                PrimerApellido,
+                SegundoApellido,
                 Genero,
                 Especialidad,
                 Celular
@@ -158,7 +165,8 @@ public class MecanicoRepository : IRepository<Mecanico>
                 @Ci,
                 @ComplementoCi,
                 @Nombres,
-                @Apellidos,
+                @PrimerApellido,
+                @SegundoApellido,
                 @Genero,
                 @Especialidad,
                 @Celular
@@ -183,7 +191,8 @@ public class MecanicoRepository : IRepository<Mecanico>
             SET Ci = @Ci,
                 ComplementoCi = @ComplementoCi,
                 Nombres = @Nombres,
-                Apellidos = @Apellidos,
+                PrimerApellido = @PrimerApellido,
+                SegundoApellido = @SegundoApellido,
                 Genero = @Genero,
                 Especialidad = @Especialidad,
                 Celular = @Celular
@@ -265,7 +274,8 @@ public class MecanicoRepository : IRepository<Mecanico>
         AddParameter(command, "@Ci", mecanico.Ci);
         AddParameter(command, "@ComplementoCi", mecanico.ComplementoCi);
         AddParameter(command, "@Nombres", mecanico.Nombres);
-        AddParameter(command, "@Apellidos", mecanico.Apellidos);
+        AddParameter(command, "@PrimerApellido", mecanico.PrimerApellido);
+        AddParameter(command, "@SegundoApellido", mecanico.SegundoApellido);
         AddParameter(command, "@Genero", mecanico.Genero);
         AddParameter(command, "@Especialidad", mecanico.Especialidad);
         AddParameter(command, "@Celular", mecanico.Celular);
@@ -292,10 +302,11 @@ public class MecanicoRepository : IRepository<Mecanico>
             Ci = reader.GetString(1),
             ComplementoCi = reader.GetString(2),
             Nombres = reader.GetString(3),
-            Apellidos = reader.GetString(4),
-            Genero = reader.GetString(5),
-            Especialidad = reader.GetString(6),
-            Celular = reader.GetString(7)
+            PrimerApellido = reader.GetString(4),
+            SegundoApellido = reader.GetString(5),
+            Genero = reader.GetString(6),
+            Especialidad = reader.GetString(7),
+            Celular = reader.GetString(8)
         };
     }
 

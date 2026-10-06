@@ -10,7 +10,9 @@ public class Mecanico
 
     public string Nombres { get; set; } = string.Empty;
 
-    public string Apellidos { get; set; } = string.Empty;
+    public string PrimerApellido { get; set; } = string.Empty;
+
+    public string SegundoApellido { get; set; } = string.Empty;
 
     public string Genero { get; set; } = string.Empty;
 

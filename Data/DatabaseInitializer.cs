@@ -38,7 +38,8 @@ public class DatabaseInitializer
                 Ci VARCHAR(8) NOT NULL,
                 ComplementoCi VARCHAR(2) NOT NULL DEFAULT '',
                 Nombres VARCHAR(100) NOT NULL,
-                Apellidos VARCHAR(100) NOT NULL,
+                PrimerApellido VARCHAR(100) NOT NULL,
+                SegundoApellido VARCHAR(100) NOT NULL,
                 Genero VARCHAR(20) NOT NULL,
                 Especialidad VARCHAR(60) NOT NULL,
                 Celular VARCHAR(20) NOT NULL,
@@ -78,12 +79,95 @@ public class DatabaseInitializer
 
     private static void EnsureMecanicosSchema(DbConnection connection)
     {
+        EnsureMecanicosApellidoColumns(connection);
         EnsureComplementoCiColumn(connection);
         ValidateMecanicosMigrationValues(connection);
         EnsureNoDuplicateMecanicosCi(connection);
         EnsureMecanicosUniqueIndex(connection);
         MigrateLegacyCiValues(connection);
         EnsureComplementoCiCheck(connection);
+    }
+
+    private static void EnsureMecanicosApellidoColumns(DbConnection connection)
+    {
+        var columnas = GetMecanicosApellidoColumns(connection);
+        var tieneApellidosAntiguos = columnas.Contains("Apellidos");
+        var tienePrimerApellido = columnas.Contains("PrimerApellido");
+        var tieneSegundoApellido = columnas.Contains("SegundoApellido");
+
+        if (!tieneApellidosAntiguos && tienePrimerApellido && tieneSegundoApellido)
+        {
+            return;
+        }
+
+        EnsureMecanicosEmptyForApellidoMigration(connection);
+
+        var cambios = new List<string>();
+
+        if (!tienePrimerApellido)
+        {
+            cambios.Add("ADD COLUMN PrimerApellido VARCHAR(100) NOT NULL AFTER Nombres");
+        }
+
+        if (!tieneSegundoApellido)
+        {
+            cambios.Add("ADD COLUMN SegundoApellido VARCHAR(100) NOT NULL AFTER PrimerApellido");
+        }
+
+        if (tieneApellidosAntiguos)
+        {
+            cambios.Add("DROP COLUMN Apellidos");
+        }
+
+        ExecuteCommand(connection, $"ALTER TABLE Mecanicos {string.Join(", ", cambios)};");
+    }
+
+    private static HashSet<string> GetMecanicosApellidoColumns(DbConnection connection)
+    {
+        const string query = """
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'Mecanicos'
+              AND COLUMN_NAME IN ('Apellidos', 'PrimerApellido', 'SegundoApellido');
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        using DbDataReader reader = command.ExecuteReader();
+        var columnas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        while (reader.Read())
+        {
+            columnas.Add(reader.GetString(0));
+        }
+
+        return columnas;
+    }
+
+    private static void EnsureMecanicosEmptyForApellidoMigration(DbConnection connection)
+    {
+        const string query = """
+            SELECT Id
+            FROM Mecanicos
+            ORDER BY Id
+            LIMIT 1;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        var idMecanico = command.ExecuteScalar();
+
+        if (idMecanico is not null)
+        {
+            throw new InvalidOperationException(
+                "No se puede migrar el esquema de apellidos de Mecanicos: existen registros " +
+                $"pendientes de migración manual (primer Id: {idMecanico}). " +
+                "Complete PrimerApellido y SegundoApellido como VARCHAR(100) NOT NULL para todos " +
+                "los registros y retire la columna antigua Apellidos únicamente después de verificar " +
+                "los datos y conservar una copia de respaldo. No se han dividido, " +
+                "inventado, eliminado ni modificado apellidos automáticamente.");
+        }
     }
 
     private static void EnsureComplementoCiColumn(DbConnection connection)

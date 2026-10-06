@@ -21,7 +21,8 @@ public class ValidacionMecanicos
         ValidarCi(mecanico.Ci, errores);
         ValidarComplementoCi(mecanico.ComplementoCi, errores);
         ValidarNombres(mecanico.Nombres, errores);
-        ValidarApellidos(mecanico.Apellidos, errores);
+        ValidarPrimerApellido(mecanico.PrimerApellido, errores);
+        ValidarSegundoApellido(mecanico.SegundoApellido, errores);
         ValidarCelular(mecanico.Celular, errores);
 
         return errores;
@@ -116,28 +117,53 @@ public class ValidacionMecanicos
         }
     }
 
-    private static void ValidarApellidos(
-        string? apellidos,
+    private static void ValidarPrimerApellido(
+        string? primerApellido,
         IDictionary<string, string> errores)
     {
-        if (string.IsNullOrWhiteSpace(apellidos))
+        if (string.IsNullOrWhiteSpace(primerApellido))
         {
-            errores[nameof(MecanicoInputModel.Apellidos)] =
-                "Los apellidos son obligatorios.";
+            errores[nameof(MecanicoInputModel.PrimerApellido)] =
+                "El primer apellido es obligatorio.";
             return;
         }
 
-        if (apellidos.Length > LongitudMaximaNombresYApellidos)
+        if (primerApellido.Length > LongitudMaximaNombresYApellidos)
         {
-            errores[nameof(MecanicoInputModel.Apellidos)] =
-                $"Los apellidos no pueden superar los {LongitudMaximaNombresYApellidos} caracteres.";
+            errores[nameof(MecanicoInputModel.PrimerApellido)] =
+                $"El primer apellido no puede superar los {LongitudMaximaNombresYApellidos} caracteres.";
             return;
         }
 
-        if (!SoloContieneLetrasYEspacios(apellidos))
+        if (!SoloContieneLetrasYEspacios(primerApellido))
         {
-            errores[nameof(MecanicoInputModel.Apellidos)] =
-                "Los apellidos solo pueden contener letras y espacios.";
+            errores[nameof(MecanicoInputModel.PrimerApellido)] =
+                "El primer apellido solo puede contener letras y espacios.";
+        }
+    }
+
+    private static void ValidarSegundoApellido(
+        string? segundoApellido,
+        IDictionary<string, string> errores)
+    {
+        if (string.IsNullOrWhiteSpace(segundoApellido))
+        {
+            errores[nameof(MecanicoInputModel.SegundoApellido)] =
+                "El segundo apellido es obligatorio.";
+            return;
+        }
+
+        if (segundoApellido.Length > LongitudMaximaNombresYApellidos)
+        {
+            errores[nameof(MecanicoInputModel.SegundoApellido)] =
+                $"El segundo apellido no puede superar los {LongitudMaximaNombresYApellidos} caracteres.";
+            return;
+        }
+
+        if (!SoloContieneLetrasYEspacios(segundoApellido))
+        {
+            errores[nameof(MecanicoInputModel.SegundoApellido)] =
+                "El segundo apellido solo puede contener letras y espacios.";
         }
     }
 
