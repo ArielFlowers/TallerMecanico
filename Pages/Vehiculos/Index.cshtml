@@ -20,19 +20,8 @@
 
         <div class="services-actions">
 
-            <form method="get"
-                  class="buscador">
-
-                <span class="buscador-icono">
-                    🔍
-                </span>
-
-                <input type="search"
-                       asp-for="Buscar"
-                       class="service-input buscador-input"
-                       placeholder="Buscar por placa, marca o modelo..." />
-
-            </form>
+            <partial name="_BuscadorVehiculo"
+                     model="Model.Buscar" />
 
             <a asp-page="./Index"
                class="services-btn services-btn-secondary">

@@ -42,6 +42,14 @@ public class IndexModel : PageModel
         CargarProductos();
     }
 
+    public IActionResult OnGetBuscar()
+    {
+        CargarMensajes();
+        CargarProductos();
+
+        return Page();
+    }
+
     public IActionResult OnPostCrear()
     {
         if (!ModelState.IsValid)

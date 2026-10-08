@@ -44,6 +44,13 @@ public class IndexModel : PageModel
         CargarDatos();
     }
 
+    public IActionResult OnGetBuscar()
+    {
+        CargarDatos();
+
+        return Page();
+    }
+
     public IActionResult OnPostCreate()
     {
         return GuardarFormulario(

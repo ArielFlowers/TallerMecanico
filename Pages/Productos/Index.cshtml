@@ -49,40 +49,8 @@
     <div class="services-actions"
          style="margin-bottom: 20px;">
 
-        <form method="get"
-              class="buscador"
-              role="search">
-
-            <span class="buscador-icono"
-                  aria-hidden="true">
-                🔍
-            </span>
-
-            <label asp-for="TerminoBusqueda"
-                   class="visually-hidden">
-                Buscar productos
-            </label>
-
-            <input asp-for="TerminoBusqueda"
-                   class="service-input buscador-input"
-                   placeholder="Buscar por código o nombre"
-                   autocomplete="off" />
-
-            <button type="submit"
-                    class="services-btn services-btn-secondary">
-                Buscar
-            </button>
-
-            @if (!string.IsNullOrWhiteSpace(
-                    Model.TerminoBusqueda))
-            {
-                <a asp-page="./Index"
-                   class="services-btn services-btn-secondary">
-                    Limpiar
-                </a>
-            }
-
-        </form>
+        <partial name="_BuscadorProducto"
+                 model="Model.TerminoBusqueda" />
 
         <a asp-page="./Index"
            class="services-btn services-btn-secondary">
@@ -749,4 +717,4 @@
 
         })();
     </script>
-}}
+}

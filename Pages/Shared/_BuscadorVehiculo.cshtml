@@ -1,0 +1,39 @@
+@model string?
+
+<form method="get"
+      asp-page-handler="Buscar"
+      class="buscador"
+      role="search">
+
+    <span class="buscador-icono"
+          aria-hidden="true">
+        🔍
+    </span>
+
+    <label for="buscador-vehiculo"
+           class="visually-hidden">
+        Buscar vehículo por placa
+    </label>
+
+    <input type="search"
+           id="buscador-vehiculo"
+           name="Buscar"
+           value="@Model"
+           class="service-input buscador-input"
+           placeholder="Buscar por placa..."
+           autocomplete="off" />
+
+    <button type="submit"
+            class="services-btn services-btn-secondary">
+        Buscar
+    </button>
+
+    @if (!string.IsNullOrWhiteSpace(Model))
+    {
+        <a href="@Context.Request.Path"
+           class="services-btn services-btn-secondary">
+            Limpiar
+        </a>
+    }
+
+</form>
