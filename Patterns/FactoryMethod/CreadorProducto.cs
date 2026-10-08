@@ -5,21 +5,21 @@ using TallerMecanico.Models;
 
 namespace TallerMecanico.Patterns.FactoryMethod;
 
-public class CreadorVehiculo :
-    CreadorRepositorio<Vehiculo>
+public class CreadorProducto :
+    CreadorRepositorio<Producto>
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
 
-    public CreadorVehiculo(
+    public CreadorProducto(
         DatabaseConnectionFactory connectionFactory)
     {
         _connectionFactory =
             connectionFactory;
     }
 
-    public override IRepository<Vehiculo> CrearRepositorio()
+    public override IRepository<Producto> CrearRepositorio()
     {
-        return new VehiculoRepository(
+        return new ProductoRepository(
             _connectionFactory);
     }
 }
