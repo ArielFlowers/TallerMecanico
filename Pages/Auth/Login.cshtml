@@ -1,0 +1,564 @@
+@page
+@model TallerMecanico.Pages.Auth.LoginModel
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+
+    <title>Acceso | AutoTaller Pro</title>
+
+    <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 24px;
+                background: #0d0a12;
+                color: #f5f3ff;
+                font-family: "Segoe UI", sans-serif;
+            }
+
+            .auth-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                width: 100%;
+                max-width: 1050px;
+                min-height: 570px;
+                background: #171120;
+                border: 1px solid #342643;
+                border-radius: 20px;
+                overflow: hidden;
+                box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+            }
+
+            .brand-panel {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 45px;
+                background: linear-gradient( 145deg, #29163f, #150e20 );
+                text-align: center;
+                border-right: 1px solid #342643;
+            }
+
+            .brand-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 90px;
+                height: 90px;
+                margin-bottom: 24px;
+                background: #7c3aed;
+                border-radius: 24px;
+                font-size: 42px;
+            }
+
+            .brand-panel h1 {
+                margin: 0;
+                font-size: 32px;
+                font-weight: 700;
+            }
+
+            .brand-panel p {
+                max-width: 310px;
+                margin-top: 15px;
+                color: #b7a8c8;
+                font-size: 15px;
+                line-height: 1.7;
+            }
+
+            .form-panel {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 45px;
+            }
+
+            .auth-tabs {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 30px;
+                padding: 5px;
+                background: #21192c;
+                border-radius: 12px;
+            }
+
+            .auth-tab {
+                flex: 1;
+                padding: 13px 8px;
+                color: #b7a8c8;
+                background: transparent;
+                border: none;
+                border-radius: 9px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+                .auth-tab.active {
+                    color: white;
+                    background: #7c3aed;
+                }
+
+                .auth-tab:focus-visible {
+                    outline: 2px solid #c4b5fd;
+                    outline-offset: 2px;
+                }
+
+            .form-title {
+                margin: 0 0 9px;
+                font-size: 24px;
+            }
+
+            .form-description {
+                margin: 0 0 25px;
+                color: #a89bb8;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .form-group {
+                margin-bottom: 19px;
+            }
+
+                .form-group label {
+                    display: block;
+                    margin-bottom: 9px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+
+            .form-control {
+                width: 100%;
+                padding: 13px 14px;
+                color: #fff;
+                background: #21192c;
+                border: 1px solid #463653;
+                border-radius: 9px;
+                font-size: 15px;
+                outline: none;
+            }
+
+                .form-control:focus {
+                    border-color: #8b5cf6;
+                    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+                }
+
+                .form-control::placeholder {
+                    color: #9384a4;
+                }
+
+            .password-container {
+                position: relative;
+            }
+
+                .password-container .form-control {
+                    padding-right: 52px;
+                }
+
+            .toggle-password {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                color: #a89bb8;
+                background: transparent;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+
+                .toggle-password:hover {
+                    color: white;
+                    background: rgba(139, 92, 246, 0.15);
+                }
+
+                .toggle-password:focus-visible {
+                    outline: 2px solid #8b5cf6;
+                }
+
+            .login-button {
+                width: 100%;
+                padding: 14px;
+                margin-top: 12px;
+                color: white;
+                background: #7c3aed;
+                border: none;
+                border-radius: 9px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+                .login-button:hover {
+                    background: #8b5cf6;
+                }
+
+                .login-button:focus-visible {
+                    outline: 2px solid #c4b5fd;
+                    outline-offset: 3px;
+                }
+
+            .validation-error {
+                display: block;
+                margin-top: 6px;
+                color: #fca5a5;
+                font-size: 13px;
+            }
+
+            .validation-summary {
+                margin-bottom: 16px;
+                color: #fca5a5;
+                font-size: 14px;
+            }
+
+                .validation-summary:empty {
+                    display: none;
+                }
+
+            .register-notice {
+                padding: 16px;
+                color: #d6c4e8;
+                background: #271b35;
+                border: 1px solid #60417d;
+                border-radius: 10px;
+                font-size: 14px;
+                line-height: 1.7;
+            }
+
+            .footer-text {
+                margin-top: 32px;
+                color: #8f829e;
+                font-size: 12px;
+                text-align: center;
+            }
+
+            [hidden] {
+                display: none !important;
+            }
+
+            .toggle-password svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .password-icon-hidden {
+            display: none !important;
+        }
+        @@media (max-width: 760px) {
+                .auth-container {
+                    grid-template-columns: 1fr;
+                }
+
+                .brand-panel {
+                    padding: 30px 22px;
+                    border-right: none;
+                    border-bottom: 1px solid #342643;
+                }
+
+                .brand-icon {
+                    width: 65px;
+                    height: 65px;
+                    margin-bottom: 14px;
+                    font-size: 30px;
+                }
+
+                .brand-panel h1 {
+                    font-size: 25px;
+                }
+
+                .brand-panel p {
+                    margin-bottom: 0;
+                    font-size: 13px;
+                }
+
+                .form-panel {
+                    padding: 30px 24px;
+                }
+            }
+    </style>
+</head>
+
+<body>
+    <main class="auth-container">
+
+        <!-- SECCIÓN IZQUIERDA -->
+        <section class="brand-panel"
+                 aria-label="Presentación de AutoTaller Pro">
+
+            <div class="brand-icon" aria-hidden="true">
+                🔧
+            </div>
+
+            <h1>AutoTaller Pro</h1>
+
+            <p>
+                Sistema de gestión para talleres mecánicos.
+                Administra los servicios, vehículos,
+                clientes y operaciones de tu taller.
+            </p>
+        </section>
+
+        <!-- SECCIÓN DERECHA -->
+        <section class="form-panel"
+                 aria-label="Acceso al sistema">
+
+            <div class="auth-tabs"
+                 role="tablist"
+                 aria-label="Opciones de acceso">
+
+                <button type="button"
+                        id="tabLogin"
+                        class="auth-tab active"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="panelLogin">
+                    Iniciar sesión
+                </button>
+
+                <button type="button"
+                        id="tabRegistro"
+                        class="auth-tab"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="panelRegistro">
+                    Registrarse
+                </button>
+            </div>
+
+            <!-- FORMULARIO DE LOGIN EXISTENTE -->
+            <div id="panelLogin"
+                 role="tabpanel"
+                 aria-labelledby="tabLogin">
+
+                <h2 class="form-title">
+                    Bienvenido de nuevo
+                </h2>
+
+                <p class="form-description">
+                    Ingresa tus credenciales para continuar.
+                </p>
+
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly"
+                         class="validation-summary"
+                         role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="Input.Username">
+                            Usuario
+                        </label>
+
+                        <input asp-for="Input.Username"
+                               class="form-control"
+                               autocomplete="username"
+                               placeholder="Ingresa tu usuario" />
+
+                        <span asp-validation-for="Input.Username"
+                              class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Input.Password">
+                            Contraseña
+                        </label>
+
+                        <div class="password-container">
+                            <input asp-for="Input.Password"
+                                   type="password"
+                                   class="form-control"
+                                   autocomplete="current-password"
+                                   placeholder="Ingresa tu contraseña" />
+
+                            <button type="button"
+        class="toggle-password"
+        id="togglePassword"
+        aria-label="Mostrar contraseña"
+        aria-pressed="false">
+
+    <svg id="iconEyeOpen"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         aria-hidden="true">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+        <circle cx="12" cy="12" r="3" />
+    </svg>
+
+    <svg id="iconEyeClosed"
+         class="password-icon-hidden"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="currentColor"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         aria-hidden="true">
+        <path d="M3 3l18 18" />
+        <path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-4.1 4.8" />
+        <path d="M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.5 10.5 0 0 0 4.2-.9" />
+    </svg>
+</button>
+                        </div>
+
+                        <span asp-validation-for="Input.Password"
+                              class="validation-error"></span>
+                    </div>
+
+                    <div style="text-align:center; margin-top:18px;">
+                        <a asp-page="/Auth/ReenviarVerificacion"
+                           style="color:#c4a0ff; text-decoration:underline;">
+                            ¿No recibiste el correo? Reenviar verificación
+                        </a>
+                    </div>
+                    <button type="submit"
+                            class="login-button">
+                        Iniciar sesión
+                    </button>
+                </form>
+            </div>
+
+            <!-- REGISTRO: PENDIENTE DE IMPLEMENTACIÓN SEGURA -->
+            <div id="panelRegistro"
+                 role="tabpanel"
+                 aria-labelledby="tabRegistro"
+                 hidden>
+
+                <h2 class="form-title">
+                    Solicitar registro
+                </h2>
+
+                <p class="form-description">
+                    Solicita una cuenta para utilizar
+                    AutoTaller Pro.
+                </p>
+
+                <div class="register-notice" role="status">
+                    El registro de empleados estará disponible
+                    cuando se habilite la verificación
+                    por correo electrónico y la aprobación
+                    del Administrador.
+
+                    <p>
+                        Ninguna cuenta podrá acceder al sistema
+                        sin completar ambos pasos.
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer-text">
+                © @DateTime.Now.Year AutoTaller Pro
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+            (() => {
+                "use strict";
+
+                const tabLogin =
+                    document.getElementById("tabLogin");
+
+                const tabRegistro =
+                    document.getElementById("tabRegistro");
+
+                const panelLogin =
+                    document.getElementById("panelLogin");
+
+                const panelRegistro =
+                    document.getElementById("panelRegistro");
+
+                function seleccionarPestana(registro) {
+                    tabLogin.classList.toggle("active", !registro);
+                    tabRegistro.classList.toggle("active", registro);
+
+                    tabLogin.setAttribute(
+                        "aria-selected",
+                        String(!registro)
+                    );
+
+                    tabRegistro.setAttribute(
+                        "aria-selected",
+                        String(registro)
+                    );
+
+                    panelLogin.hidden = registro;
+                    panelRegistro.hidden = !registro;
+                }
+
+                tabLogin.addEventListener("click", () => {
+                    seleccionarPestana(false);
+                });
+
+                tabRegistro.addEventListener("click", () => {
+                    window.location.assign("/Auth/Registro");
+                });
+
+                const passwordInput =
+                document.getElementById("Input_Password");
+
+            const togglePassword =
+                document.getElementById("togglePassword");
+
+            const iconEyeOpen =
+                document.getElementById("iconEyeOpen");
+
+            const iconEyeClosed =
+                document.getElementById("iconEyeClosed");
+
+            togglePassword.addEventListener("click", () => {
+                const mostrar = passwordInput.type === "password";
+
+                passwordInput.type = mostrar ? "text" : "password";
+
+                togglePassword.setAttribute(
+                    "aria-label",
+                    mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
+                );
+
+                togglePassword.setAttribute(
+                    "aria-pressed",
+                    String(mostrar)
+                );
+
+                iconEyeOpen.classList.toggle(
+                    "password-icon-hidden",
+                    mostrar
+                );
+
+                iconEyeClosed.classList.toggle(
+                    "password-icon-hidden",
+                    !mostrar
+                );
+            });
+
+            })();
+    </script>
+</body>
+</html>

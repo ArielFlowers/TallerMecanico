@@ -1,0 +1,95 @@
+@page
+@model TallerMecanico.Pages.Administracion.SolicitudesModel
+
+@{
+    ViewData["Title"] = "Aprobacion de empleados";
+}
+
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h1 class="fw-bold">Aprobacion de empleados</h1>
+        <p class="text-muted">
+            Revisa las solicitudes de empleados que ya verificaron su correo.
+        </p>
+    </div>
+
+    @if (TempData["Mensaje"] is string mensaje)
+    {
+        <div class="alert alert-success" role="status">
+            @mensaje
+        </div>
+    }
+
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert-danger" role="alert">
+            @error
+        </div>
+    }
+
+    @if (Model.Solicitudes.Count == 0)
+    {
+        <div class="alert alert-info">
+            No hay solicitudes pendientes de aprobacion.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Correo</th>
+                        <th>Fecha de solicitud</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var solicitud in Model.Solicitudes)
+                {
+                    <tr>
+                        <td>@solicitud.Id</td>
+                        <td>@solicitud.Username</td>
+                        <td>@solicitud.Email</td>
+                        <td>@solicitud.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <span class="badge bg-warning text-dark">
+                                Pendiente de aprobacion
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-2">
+
+                                <form method="post"
+                                      asp-page-handler="Aprobar"
+                                      asp-route-id="@solicitud.Id">
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm"
+                                            onclick="return confirm('¿Aprobar a este empleado?');">
+                                        Aprobar
+                                    </button>
+                                </form>
+
+                                <form method="post"
+                                      asp-page-handler="Rechazar"
+                                      asp-route-id="@solicitud.Id">
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm"
+                                            onclick="return confirm('¿Rechazar esta solicitud?');">
+                                        Rechazar
+                                    </button>
+                                </form>
+
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

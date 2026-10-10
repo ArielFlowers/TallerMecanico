@@ -18,26 +18,22 @@ public class ClienteService
     private const string MensajeClienteConVehiculos =
         "No se puede eliminar el cliente porque tiene vehículos asociados.";
 
-    private const string UsuarioTemporal =
-        "sistema";
-
     private readonly IClientePort _clientePort;
     private readonly IVehiculoPort _vehiculoPort;
     private readonly ValidacionClientes _validacionClientes;
+    private readonly ICurrentUser _currentUser;
+
 
     public ClienteService(
-        IClientePort clientePort,
-        IVehiculoPort vehiculoPort,
-        ValidacionClientes validacionClientes)
+            IClientePort clientePort,
+            IVehiculoPort vehiculoPort,
+            ValidacionClientes validacionClientes,
+            ICurrentUser currentUser)
     {
-        _clientePort =
-            clientePort;
-
-        _vehiculoPort =
-            vehiculoPort;
-
-        _validacionClientes =
-            validacionClientes;
+        _clientePort = clientePort;
+        _vehiculoPort = vehiculoPort;
+        _validacionClientes = validacionClientes;
+        _currentUser = currentUser;
     }
 
     public IReadOnlyList<Cliente> Obtener()
@@ -299,40 +295,42 @@ public class ClienteService
         }
     }
 
-    private static Cliente CrearCliente(
-        ClienteFormViewModel formulario)
+    private Cliente CrearCliente(
+    ClienteFormViewModel formulario)
     {
         return new Cliente
         {
             Ci =
-                formulario.Ci ??
-                string.Empty,
+            formulario.Ci ??
+            string.Empty,
 
             ComplementoCi =
-                formulario.ComplementoCi ??
-                string.Empty,
+            formulario.ComplementoCi ??
+            string.Empty,
 
             Nombres =
-                formulario.Nombres ??
-                string.Empty,
+            formulario.Nombres ??
+            string.Empty,
 
             PrimerApellido =
-                formulario.PrimerApellido ??
-                string.Empty,
+            formulario.PrimerApellido ??
+            string.Empty,
 
             SegundoApellido =
-                formulario.SegundoApellido ??
-                string.Empty,
+            formulario.SegundoApellido ??
+            string.Empty,
 
             Celular =
-                formulario.Celular ??
-                string.Empty,
+            formulario.Celular ??
+            string.Empty,
 
             CreadoPor =
-                UsuarioTemporal,
+            _currentUser.Username
+            ?? throw new UnauthorizedAccessException(
+                "Se requiere un usuario autenticado."),
 
             FechaCreacion =
-                DateTime.Now
+            DateTime.Now
         };
     }
 

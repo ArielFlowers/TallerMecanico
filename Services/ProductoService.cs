@@ -14,21 +14,18 @@ public class ProductoService
     private const string MensajeProductoNoExiste =
         "El producto solicitado no existe.";
 
-    private const string UsuarioTemporal =
-        "sistema";
-
     private readonly IProductoPort _productoPort;
     private readonly ValidacionProductos _validacionProductos;
 
+    private readonly ICurrentUser _currentUser;
     public ProductoService(
         IProductoPort productoPort,
-        ValidacionProductos validacionProductos)
+        ValidacionProductos validacionProductos,
+        ICurrentUser currentUser)
     {
-        _productoPort =
-            productoPort;
-
-        _validacionProductos =
-            validacionProductos;
+        _productoPort = productoPort;
+        _validacionProductos = validacionProductos;
+        _currentUser = currentUser;
     }
 
     public IReadOnlyList<Producto> Obtener()
@@ -291,7 +288,7 @@ public class ProductoService
         }
     }
 
-    private static Producto CrearProducto(
+    private Producto CrearProducto(
         ProductoFormViewModel formulario)
     {
         return new Producto
@@ -315,9 +312,9 @@ public class ProductoService
             StockMinimo =
                 formulario.StockMinimo ??
                 0,
-
-            CreadoPor =
-                UsuarioTemporal,
+            CreadoPor = _currentUser.Username
+                 ?? throw new UnauthorizedAccessException(
+                     "Se requiere un usuario autenticado."),
 
             FechaCreacion =
                 DateTime.Now

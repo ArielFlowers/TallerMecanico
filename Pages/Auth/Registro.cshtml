@@ -1,0 +1,300 @@
+@page
+@model TallerMecanico.Pages.Auth.RegistroModel
+
+@{
+    ViewData["Title"] = "Registrarse";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+
+    <title>Registrarse | AutoTaller Pro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            background: #0d0a12;
+            color: #f5f3ff;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        .auth-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+            max-width: 1050px;
+            background: #171120;
+            border: 1px solid #342643;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+        }
+
+        .brand-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 45px;
+            background: linear-gradient(145deg, #29163f, #150e20);
+            border-right: 1px solid #342643;
+            text-align: center;
+        }
+
+        .brand-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 90px;
+            height: 90px;
+            margin-bottom: 24px;
+            background: #7c3aed;
+            border-radius: 24px;
+            font-size: 42px;
+        }
+
+        .brand-panel h1 {
+            font-size: 32px;
+            margin: 0;
+        }
+
+        .brand-panel p {
+            max-width: 310px;
+            margin-top: 15px;
+            color: #b7a8c8;
+            line-height: 1.7;
+        }
+
+        .form-panel {
+            padding: 45px;
+        }
+
+        h2 {
+            margin: 0 0 10px;
+            font-size: 26px;
+        }
+
+        .description {
+            margin-bottom: 25px;
+            color: #a89bb8;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 13px 14px;
+            color: white;
+            background: #21192c;
+            border: 1px solid #463653;
+            border-radius: 9px;
+            font-size: 15px;
+        }
+
+        .form-control:focus {
+            outline: 2px solid #a78bfa;
+            outline-offset: 1px;
+        }
+
+        .login-button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 14px;
+            color: white;
+            background: #7c3aed;
+            border: none;
+            border-radius: 9px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .login-button:hover {
+            background: #8b5cf6;
+        }
+
+        .login-button:focus-visible {
+            outline: 2px solid #c4b5fd;
+            outline-offset: 3px;
+        }
+
+        .validation-error, .validation-summary {
+            color: #fca5a5;
+            font-size: 13px;
+        }
+
+        .validation-summary {
+            margin-bottom: 16px;
+        }
+
+        .success-message {
+            padding: 20px;
+            background: #271b35;
+            border: 1px solid #8b5cf6;
+            border-radius: 10px;
+            line-height: 1.7;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 25px;
+            color: #c4b5fd;
+            text-align: center;
+        }
+
+        .hint {
+            margin-top: 7px;
+            color: #b7a8c8;
+            font-size: 12px;
+        }
+
+        @@media (max-width: 760px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-panel {
+                padding: 30px 22px;
+                border-right: none;
+                border-bottom: 1px solid #342643;
+            }
+
+            .form-panel {
+                padding: 30px 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="auth-container">
+        <section class="brand-panel">
+            <div class="brand-icon" aria-hidden="true">🔧</div>
+            <h1>AutoTaller Pro</h1>
+            <p>
+                Solicita tu cuenta para formar parte
+                del sistema de gestión del taller.
+            </p>
+        </section>
+
+        <section class="form-panel">
+            <h2>Solicitar registro</h2>
+
+            <p class="description">
+                Primero verificarás tu correo electrónico.
+                Después, el Administrador deberá aprobar tu cuenta.
+            </p>
+
+            @if (Model.SolicitudRecibida)
+            {
+                <div class="success-message" role="status">
+                    <strong>Solicitud recibida.</strong>
+                    <p>
+                        Si el registro se procesó correctamente,
+                        recibirás un correo con el enlace de verificación.
+                    </p>
+                    <p>
+                        Después de verificar tu correo deberás esperar
+                        la aprobación del Administrador.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <form method="post" asp-page="/Auth/Registro">
+                    <div asp-validation-summary="ModelOnly"
+                         class="validation-summary"
+                         role="alert"></div>
+
+                    <div class="form-group">
+                        <label asp-for="Input.Username">Usuario</label>
+                        <input asp-for="Input.Username"
+                               class="form-control"
+                               autocomplete="username"
+                               maxlength="50"
+                               required />
+                        <span asp-validation-for="Input.Username"
+                              class="validation-error"></span>
+                        <div class="hint">
+                            Entre 3 y 50 caracteres.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Input.Email">Correo electrónico</label>
+                        <input asp-for="Input.Email"
+                               type="email"
+                               class="form-control"
+                               autocomplete="email"
+                               maxlength="254"
+                               required />
+                        <span asp-validation-for="Input.Email"
+                              class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Input.Password">Contraseña</label>
+                        <input asp-for="Input.Password"
+                               type="password"
+                               class="form-control"
+                               autocomplete="new-password"
+                               minlength="12"
+                               maxlength="128"
+                               required />
+                        <span asp-validation-for="Input.Password"
+                              class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Input.ConfirmarPassword">
+                            Confirmar contraseña
+                        </label>
+                        <input asp-for="Input.ConfirmarPassword"
+                               type="password"
+                               class="form-control"
+                               autocomplete="new-password"
+                               minlength="12"
+                               maxlength="128"
+                               required />
+                        <span asp-validation-for="Input.ConfirmarPassword"
+                              class="validation-error"></span>
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        Solicitar registro
+                    </button>
+                </form>
+            }
+
+            <a asp-page="/Auth/Login" class="back-link">
+                Volver a iniciar sesión
+            </a>
+        </section>
+    </main>
+</body>
+</html>
