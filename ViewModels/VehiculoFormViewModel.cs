@@ -6,6 +6,8 @@ public class VehiculoFormViewModel
 
     public string? Placa { get; set; }
 
+    public bool EsPlacaExtranjera { get; set; }
+
     public string? Marca { get; set; }
 
     public string? Modelo { get; set; }

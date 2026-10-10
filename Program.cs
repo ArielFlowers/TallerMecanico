@@ -13,6 +13,7 @@ using TallerMecanico.Infraestructura.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using TallerMecanico.Infraestructura.Setup;
+using TallerMecanico.Infraestructura.Session;
 
 var builder =
     WebApplication.CreateBuilder(args);
@@ -62,6 +63,7 @@ builder.Services.AddRazorPages(options =>
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
 
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(

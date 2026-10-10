@@ -100,6 +100,8 @@ public class ClienteService
         {
             _clientePort.Add(
                 cliente);
+
+            normalizado.Id = cliente.Id;
         }
         catch (MySqlException exception)
             when (exception.Number == 1062)

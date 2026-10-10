@@ -3,18 +3,22 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
 using TallerMecanico.ViewModels;
+using TallerMecanico.Application.Ports;
 
 namespace TallerMecanico.Pages.Clientes;
 
 public class IndexModel : PageModel
 {
     private readonly ClienteService _clienteService;
+    private readonly IBorradorVehiculoPort _borradores;
 
     public IndexModel(
-        ClienteService clienteService)
+        ClienteService clienteService,
+        IBorradorVehiculoPort borradores)
     {
         _clienteService =
             clienteService;
+        _borradores = borradores;
     }
 
     [BindProperty]
@@ -26,6 +30,9 @@ public class IndexModel : PageModel
 
     [BindProperty(SupportsGet = true)]
     public string? TerminoBusqueda { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public Guid? BorradorVehiculoId { get; set; }
 
     public IReadOnlyList<Cliente> Clientes { get; private set; } =
         [];
@@ -40,10 +47,16 @@ public class IndexModel : PageModel
     {
         CargarMensajes();
         CargarClientes();
+        if (BorradorVehiculoId.HasValue && _borradores.Obtener(BorradorVehiculoId.Value) is not null)
+            FormularioActivo = "crear";
     }
 
     public IActionResult OnPostCrear()
     {
+        if (BorradorVehiculoId.HasValue && _borradores.Obtener(BorradorVehiculoId.Value) is null)
+        {
+            ModelState.AddModelError(string.Empty, "El borrador del vehículo venció. Regresa a Vehículos para continuar.");
+        }
         if (!ModelState.IsValid)
         {
             FormularioActivo =
@@ -78,6 +91,12 @@ public class IndexModel : PageModel
 
         TempData["ClienteExito"] =
             "Cliente registrado correctamente.";
+
+        if (BorradorVehiculoId.HasValue &&
+            _borradores.AsignarCliente(BorradorVehiculoId.Value, ClienteInput.Id))
+        {
+            return RedirectToPage("/Vehiculos/Index", "Retomar", new { borradorId = BorradorVehiculoId.Value });
+        }
 
         return RedirectToPage(
             new

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
 using TallerMecanico.ViewModels;
+using TallerMecanico.Application.Ports;
 
 namespace TallerMecanico.Pages.Vehiculos;
 
@@ -10,16 +11,19 @@ public class IndexModel : PageModel
 {
     private readonly VehiculoService _vehiculoService;
     private readonly ClienteService _clienteService;
+    private readonly IBorradorVehiculoPort _borradores;
 
     public IndexModel(
         VehiculoService vehiculoService,
-        ClienteService clienteService)
+        ClienteService clienteService,
+        IBorradorVehiculoPort borradores)
     {
         _vehiculoService =
             vehiculoService;
 
         _clienteService =
             clienteService;
+        _borradores = borradores;
     }
 
     [BindProperty]
@@ -38,6 +42,11 @@ public class IndexModel : PageModel
     public string? ModalAbierto { get; private set; }
 
     public string? ModeloAnterior { get; private set; }
+
+    [BindProperty]
+    public Guid? BorradorId { get; set; }
+
+    public string? MensajeError => TempData["VehiculoError"] as string;
 
     public void OnGet()
     {
@@ -61,6 +70,29 @@ public class IndexModel : PageModel
     {
         return GuardarFormulario(
             actualizar: true);
+    }
+
+    public IActionResult OnPostRegistrarCliente(string modal)
+    {
+        if (modal is not ("crear" or "editar")) return BadRequest();
+        if (BorradorId.HasValue) _borradores.Eliminar(BorradorId.Value);
+        Guid borradorId = _borradores.Guardar(Formulario, modal, Buscar);
+        return RedirectToPage("/Clientes/Index", new { BorradorVehiculoId = borradorId });
+    }
+
+    public IActionResult OnGetRetomar(Guid borradorId)
+    {
+        BorradorVehiculo? borrador = _borradores.Obtener(borradorId);
+        if (borrador is null)
+        {
+            TempData["VehiculoError"] = "El borrador del vehículo venció. Abre un formulario nuevo para continuar.";
+            return RedirectToPage();
+        }
+
+        Formulario = borrador.Formulario;
+        Buscar = borrador.Buscar;
+        BorradorId = borradorId;
+        return MostrarModal(borrador.Modal);
     }
 
     public IActionResult OnPostDelete(
@@ -91,9 +123,7 @@ public class IndexModel : PageModel
             return "Cliente no disponible";
         }
 
-        return $"{cliente.Nombres} " +
-               $"{cliente.PrimerApellido} " +
-               $"{cliente.SegundoApellido}";
+        return $"{cliente.PrimerApellido} {cliente.SegundoApellido} {cliente.Nombres}".Trim();
     }
 
     public string ObtenerCiCliente(
@@ -165,6 +195,7 @@ public class IndexModel : PageModel
 
         if (ModelState.IsValid)
         {
+            if (BorradorId.HasValue) _borradores.Eliminar(BorradorId.Value);
             return RedirectToPage();
         }
 
@@ -205,7 +236,14 @@ public class IndexModel : PageModel
     private void CargarClientes()
     {
         Clientes =
-            _clienteService.Obtener();
+            _clienteService.Obtener()
+                .OrderBy(cliente => cliente.PrimerApellido, CatalogoVehiculos.ComparadorAlfabetico)
+                .ThenBy(cliente => cliente.SegundoApellido, CatalogoVehiculos.ComparadorAlfabetico)
+                .ThenBy(cliente => cliente.Nombres, CatalogoVehiculos.ComparadorAlfabetico)
+                .ThenBy(cliente => cliente.Ci)
+                .ThenBy(cliente => cliente.ComplementoCi)
+                .ThenBy(cliente => cliente.Id)
+                .ToArray();
     }
 
     private void CargarVehiculos()

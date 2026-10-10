@@ -1,9 +1,24 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 
 namespace TallerMecanico.Models;
 
 public static class CatalogoVehiculos
 {
+    public static StringComparer ComparadorAlfabetico { get; } =
+        StringComparer.Create(CultureInfo.GetCultureInfo("es-BO"), ignoreCase: true);
+
+    public static IEnumerable<string> MarcasOrdenadas =>
+        Marcas.Keys.OrderBy(marca => marca, ComparadorAlfabetico);
+
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> CatalogoOrdenado =>
+        MarcasOrdenadas.ToDictionary(marca => marca, ObtenerModelosOrdenados);
+
+    public static IReadOnlyList<string> ObtenerModelosOrdenados(string marca) =>
+        Marcas.TryGetValue(marca, out var modelos)
+            ? modelos.OrderBy(modelo => modelo, ComparadorAlfabetico).ToArray()
+            : [];
+
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> Marcas { get; } =
         new ReadOnlyDictionary<string, IReadOnlyList<string>>(
             new Dictionary<string, IReadOnlyList<string>>

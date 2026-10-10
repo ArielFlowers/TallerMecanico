@@ -1,6 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
     const catalogo = JSON.parse(document.getElementById("catalogo-vehiculos").textContent);
 
+    const validarPlaca = formulario => {
+        const input = formulario.querySelector("[data-placa-input]");
+        const extranjera = formulario.querySelector("[data-placa-extranjera]").checked;
+        const aviso = formulario.querySelector("[data-placa-aviso]");
+        input.pattern = extranjera ? input.dataset.patronExtranjero : input.dataset.patronNacional;
+        input.maxLength = extranjera ? 15 : 7;
+        input.placeholder = extranjera ? "Ej. AB123CD" : "Ej. 123ABC o 1234ABC";
+        input.value = input.value.replace(/\s/g, "").toUpperCase();
+        if (extranjera) input.value = input.value.replace(/-/g, "");
+        const ayuda = extranjera ? input.dataset.mensajeExtranjero : input.dataset.mensajeNacional;
+        const invalido = input.value.length > 0 && !new RegExp(input.pattern).test(input.value);
+        const mensaje = invalido ? ayuda : "";
+        formulario.querySelector("[data-placa-ayuda]").textContent = ayuda;
+        input.setCustomValidity(mensaje);
+        aviso.textContent = mensaje;
+        aviso.classList.toggle("is-visible", invalido);
+        input.classList.toggle("input-error", invalido);
+    };
+
     const cargarModelos = (formulario, seleccionado = "") => {
         const marca = formulario.querySelector("[data-marca-input]").value;
         const modelo = formulario.querySelector("[data-modelo-input]");
@@ -24,11 +43,15 @@ document.addEventListener("DOMContentLoaded", () => {
             ["id", "placa", "marca", "kilometraje", "observaciones"].forEach(campo => {
                 document.getElementById(`editar-${campo}`).value = boton.dataset[campo] ?? "";
             });
+            document.getElementById("editar-cliente").value = boton.dataset.clienteId ?? "";
+            document.getElementById("editar-extranjera").checked = boton.dataset.extranjera === "true";
+            formulario.querySelector('[name="BorradorId"]').value = "";
             cargarModelos(formulario, boton.dataset.modelo);
             const anterior = document.getElementById("editar-modelo-anterior");
             anterior.hidden = Boolean(boton.dataset.marca);
             anterior.querySelector("span").textContent = boton.dataset.modelo;
             limpiarErrores(formulario);
+            validarPlaca(formulario);
         });
     });
 
@@ -46,23 +69,19 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector('[data-modal-abrir="modal-crear"]').addEventListener("click", () => {
         const formulario = document.querySelector("#modal-crear form");
         formulario.querySelectorAll("input:not([type=hidden]), textarea, select").forEach(campo => {
-            campo.value = "";
+            if (campo.type === "checkbox") campo.checked = false;
+            else campo.value = "";
         });
+        formulario.querySelector('[name="Formulario.Id"]').value = "0";
+        formulario.querySelector('[name="BorradorId"]').value = "";
         cargarModelos(formulario);
         limpiarErrores(formulario);
+        validarPlaca(formulario);
     });
 
     document.querySelectorAll("[data-placa-input]").forEach(input => {
-        const aviso = input.parentElement.querySelector("[data-placa-aviso]");
-        const formato = new RegExp(input.pattern);
-        input.addEventListener("input", () => {
-            input.value = input.value.replace(/\s/g, "").toUpperCase();
-            const invalido = input.value.length > 0 && !formato.test(input.value);
-            const mensaje = invalido ? input.dataset.placaMensaje : "";
-            input.setCustomValidity(mensaje);
-            aviso.textContent = mensaje;
-            aviso.classList.toggle("is-visible", invalido);
-            input.classList.toggle("input-error", invalido);
-        });
+        input.addEventListener("input", () => validarPlaca(input.form));
+        input.form.querySelector("[data-placa-extranjera]")
+            .addEventListener("change", () => validarPlaca(input.form));
     });
 });

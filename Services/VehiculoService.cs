@@ -39,6 +39,8 @@ public class VehiculoService
     {
         return _vehiculoPort
             .GetAll()
+            .OrderBy(vehiculo => vehiculo.Placa, CatalogoVehiculos.ComparadorAlfabetico)
+            .ThenBy(vehiculo => vehiculo.Id)
             .ToList();
     }
 
@@ -48,6 +50,8 @@ public class VehiculoService
         return _vehiculoPort
             .Search(
                 filtro.Trim())
+            .OrderBy(vehiculo => vehiculo.Placa, CatalogoVehiculos.ComparadorAlfabetico)
+            .ThenBy(vehiculo => vehiculo.Id)
             .ToList();
     }
 
@@ -230,6 +234,8 @@ public class VehiculoService
             Placa =
                 formulario.Placa ??
                 string.Empty,
+
+            EsPlacaExtranjera = formulario.EsPlacaExtranjera,
 
             Marca =
                 formulario.Marca ??
