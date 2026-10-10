@@ -37,6 +37,7 @@ public class DatabaseInitializer
         EnsureVehiculosPlacaSchema(connection);
 
         CreateProductosTable(connection);
+        ExecuteCommand(connection, OrdenSchema.CrearTablas);
         CreateUsuariosTable(connection);
         CreateAuditoriaTable(connection);
     }

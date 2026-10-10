@@ -404,6 +404,36 @@ public class ProductoRepository :
             command.ExecuteScalar());
     }
 
+    // Estas sobrecargas no abren conexiones: participan en la transacción de la orden.
+    public Producto? ObtenerParaActualizar(int id, DbConnection conexion, DbTransaction transaccion)
+    {
+        using DbCommand comando = RepositorioOrdenSql.CrearComandoCompartido(conexion, transaccion, """
+            SELECT Id, Codigo, Nombre, Precio, Stock, StockMinimo, CreadoPor, FechaCreacion
+            FROM Productos WHERE Id = @Id FOR UPDATE;
+            """, ("@Id", id));
+        using DbDataReader lector = comando.ExecuteReader();
+        return lector.Read() ? MapProducto(lector) : null;
+    }
+
+    public bool Descontar(int productoId, int cantidad, DbConnection conexion, DbTransaction transaccion)
+    {
+        if (cantidad <= 0) return false;
+        using DbCommand comando = RepositorioOrdenSql.CrearComandoCompartido(conexion, transaccion, """
+            UPDATE Productos SET Stock = Stock - @Cantidad WHERE Id = @Id AND Stock >= @Cantidad;
+            """, ("@Cantidad", cantidad), ("@Id", productoId));
+        return comando.ExecuteNonQuery() == 1;
+    }
+
+    public bool Restituir(int productoId, int cantidad, DbConnection conexion, DbTransaction transaccion)
+    {
+        if (cantidad <= 0) return false;
+        using DbCommand comando = RepositorioOrdenSql.CrearComandoCompartido(conexion, transaccion, """
+            UPDATE Productos SET Stock = Stock + @Cantidad
+            WHERE Id = @Id AND Stock <= 2147483647 - @Cantidad;
+            """, ("@Cantidad", cantidad), ("@Id", productoId));
+        return comando.ExecuteNonQuery() == 1;
+    }
+
     private static void AddParameters(
         DbCommand command,
         Producto producto,

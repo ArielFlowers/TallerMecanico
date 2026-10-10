@@ -62,11 +62,15 @@ public class VehiculoService
             id);
     }
 
-    public void Delete(
+    public string? Delete(
         int id)
     {
-        _vehiculoPort.Delete(
-            id);
+        if (id <= 0 || _vehiculoPort.GetById(id) is null)
+            return "El vehículo seleccionado ya no existe.";
+        try { _vehiculoPort.Delete(id); }
+        catch (MySqlException error) when (error.Number == 1451)
+        { return "No se puede eliminar el vehículo porque tiene órdenes asociadas."; }
+        return null;
     }
 
     public bool ExistsPorCliente(

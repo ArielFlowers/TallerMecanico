@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using TallerMecanico.Infraestructura.Setup;
 using TallerMecanico.Infraestructura.Session;
+using TallerMecanico.Application;
 
 var builder =
     WebApplication.CreateBuilder(args);
@@ -51,6 +52,8 @@ builder.Services.AddRazorPages(options =>
         "/Vehiculos",
         "PersonalAutorizado");
 
+    options.Conventions.AuthorizeFolder("/Ordenes", "PersonalAutorizado");
+
     options.Conventions.AuthorizeFolder(
         "/Productos",
         "PersonalAutorizado");
@@ -64,6 +67,12 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ITokenOrdenPort, TokenOrdenSesion>();
+builder.Services.AddScoped<IUnidadTrabajoOrdenPort, MySqlUnidadTrabajoOrden>();
+builder.Services.AddScoped<ValidacionOrdenes>();
+builder.Services.AddScoped<OrdenServicioService>();
+builder.Services.AddScoped<OrdenServicioFacade>();
 
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(

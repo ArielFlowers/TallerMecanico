@@ -98,10 +98,10 @@ public class IndexModel : PageModel
     public IActionResult OnPostDelete(
         int id)
     {
-        _vehiculoService.Delete(
-            id);
+        string? error = _vehiculoService.Delete(id);
+        if (error is not null) TempData["VehiculoError"] = error;
 
-        return RedirectToPage();
+        return RedirectToPage(new { Buscar });
     }
 
     public string ObtenerNombreCliente(
