@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
@@ -68,7 +68,7 @@ public class EditModel : PageModel
 
         MensajeExito = "Servicio actualizado correctamente.";
 
-        return RedirectToPage("./Control");
+        return RedirectToPage("./Index");
     }
 
     private void AgregarErroresDeFormato()

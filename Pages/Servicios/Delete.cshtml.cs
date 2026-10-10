@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
@@ -48,6 +48,6 @@ public class DeleteModel : PageModel
             MensajeError = ex.Message;
         }
 
-        return RedirectToPage("./Control");
+        return RedirectToPage("./Index");
     }
 }

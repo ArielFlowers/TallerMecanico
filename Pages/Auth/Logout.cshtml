@@ -1,0 +1,20 @@
+﻿@page
+@model TallerMecanico.Pages.Auth.LogoutModel
+
+@{
+    ViewData["Title"] = "Cerrar sesión";
+}
+
+<h1>Cerrar sesión</h1>
+
+<p>¿Deseas cerrar tu sesión actual?</p>
+
+<form method="post">
+    <button type="submit" class="btn btn-danger">
+        Cerrar sesión
+    </button>
+</form>
+
+<a asp-page="/Index">
+    Cancelar
+</a>

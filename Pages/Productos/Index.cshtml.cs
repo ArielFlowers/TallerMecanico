@@ -52,6 +52,10 @@ public class IndexModel : PageModel
 
     public IActionResult OnPostCrear()
     {
+        if (!User.IsInRole("Administrador"))
+        {
+            return Forbid();
+        }
         if (!ModelState.IsValid)
         {
             FormularioActivo =
@@ -96,8 +100,14 @@ public class IndexModel : PageModel
 
     public IActionResult OnPostActualizar()
     {
+        if (!User.IsInRole("Administrador"))
+        {
+            return Forbid();
+        }
+
         ProductoInput.Id =
             ProductoId;
+
 
         if (!ModelState.IsValid)
         {
@@ -146,6 +156,11 @@ public class IndexModel : PageModel
 
     public IActionResult OnPostEliminar()
     {
+        if (!User.IsInRole("Administrador"))
+        {
+            return Forbid();
+        }
+
         string? error =
             _productoService.Eliminar(
                 ProductoId);

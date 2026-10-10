@@ -1,0 +1,161 @@
+@page
+@model TallerMecanico.Pages.Auth.VerificarEmailModel
+
+@{
+    ViewData["Title"] = "Verificar correo - AutoTaller Pro";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+
+    <title>Verificar correo | AutoTaller Pro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "Segoe UI", sans-serif;
+            background: #0d0a12;
+            color: #f5f3ff;
+        }
+
+        .verification-card {
+            width: 100%;
+            max-width: 520px;
+            padding: 46px;
+            text-align: center;
+            background: #171120;
+            border: 1px solid #342643;
+            border-radius: 20px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+        }
+
+        .verification-icon {
+            width: 74px;
+            height: 74px;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #7c3aed;
+            border-radius: 20px;
+            font-size: 34px;
+        }
+
+        h1 {
+            margin: 0 0 18px;
+            font-size: 28px;
+        }
+
+        p {
+            color: #b7a8c8;
+            line-height: 1.7;
+        }
+
+        .message {
+            margin: 20px 0;
+            padding: 16px;
+            background: #291b3e;
+            border: 1px solid #63418f;
+            border-radius: 10px;
+            color: #e9ddff;
+        }
+
+        .message.success {
+            background: #103126;
+            border-color: #287752;
+            color: #b8f7d5;
+        }
+
+        .confirm-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 25px;
+            border: none;
+            border-radius: 10px;
+            background: #7c3aed;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirm-button:hover {
+            background: #6d28d9;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 28px;
+            color: #b99bff;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @@media (max-width: 600px) {
+            .verification-card {
+                padding: 28px 22px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="verification-card">
+        <div class="verification-icon" aria-hidden="true">
+            &#9993;
+        </div>
+
+        <h1>Verificación de correo</h1>
+
+        @if (!string.IsNullOrEmpty(Model.Mensaje))
+        {
+            <div class="message @(Model.Confirmado ? "success" : "")"
+                 role="status">
+                @Model.Mensaje
+            </div>
+        }
+
+        @if (Model.PuedeConfirmar)
+        {
+            <p>
+                Confirma tu dirección de correo para continuar
+                con tu solicitud de registro en AutoTaller Pro.
+            </p>
+
+            <form method="post">
+                <input type="hidden" asp-for="Token" />
+
+                <button type="submit" class="confirm-button">
+                    Confirmar mi correo
+                </button>
+            </form>
+        }
+
+        <a class="back-link" asp-page="/Auth/Login">
+            Volver al inicio de sesión
+        </a>
+    </main>
+</body>
+</html>

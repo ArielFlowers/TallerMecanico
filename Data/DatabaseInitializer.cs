@@ -36,6 +36,8 @@ public class DatabaseInitializer
         EnsureVehiculosClienteSchema(connection);
 
         CreateProductosTable(connection);
+        CreateUsuariosTable(connection);
+        CreateAuditoriaTable(connection);
     }
 
     // =====================================================
@@ -1005,6 +1007,73 @@ public class DatabaseInitializer
         ExecuteCommand(
             connection,
             query);
+    }
+
+
+    // =====================================================
+    // USUARIOS - AUTENTICACIÓN Y AUDITORÍA
+    // =====================================================
+
+    private static void CreateUsuariosTable(
+        DbConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS Usuarios
+            (
+                Id INT NOT NULL AUTO_INCREMENT,
+                Username VARCHAR(100) NOT NULL,
+                PasswordHash VARCHAR(255) NOT NULL,
+                Rol ENUM('Administrador', 'Recepcionista')
+                    NOT NULL,
+                Activo BOOLEAN NOT NULL DEFAULT TRUE,
+                CreadoPor VARCHAR(50)
+                    NOT NULL DEFAULT 'sistema',
+                FechaCreacion DATETIME
+                    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                ModificadoPor VARCHAR(50) NULL,
+                FechaModificacion DATETIME NULL,
+
+                CONSTRAINT PK_Usuarios
+                    PRIMARY KEY (Id),
+
+                CONSTRAINT UQ_Usuarios_Username
+                    UNIQUE (Username)
+            ) ENGINE=InnoDB
+              DEFAULT CHARSET=utf8mb4;
+            """;
+
+        ExecuteCommand(connection, query);
+    }
+
+
+    // =====================================================
+    // AUDITORIA
+    // =====================================================
+
+    private static void CreateAuditoriaTable(
+        DbConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS Auditoria
+            (
+                Id BIGINT NOT NULL AUTO_INCREMENT,
+                UsuarioId INT NULL,
+                Username VARCHAR(100) NULL,
+                Accion VARCHAR(60) NOT NULL,
+                Entidad VARCHAR(60) NOT NULL,
+                EntidadId VARCHAR(100) NULL,
+                Fecha DATETIME(6) NOT NULL,
+
+                CONSTRAINT PK_Auditoria
+                    PRIMARY KEY (Id),
+
+                INDEX IX_Auditoria_Fecha (Fecha),
+                INDEX IX_Auditoria_UsuarioId (UsuarioId)
+            ) ENGINE=InnoDB
+              DEFAULT CHARSET=utf8mb4;
+            """;
+
+        ExecuteCommand(connection, query);
     }
 
     // =====================================================

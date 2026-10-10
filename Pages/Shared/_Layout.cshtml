@@ -1,7 +1,14 @@
-﻿<!DOCTYPE html>
+@{
+    bool esAdministrador = User.IsInRole("Administrador");
+    bool esRecepcionista = User.IsInRole("Recepcionista");
+    string nombreUsuario = User.Identity?.Name ?? "Usuario";
+}
+
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0" />
 
@@ -24,6 +31,8 @@
 
         <aside class="sidebar">
 
+            <!-- MARCA -->
+
             <div class="brand">
 
                 <div class="brand-icon">
@@ -44,7 +53,6 @@
 
             </div>
 
-
             <nav class="sidebar-menu">
 
                 <!-- INICIO -->
@@ -63,66 +71,69 @@
                 </a>
 
 
-                <!-- PERSONAL -->
+                <!-- PERSONAL: SOLO ADMINISTRADOR -->
+                @if (esAdministrador)
+                {
+                    <div class="menu-group">
 
-                <div class="menu-group">
+                        <button class="menu-item menu-toggle"
+                                type="button"
+                                aria-expanded="false"
+                                aria-controls="personal-menu">
 
-                    <button class="menu-item menu-toggle"
-                            type="button"
-                            aria-expanded="false"
-                            aria-controls="personal-menu">
-
-                        <span class="menu-icon">
-                            👤
-                        </span>
-
-                        <span>
-                            Personal
-                        </span>
-
-                        <span class="menu-chevron">
-                            ›
-                        </span>
-
-                    </button>
-
-
-                    <div class="submenu"
-                         id="personal-menu">
-
-                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Mecanicos") ? "active" : "")"
-                           asp-page="/Mecanicos/Index">
-
-                            <span>
-                                Mecánicos
+                            <span class="menu-icon">
+                                👤
                             </span>
 
-                        </a>
-
-                        <a class="submenu-item"
-                           href="#">
-
                             <span>
-                                Usuarios
+                                Personal
                             </span>
 
-                        </a>
-
-                        <a class="submenu-item"
-                           href="#">
-
-                            <span>
-                                Roles
+                            <span class="menu-chevron">
+                                ›
                             </span>
 
-                        </a>
+                        </button>
+
+                        <div class="submenu"
+                             id="personal-menu">
+
+                            <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Mecanicos") ? "active" : "")"
+                               asp-page="/Mecanicos/Index">
+
+                                <span>
+                                    Mecánicos
+                                </span>
+
+                            </a>
+
+                            <!-- Pendiente: Gestión de usuarios -->
+                            <a class="submenu-item"
+                               href="#">
+
+                                <span>
+                                    Usuarios
+                                </span>
+
+                            </a>
+
+                            <!-- Pendiente: Gestión de roles -->
+                            <a class="submenu-item"
+                               href="#">
+
+                                <span>
+                                    Roles
+                                </span>
+
+                            </a>
+
+                        </div>
 
                     </div>
+                }
 
-                </div>
 
-
-                <!-- CLIENTES Y VEHÍCULOS -->
+                <!-- CLIENTES Y VEHÍCULOS: AMBOS ROLES -->
 
                 <div class="menu-group">
 
@@ -144,7 +155,6 @@
                         </span>
 
                     </button>
-
 
                     <div class="submenu"
                          id="clientes-menu">
@@ -172,7 +182,7 @@
                 </div>
 
 
-                <!-- OPERACIONES DEL TALLER -->
+                <!-- OPERACIONES DEL TALLER: AMBOS ROLES -->
 
                 <div class="menu-group">
 
@@ -195,18 +205,24 @@
 
                     </button>
 
-
                     <div class="submenu"
                          id="taller-menu">
 
-                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Servicios") ? "active" : "")"
-                           asp-page="/Servicios/Index">
+                        <!-- SERVICIOS: SOLO ADMINISTRADOR -->
+                        @if (esAdministrador)
+                        {
+                            <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Servicios") ? "active" : "")"
+                               asp-page="/Servicios/Index">
 
-                            <span>
-                                Servicios
-                            </span>
+                                <span>
+                                    Servicios
+                                </span>
 
-                        </a>
+                            </a>
+                        }
+
+                        <!-- ÓRDENES: AMBOS ROLES -->
+                        <!-- Enlace pendiente de implementar -->
 
                         <a class="submenu-item"
                            href="#">
@@ -217,21 +233,25 @@
 
                         </a>
 
-                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Historial") ? "active" : "")"
-                           asp-page="/Historial/Index">
+                        <!-- HISTORIAL: SOLO ADMINISTRADOR -->
+                        @if (esAdministrador)
+                        {
+                            <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Historial") ? "active" : "")"
+                               asp-page="/Historial/Index">
 
-                            <span>
-                                Historial
-                            </span>
+                                <span>
+                                    Historial
+                                </span>
 
-                        </a>
+                            </a>
+                        }
 
                     </div>
 
                 </div>
 
 
-                <!-- INVENTARIO -->
+                <!-- INVENTARIO: AMBOS ROLES -->
 
                 <div class="menu-group">
 
@@ -254,7 +274,6 @@
 
                     </button>
 
-
                     <div class="submenu"
                          id="inventario-menu">
 
@@ -266,6 +285,8 @@
                             </span>
 
                         </a>
+
+                        <!-- Enlace pendiente de implementar -->
 
                         <a class="submenu-item"
                            href="#">
@@ -281,84 +302,122 @@
                 </div>
 
 
-                <!-- ADMINISTRACIÓN -->
+                <!-- ADMINISTRACIÓN: SOLO ADMINISTRADOR -->
+                @if (esAdministrador)
+                {
+                    <div class="menu-group">
 
-                <div class="menu-group">
+                        <button class="menu-item menu-toggle"
+                                type="button"
+                                aria-expanded="false"
+                                aria-controls="administracion-menu">
 
-                    <button class="menu-item menu-toggle"
-                            type="button"
-                            aria-expanded="false"
-                            aria-controls="administracion-menu">
-
-                        <span class="menu-icon">
-                            💼
-                        </span>
-
-                        <span>
-                            Administración
-                        </span>
-
-                        <span class="menu-chevron">
-                            ›
-                        </span>
-
-                    </button>
-
-
-                    <div class="submenu"
-                         id="administracion-menu">
-
-                        <a class="submenu-item"
-                           href="#">
-
-                            <span>
-                                Facturación
+                            <span class="menu-icon">
+                                💼
                             </span>
 
-                        </a>
-
-                        <a class="submenu-item"
-                           href="#">
-
                             <span>
-                                Pagos
+                                Administración
                             </span>
 
-                        </a>
-
-                        <a class="submenu-item"
-                           href="#">
-
-                            <span>
-                                Reportes
+                            <span class="menu-chevron">
+                                ›
                             </span>
 
-                        </a>
+                        </button>
+
+                        <div class="submenu"
+                             id="administracion-menu">
+                            <a class="submenu-item"
+                               asp-page="/Administracion/Solicitudes">
+                                <span>
+                                    Aprobación de empleados
+                                </span>
+                            </a>
+
+                            <!-- Enlaces pendientes de implementar -->
+
+                            <a class="submenu-item"
+                               href="#">
+
+                                <span>
+                                    Facturación
+                                </span>
+
+                            </a>
+
+                            <a class="submenu-item"
+                               href="#">
+
+                                <span>
+                                    Pagos
+                                </span>
+
+                            </a>
+
+                            <a class="submenu-item"
+                               href="#">
+
+                                <span>
+                                    Reportes
+                                </span>
+
+                            </a>
+
+                        </div>
 
                     </div>
-
-                </div>
+                }
 
             </nav>
 
 
+            <!-- OPCIONES INFERIORES -->
+
             <div class="sidebar-bottom">
 
-                <a class="menu-item"
-                   href="#">
+                <!-- CONFIGURACIÓN: SOLO ADMINISTRADOR -->
+                @if (esAdministrador)
+                {
+                    <a class="menu-item"
+                       href="#">
 
-                    <span class="menu-icon">
-                        ⚙
-                    </span>
+                        <span class="menu-icon">
+                            ⚙
+                        </span>
 
-                    <span>
-                        Configuración
-                    </span>
+                        <span>
+                            Configuración
+                        </span>
 
-                </a>
+                    </a>
+                }
+
+                <!-- LOGOUT: AMBOS ROLES -->
+
+                <form method="post"
+                      asp-page="/Auth/Logout">
+
+                    <button type="submit"
+                            class="menu-item"
+                            style="width: 100%; text-align: left; border: none; background: transparent; color: inherit; cursor: pointer;">
+
+                        <span class="menu-icon">
+                            ↪
+                        </span>
+
+                        <span>
+                            Cerrar sesión
+                        </span>
+
+                    </button>
+
+                </form>
 
             </div>
 
+
+            <!-- PIE DEL SIDEBAR -->
 
             <div class="sidebar-footer">
 
@@ -375,6 +434,8 @@
         </aside>
 
 
+        <!-- CONTENIDO PRINCIPAL -->
+
         <main class="main-content">
 
             <header class="topbar">
@@ -385,6 +446,8 @@
                     </span>
                 </div>
 
+                <!-- USUARIO AUTENTICADO -->
+
                 <div class="topbar-user">
 
                     <span class="user-icon">
@@ -392,7 +455,8 @@
                     </span>
 
                     <span>
-                        Administrador
+                        @nombreUsuario
+                        (@(esAdministrador ? "Administrador" : esRecepcionista ? "Recepcionista" : "Usuario"))
                     </span>
 
                 </div>
