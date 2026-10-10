@@ -29,6 +29,15 @@ La prueba inicia un servidor HTTPS temporal con certificado propio, crea un usua
 
 `tests/vehiculos_ui.cjs` lo ejecuta la prueba xUnit con su configuración temporal; no inicia una aplicación SQLite ni debe apuntarse a una base del taller.
 
+## Órdenes de la tarjeta 4
+
+```powershell
+# Configura TALLER_TEST_MYSQL con el servidor de pruebas.
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~Ordenes'
+```
+
+Comprueban creación y anulación atómicas, cantidades agrupadas, stock, auditoría, rollback después de cambios reales, reenvíos simultáneos, competencia por stock, anulaciones concurrentes, precios manipulados, claves foráneas y conservación del trigger de historial. Consultar `docs/TARJETA4_ORDENES_EC2.md` para los contratos de integración con la tarjeta 3.
+
 ## Pruebas existentes de autenticación
 
 Algunas clases anteriores terminadas en `MySqlTests` utilizan User Secrets y datos de usuarios específicos. Revisar su configuración antes de ejecutarlas. `EnvioGmailRealTests` solo envía correo cuando se autoriza explícitamente mediante su variable de entorno; no forma parte de esta verificación.

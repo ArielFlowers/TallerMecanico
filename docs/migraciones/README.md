@@ -28,6 +28,11 @@ La migración `003_vehiculos_placas_extranjeras.sql` es idempotente: amplía
 las placas y añade el toggle persistido. `DatabaseInitializer` también
 aplica estos cambios automáticamente al iniciar la aplicación.
 
+La migración `004_ordenes_transaccionales.sql` crea `Ordenes` y
+`DetalleOrdenes` sin eliminar datos y se puede ejecutar nuevamente.
+Requiere las tablas de clientes, vehículos, mecánicos y productos.
+`DatabaseInitializer` también crea estas tablas automáticamente.
+
 ## Base de datos existente
 
 Si ya se aplicaron las migraciones 001 y 002, no ejecutarlas nuevamente.
