@@ -24,6 +24,10 @@ registro y el control del reenvio.
 
 Los scripts actuales no son idempotentes: deben aplicarse una sola vez.
 
+La migración `003_vehiculos_placas_extranjeras.sql` es idempotente: amplía
+las placas y añade el toggle persistido. `DatabaseInitializer` también
+aplica estos cambios automáticamente al iniciar la aplicación.
+
 ## Base de datos existente
 
 Si ya se aplicaron las migraciones 001 y 002, no ejecutarlas nuevamente.

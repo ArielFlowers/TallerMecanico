@@ -1,86 +1,102 @@
-// Requires Playwright and Microsoft Edge. Run after dotnet build.
+// Lo inicia VehiculosNavegadorTests sobre una base MySQL temporal y HTTPS.
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
-const { spawn } = require("node:child_process");
-const { once } = require("node:events");
-const { mkdtempSync, rmSync } = require("node:fs");
-const { tmpdir } = require("node:os");
-const { join, resolve } = require("node:path");
 const assert = require("node:assert/strict");
-const net = require("node:net");
 
 (async () => {
-    const directory = mkdtempSync(join(tmpdir(), "vehiculos-ui-"));
-    const socket = net.createServer();
-    socket.listen(0, "127.0.0.1");
-    await once(socket, "listening");
-    const base = `http://127.0.0.1:${socket.address().port}`;
-    await new Promise(resolve => socket.close(resolve));
-    const root = resolve(__dirname, "..");
-    const server = spawn("dotnet", [join(root, "bin/Debug/net10.0/TallerMecanico.dll")], {
-        cwd: root, windowsHide: true, stdio: "ignore",
-        env: { ...process.env, ASPNETCORE_ENVIRONMENT: "Development", ASPNETCORE_URLS: base,
-            ConnectionStrings__DefaultConnection: `Data Source=${join(directory, "test.db")}` }
-    });
-    let browser;
+    assert(process.env.TALLER_UI_DATABASE?.startsWith("autotaller_test_"), "Se requiere una base aislada de pruebas.");
+    const base = process.env.TALLER_UI_URL;
+    assert(base && process.env.TALLER_UI_PASSWORD, "Falta la configuración del servidor de pruebas.");
+    const browser = await chromium.launch({ channel: "msedge", headless: true });
     try {
-        for (let attempt = 0; attempt < 100; attempt++) {
-            try {
-                if ((await fetch(base + "/Vehiculos")).ok) break;
-            } catch {}
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        browser = await chromium.launch({ channel: "msedge", headless: true });
-        const page = await browser.newPage();
+        const page = await browser.newPage({ ignoreHTTPSErrors: true });
         const errors = [];
         page.on("pageerror", error => errors.push(error.message));
+        await page.goto(base + "/Auth/Login");
+        await page.locator('[name="Input.Username"]').fill("ec2_ui");
+        await page.locator('[name="Input.Password"]').fill(process.env.TALLER_UI_PASSWORD);
+        await page.locator('button[type="submit"]').click();
+        await page.waitForURL(url => !url.pathname.startsWith("/Auth"));
         await page.goto(base + "/Vehiculos");
         await page.locator('[data-modal-abrir="modal-crear"]').click();
         assert(await page.locator("#crear-modelo").isDisabled());
+        const opciones = id => page.locator(`${id} option:not([value=""])`).allTextContents();
+        const comprobarOrden = valores => assert.deepEqual(valores, [...valores].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" })));
+        comprobarOrden(await opciones("#crear-marca"));
+        comprobarOrden((await opciones("#crear-cliente")).map(texto => texto.trim()));
         await page.locator("#crear-marca").selectOption("Toyota");
+        comprobarOrden(await opciones("#crear-modelo"));
         await page.locator("#crear-modelo").selectOption("Hilux");
         await page.locator("#crear-marca").selectOption("Suzuki");
         assert.equal(await page.locator("#crear-modelo").inputValue(), "");
-        assert(!(await page.locator("#crear-modelo").textContent()).includes("Hilux"));
         await page.locator("#crear-marca").selectOption("Toyota");
         await page.locator("#crear-modelo").selectOption("Hilux");
-        await page.locator("#crear-placa").fill("12ABC");
+        await page.locator("#crear-placa").fill("AB123CD");
         assert(!(await page.locator("#crear-placa").evaluate(input => input.checkValidity())));
-        await page.locator("#crear-placa").fill("123abc");
-        assert.equal(await page.locator("#crear-placa").inputValue(), "123ABC");
+        await page.locator("#crear-extranjera").check();
+        await page.locator("#crear-placa").fill(" ab-12 cd ");
+        assert.equal(await page.locator("#crear-placa").inputValue(), "AB12CD");
         assert(await page.locator("#crear-placa").evaluate(input => input.checkValidity()));
-        await page.locator("#crear-placa").fill("1234abc");
-        assert.equal(await page.locator("#crear-placa").inputValue(), "1234ABC");
-        await page.locator('#modal-crear button[type="submit"]').click();
-        await page.waitForURL(base + "/Vehiculos");
-        await page.locator('[data-modal-abrir="modal-editar"]').waitFor();
-
-        // A duplicate must reopen the form with both dependent selections intact.
+        assert(!(await page.locator("#crear-cliente").evaluate(input => input.checkValidity())));
+        await page.locator("#crear-kilometraje").fill("45000");
+        await page.locator("#crear-observaciones").fill("Revisar motor");
+        await page.locator("#modal-crear").getByRole("button", { name: "Registrar cliente", exact: true }).click();
+        await page.waitForURL(url => url.pathname === "/Clientes");
+        await page.locator("#cliente-ci").fill("7654321");
+        await page.locator("#cliente-nombres").fill("Lucia");
+        await page.locator("#cliente-primer-apellido").fill("Mamani");
+        await page.locator("#cliente-segundo-apellido").fill("Perez");
+        await page.locator("#cliente-celular").fill("71234567");
+        await page.locator("#cliente-boton-crear").click();
+        await page.waitForURL(url => url.pathname === "/Vehiculos" && url.searchParams.get("handler") === "Retomar");
+        assert.equal(await page.locator("#crear-placa").inputValue(), "AB12CD");
+        assert(await page.locator("#crear-extranjera").isChecked());
+        assert.equal(await page.locator("#crear-modelo").inputValue(), "Hilux");
+        assert.equal(await page.locator("#crear-kilometraje").inputValue(), "45000");
+        assert.equal(await page.locator("#crear-observaciones").inputValue(), "Revisar motor");
+        assert.match(await page.locator("#crear-cliente option:checked").textContent(), /Mamani.*Lucia.*7654321/);
+        const clienteId = await page.locator("#crear-cliente").inputValue();
+        await page.locator("#modal-crear").getByRole("button", { name: "Guardar", exact: true }).click();
+        await page.waitForURL(url => url.pathname === "/Vehiculos" && !url.search);
+        await page.locator('[data-modal-abrir="modal-editar"][data-placa="AB12CD"]').waitFor();
         await page.locator('[data-modal-abrir="modal-crear"]').click();
-        await page.locator("#crear-placa").fill("1234ABC");
+        await page.locator("#crear-cliente").selectOption(clienteId);
         await page.locator("#crear-marca").selectOption("Toyota");
         await page.locator("#crear-modelo").selectOption("Corolla");
-        await page.locator('#modal-crear button[type="submit"]').click();
-        await page.locator("#modal-crear.is-open .service-validation").filter({ hasText: "ya está registrada" }).waitFor();
-        assert.equal(await page.locator("#crear-marca").inputValue(), "Toyota");
-        assert.equal(await page.locator("#crear-modelo").inputValue(), "Corolla");
+        await page.locator("#crear-placa").fill("321zxy");
+        await page.locator("#modal-crear").getByRole("button", { name: "Registrar cliente", exact: true }).click();
+        await page.waitForURL(url => url.pathname === "/Clientes");
+        await page.getByRole("link", { name: "Cancelar y volver al vehículo" }).click();
+        await page.waitForURL(url => url.pathname === "/Vehiculos");
+        assert.equal(await page.locator("#crear-placa").inputValue(), "321ZXY");
+        assert.equal(await page.locator("#crear-cliente").inputValue(), clienteId);
+        assert(!(await page.locator("#crear-extranjera").isChecked()));
+        await page.locator("#modal-crear").getByRole("button", { name: "Guardar", exact: true }).click();
+        await page.waitForURL(url => url.pathname === "/Vehiculos" && !url.search);
+        await page.locator('[data-modal-abrir="modal-crear"]').click();
+        await page.locator("#crear-extranjera").check();
+        await page.locator("#crear-placa").fill("AB12CD");
+        await page.locator("#crear-cliente").selectOption(clienteId);
+        await page.locator("#crear-marca").selectOption("Toyota");
+        await page.locator("#crear-modelo").selectOption("Hilux");
+        await page.locator("#modal-crear").getByRole("button", { name: "Guardar", exact: true }).click();
+        await page.locator("#modal-crear").getByText("Esta placa ya está registrada.").waitFor();
+        assert(await page.locator("#crear-extranjera").isChecked());
+        assert.equal(await page.locator("#crear-cliente").inputValue(), clienteId);
+        assert.equal(await page.locator("#crear-modelo").inputValue(), "Hilux");
         await page.locator("#modal-crear .modal-close").click();
-
-        await page.locator('[data-modal-abrir="modal-editar"]').click();
-        assert.equal(await page.locator("#editar-marca").inputValue(), "Toyota");
-        assert.equal(await page.locator("#editar-modelo").inputValue(), "Hilux");
-        assert(await page.locator("#editar-modelo-anterior").isHidden());
-        await page.locator("#editar-modelo").selectOption("Land Cruiser");
-        await page.locator('#modal-editar button[type="submit"]').click();
-        await page.locator(".vehiculos-table td").filter({ hasText: "Land Cruiser" }).waitFor();
-        await page.locator('[data-modal-abrir="modal-eliminar"]').click();
-        await page.locator('#modal-eliminar button[type="submit"]').click();
-        await page.getByText("No existen vehículos registrados").waitFor();
+        await page.locator('[data-modal-abrir="modal-editar"][data-placa="AB12CD"]').click();
+        assert(await page.locator("#editar-extranjera").isChecked());
+        await page.locator("#editar-extranjera").uncheck();
+        assert(!(await page.locator("#editar-placa").evaluate(input => input.checkValidity())));
+        await page.locator("#editar-placa").fill("1234DEF");
+        await page.locator("#modal-editar").getByRole("button", { name: "Guardar", exact: true }).click();
+        await page.waitForURL(url => url.pathname === "/Vehiculos" && !url.search);
+        const placas = await page.locator('[data-modal-abrir="modal-editar"]').evaluateAll(botones => botones.map(boton => boton.dataset.placa));
+        comprobarOrden(placas);
+        assert.equal(await page.locator('[data-modal-abrir="modal-editar"][data-placa="1234DEF"]').getAttribute("data-extranjera"), "false");
         assert.deepEqual(errors, []);
-        console.log("PASS: dependent dropdowns, plate feedback, validation recovery, edit and delete in Edge");
+        console.log("PASS: HTTPS/login, catálogo y clientes ordenados, toggle, cliente obligatorio, borrador, cancelar, duplicados y edición.");
     } finally {
-        if (browser) await browser.close();
-        server.kill();
-        await once(server, "exit");
-        rmSync(directory, { recursive: true, force: true });
+        await browser.close();
     }
 })().catch(error => { console.error(error); process.exitCode = 1; });
