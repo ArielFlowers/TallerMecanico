@@ -1,4 +1,4 @@
-﻿@model TallerMecanico.ViewModels.ServicioTablaViewModel
+@model TallerMecanico.ViewModels.ServicioTablaViewModel
 
 @if (Model.Servicios.Count == 0)
 {
@@ -58,6 +58,10 @@ else
                                         Editar
                                     </a>
 
+                                    <a asp-page="/Historial/Index"
+   class="service-action service-action-edit">
+    Historial
+</a>
                                     <a asp-page="./Delete"
                                        asp-route-id="@servicio.Id"
                                        class="service-action service-action-delete">

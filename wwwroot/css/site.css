@@ -1450,3 +1450,76 @@ button.service-action {
         padding: 32px 20px;
     }
 }
+/* SERVICIOS_FORM_INPUT_FIX
+   Estilo uniforme de los campos Crear y Editar Servicio.
+*/
+.service-form .service-input,
+.service-form input.service-input[type="text"],
+.service-form input.service-input[type="number"],
+.service-form textarea.service-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #100c18;
+    color: #f5f0ff;
+    border: 1px solid #51415f;
+    border-radius: 8px;
+    font: inherit;
+}
+
+.service-form input.service-input {
+    min-height: 42px;
+    padding: 10px 12px;
+}
+
+.service-form textarea.service-input {
+    padding: 12px;
+    resize: vertical;
+}
+
+.service-form .service-input::placeholder {
+    color: #9488a5;
+    opacity: 1;
+}
+
+.service-form .service-input:focus {
+    background-color: #171022;
+    color: #ffffff;
+    border-color: #8b5cf6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.18);
+}
+
+.service-form .service-input:disabled,
+.service-form .service-input[readonly] {
+    background-color: #21192b;
+    color: #a99db8;
+}
+
+/* SERVICIOS_AUTOFILL_FIX
+   Evita el fondo claro del autocompletado de Chrome.
+*/
+
+.service-form input.service-input:not([type="number"]) {
+    background-color: #100c18 !important;
+    color: #f5f0ff !important;
+    border: 1px solid #51415f;
+    color-scheme: dark;
+}
+
+.service-form input.service-input:-webkit-autofill,
+.service-form input.service-input:-webkit-autofill:hover,
+.service-form input.service-input:-webkit-autofill:focus,
+.service-form input.service-input:-webkit-autofill:active {
+    -webkit-text-fill-color: #f5f0ff !important;
+    -webkit-box-shadow: 0 0 0 1000px #100c18 inset !important;
+    box-shadow: 0 0 0 1000px #100c18 inset !important;
+    caret-color: #f5f0ff;
+    border: 1px solid #51415f;
+    transition: background-color 9999s ease-out;
+}
+
+.service-form input.service-input:focus {
+    border-color: #8b5cf6;
+    outline: none;
+}
