@@ -20,6 +20,14 @@
         </button>
     </div>
 
+    @if (Model.BorradorVehiculoId.HasValue)
+    {
+        <a asp-page="/Vehiculos/Index" asp-page-handler="Retomar"
+           asp-route-borradorId="@Model.BorradorVehiculoId" class="services-btn services-btn-secondary">
+            Volver al vehículo sin registrar cliente
+        </a>
+    }
+
     @if (!string.IsNullOrEmpty(Model.MensajeExito))
     {
         <div class="service-validation"
@@ -44,6 +52,8 @@
         <form method="get"
               class="buscador"
               role="search">
+
+            <input asp-for="BorradorVehiculoId" type="hidden" />
 
             <span class="buscador-icono"
                   aria-hidden="true">
@@ -253,6 +263,8 @@
                name="TerminoBusqueda"
                value="@Model.TerminoBusqueda" />
 
+        <input asp-for="BorradorVehiculoId" type="hidden" />
+
         <div asp-validation-summary="ModelOnly"
              class="service-validation">
         </div>
@@ -431,6 +443,14 @@
 
 
         <div class="service-form-actions">
+
+            @if (Model.BorradorVehiculoId.HasValue)
+            {
+                <a asp-page="/Vehiculos/Index" asp-page-handler="Retomar"
+                   asp-route-borradorId="@Model.BorradorVehiculoId" class="services-btn services-btn-secondary">
+                    Cancelar y volver al vehículo
+                </a>
+            }
 
             <button type="button"
                     class="services-btn services-btn-secondary"

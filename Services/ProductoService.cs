@@ -228,8 +228,9 @@ public class ProductoService
             return MensajeProductoNoExiste;
         }
 
-        _productoPort.Delete(
-            id);
+        try { _productoPort.Delete(id); }
+        catch (MySqlException error) when (error.Number == 1451)
+        { return "No se puede eliminar el producto porque tiene órdenes asociadas."; }
 
         return null;
     }

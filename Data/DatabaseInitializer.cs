@@ -34,8 +34,10 @@ public class DatabaseInitializer
 
         CreateVehiculosTable(connection);
         EnsureVehiculosClienteSchema(connection);
+        EnsureVehiculosPlacaSchema(connection);
 
         CreateProductosTable(connection);
+        ExecuteCommand(connection, OrdenSchema.CrearTablas);
         CreateUsuariosTable(connection);
         EnsureUsuariosEmailSchema(connection);
         CreateSolicitudesRegistroTable(connection);
@@ -836,7 +838,8 @@ public class DatabaseInitializer
         const string query = """
             CREATE TABLE IF NOT EXISTS Vehiculos (
                 Id INT NOT NULL AUTO_INCREMENT,
-                Placa VARCHAR(10) NOT NULL UNIQUE,
+                Placa VARCHAR(15) NOT NULL UNIQUE,
+                EsPlacaExtranjera BOOLEAN NOT NULL DEFAULT FALSE,
                 Marca VARCHAR(60) NOT NULL DEFAULT '',
                 Modelo VARCHAR(100) NOT NULL,
                 Kilometraje INT NOT NULL,
@@ -866,6 +869,24 @@ public class DatabaseInitializer
         EnsureVehiculosClienteIdColumn(connection);
         EnsureVehiculosClienteIdIndex(connection);
         EnsureVehiculosClienteForeignKey(connection);
+    }
+
+    private static void EnsureVehiculosPlacaSchema(DbConnection connection)
+    {
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Vehiculos' AND COLUMN_NAME = 'Placa';
+            """;
+        if (Convert.ToInt32(command.ExecuteScalar()) < 15)
+            ExecuteCommand(connection, "ALTER TABLE Vehiculos MODIFY COLUMN Placa VARCHAR(15) NOT NULL;");
+
+        command.CommandText = """
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Vehiculos' AND COLUMN_NAME = 'EsPlacaExtranjera';
+            """;
+        if (Convert.ToInt32(command.ExecuteScalar()) == 0)
+            ExecuteCommand(connection, "ALTER TABLE Vehiculos ADD COLUMN EsPlacaExtranjera BOOLEAN NOT NULL DEFAULT FALSE AFTER Placa;");
     }
 
     private static void EnsureVehiculosClienteIdColumn(

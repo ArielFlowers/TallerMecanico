@@ -34,7 +34,8 @@ public class VehiculoRepository :
                    Kilometraje,
                    Observaciones,
                    Marca,
-                   ClienteId
+                   ClienteId,
+                   EsPlacaExtranjera
             FROM Vehiculos
             ORDER BY Placa;
             """;
@@ -76,7 +77,8 @@ public class VehiculoRepository :
                    Kilometraje,
                    Observaciones,
                    Marca,
-                   ClienteId
+                   ClienteId,
+                   EsPlacaExtranjera
             FROM Vehiculos
             WHERE Id = @Id;
             """;
@@ -119,7 +121,8 @@ public class VehiculoRepository :
                    Kilometraje,
                    Observaciones,
                    Marca,
-                   ClienteId
+                   ClienteId,
+                   EsPlacaExtranjera
             FROM Vehiculos
             WHERE Placa LIKE @Filtro ESCAPE '!'
                OR Modelo LIKE @Filtro ESCAPE '!'
@@ -228,7 +231,8 @@ public class VehiculoRepository :
                 Kilometraje,
                 Observaciones,
                 Marca,
-                ClienteId
+                ClienteId,
+                EsPlacaExtranjera
             )
             VALUES
             (
@@ -237,7 +241,8 @@ public class VehiculoRepository :
                 @Kilometraje,
                 @Observaciones,
                 @Marca,
-                @ClienteId
+                @ClienteId,
+                @EsPlacaExtranjera
             );
             """;
 
@@ -268,7 +273,8 @@ public class VehiculoRepository :
                 Modelo = @Modelo,
                 Kilometraje = @Kilometraje,
                 Observaciones = @Observaciones,
-                ClienteId = @ClienteId
+                ClienteId = @ClienteId,
+                EsPlacaExtranjera = @EsPlacaExtranjera
             WHERE Id = @Id;
             """;
 
@@ -345,6 +351,8 @@ public class VehiculoRepository :
             "@Placa",
             vehiculo.Placa);
 
+        AddParameter(command, "@EsPlacaExtranjera", vehiculo.EsPlacaExtranjera);
+
         AddParameter(
             command,
             "@Modelo",
@@ -407,6 +415,8 @@ public class VehiculoRepository :
             Placa =
                 reader.GetString(
                     reader.GetOrdinal("Placa")),
+
+            EsPlacaExtranjera = reader.GetBoolean(reader.GetOrdinal("EsPlacaExtranjera")),
 
             Modelo =
                 reader.GetString(

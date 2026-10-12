@@ -77,15 +77,17 @@ public class MecanicoService
         return (true, errores);
     }
 
-    public bool Eliminar(int id)
+    public string? Eliminar(int id)
     {
         if (_mecanicoRepository.GetById(id) is null)
         {
-            return false;
+            return "El mecánico seleccionado ya no existe.";
         }
 
-        _mecanicoRepository.Delete(id);
-        return true;
+        try { _mecanicoRepository.Delete(id); }
+        catch (MySqlConnector.MySqlException error) when (error.Number == 1451)
+        { return "No se puede eliminar el mecánico porque tiene órdenes asociadas."; }
+        return null;
     }
 
     private Dictionary<string, string> ObtenerErrores(

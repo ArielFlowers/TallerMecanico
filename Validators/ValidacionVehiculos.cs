@@ -12,6 +12,11 @@ public class ValidacionVehiculos
     public const string MensajeFormatoPlaca =
         "La placa debe contener 3 o 4 números y 3 letras. Ejemplos: 123ABC o 1234ABC.";
 
+    public const string PatronPlacaExtranjera = "^[A-Z0-9]{2,15}$";
+
+    public const string MensajeFormatoPlacaExtranjera =
+        "La placa extranjera debe contener entre 2 y 15 letras o números, en cualquier orden.";
+
     public const int LongitudMaximaModelo =
         60;
 
@@ -39,9 +44,9 @@ public class ValidacionVehiculos
                 formulario.Id,
 
             Placa =
-                QuitarEspacios(
-                    formulario.Placa)
-                .ToUpperInvariant(),
+                NormalizarPlaca(formulario.Placa, formulario.EsPlacaExtranjera),
+
+            EsPlacaExtranjera = formulario.EsPlacaExtranjera,
 
             Marca =
                 marca,
@@ -109,16 +114,17 @@ public class ValidacionVehiculos
             return;
         }
 
-        if (!Regex.IsMatch(
-                formulario.Placa,
-                PatronPlaca)
-            ||
-            formulario.Placa.Length
-                is < 6 or > 7)
+        string patron = formulario.EsPlacaExtranjera
+            ? PatronPlacaExtranjera
+            : PatronPlaca;
+
+        if (!Regex.IsMatch(formulario.Placa, patron))
         {
             errores[
                 nameof(formulario.Placa)] =
-                MensajeFormatoPlaca;
+                formulario.EsPlacaExtranjera
+                    ? MensajeFormatoPlacaExtranjera
+                    : MensajeFormatoPlaca;
         }
     }
 
@@ -195,10 +201,10 @@ public class ValidacionVehiculos
         VehiculoFormViewModel formulario,
         IDictionary<string, string> errores)
     {
-        // NULL está permitido porque los vehículos antiguos
-        // pueden existir todavía sin cliente relacionado.
         if (!formulario.ClienteId.HasValue)
         {
+            errores[nameof(formulario.ClienteId)] =
+                "Selecciona un cliente. Si todavía no existe, regístralo antes de guardar el vehículo.";
             return;
         }
 
@@ -234,5 +240,11 @@ public class ValidacionVehiculos
                 .Where(
                     caracter =>
                         !char.IsWhiteSpace(caracter)));
+    }
+
+    private static string NormalizarPlaca(string? placa, bool extranjera)
+    {
+        string normalizada = QuitarEspacios(placa).ToUpperInvariant();
+        return extranjera ? normalizada.Replace("-", string.Empty) : normalizada;
     }
 }

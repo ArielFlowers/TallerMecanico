@@ -22,6 +22,15 @@ El nombre efectivo de la base siempre es el indicado en la cadena de conexión. 
 
 No ejecutar los scripts 001 y 002 para instalar la versión actual: el inicializador ya incorpora sus estructuras.
 
+La migración `003_vehiculos_placas_extranjeras.sql` es idempotente: amplía
+las placas y añade el toggle persistido. `DatabaseInitializer` también
+aplica estos cambios automáticamente al iniciar la aplicación.
+
+La migración `004_ordenes_transaccionales.sql` crea `Ordenes` y
+`DetalleOrdenes` sin eliminar datos y se puede ejecutar nuevamente.
+Requiere las tablas de clientes, vehículos, mecánicos y productos.
+`DatabaseInitializer` también crea estas tablas automáticamente.
+
 ## Base de datos existente
 
 El inicializador comprueba las columnas y el índice único antes de agregarlos. Conserva tablas, registros, contraseñas, correos, roles y marcas de verificación existentes.

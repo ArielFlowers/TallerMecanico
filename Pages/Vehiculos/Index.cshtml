@@ -5,6 +5,8 @@
 
 @{
     ViewData["Title"] = "Vehículos";
+    var datosCrear = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["Prefijo"] = "crear" };
+    var datosEditar = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["Prefijo"] = "editar" };
 }
 
 <div class="dashboard">
@@ -38,6 +40,10 @@
 
     </div>
 
+    @if (!string.IsNullOrEmpty(Model.MensajeError))
+    {
+        <div class="service-validation" role="alert">@Model.MensajeError</div>
+    }
 
     <section class="recent-orders">
 
@@ -95,6 +101,10 @@
 
                                 <td class="service-name">
                                     @vehiculo.Placa
+                                    @if (vehiculo.EsPlacaExtranjera)
+                                    {
+                                        <small>Extranjera</small>
+                                    }
                                 </td>
 
                                 <td>
@@ -152,7 +162,7 @@
                                                 title="Editar vehículo"
                                                 data-modal-abrir="modal-editar"
                                                 data-id="@vehiculo.Id"
-                                                data-placa="@vehiculo.Placa"
+                                                data-placa="@vehiculo.Placa" data-extranjera="@vehiculo.EsPlacaExtranjera.ToString().ToLowerInvariant()"
                                                 data-marca="@vehiculo.Marca"
                                                 data-modelo="@vehiculo.Modelo"
                                                 data-kilometraje="@vehiculo.Kilometraje"
@@ -166,7 +176,7 @@
                                                 title="Eliminar vehículo"
                                                 data-modal-abrir="modal-eliminar"
                                                 data-id="@vehiculo.Id"
-                                                data-placa="@vehiculo.Placa">
+                                                data-placa="@vehiculo.Placa" data-extranjera="@vehiculo.EsPlacaExtranjera.ToString().ToLowerInvariant()">
                                             🗑
                                         </button>
 
@@ -228,198 +238,7 @@
             </div>
 
 
-            <!-- CLIENTE -->
-
-            <div class="service-form-group">
-
-                <label for="crear-cliente">
-                    Cliente
-                </label>
-
-                <select asp-for="Formulario.ClienteId"
-                        id="crear-cliente"
-                        class="service-input">
-
-                    <option value="">
-                        Sin cliente asignado
-                    </option>
-
-                    @foreach (var cliente in Model.Clientes)
-                    {
-                        <option value="@cliente.Id">
-                            @cliente.Ci@(string.IsNullOrWhiteSpace(cliente.ComplementoCi) ? "" : $"-{cliente.ComplementoCi}") -
-                            @cliente.Nombres
-                            @cliente.PrimerApellido
-                            @cliente.SegundoApellido
-                        </option>
-                    }
-
-                </select>
-
-                <span asp-validation-for="Formulario.ClienteId"
-                      class="service-validation">
-                </span>
-
-                @if (Model.Clientes.Count == 0)
-                {
-                    <small style="display:block; margin-top:6px;">
-                        No hay clientes registrados.
-                        Puedes guardar el vehículo sin cliente y asignarlo posteriormente.
-                    </small>
-                }
-
-            </div>
-
-
-            <!-- PLACA -->
-
-            <div class="service-form-group">
-
-                <label for="crear-placa">
-                    Placa
-                    <span class="campo-obligatorio">*</span>
-                </label>
-
-                <input asp-for="Formulario.Placa"
-                       id="crear-placa"
-                       class="service-input"
-                       maxlength="7"
-                       required
-                       pattern="@ValidacionVehiculos.PatronPlaca"
-                       data-placa-mensaje="@ValidacionVehiculos.MensajeFormatoPlaca"
-                       placeholder="Ej. 123ABC o 1234ABC"
-                       data-placa-input />
-
-                <span class="field-warning"
-                      data-placa-aviso>
-                </span>
-
-                <span asp-validation-for="Formulario.Placa"
-                      class="service-validation">
-                </span>
-
-            </div>
-
-
-            <!-- MARCA -->
-
-            <div class="service-form-group">
-
-                <label for="crear-marca">
-                    Marca
-                    <span class="campo-obligatorio">*</span>
-                </label>
-
-                <select asp-for="Formulario.Marca"
-                        id="crear-marca"
-                        class="service-input"
-                        required
-                        data-marca-input>
-
-                    <option value="">
-                        Selecciona una marca
-                    </option>
-
-                    @foreach (var marca in
-                              CatalogoVehiculos.Marcas.Keys)
-                    {
-                        <option value="@marca">
-                            @marca
-                        </option>
-                    }
-
-                </select>
-
-                <span asp-validation-for="Formulario.Marca"
-                      class="service-validation">
-                </span>
-
-            </div>
-
-
-            <!-- MODELO -->
-
-            <div class="service-form-group">
-
-                <label for="crear-modelo">
-                    Modelo
-                    <span class="campo-obligatorio">*</span>
-                </label>
-
-                <select asp-for="Formulario.Modelo"
-                        id="crear-modelo"
-                        class="service-input"
-                        required
-                        data-modelo-input>
-
-                    <option value="">
-                        Selecciona un modelo
-                    </option>
-
-                    @if (CatalogoVehiculos.Marcas.TryGetValue(
-                            Model.Formulario.Marca ??
-                            string.Empty,
-                            out var modelosCrear))
-                    {
-                        @foreach (var modelo in modelosCrear)
-                        {
-                            <option value="@modelo">
-                                @modelo
-                            </option>
-                        }
-                    }
-
-                </select>
-
-                <span asp-validation-for="Formulario.Modelo"
-                      class="service-validation">
-                </span>
-
-            </div>
-
-
-            <!-- KILOMETRAJE -->
-
-            <div class="service-form-group">
-
-                <label for="crear-kilometraje">
-                    Kilometraje
-                </label>
-
-                <input asp-for="Formulario.Kilometraje"
-                       id="crear-kilometraje"
-                       class="service-input"
-                       type="number"
-                       min="0"
-                       placeholder="Ej. 45000" />
-
-                <span asp-validation-for="Formulario.Kilometraje"
-                      class="service-validation">
-                </span>
-
-            </div>
-
-
-            <!-- OBSERVACIONES -->
-
-            <div class="service-form-group">
-
-                <label for="crear-observaciones">
-                    Observaciones
-                </label>
-
-                <textarea asp-for="Formulario.Observaciones"
-                          id="crear-observaciones"
-                          class="service-input service-textarea"
-                          rows="3"
-                          placeholder="Detalles adicionales del estado del vehículo..."></textarea>
-
-                <span asp-validation-for="Formulario.Observaciones"
-                      class="service-validation">
-                </span>
-
-            </div>
-
+            <partial name="_CamposVehiculo" model="Model" view-data="datosCrear" />
 
             <div class="service-form-actions">
 
@@ -481,208 +300,10 @@
                  class="service-validation">
             </div>
 
-            <input asp-for="Formulario.Id"
-                   id="editar-id"
-                   type="hidden" />
 
 
-            <!-- CLIENTE -->
 
-            <div class="service-form-group">
-
-                <label for="editar-cliente">
-                    Cliente
-                </label>
-
-                <select asp-for="Formulario.ClienteId"
-                        id="editar-cliente"
-                        class="service-input">
-
-                    <option value="">
-                        Sin cliente asignado
-                    </option>
-
-                    @foreach (var cliente in Model.Clientes)
-                    {
-                        <option value="@cliente.Id">
-                            @cliente.Ci@(string.IsNullOrWhiteSpace(cliente.ComplementoCi) ? "" : $"-{cliente.ComplementoCi}") -
-                            @cliente.Nombres
-                            @cliente.PrimerApellido
-                            @cliente.SegundoApellido
-                        </option>
-                    }
-
-                </select>
-
-                <span asp-validation-for="Formulario.ClienteId"
-                      class="service-validation">
-                </span>
-
-                <small style="
-                    display:block;
-                    margin-top:6px;
-                    opacity:.7;">
-                    Los vehículos antiguos sin cliente pueden asignarse desde aquí.
-                </small>
-
-            </div>
-
-
-            <!-- PLACA -->
-
-            <div class="service-form-group">
-
-                <label for="editar-placa">
-                    Placa
-                    <span class="campo-obligatorio">*</span>
-                </label>
-
-                <input asp-for="Formulario.Placa"
-                       id="editar-placa"
-                       class="service-input"
-                       maxlength="7"
-                       required
-                       pattern="@ValidacionVehiculos.PatronPlaca"
-                       data-placa-mensaje="@ValidacionVehiculos.MensajeFormatoPlaca"
-                       data-placa-input />
-
-                <span class="field-warning"
-                      data-placa-aviso>
-                </span>
-
-                <span asp-validation-for="Formulario.Placa"
-                      class="service-validation">
-                </span>
-
-            </div>
-
-
-            <!-- MARCA -->
-
-            <div class="service-form-group">
-
-                <label for="editar-marca">
-                    Marca
-                    <span class="campo-obligatorio">*</span>
-                </label>
-
-                <select asp-for="Formulario.Marca"
-                        id="editar-marca"
-                        class="service-input"
-                        required
-                        data-marca-input>
-
-                    <option value="">
-                        Selecciona una marca
-                    </option>
-
-                    @foreach (var marca in
-                              CatalogoVehiculos.Marcas.Keys)
-                    {
-                        <option value="@marca">
-                            @marca
-                        </option>
-                    }
-
-                </select>
-
-                <span asp-validation-for="Formulario.Marca"
-                      class="service-validation">
-                </span>
-
-            </div>
-
-
-            <!-- MODELO -->
-
-            <div class="service-form-group">
-
-                <label for="editar-modelo">
-                    Modelo
-                    <span class="campo-obligatorio">*</span>
-                </label>
-
-                <select asp-for="Formulario.Modelo"
-                        id="editar-modelo"
-                        class="service-input"
-                        required
-                        data-modelo-input>
-
-                    <option value="">
-                        Selecciona un modelo
-                    </option>
-
-                    @if (CatalogoVehiculos.Marcas.TryGetValue(
-                            Model.Formulario.Marca ??
-                            string.Empty,
-                            out var modelosEditar))
-                    {
-                        @foreach (var modelo in modelosEditar)
-                        {
-                            <option value="@modelo">
-                                @modelo
-                            </option>
-                        }
-                    }
-
-                </select>
-
-                <span asp-validation-for="Formulario.Modelo"
-                      class="service-validation">
-                </span>
-
-                <p id="editar-modelo-anterior"
-                   hidden="@(string.IsNullOrEmpty(Model.ModeloAnterior))">
-                    Modelo anterior:
-                    <span>
-                        @Model.ModeloAnterior
-                    </span>.
-                    Selecciona una marca y un modelo del catálogo.
-                </p>
-
-            </div>
-
-
-            <!-- KILOMETRAJE -->
-
-            <div class="service-form-group">
-
-                <label for="editar-kilometraje">
-                    Kilometraje
-                </label>
-
-                <input asp-for="Formulario.Kilometraje"
-                       id="editar-kilometraje"
-                       class="service-input"
-                       type="number"
-                       min="0" />
-
-                <span asp-validation-for="Formulario.Kilometraje"
-                      class="service-validation">
-                </span>
-
-            </div>
-
-
-            <!-- OBSERVACIONES -->
-
-            <div class="service-form-group">
-
-                <label for="editar-observaciones">
-                    Observaciones
-                </label>
-
-                <textarea asp-for="Formulario.Observaciones"
-                          id="editar-observaciones"
-                          class="service-input service-textarea"
-                          rows="3"></textarea>
-
-                <span asp-validation-for="Formulario.Observaciones"
-                      class="service-validation">
-                </span>
-
-            </div>
-
+            <partial name="_CamposVehiculo" model="Model" view-data="datosEditar" />
 
             <div class="service-form-actions">
 
@@ -784,41 +405,12 @@
             type="application/json">
         @Html.Raw(
             System.Text.Json.JsonSerializer.Serialize(
-                CatalogoVehiculos.Marcas))
+                CatalogoVehiculos.CatalogoOrdenado))
     </script>
 
     <script src="~/js/vehiculos.js"
             asp-append-version="true">
     </script>
 
-    <script>
-        (() => {
 
-            const selectorClienteEditar =
-                document.getElementById(
-                    "editar-cliente");
-
-            document
-                .querySelectorAll(
-                    '[data-modal-abrir="modal-editar"]'
-                )
-                .forEach(boton => {
-
-                    boton.addEventListener(
-                        "click",
-                        () => {
-
-                            if (!selectorClienteEditar) {
-                                return;
-                            }
-
-                            selectorClienteEditar.value =
-                                boton.dataset.clienteId ?? "";
-
-                        });
-
-                });
-
-        })();
-    </script>
 }

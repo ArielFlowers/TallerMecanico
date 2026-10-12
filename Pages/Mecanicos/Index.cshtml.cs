@@ -87,11 +87,11 @@ public class IndexModel : PageModel
 
     public IActionResult OnPostEliminar()
     {
-        var eliminado = _mecanicoService.Eliminar(MecanicoId);
+        string? error = _mecanicoService.Eliminar(MecanicoId);
 
-        if (!eliminado)
+        if (error is not null)
         {
-            MensajeError = MensajeRegistroNoEncontrado;
+            MensajeError = error;
             return RedirigirAlListado();
         }
 

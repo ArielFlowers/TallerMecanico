@@ -247,6 +247,9 @@ public class ClienteRepository :
             cliente);
 
         command.ExecuteNonQuery();
+
+        command.CommandText = "SELECT LAST_INSERT_ID();";
+        cliente.Id = Convert.ToInt32(command.ExecuteScalar());
     }
 
     public void Update(Cliente cliente)
