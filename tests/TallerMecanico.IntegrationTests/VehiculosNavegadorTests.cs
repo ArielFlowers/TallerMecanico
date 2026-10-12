@@ -28,8 +28,6 @@ public sealed class VehiculosNavegadorTests
     {
         using var aislada = new MySqlAisladoFixture();
         string raiz = MySqlAisladoFixture.RaizProyecto;
-        foreach (string migracion in new[] { "001_registro_usuarios.sql", "002_control_reenvio_verificacion.sql" })
-            aislada.Ejecutar(File.ReadAllText(Path.Combine(raiz, "docs/migraciones", migracion)));
         string password = $"Ec2_{Guid.NewGuid():N}";
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         new UsuarioRepository(aislada.Factory).Agregar(new Usuario
