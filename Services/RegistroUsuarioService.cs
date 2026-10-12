@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using TallerMecanico.Application.Exceptions;
 using TallerMecanico.Application.Ports;
 using TallerMecanico.Models;
 using TallerMecanico.Validators;
@@ -32,19 +33,19 @@ public sealed class RegistroUsuarioService
         if (!ValidadorSolicitudRegistro.UsuarioValido(username))
         {
             throw new ArgumentException(
-                "El nombre de usuario no es valido.");
+                "El nombre de usuario no es valido.", nameof(username));
         }
 
         if (!ValidadorSolicitudRegistro.EmailValido(email))
         {
             throw new ArgumentException(
-                "El correo electronico no es valido.");
+                "El correo electronico no es valido.", nameof(email));
         }
 
         if (!ValidadorSolicitudRegistro.PasswordValido(password))
         {
             throw new ArgumentException(
-                "La contrasena no cumple los requisitos.");
+                "La contrasena no cumple los requisitos.", nameof(password));
         }
 
         string usuarioNormalizado = username.Trim();
@@ -53,15 +54,13 @@ public sealed class RegistroUsuarioService
         if (_usuarios.ExisteUsername(usuarioNormalizado) ||
             _solicitudes.ExisteUsername(usuarioNormalizado))
         {
-            throw new InvalidOperationException(
-                "El nombre de usuario no esta disponible.");
+            throw new SolicitudRegistroDuplicadaException(nameof(SolicitudRegistro.Username));
         }
 
         if (_usuarios.ExisteEmail(emailNormalizado) ||
             _solicitudes.ExisteEmail(emailNormalizado))
         {
-            throw new InvalidOperationException(
-                "El correo electronico no esta disponible.");
+            throw new SolicitudRegistroDuplicadaException(nameof(SolicitudRegistro.Email));
         }
 
         string passwordHash =

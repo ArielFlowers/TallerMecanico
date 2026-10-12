@@ -399,10 +399,11 @@
                       asp-page="/Auth/Logout">
 
                     <button type="submit"
-                            class="menu-item"
-                            style="width: 100%; text-align: left; border: none; background: transparent; color: inherit; cursor: pointer;">
+                            class="menu-item logout-button"
+                            aria-label="Cerrar sesión"
+                            title="Cerrar sesión">
 
-                        <span class="menu-icon">
+                        <span class="menu-icon" aria-hidden="true">
                             ↪
                         </span>
 
@@ -414,20 +415,19 @@
 
                 </form>
 
-            </div>
+                <!-- PIE DEL SIDEBAR -->
 
+                <div class="sidebar-footer">
 
-            <!-- PIE DEL SIDEBAR -->
+                    <span>
+                        Sistema de Gestión
+                    </span>
 
-            <div class="sidebar-footer">
+                    <small>
+                        © 2026 Taller Mecánico
+                    </small>
 
-                <span>
-                    Sistema de Gestión
-                </span>
-
-                <small>
-                    © 2026 Taller Mecánico
-                </small>
+                </div>
 
             </div>
 

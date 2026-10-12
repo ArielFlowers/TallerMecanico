@@ -38,6 +38,9 @@ public class DatabaseInitializer
 
         CreateProductosTable(connection);
         CreateUsuariosTable(connection);
+        EnsureUsuariosEmailSchema(connection);
+        CreateSolicitudesRegistroTable(connection);
+        EnsureSolicitudesRegistroReenvioSchema(connection);
         CreateAuditoriaTable(connection);
     }
 
@@ -1043,6 +1046,8 @@ public class DatabaseInitializer
                 Id INT NOT NULL AUTO_INCREMENT,
                 Username VARCHAR(100) NOT NULL,
                 PasswordHash VARCHAR(255) NOT NULL,
+                Email VARCHAR(254) NULL,
+                EmailVerificado BOOLEAN NOT NULL DEFAULT FALSE,
                 Rol ENUM('Administrador', 'Recepcionista')
                     NOT NULL,
                 Activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -1057,12 +1062,152 @@ public class DatabaseInitializer
                     PRIMARY KEY (Id),
 
                 CONSTRAINT UQ_Usuarios_Username
-                    UNIQUE (Username)
+                    UNIQUE (Username),
+
+                CONSTRAINT UQ_Usuarios_Email
+                    UNIQUE (Email)
             ) ENGINE=InnoDB
               DEFAULT CHARSET=utf8mb4;
             """;
 
         ExecuteCommand(connection, query);
+    }
+
+    private static void EnsureUsuariosEmailSchema(
+        DbConnection connection)
+    {
+        if (!ColumnExists(connection, "Usuarios", "Email"))
+        {
+            ExecuteCommand(
+                connection,
+                "ALTER TABLE Usuarios ADD COLUMN Email VARCHAR(254) NULL;");
+        }
+
+        if (!ColumnExists(connection, "Usuarios", "EmailVerificado"))
+        {
+            ExecuteCommand(
+                connection,
+                """
+                ALTER TABLE Usuarios
+                ADD COLUMN EmailVerificado BOOLEAN NOT NULL DEFAULT FALSE;
+                """);
+        }
+
+        EnsureUsuariosEmailUniqueIndex(connection);
+    }
+
+    private static void EnsureUsuariosEmailUniqueIndex(
+        DbConnection connection)
+    {
+        // Acepta un índice equivalente aunque tenga otro nombre.
+        // Un índice compuesto o de prefijo no garantiza la misma unicidad.
+        const string query = """
+            SELECT COUNT(*)
+            FROM (
+                SELECT INDEX_NAME
+                FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'Usuarios'
+                  AND NON_UNIQUE = 0
+                GROUP BY INDEX_NAME
+                HAVING COUNT(*) = 1
+                   AND MAX(COLUMN_NAME) = 'Email'
+                   AND MAX(SUB_PART) IS NULL
+            ) AS IndicesEmailUnicos;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        if (Convert.ToInt64(command.ExecuteScalar()) > 0)
+        {
+            return;
+        }
+
+        const string duplicadosQuery = """
+            SELECT COUNT(*)
+            FROM (
+                SELECT Email
+                FROM Usuarios
+                WHERE Email IS NOT NULL
+                GROUP BY Email
+                HAVING COUNT(*) > 1
+            ) AS CorreosDuplicados;
+            """;
+
+        using DbCommand duplicadosCommand = connection.CreateCommand();
+        duplicadosCommand.CommandText = duplicadosQuery;
+
+        if (Convert.ToInt64(duplicadosCommand.ExecuteScalar()) > 0)
+        {
+            throw new InvalidOperationException(
+                "No se puede completar el esquema de autenticación: " +
+                "existen correos duplicados en Usuarios. " +
+                "Revise esos datos antes de crear el índice único. " +
+                "No se han modificado ni eliminado usuarios.");
+        }
+
+        ExecuteCommand(
+            connection,
+            """
+            ALTER TABLE Usuarios
+            ADD CONSTRAINT UQ_Usuarios_Email UNIQUE (Email);
+            """);
+    }
+
+    private static void CreateSolicitudesRegistroTable(
+        DbConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS SolicitudesRegistro
+            (
+                Id BIGINT NOT NULL AUTO_INCREMENT,
+                Username VARCHAR(50) NOT NULL,
+                Email VARCHAR(254) NOT NULL,
+                PasswordHash VARCHAR(255) NOT NULL,
+                Estado ENUM(
+                    'PendienteVerificacion',
+                    'PendienteAprobacion',
+                    'Aprobada',
+                    'Rechazada'
+                ) NOT NULL DEFAULT 'PendienteVerificacion',
+                TokenVerificacionHash CHAR(64) NULL,
+                TokenExpiraEn DATETIME(6) NULL,
+                EmailVerificadoEn DATETIME(6) NULL,
+                FechaSolicitud DATETIME(6) NOT NULL,
+                UltimoIntentoVerificacionEn DATETIME(6) NULL,
+                FechaResolucion DATETIME(6) NULL,
+                RevisadoPorUsuarioId INT NULL,
+
+                CONSTRAINT PK_SolicitudesRegistro PRIMARY KEY (Id),
+                CONSTRAINT UQ_SolicitudesRegistro_Username UNIQUE (Username),
+                CONSTRAINT UQ_SolicitudesRegistro_Email UNIQUE (Email),
+                CONSTRAINT UQ_SolicitudesRegistro_Token UNIQUE (TokenVerificacionHash),
+                INDEX IX_SolicitudesRegistro_Estado (Estado)
+            ) ENGINE=InnoDB
+              DEFAULT CHARSET=utf8mb4;
+            """;
+
+        ExecuteCommand(connection, query);
+    }
+
+    private static void EnsureSolicitudesRegistroReenvioSchema(
+        DbConnection connection)
+    {
+        if (ColumnExists(
+                connection,
+                "SolicitudesRegistro",
+                "UltimoIntentoVerificacionEn"))
+        {
+            return;
+        }
+
+        ExecuteCommand(
+            connection,
+            """
+            ALTER TABLE SolicitudesRegistro
+            ADD COLUMN UltimoIntentoVerificacionEn DATETIME(6) NULL;
+            """);
     }
 
 
@@ -1099,6 +1244,27 @@ public class DatabaseInitializer
     // =====================================================
     // HELPERS
     // =====================================================
+
+    private static bool ColumnExists(
+        DbConnection connection,
+        string tableName,
+        string columnName)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = @TableName
+              AND COLUMN_NAME = @ColumnName;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@TableName", tableName);
+        AddParameter(command, "@ColumnName", columnName);
+
+        return Convert.ToInt64(command.ExecuteScalar()) > 0;
+    }
 
     private static void ExecuteCommand(
         DbConnection connection,
