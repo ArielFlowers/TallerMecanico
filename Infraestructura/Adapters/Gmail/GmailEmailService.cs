@@ -1,18 +1,33 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using MimeKit;
+using TallerMecanico.Application.Exceptions;
 using TallerMecanico.Application.Ports;
+using TallerMecanico.Validators;
 
 namespace TallerMecanico.Infraestructura.Adapters.Gmail;
 
 public sealed class GmailEmailService : IEmailService
 {
     private readonly IConfiguration _configuration;
+    private readonly ILogger<GmailEmailService> _logger;
+    private readonly Func<SmtpClient> _crearCliente;
 
-    public GmailEmailService(IConfiguration configuration)
+    public GmailEmailService(
+        IConfiguration configuration,
+        ILogger<GmailEmailService>? logger = null,
+        Func<SmtpClient>? crearCliente = null)
     {
         _configuration = configuration;
+        _logger = logger ?? NullLogger<GmailEmailService>.Instance;
+        _crearCliente = crearCliente ?? (() => new SmtpClient());
+    }
+
+    public void ValidarConfiguracion()
+    {
+        ObtenerConfiguracionValidada();
     }
 
     public async Task EnviarVerificacionAsync(
@@ -20,18 +35,7 @@ public sealed class GmailEmailService : IEmailService
         string enlaceVerificacion,
         CancellationToken cancellationToken = default)
     {
-        string host = ObtenerConfiguracion("Email:Smtp:Host");
-        string username = ObtenerConfiguracion("Email:Smtp:Username");
-        string password = ObtenerConfiguracion("Email:Smtp:Password");
-        string remitente = ObtenerConfiguracion("Email:Smtp:From");
-
-        int puerto = _configuration.GetValue<int>("Email:Smtp:Port");
-
-        if (host != "smtp.gmail.com" || puerto != 465)
-        {
-            throw new InvalidOperationException(
-                "La configuracion SMTP no coincide con Gmail puerto 465.");
-        }
+        var configuracion = ObtenerConfiguracionValidada();
 
         if (!Uri.TryCreate(
                 enlaceVerificacion,
@@ -46,7 +50,7 @@ public sealed class GmailEmailService : IEmailService
 
         var mensaje = new MimeMessage();
 
-        mensaje.From.Add(MailboxAddress.Parse(remitente));
+        mensaje.From.Add(configuracion.Remitente);
         mensaje.To.Add(MailboxAddress.Parse(destinatario));
         mensaje.Subject = "Verifica tu correo - AutoTaller Pro";
 
@@ -69,24 +73,99 @@ public sealed class GmailEmailService : IEmailService
                 "Si no solicitaste esta cuenta, ignora este mensaje."
         };
 
-        using var cliente = new SmtpClient();
+        using SmtpClient cliente = _crearCliente();
 
         cliente.Timeout = 15000;
 
-        await cliente.ConnectAsync(
-            host,
-            puerto,
-            SecureSocketOptions.SslOnConnect,
-            cancellationToken);
+        string etapa = "Conexion";
+        bool aceptadoPorSmtp = false;
 
-        await cliente.AuthenticateAsync(
-            username,
-            password,
-            cancellationToken);
+        try
+        {
+            await cliente.ConnectAsync(
+                configuracion.Host,
+                configuracion.Puerto,
+                SecureSocketOptions.SslOnConnect,
+                cancellationToken);
 
-        await cliente.SendAsync(mensaje, cancellationToken);
+            etapa = "Autenticacion";
+            await cliente.AuthenticateAsync(
+                configuracion.Usuario,
+                configuracion.Password,
+                cancellationToken);
 
-        await cliente.DisconnectAsync(true, cancellationToken);
+            etapa = "Envio";
+            await cliente.SendAsync(mensaje, cancellationToken);
+            aceptadoPorSmtp = true;
+        }
+        catch (Exception ex) when (
+            ex is not OperationCanceledException ||
+            !cancellationToken.IsCancellationRequested)
+        {
+            throw new EnvioVerificacionException(
+                etapa, ex.GetType().FullName!, ObtenerCodigoSmtp(ex));
+        }
+        finally
+        {
+            if (cliente.IsConnected)
+            {
+                try
+                {
+                    await cliente.DisconnectAsync(true, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    // El cierre no cambia la aceptación ni oculta el error original.
+                    _logger.LogWarning(
+                        "Fallo al cerrar SMTP. Aceptado: {Aceptado}; Tipo: {Tipo}; Código: {Codigo}",
+                        aceptadoPorSmtp, ex.GetType().FullName, ObtenerCodigoSmtp(ex));
+                }
+            }
+        }
+    }
+
+    private (
+        string Host,
+        int Puerto,
+        string Usuario,
+        string Password,
+        MailboxAddress Remitente) ObtenerConfiguracionValidada()
+    {
+        string host = ObtenerConfiguracion("Email:Smtp:Host");
+        if (host != "smtp.gmail.com")
+        {
+            throw new ConfiguracionRegistroException("Email:Smtp:Host");
+        }
+
+        if (!int.TryParse(_configuration["Email:Smtp:Port"], out int puerto) ||
+            puerto != 465)
+        {
+            throw new ConfiguracionRegistroException("Email:Smtp:Port");
+        }
+
+        string usuario = ObtenerConfiguracion("Email:Smtp:Username");
+        string password = ObtenerConfiguracion("Email:Smtp:Password");
+        string from = ObtenerConfiguracion("Email:Smtp:From");
+        if (!MailboxAddress.TryParse(from, out MailboxAddress? remitente) ||
+            !ValidadorSolicitudRegistro.EmailValido(remitente.Address))
+        {
+            throw new ConfiguracionRegistroException("Email:Smtp:From");
+        }
+
+        return (host, puerto, usuario, password, remitente);
+    }
+
+    private static int? ObtenerCodigoSmtp(Exception error)
+    {
+        for (Exception? causa = error; causa is not null; causa = causa.InnerException)
+        {
+            if (causa is SmtpCommandException smtp)
+            {
+                return (int)smtp.StatusCode;
+            }
+        }
+
+        return null;
     }
 
     private string ObtenerConfiguracion(string clave)
@@ -95,8 +174,7 @@ public sealed class GmailEmailService : IEmailService
 
         if (string.IsNullOrWhiteSpace(valor))
         {
-            throw new InvalidOperationException(
-                $"Falta la configuracion {clave}.");
+            throw new ConfiguracionRegistroException(clave);
         }
 
         return valor;

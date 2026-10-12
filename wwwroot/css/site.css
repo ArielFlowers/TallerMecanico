@@ -176,8 +176,8 @@ body {
    ========================= */
 
 .sidebar-footer {
-    margin-top: auto;
-    padding: 16px 10px 4px;
+    margin-top: 10px;
+    padding: 0 10px;
     color: var(--text-subtle);
     font-size: 10px;
     display: flex;
@@ -1224,6 +1224,7 @@ button.service-action {
 
 .sidebar-bottom {
     margin-top: auto;
+    margin-bottom: 24px;
     padding-top: 12px;
 }
 
@@ -1231,8 +1232,27 @@ button.service-action {
     width: 100%;
 }
 
-.sidebar-footer {
-    margin-top: 12px;
+.logout-button {
+    padding: 13px 14px;
+    border: none;
+    border-radius: 10px;
+    background-color: #b72d42;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition);
+}
+
+.logout-button .menu-icon {
+    opacity: 1;
+}
+
+.logout-button:hover {
+    background-color: #922238;
+    color: #fff;
 }
 
 
@@ -1241,6 +1261,14 @@ button.service-action {
    ========================================= */
 
 @media (max-width: 768px) {
+
+    .sidebar-bottom {
+        margin-bottom: 28px;
+    }
+
+    .logout-button {
+        padding: 13px 8px;
+    }
 
     .submenu {
         margin-left: 0;

@@ -146,6 +146,8 @@ public class ReenvioVerificacionServiceTests
 
     private sealed class EmailFalso : IEmailService
     {
+        public void ValidarConfiguracion() { }
+
         public int Envios { get; private set; }
         public string? Destinatario { get; private set; }
         public string? Enlace { get; private set; }
