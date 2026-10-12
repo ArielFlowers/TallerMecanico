@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using TallerMecanico.Application.Exceptions;
 using TallerMecanico.Application.Ports;
 
 namespace TallerMecanico.Services;
@@ -25,23 +26,9 @@ public sealed class RegistroConEmailService
         string password,
         CancellationToken cancellationToken = default)
     {
-        string? baseUrl = _configuration["App:PublicBaseUrl"];
-
-        if (!Uri.TryCreate(
-                baseUrl,
-                UriKind.Absolute,
-                out Uri? uriBase) ||
-            (uriBase.Scheme != Uri.UriSchemeHttps &&
-             !(uriBase.Scheme == Uri.UriSchemeHttp &&
-               uriBase.IsLoopback)) ||
-            !string.IsNullOrEmpty(uriBase.UserInfo) ||
-            !string.IsNullOrEmpty(uriBase.Query) ||
-            !string.IsNullOrEmpty(uriBase.Fragment))
-        {
-            throw new InvalidOperationException(
-                "App:PublicBaseUrl debe ser HTTPS " +
-                "o HTTP en localhost para desarrollo.");
-        }
+        Uri uriBase = EnlaceVerificacion.ObtenerBase(_configuration);
+        _email.ValidarConfiguracion();
+        cancellationToken.ThrowIfCancellationRequested();
 
         // Primero se guarda la solicitud y se obtiene el token.
         string token = _registro.CrearSolicitudPendiente(
@@ -49,16 +36,19 @@ public sealed class RegistroConEmailService
             email,
             password);
 
-        // Nunca se escribe el token en logs.
-        string rutaVerificacion =
-            "/Auth/VerificarEmail?token=" +
-            Uri.EscapeDataString(token);
-
-        Uri enlace = new Uri(uriBase, rutaVerificacion);
-
-        await _email.EnviarVerificacionAsync(
-            email.Trim().ToLowerInvariant(),
-            enlace.AbsoluteUri,
-            cancellationToken);
+        try
+        {
+            await _email.EnviarVerificacionAsync(
+                email.Trim().ToLowerInvariant(),
+                EnlaceVerificacion.Crear(uriBase, token),
+                cancellationToken);
+        }
+        catch (Exception ex) when (
+            ex is not OperationCanceledException ||
+            !cancellationToken.IsCancellationRequested)
+        {
+            // La solicitud ya existe. Se conserva para el reenvío.
+            throw new SolicitudGuardadaCorreoPendienteException(ex);
+        }
     }
 }

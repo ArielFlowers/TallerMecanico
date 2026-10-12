@@ -1,5 +1,8 @@
 -- MIGRACION 001 - REGISTRO DE USUARIOS
--- Ejecutar una sola vez en la base tallermecanico.
+-- Script histórico para versiones anteriores al inicializador actualizado.
+-- El inicializador actual incorpora este esquema y detecta estructuras existentes.
+-- No ejecutar después de iniciar la aplicación actual: no es idempotente.
+-- Referencia de instalación: taller_mecanico; usar siempre la base configurada.
 -- Conserva las cuentas existentes.
 
 -- Agregar correo a usuarios existentes y futuros.

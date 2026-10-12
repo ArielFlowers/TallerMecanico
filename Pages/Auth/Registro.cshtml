@@ -215,9 +215,17 @@
                 <div class="success-message" role="status">
                     <strong>Solicitud recibida.</strong>
                     <p>
-                        Si el registro se procesó correctamente,
-                        recibirás un correo con el enlace de verificación.
+                        Si tu solicitud puede continuar, se intentará enviar un
+                        enlace de verificación. La recepción puede demorarse;
+                        revisa también la carpeta de spam.
                     </p>
+                    <p>
+                        Si el correo no llega, solicita un nuevo enlace cuando
+                        esté disponible. No necesitas repetir el formulario de registro.
+                    </p>
+                    <a asp-page="/Auth/ReenviarVerificacion" class="back-link">
+                        Solicitar un nuevo enlace de verificación
+                    </a>
                     <p>
                         Después de verificar tu correo deberás esperar
                         la aprobación del Administrador.

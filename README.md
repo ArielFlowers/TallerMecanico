@@ -4,7 +4,7 @@
 ## Base de datos (MySQL 8, rama feature/mysql-factory-method)
 - Levantar: `docker compose up -d` (crea BD `taller_mecanico`, usuario `taller`/`taller123`, puerto 3306).
 - `appsettings.json`: `ConnectionStrings:MySqlConnection`. No commitear claves reales: usar UserSecrets en local.
-- Las tablas + trigger se autocrean al arrancar (`DatabaseInitializer`). DDL de referencia en `Data/Scripts/MySql/`.
+- Las tablas + trigger se autocrean al arrancar (`DatabaseInitializer`). El esquema de autenticación incluye correo, solicitudes y control de reenvío; las estructuras faltantes de las versiones anteriores se agregan sin recrear las tablas. Ver [instalación de autenticación](docs/migraciones/README.md). DDL de referencia en `Data/Scripts/MySql/`.
 - Reset DB: `docker compose down -v` (borra el volumen) y reiniciar.
 - Si el arranque falla con "SUPER privilege and binary logging": el compose ya trae `--log-bin-trust-function-creators=1`. En MySQL local propio, ejecutar como root: `SET GLOBAL log_bin_trust_function_creators = 1;`
 

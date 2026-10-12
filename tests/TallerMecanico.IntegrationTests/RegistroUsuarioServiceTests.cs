@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using TallerMecanico.Application.Ports;
+using TallerMecanico.Application.Exceptions;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
 using Xunit;
@@ -81,7 +82,7 @@ public class RegistroUsuarioServiceTests
         var servicio = new RegistroUsuarioService(
             usuarios, solicitudes, new HasherFalso());
 
-        Assert.Throws<InvalidOperationException>(() =>
+        Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
             servicio.CrearSolicitudPendiente(
                 "empleado123",
                 "empleado@empresa.com",
@@ -103,7 +104,7 @@ public class RegistroUsuarioServiceTests
             solicitudes,
             new HasherFalso());
 
-        Assert.Throws<InvalidOperationException>(() =>
+        Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
             servicio.CrearSolicitudPendiente(
                 "empleado123",
                 "empleado@empresa.com",

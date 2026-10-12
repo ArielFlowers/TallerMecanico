@@ -31,29 +31,17 @@ public sealed class ReenvioVerificacionService
 
         string correoNormalizado = email.Trim().ToLowerInvariant();
 
+        // Validar antes de consultar o consumir el intervalo de reenvío.
+        Uri uriBase = EnlaceVerificacion.ObtenerBase(_configuration);
+        _email.ValidarConfiguracion();
+        cancellationToken.ThrowIfCancellationRequested();
+
         var solicitud =
             _solicitudes.ObtenerPendientePorEmail(correoNormalizado);
 
         if (solicitud is null)
         {
             return;
-        }
-
-        string? baseUrl = _configuration["App:PublicBaseUrl"];
-
-        if (!Uri.TryCreate(
-                baseUrl,
-                UriKind.Absolute,
-                out Uri? uriBase) ||
-            (uriBase.Scheme != Uri.UriSchemeHttps &&
-             !(uriBase.Scheme == Uri.UriSchemeHttp &&
-               uriBase.IsLoopback)) ||
-            !string.IsNullOrEmpty(uriBase.UserInfo) ||
-            !string.IsNullOrEmpty(uriBase.Query) ||
-            !string.IsNullOrEmpty(uriBase.Fragment))
-        {
-            throw new InvalidOperationException(
-                "App:PublicBaseUrl no es valida.");
         }
 
         byte[] tokenBytes = RandomNumberGenerator.GetBytes(32);
@@ -76,15 +64,9 @@ public sealed class ReenvioVerificacionService
             return;
         }
 
-        string rutaVerificacion =
-            "/Auth/VerificarEmail?token=" +
-            Uri.EscapeDataString(token);
-
-        Uri enlace = new Uri(uriBase, rutaVerificacion);
-
         await _email.EnviarVerificacionAsync(
             correoNormalizado,
-            enlace.AbsoluteUri,
+            EnlaceVerificacion.Crear(uriBase, token),
             cancellationToken);
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
+using TallerMecanico.Application.Exceptions;
 using TallerMecanico.Services;
 
 namespace TallerMecanico.Pages.Auth;
@@ -55,34 +56,53 @@ public sealed class RegistroModel : PageModel
                 Input.Password,
                 cancellationToken);
 
-            SolicitudRecibida = true;
-
-            Input = new RegistroInput();
-
-            ModelState.Clear();
-
-            return Page();
+            return MostrarSolicitudRecibida();
         }
-        catch (ArgumentException)
+        catch (ConfiguracionRegistroException ex)
         {
+            _logger.LogError(
+                "Configuración de registro inválida. Clave: {Clave}; Solicitud HTTP: {Id}",
+                ex.Clave, HttpContext.TraceIdentifier);
+
+            ModelState.AddModelError(
+                string.Empty,
+                "El registro no está disponible en este momento. Intenta más tarde.");
+        }
+        catch (SolicitudRegistroDuplicadaException ex)
+        {
+            _logger.LogInformation(
+                "Datos de registro no disponibles. Campo: {Campo}; Solicitud HTTP: {Id}",
+                ex.Campo, HttpContext.TraceIdentifier);
+
+            return MostrarSolicitudRecibida();
+        }
+        catch (SolicitudGuardadaCorreoPendienteException ex)
+        {
+            _logger.LogWarning(
+                "Solicitud guardada; aceptación SMTP no confirmada. Etapa: {Etapa}; " +
+                "Tipo: {Tipo}; Código: {Codigo}; Solicitud HTTP: {Id}",
+                ex.Etapa, ex.TipoError, ex.CodigoSmtp, HttpContext.TraceIdentifier);
+
+            return MostrarSolicitudRecibida();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(
+                "Validación de registro rechazada. Campo: {Campo}; Solicitud HTTP: {Id}",
+                ex.ParamName, HttpContext.TraceIdentifier);
+
             ModelState.AddModelError(
                 string.Empty,
                 "Los datos ingresados no cumplen los requisitos.");
         }
-        catch (InvalidOperationException)
-        {
-            ModelState.AddModelError(
-                string.Empty,
-                "No se pudo completar la solicitud. " +
-                "Si ya te registraste, revisa tu correo o " +
-                "solicita un nuevo enlace cuando este disponible.");
-        }
         catch (Exception ex) when (
-            ex is not OperationCanceledException)
+            ex is not OperationCanceledException ||
+            !cancellationToken.IsCancellationRequested)
         {
             _logger.LogError(
-                "Error al procesar la solicitud de registro. Tipo: {TipoError}",
-                ex.GetType().Name);
+                "Fallo al crear la solicitud de registro. Tipo: {Tipo}; " +
+                "Pila: {Pila}; Solicitud HTTP: {Id}",
+                ex.GetType().FullName, ex.StackTrace, HttpContext.TraceIdentifier);
 
             ModelState.AddModelError(
                 string.Empty,
@@ -90,6 +110,15 @@ public sealed class RegistroModel : PageModel
                 "Si recibes un correo de verificacion, utiliza ese enlace.");
         }
 
+        return Page();
+    }
+
+    private IActionResult MostrarSolicitudRecibida()
+    {
+        // Mismo resultado público para alta, duplicado o envío no confirmado.
+        SolicitudRecibida = true;
+        Input = new RegistroInput();
+        ModelState.Clear();
         return Page();
     }
 }
