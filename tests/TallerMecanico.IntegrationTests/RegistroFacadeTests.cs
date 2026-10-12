@@ -6,7 +6,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
-public sealed class RegistroConEmailServiceTests
+public sealed class RegistroFacadeTests
 {
     private const string PasswordPrueba = "ClaveSoloParaPruebas123";
 
@@ -21,7 +21,7 @@ public sealed class RegistroConEmailServiceTests
     {
         var fixture = new RegistroCorreoFixture();
         var error = await Assert.ThrowsAsync<ConfiguracionRegistroException>(
-            () => fixture.CrearRegistro(url).SolicitarRegistroAsync(
+            () => fixture.CrearFachada(url).SolicitarRegistroAsync(
                 "empleado", "empleado@example.com", PasswordPrueba));
 
         Assert.Equal("App:PublicBaseUrl", error.Clave);
@@ -38,7 +38,7 @@ public sealed class RegistroConEmailServiceTests
         fixture.Correo.ErrorConfiguracion = new ConfiguracionRegistroException("Email:Smtp:Password");
 
         await Assert.ThrowsAsync<ConfiguracionRegistroException>(() =>
-            fixture.CrearRegistro().SolicitarRegistroAsync(
+            fixture.CrearFachada().SolicitarRegistroAsync(
                 "empleado", "empleado@example.com", PasswordPrueba));
 
         Assert.Null(fixture.Solicitudes.Guardada);
@@ -53,7 +53,7 @@ public sealed class RegistroConEmailServiceTests
         var fixture = new RegistroCorreoFixture();
         fixture.Correo.AntesDeEnviar = () => Assert.NotNull(fixture.Solicitudes.Guardada);
 
-        await fixture.CrearRegistro().SolicitarRegistroAsync(
+        await fixture.CrearFachada().SolicitarRegistroAsync(
             "empleado", "empleado@example.com", PasswordPrueba);
 
         Assert.Equal(1, fixture.Correo.Envios);
@@ -67,7 +67,7 @@ public sealed class RegistroConEmailServiceTests
         fixture.Correo.ErrorEnvio = new EnvioVerificacionException("Autenticacion", "ErrorSimulado", 535);
 
         var error = await Assert.ThrowsAsync<SolicitudGuardadaCorreoPendienteException>(() =>
-            fixture.CrearRegistro().SolicitarRegistroAsync(
+            fixture.CrearFachada().SolicitarRegistroAsync(
                 "empleado", "empleado@example.com", PasswordPrueba));
 
         Assert.NotNull(fixture.Solicitudes.Guardada);
@@ -84,7 +84,7 @@ public sealed class RegistroConEmailServiceTests
         cancellation.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            fixture.CrearRegistro().SolicitarRegistroAsync(
+            fixture.CrearFachada().SolicitarRegistroAsync(
                 "empleado", "empleado@example.com", PasswordPrueba, cancellation.Token));
 
         Assert.Null(fixture.Solicitudes.Guardada);
@@ -103,7 +103,7 @@ public sealed class RegistroConEmailServiceTests
         if (caso == "FalloEnvio") fixture.Correo.ErrorEnvio = new IOException(contenidoSensible);
 
         var logger = new LoggerEnMemoria<RegistroModel>();
-        var page = new RegistroModel(fixture.CrearRegistro(), logger)
+        var page = new RegistroModel(fixture.CrearFachada(), logger)
         {
             PageContext = new PageContext { HttpContext = new DefaultHttpContext() },
             Input = new RegistroInput
@@ -137,7 +137,7 @@ public sealed class RegistroConEmailServiceTests
         var fixture = new RegistroCorreoFixture();
         fixture.Correo.ErrorConfiguracion = new ConfiguracionRegistroException("Email:Smtp:Password");
         var logger = new LoggerEnMemoria<RegistroModel>();
-        var page = new RegistroModel(fixture.CrearRegistro(), logger)
+        var page = new RegistroModel(fixture.CrearFachada(), logger)
         {
             PageContext = new PageContext { HttpContext = new DefaultHttpContext() },
             Input = new RegistroInput

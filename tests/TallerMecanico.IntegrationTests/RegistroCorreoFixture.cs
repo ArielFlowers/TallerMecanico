@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using TallerMecanico.Application.Facades;
 using TallerMecanico.Application.Ports;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
@@ -13,9 +14,9 @@ internal sealed class RegistroCorreoFixture
     public SolicitudesEnMemoria Solicitudes { get; } = new();
     public CorreoSimulado Correo { get; } = new();
 
-    public RegistroConEmailService CrearRegistro(string? url = "https://localhost:7043")
+    public RegistroFacade CrearFachada(string? url = "https://localhost:7043")
     {
-        return new RegistroConEmailService(
+        return new RegistroFacade(
             new RegistroUsuarioService(Usuarios, Solicitudes, new HasherSimulado()),
             Correo, Configuracion(url));
     }

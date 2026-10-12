@@ -1,22 +1,27 @@
 using Microsoft.Extensions.Configuration;
 using TallerMecanico.Application.Exceptions;
 using TallerMecanico.Application.Ports;
+using TallerMecanico.Services;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Application.Facades;
 
-public sealed class RegistroConEmailService
+/// <summary>
+/// Simplifica para la interfaz web la creación de una solicitud de registro
+/// y el envío de su enlace de verificación.
+/// </summary>
+public sealed class RegistroFacade
 {
-    private readonly RegistroUsuarioService _registro;
-    private readonly IEmailService _email;
+    private readonly RegistroUsuarioService _registroUsuario;
+    private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
 
-    public RegistroConEmailService(
-        RegistroUsuarioService registro,
-        IEmailService email,
+    public RegistroFacade(
+        RegistroUsuarioService registroUsuario,
+        IEmailService emailService,
         IConfiguration configuration)
     {
-        _registro = registro;
-        _email = email;
+        _registroUsuario = registroUsuario;
+        _emailService = emailService;
         _configuration = configuration;
     }
 
@@ -27,18 +32,17 @@ public sealed class RegistroConEmailService
         CancellationToken cancellationToken = default)
     {
         Uri uriBase = EnlaceVerificacion.ObtenerBase(_configuration);
-        _email.ValidarConfiguracion();
+        _emailService.ValidarConfiguracion();
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Primero se guarda la solicitud y se obtiene el token.
-        string token = _registro.CrearSolicitudPendiente(
+        string token = _registroUsuario.CrearSolicitudPendiente(
             username,
             email,
             password);
 
         try
         {
-            await _email.EnviarVerificacionAsync(
+            await _emailService.EnviarVerificacionAsync(
                 email.Trim().ToLowerInvariant(),
                 EnlaceVerificacion.Crear(uriBase, token),
                 cancellationToken);
@@ -47,7 +51,7 @@ public sealed class RegistroConEmailService
             ex is not OperationCanceledException ||
             !cancellationToken.IsCancellationRequested)
         {
-            // La solicitud ya existe. Se conserva para el reenvío.
+            // La solicitud ya existe y se conserva para permitir el reenvío.
             throw new SolicitudGuardadaCorreoPendienteException(ex);
         }
     }

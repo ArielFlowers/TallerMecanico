@@ -2,18 +2,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
 using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Services;
+using TallerMecanico.Application.Facades;
 
 namespace TallerMecanico.Pages.Auth;
 
 [EnableRateLimiting("RegistroRateLimit")]
 public sealed class RegistroModel : PageModel
 {
-    private readonly RegistroConEmailService _registro;
+    private readonly RegistroFacade _registro;
     private readonly ILogger<RegistroModel> _logger;
 
     public RegistroModel(
-        RegistroConEmailService registro,
+        RegistroFacade registro,
         ILogger<RegistroModel> logger)
     {
         _registro = registro;

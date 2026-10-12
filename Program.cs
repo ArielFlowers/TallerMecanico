@@ -13,6 +13,7 @@ using TallerMecanico.Infraestructura.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using TallerMecanico.Infraestructura.Setup;
+using TallerMecanico.Application.Facades;
 
 var builder =
     WebApplication.CreateBuilder(args);
@@ -91,7 +92,7 @@ builder.Services.AddScoped<RegistroUsuarioService>();
 builder.Services.AddScoped<VerificacionEmailService>();
 
 builder.Services.AddScoped<IEmailService, GmailEmailService>();
-builder.Services.AddScoped<RegistroConEmailService>();
+builder.Services.AddScoped<RegistroFacade>();
 builder.Services.AddScoped<ReenvioVerificacionService>();
 
 builder.Services.AddScoped<
