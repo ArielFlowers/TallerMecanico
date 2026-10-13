@@ -96,7 +96,7 @@ builder.Services.AddSingleton<
     IPasswordHasher,
     Argon2idPasswordHasher>();
 
-builder.Services.AddSingleton<AuthenticationFallbackHash>();
+builder.Services.AddSingleton<IFallbackHash, AuthenticationFallbackHash>();
 
 
 // =====================================================
