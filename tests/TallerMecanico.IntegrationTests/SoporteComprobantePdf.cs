@@ -5,7 +5,9 @@ using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Dominio.Servicios;
 using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Infraestructura.Configuracion;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -28,7 +30,7 @@ internal static class SoporteComprobantePdf
     public static ComprobanteOrdenPdf CrearGenerador()
     {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-        return new ComprobanteOrdenPdf();
+        return new ComprobanteOrdenPdf(ConfiguracionTaller.Instancia);
     }
 
     public static OrdenDetalle Orden() => new()

@@ -1,5 +1,6 @@
 using System.Globalization;
 using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Dominio.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 

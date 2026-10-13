@@ -57,7 +57,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance)
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance)
         {
             Estado = EstadoOrden.Activa,
             Fecha = new DateOnly(2026, 10, 12)
@@ -76,7 +76,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
         pagina.ModelState.AddModelError(nameof(pagina.Estado), "Estado inválido.");
 
         Assert.IsType<PageResult>(pagina.OnGet());
@@ -91,7 +91,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         Assert.Null(fachada.ObtenerDetalle(id));
         Assert.IsType<BadRequestObjectResult>(pagina.OnGetDetalle(id));
@@ -103,7 +103,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         Assert.Null(fachada.ObtenerDetalle(999));
         Assert.IsType<NotFoundObjectResult>(pagina.OnGetDetalle(999));
@@ -115,7 +115,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba { FallarDetalle = true };
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         var resultado = Assert.IsType<ObjectResult>(pagina.OnGetDetalle(1));
         Assert.Equal(503, resultado.StatusCode);

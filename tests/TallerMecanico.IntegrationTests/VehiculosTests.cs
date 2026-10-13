@@ -159,7 +159,7 @@ public class VehiculosTests
         var vehiculos = new VehiculosPrueba();
         var servicio = new ClienteService(clientes, vehiculos, new ValidacionClientes(), usuario);
         Guid id = borradores.Guardar(Formulario("123ABC"), "crear", null);
-        var pagina = new TallerMecanico.Pages.Clientes.IndexModel(servicio, borradores)
+        var pagina = new TallerMecanico.Pages.Clientes.IndexModel(servicio, borradores, new BorradorOrdenSesion(contexto, usuario))
         {
             BorradorVehiculoId = id,
             ClienteInput = new ClienteFormViewModel
