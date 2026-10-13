@@ -1,4 +1,4 @@
-using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Aplicacion.Servicios;

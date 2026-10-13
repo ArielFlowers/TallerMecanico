@@ -1,6 +1,5 @@
 
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Infraestructura.Seguridad;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Aplicacion.Servicios;
@@ -9,12 +8,12 @@ public sealed class AuthenticationService : IAuthenticationService
 {
     private readonly IUsuarioPort _usuarioPort;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly AuthenticationFallbackHash _fallbackHash;
+    private readonly IFallbackHash _fallbackHash;
 
     public AuthenticationService(
         IUsuarioPort usuarioPort,
         IPasswordHasher passwordHasher,
-        AuthenticationFallbackHash fallbackHash)
+        IFallbackHash fallbackHash)
     {
         _usuarioPort = usuarioPort;
         _passwordHasher = passwordHasher;

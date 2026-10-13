@@ -1,3 +1,4 @@
+using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 
 namespace TallerMecanico.Infraestructura.Persistencia.Fabricas;

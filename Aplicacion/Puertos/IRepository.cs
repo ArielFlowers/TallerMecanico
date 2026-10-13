@@ -1,4 +1,4 @@
-namespace TallerMecanico.Infraestructura.Persistencia;
+namespace TallerMecanico.Aplicacion.Puertos;
 
 public interface IRepository<T>
 {

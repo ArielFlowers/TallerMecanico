@@ -3,7 +3,7 @@ using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Infraestructura.Seguridad;
 
-public sealed class AuthenticationFallbackHash
+public sealed class AuthenticationFallbackHash : IFallbackHash
 {
     public string Hash { get; }
 
