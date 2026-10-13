@@ -77,6 +77,14 @@
                 class="servicios-search-button">
             Buscar
         </button>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Busqueda))
+        {
+            <a asp-page="./Index"
+               class="servicios-search-button">
+                Limpiar
+            </a>
+        }
     </form>
 </div>
 

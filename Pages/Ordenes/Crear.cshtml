@@ -70,22 +70,26 @@
     </form>
 
     <section class="recent-orders ordenes-card">
-        <div class="section-header"><div><h2>Agregar productos (opcional)</h2><p>Solo si el servicio requiere repuestos. La disponibilidad es orientativa; el stock se valida al guardar.</p></div><button type="submit" form="nuevo-producto" class="services-btn services-btn-secondary">+ Nuevo producto</button></div>
+        <div class="section-header"><div><h2>Paso 1 · Productos del detalle (opcional)</h2><p>Añade uno o varios repuestos al detalle temporal. Solo se descuenta stock al guardar la orden.</p></div><button type="submit" form="nuevo-producto" class="services-btn services-btn-secondary">+ Nuevo producto</button></div>
         <input id="filtro-productos" class="service-input" type="search" placeholder="Buscar producto por código o nombre" autocomplete="off" />
         <form method="post" asp-page-handler="AgregarLinea" class="ordenes-agregar">
             <input type="hidden" asp-for="Formulario.VehiculoId" /><input type="hidden" asp-for="Formulario.MecanicoId" /><input type="hidden" asp-for="Formulario.ServicioId" /><input type="hidden" asp-for="Formulario.Fecha" /><input type="hidden" asp-for="Formulario.Token" /><input type="hidden" asp-for="BorradorId" />
             <input type="hidden" asp-for="Formulario.ClienteNuevoId" />
             @for (var i = 0; i < Model.Formulario.Lineas.Count; i++) { <input type="hidden" name="Formulario.Lineas[@i].ProductoId" value="@Model.Formulario.Lineas[i].ProductoId" /><input type="hidden" name="Formulario.Lineas[@i].Cantidad" value="@Model.Formulario.Lineas[i].Cantidad" /><input type="hidden" name="Formulario.Lineas[@i].Precio" value="@Model.Formulario.Lineas[i].Precio" /> }
-            <label class="visually-hidden" for="producto-select">Producto</label>
-            <select asp-for="ProductoId" id="producto-select" class="service-input" required><option value="">Selecciona un producto</option>@foreach (var p in Model.Productos) { <option value="@p.Id" data-search="@($"{p.Codigo} {p.Nombre}")" data-stock="@p.Stock">@p.Codigo — @p.Nombre | Bs. @p.Precio.ToString("0.00") | Stock: @p.Stock</option> }</select>
-            <label for="Cantidad">Cantidad</label><input asp-for="Cantidad" class="service-input" type="number" min="1" value="1" required />
-            <button type="submit" class="services-btn services-btn-primary">Agregar línea</button>
+            <label>Producto
+                <select asp-for="ProductoId" id="producto-select" class="service-input" required><option value="">Selecciona un producto</option>@foreach (var p in Model.Productos) { <option value="@p.Id" data-search="@($"{p.Codigo} {p.Nombre}")" data-stock="@p.Stock">@p.Codigo — @p.Nombre | Bs. @p.Precio.ToString("0.00") | Stock: @p.Stock</option> }</select>
+            </label>
+            <label>Cantidad
+                <input asp-for="Cantidad" class="service-input" type="number" min="1" value="1" required />
+            </label>
+            <button type="submit" class="services-btn services-btn-primary">Añadir producto al detalle</button>
         </form>
         <span asp-validation-for="ProductoId" class="service-validation"></span><span asp-validation-for="Cantidad" class="service-validation"></span>
     </section>
 
     <section class="recent-orders ordenes-card">
-        <h2>Detalle temporal (@Model.Lineas.Count líneas)</h2>
+        <h2>Paso 2 · Detalle temporal (@Model.Lineas.Count líneas)</h2>
+        <p>Todavía no está guardado: revisa el servicio y los productos y pulsa ✓ Guardar orden para registrarla.</p>
         @if (Model.Formulario.ServicioId.HasValue)
         {
             var servicioSel = Model.Servicios.FirstOrDefault(x => x.Id == Model.Formulario.ServicioId.Value);
@@ -97,9 +101,8 @@
             @foreach (var l in Model.Lineas) { <tr data-orden-linea data-precio="@l.Precio.ToString(CultureInfo.InvariantCulture)"><td>@l.Codigo</td><td>@l.Nombre@if (l.Cantidad > l.Stock) { <span class="service-validation"> Stock insuficiente; se comprobará al guardar.</span> }</td><td>Bs. @l.Precio.ToString("0.00")</td><td><form method="post" asp-page-handler="ActualizarCantidad" class="ordenes-editar"><input type="hidden" name="productoId" value="@l.ProductoId" /><input type="hidden" asp-for="Formulario.VehiculoId" /><input type="hidden" asp-for="Formulario.MecanicoId" /><input type="hidden" asp-for="Formulario.ServicioId" /><input type="hidden" asp-for="Formulario.Fecha" /><input type="hidden" asp-for="Formulario.Token" /><input type="hidden" asp-for="BorradorId" />@for (var i = 0; i < Model.Formulario.Lineas.Count; i++) { <input type="hidden" name="Formulario.Lineas[@i].ProductoId" value="@Model.Formulario.Lineas[i].ProductoId" /><input type="hidden" name="Formulario.Lineas[@i].Cantidad" value="@Model.Formulario.Lineas[i].Cantidad" /><input type="hidden" name="Formulario.Lineas[@i].Precio" value="@Model.Formulario.Lineas[i].Precio" /> }<input type="number" name="cantidad" value="@l.Cantidad" min="1" data-cantidad required /><button class="services-btn services-btn-secondary">Actualizar</button></form></td><td data-subtotal>Bs. @((l.Precio * l.Cantidad).ToString("0.00"))</td><td><form method="post" asp-page-handler="QuitarLinea"><input type="hidden" name="productoId" value="@l.ProductoId" /><input type="hidden" asp-for="Formulario.VehiculoId" /><input type="hidden" asp-for="Formulario.MecanicoId" /><input type="hidden" asp-for="Formulario.ServicioId" /><input type="hidden" asp-for="Formulario.Fecha" /><input type="hidden" asp-for="Formulario.Token" /><input type="hidden" asp-for="BorradorId" />@for (var i = 0; i < Model.Formulario.Lineas.Count; i++) { <input type="hidden" name="Formulario.Lineas[@i].ProductoId" value="@Model.Formulario.Lineas[i].ProductoId" /><input type="hidden" name="Formulario.Lineas[@i].Cantidad" value="@Model.Formulario.Lineas[i].Cantidad" /><input type="hidden" name="Formulario.Lineas[@i].Precio" value="@Model.Formulario.Lineas[i].Precio" /> }<button class="services-btn services-btn-secondary">Quitar</button></form></td></tr> }
             </tbody><tfoot><tr><th colspan="2">Resumen (<span id="resumen-lineas">@Model.Lineas.Count</span> líneas)</th><th colspan="2"><span id="resumen-cantidad">@Model.CantidadTotal</span> unidades</th><th id="resumen-total" data-costo-servicio="@Model.CostoServicioSeleccionado.ToString(CultureInfo.InvariantCulture)">Bs. @Model.TotalEstimado.ToString("0.00")</th><th></th></tr></tfoot></table></div>
         }
+    <div class="ordenes-guardar"><span>Estimado: <strong>Bs. @Model.TotalEstimado.ToString("0.00")</strong></span><span asp-validation-for="Formulario.Lineas" class="service-validation"></span><button type="submit" form="formulario-orden" class="services-btn services-btn-primary">✓ Guardar orden</button></div>
     </section>
-
-    <div class="ordenes-guardar"><span asp-validation-for="Formulario.Lineas" class="service-validation"></span><button type="submit" form="formulario-orden" class="services-btn services-btn-primary">Guardar orden</button></div>
 
     <form method="post" id="nuevo-producto" asp-page-handler="NuevoProducto">
         <input type="hidden" asp-for="Formulario.VehiculoId" /><input type="hidden" asp-for="Formulario.MecanicoId" /><input type="hidden" asp-for="Formulario.ServicioId" /><input type="hidden" asp-for="Formulario.Fecha" /><input type="hidden" asp-for="Formulario.Token" />
