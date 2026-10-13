@@ -140,6 +140,103 @@ public sealed class ConsultaOrdenesMySqlTests
         Assert.Single(Fachada(aislada).Obtener(fecha: DateOnly.MaxValue));
     }
 
+    [MySqlAisladoFact]
+    public void Detalle_RecuperaRelacionesProductosEImportesHistoricosSinRecalcular()
+    {
+        using var aislada = new MySqlAisladoFixture();
+        int id = CrearOrden(aislada, new DateTime(2026, 10, 12, 15, 30, 0));
+        aislada.Ejecutar("UPDATE Productos SET Precio = 999.99;");
+        aislada.Ejecutar("UPDATE Clientes SET ComplementoCi = '1A'; UPDATE Mecanicos SET ComplementoCi = '2B';");
+
+        var detalle = Fachada(aislada).ObtenerDetalle(id);
+
+        Assert.NotNull(detalle);
+        Assert.Equal(id, detalle.Id);
+        Assert.Equal(new DateTime(2026, 10, 12, 15, 30, 0), detalle.Fecha);
+        Assert.Equal("Toyota", detalle.Marca);
+        Assert.Equal("Corolla", detalle.Modelo);
+        Assert.Equal(15, detalle.Placa.Length);
+        Assert.Equal("Ana María Arce Pérez", detalle.NombreCliente);
+        Assert.False(string.IsNullOrWhiteSpace(detalle.CiCliente));
+        Assert.Equal("1A", detalle.ComplementoCiCliente);
+        Assert.Equal("71234567", detalle.CelularCliente);
+        Assert.Equal("José Muñoz Núñez", detalle.NombreMecanico);
+        Assert.Equal(detalle.CiCliente, detalle.CiMecanico);
+        Assert.Equal("2B", detalle.ComplementoCiMecanico);
+        Assert.Equal(31m, detalle.Total);
+        Assert.Equal(new[] { 10m, 21m }, detalle.Productos.Select(producto => producto.PrecioUnitario));
+        Assert.Equal(new[] { 10m, 21m }, detalle.Productos.Select(producto => producto.Subtotal));
+        Assert.All(detalle.Productos, producto => Assert.Equal(1, producto.Cantidad));
+        Assert.All(detalle.Productos, producto => Assert.Equal("Producto de prueba", producto.Nombre));
+        Assert.Equal(2, detalle.Productos.Select(producto => producto.Codigo).Distinct().Count());
+    }
+
+    [MySqlAisladoFact]
+    public void Detalle_OrdenActivaConservaAuditoriaUtcSinAnulacion()
+    {
+        using var aislada = new MySqlAisladoFixture();
+        int id = CrearOrden(aislada, new DateTime(2026, 10, 12));
+
+        var detalle = Fachada(aislada).ObtenerDetalle(id)!;
+
+        Assert.Equal(EstadoOrden.Activa, detalle.Estado);
+        Assert.Equal("recepcion_prueba", detalle.CreadoPor);
+        Assert.Equal(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), detalle.FechaCreacion);
+        Assert.Equal(DateTimeKind.Utc, detalle.FechaCreacion.Kind);
+        Assert.Null(detalle.AnuladoPor);
+        Assert.Null(detalle.FechaAnulacion);
+    }
+
+    [MySqlAisladoFact]
+    public void Detalle_OrdenAnuladaConservaProductosTotalYAmbasAuditorias()
+    {
+        using var aislada = new MySqlAisladoFixture();
+        int id = CrearOrden(aislada, new DateTime(2026, 10, 12), EstadoOrden.Anulada);
+
+        var detalle = Fachada(aislada).ObtenerDetalle(id)!;
+
+        Assert.Equal(EstadoOrden.Anulada, detalle.Estado);
+        Assert.Equal("recepcion_prueba", detalle.CreadoPor);
+        Assert.Equal("admin_prueba", detalle.AnuladoPor);
+        Assert.Equal(new DateTime(2026, 10, 14, 0, 0, 0, DateTimeKind.Utc), detalle.FechaAnulacion);
+        Assert.Equal(DateTimeKind.Utc, detalle.FechaAnulacion!.Value.Kind);
+        Assert.Equal(2, detalle.Productos.Count);
+        Assert.Equal(31m, detalle.Total);
+    }
+
+    [MySqlAisladoFact]
+    public void Detalle_InexistenteDevuelveNullYSinClienteNoOcultaLaOrden()
+    {
+        using var aislada = new MySqlAisladoFixture();
+        int id = CrearOrden(aislada, new DateTime(2026, 10, 12));
+        aislada.Ejecutar("UPDATE Vehiculos SET ClienteId = NULL;");
+        var fachada = Fachada(aislada);
+
+        Assert.Null(fachada.ObtenerDetalle(int.MaxValue));
+        var detalle = fachada.ObtenerDetalle(id)!;
+        Assert.Null(detalle.NombreCliente);
+        Assert.Null(detalle.CiCliente);
+        Assert.Null(detalle.CelularCliente);
+        Assert.Equal(2, detalle.Productos.Count);
+    }
+
+    [MySqlAisladoFact]
+    public void Detalle_ConsultasRepetidasNoCambianStockEstadoAuditoriaNiImportes()
+    {
+        using var aislada = new MySqlAisladoFixture();
+        int id = CrearOrden(aislada, new DateTime(2026, 10, 12), EstadoOrden.Anulada);
+        object? stock = aislada.Escalar("SELECT SUM(Stock) FROM Productos;");
+        object? orden = aislada.Escalar("SELECT CONCAT_WS('|', Estado, Total, Token, CreadoPor, FechaCreacion, AnuladoPor, FechaAnulacion) FROM Ordenes;");
+        object? detalles = aislada.Escalar("SELECT GROUP_CONCAT(CONCAT_WS('|', Id, ProductoId, Cantidad, PrecioUnitario, Subtotal) ORDER BY Id) FROM DetalleOrdenes;");
+        var fachada = Fachada(aislada);
+
+        Assert.Equal(2, fachada.ObtenerDetalle(id)!.Productos.Count);
+        Assert.Equal(2, fachada.ObtenerDetalle(id)!.Productos.Count);
+        Assert.Equal(stock, aislada.Escalar("SELECT SUM(Stock) FROM Productos;"));
+        Assert.Equal(orden, aislada.Escalar("SELECT CONCAT_WS('|', Estado, Total, Token, CreadoPor, FechaCreacion, AnuladoPor, FechaAnulacion) FROM Ordenes;"));
+        Assert.Equal(detalles, aislada.Escalar("SELECT GROUP_CONCAT(CONCAT_WS('|', Id, ProductoId, Cantidad, PrecioUnitario, Subtotal) ORDER BY Id) FROM DetalleOrdenes;"));
+    }
+
     internal static int CrearOrden(MySqlAisladoFixture aislada, DateTime fecha, EstadoOrden estado = EstadoOrden.Activa)
     {
         string ci = Interlocked.Increment(ref _ci).ToString();

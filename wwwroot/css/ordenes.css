@@ -95,3 +95,107 @@
     clip-path: inset(50%);
     white-space: nowrap;
 }
+
+.ordenes-page [data-ver-orden],
+.ordenes-dialog [data-cerrar-detalle] {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.ordenes-dialog {
+    width: min(1000px, calc(100% - 32px));
+    max-height: calc(100vh - 40px);
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+}
+
+.ordenes-dialog::backdrop {
+    background: rgba(8, 6, 11, 0.78);
+    backdrop-filter: blur(3px);
+}
+
+.ordenes-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.ordenes-dialog-header h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+}
+
+.ordenes-dialog-header [data-cerrar-detalle] {
+    width: auto;
+    flex-shrink: 0;
+}
+
+.ordenes-dialog-header p,
+.ordenes-detalle-zona {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.ordenes-dialog-body {
+    max-height: calc(100vh - 150px);
+    padding: 24px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.ordenes-detalle-seccion + .ordenes-detalle-seccion {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.ordenes-detalle-seccion h3 {
+    margin: 0 0 16px;
+    font-size: 15px;
+}
+
+.ordenes-datos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 12px 0 0;
+}
+
+.ordenes-datos dt {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.ordenes-datos dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.ordenes-productos-table {
+    min-width: 650px;
+}
+
+.ordenes-detalle-total {
+    margin: 20px 0 0;
+    text-align: right;
+}
+
+.ordenes-detalle-total strong {
+    color: var(--primary-hover);
+    white-space: nowrap;
+}
+
+.ordenes-anulada-aviso {
+    color: var(--danger);
+    font-size: 13px;
+}

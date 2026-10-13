@@ -78,6 +78,7 @@
                             <th scope="col">Total</th>
                             <th scope="col">Estado</th>
                             <th scope="col">Creado por</th>
+                            <th scope="col">Detalle</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,6 +97,15 @@
                                     </span>
                                 </td>
                                 <td>@orden.CreadoPor</td>
+                                <td>
+                                    <button type="button" class="services-btn services-btn-secondary"
+                                            data-ver-orden
+                                            data-detalle-url="@Url.Page("./Index", "Detalle", new { id = orden.Id })"
+                                            aria-label="Ver orden @orden.Id"
+                                            aria-haspopup="dialog" aria-controls="orden-detalle-dialog">
+                                        Ver
+                                    </button>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -104,3 +114,22 @@
         }
     </section>
 </div>
+
+<dialog id="orden-detalle-dialog" class="ordenes-dialog"
+        aria-labelledby="orden-detalle-titulo" aria-describedby="orden-detalle-descripcion">
+    <div class="ordenes-dialog-header">
+        <div>
+            <h2 id="orden-detalle-titulo">Detalle de la orden</h2>
+            <p id="orden-detalle-descripcion">Consulta de solo lectura.</p>
+        </div>
+        <button type="button" class="services-btn services-btn-secondary" data-cerrar-detalle autofocus>Cerrar</button>
+    </div>
+    <div class="ordenes-dialog-body">
+        <p id="orden-detalle-estado" role="status" aria-live="polite"></p>
+        <div id="orden-detalle-contenido" aria-busy="false"></div>
+    </div>
+</dialog>
+
+@section Scripts {
+    <script src="~/js/ordenes.js" asp-append-version="true"></script>
+}

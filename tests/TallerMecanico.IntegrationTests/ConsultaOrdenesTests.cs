@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
@@ -30,6 +32,8 @@ public sealed class ConsultaOrdenesTests
         Assert.Equal(EstadoOrden.Anulada, puerto.Estado);
         Assert.Equal(fecha, puerto.Fecha);
         Assert.Equal(1, puerto.Consultas);
+        Assert.Same(puerto.Detalle, fachada.ObtenerDetalle(1));
+        Assert.Equal(1, puerto.ConsultasDetalle);
     }
 
     [Theory]
@@ -43,7 +47,9 @@ public sealed class ConsultaOrdenesTests
         var fachada = new ConsultaOrdenesFacade(new ConsultaOrdenesService(puerto, usuario));
 
         Assert.Throws<UnauthorizedAccessException>(() => fachada.Obtener());
+        Assert.Throws<UnauthorizedAccessException>(() => fachada.ObtenerDetalle(1));
         Assert.Equal(0, puerto.Consultas);
+        Assert.Equal(0, puerto.ConsultasDetalle);
     }
 
     [Fact]
@@ -51,7 +57,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = new ConsultaOrdenesFacade(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada)
+        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance)
         {
             Estado = EstadoOrden.Activa,
             Fecha = new DateOnly(2026, 10, 12)
@@ -70,12 +76,50 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = new ConsultaOrdenesFacade(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada);
+        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
         pagina.ModelState.AddModelError(nameof(pagina.Estado), "Estado inválido.");
 
         Assert.IsType<PageResult>(pagina.OnGet());
         Assert.Empty(pagina.Ordenes);
         Assert.Equal(0, puerto.Consultas);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Detalle_IdInvalidoNoConsultaElPuerto(int id)
+    {
+        var puerto = new ConsultasPrueba();
+        var fachada = new ConsultaOrdenesFacade(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+
+        Assert.Null(fachada.ObtenerDetalle(id));
+        Assert.IsType<BadRequestObjectResult>(pagina.OnGetDetalle(id));
+        Assert.Equal(0, puerto.ConsultasDetalle);
+    }
+
+    [Fact]
+    public void Detalle_OrdenInexistenteDevuelve404SinConsultarListado()
+    {
+        var puerto = new ConsultasPrueba();
+        var fachada = new ConsultaOrdenesFacade(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+
+        Assert.Null(fachada.ObtenerDetalle(999));
+        Assert.IsType<NotFoundObjectResult>(pagina.OnGetDetalle(999));
+        Assert.Equal(0, puerto.Consultas);
+    }
+
+    [Fact]
+    public void Detalle_ErrorDePersistenciaDevuelve503SinExponerElErrorTecnico()
+    {
+        var puerto = new ConsultasPrueba { FallarDetalle = true };
+        var fachada = new ConsultaOrdenesFacade(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+
+        var resultado = Assert.IsType<ObjectResult>(pagina.OnGetDetalle(1));
+        Assert.Equal(503, resultado.StatusCode);
+        Assert.Equal("No se pudo consultar la orden. Intenta nuevamente.", resultado.Value);
     }
 
     [Fact]
@@ -103,6 +147,16 @@ public sealed class ConsultaOrdenesTests
         public int Consultas { get; private set; }
         public EstadoOrden? Estado { get; private set; }
         public DateOnly? Fecha { get; private set; }
+        public OrdenDetalle Detalle { get; } = new() { Id = 1 };
+        public int ConsultasDetalle { get; private set; }
+        public bool FallarDetalle { get; init; }
+
+        public OrdenDetalle? ObtenerDetalle(int id)
+        {
+            ConsultasDetalle++;
+            if (FallarDetalle) throw new FalloConsultaPrueba();
+            return id == Detalle.Id ? Detalle : null;
+        }
 
         public IReadOnlyList<OrdenResumen> Obtener(EstadoOrden? estado = null, DateOnly? fecha = null)
         {
@@ -112,6 +166,8 @@ public sealed class ConsultaOrdenesTests
             return Ordenes;
         }
     }
+
+    private sealed class FalloConsultaPrueba() : DbException("Error técnico de prueba");
 
     private sealed class ConexionProhibida : DatabaseConnectionFactory
     {

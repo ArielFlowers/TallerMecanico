@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using TallerMecanico.Infraestructura.Adapters.MySql;
 using TallerMecanico.Infraestructura.Identity;
@@ -20,6 +21,8 @@ public sealed class ConsultaOrdenesHttpTests
         int activa = ConsultaOrdenesMySqlTests.CrearOrden(aislada, new DateTime(2026, 10, 12));
         int anulada = ConsultaOrdenesMySqlTests.CrearOrden(aislada, new DateTime(2026, 10, 12), EstadoOrden.Anulada);
         ConsultaOrdenesMySqlTests.CrearOrden(aislada, new DateTime(2026, 10, 13));
+        aislada.Ejecutar("UPDATE Productos SET Precio = 999.99, Nombre = '<script>window.modalInjected = true</script>';");
+        aislada.Ejecutar("UPDATE Clientes SET ComplementoCi = '1A'; UPDATE Mecanicos SET ComplementoCi = '2B';");
         string password = $"Ordenes_{Guid.NewGuid():N}";
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         string passwordHash = hasher.GenerarHash(password);
@@ -83,10 +86,14 @@ public sealed class ConsultaOrdenesHttpTests
             var sinSesion = await anonimo.GetAsync("/Ordenes");
             Assert.Equal(HttpStatusCode.Redirect, sinSesion.StatusCode);
             Assert.Contains("/Auth/Login", sinSesion.Headers.Location!.ToString());
+            using var detalleSinSesion = new HttpRequestMessage(HttpMethod.Get, $"/Ordenes?handler=Detalle&id={activa}");
+            detalleSinSesion.Headers.Add("X-Requested-With", "XMLHttpRequest");
+            Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.SendAsync(detalleSinSesion)).StatusCode);
 
             foreach (string rol in new[] { "Administrador", "Recepcionista" })
             {
-                using var cliente = CrearCliente(url);
+                var cookies = new CookieContainer();
+                using var cliente = CrearCliente(url, cookies);
                 await IniciarSesion(cliente, rol, password);
                 using var listado = await cliente.GetAsync("/Ordenes");
                 Assert.Equal(HttpStatusCode.OK, listado.StatusCode);
@@ -116,6 +123,28 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.Contains("No se encontraron órdenes", vacio);
                 Assert.Equal(0, ContarFilas(vacio));
 
+                string detalleHtml = await cliente.GetStringAsync($"/Ordenes?handler=Detalle&id={activa}");
+                Assert.Equal(2, ContarFilas(detalleHtml));
+                Assert.DoesNotContain("<script>", detalleHtml);
+                Assert.Contains("&lt;script&gt;", detalleHtml);
+                string detalleTexto = WebUtility.HtmlDecode(detalleHtml);
+                Assert.Contains("31/12/2025 20:00", detalleTexto);
+                Assert.Contains("UTC-4", detalleTexto);
+                Assert.Contains("Bs. 10,00", detalleTexto);
+                Assert.Contains("Bs. 21,00", detalleTexto);
+                Assert.Contains("Bs. 31,00", detalleTexto);
+                Assert.DoesNotContain("999,99", detalleTexto);
+                Assert.Contains("-1A", detalleTexto);
+                Assert.Contains("-2B", detalleTexto);
+                Assert.DoesNotContain("Anulado por", detalleTexto);
+                string anulacion = WebUtility.HtmlDecode(await cliente.GetStringAsync($"/Ordenes?handler=Detalle&id={anulada}"));
+                Assert.Contains("admin_prueba", anulacion);
+                Assert.Contains("13/10/2026 20:00", anulacion);
+                Assert.Equal(2, ContarFilas(anulacion));
+                Assert.Equal(HttpStatusCode.NotFound, (await cliente.GetAsync("/Ordenes?handler=Detalle&id=2147483647")).StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, (await cliente.GetAsync("/Ordenes?handler=Detalle&id=-1")).StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, (await cliente.GetAsync("/Ordenes?handler=Detalle&id=abc")).StatusCode);
+
                 if (rol == "Recepcionista")
                 {
                     string rutaFiltrada = "/Ordenes?Estado=Anulada&Fecha=2026-10-12";
@@ -123,6 +152,10 @@ public sealed class ConsultaOrdenesHttpTests
                     ConsultaOrdenesMySqlTests.CrearOrden(aislada, new DateTime(2026, 10, 12), EstadoOrden.Anulada);
                     Assert.Equal(2, ContarFilas(await cliente.GetStringAsync(rutaFiltrada)));
                     Assert.Equal(4, ContarFilas(await cliente.GetStringAsync("/Ordenes")));
+                    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")))
+                    {
+                        await ComprobarModalEnNavegador(url, cookies, aislada, activa, anulada);
+                    }
                 }
             }
 
@@ -138,12 +171,37 @@ public sealed class ConsultaOrdenesHttpTests
         }
     }
 
-    private static HttpClient CrearCliente(string url) => new(new HttpClientHandler
+    private static HttpClient CrearCliente(string url, CookieContainer? cookies = null) => new(new HttpClientHandler
     {
         AllowAutoRedirect = false,
-        CookieContainer = new CookieContainer(),
+        CookieContainer = cookies ?? new CookieContainer(),
         ServerCertificateCustomValidationCallback = (_, _, _, _) => true
     }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(5) };
+
+    private static async Task ComprobarModalEnNavegador(
+        string url, CookieContainer cookies, MySqlAisladoFixture aislada, int activa, int anulada)
+    {
+        var inicio = new ProcessStartInfo("node")
+        {
+            WorkingDirectory = MySqlAisladoFixture.RaizProyecto,
+            UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardOutput = true, RedirectStandardError = true
+        };
+        inicio.ArgumentList.Add("tests/ordenes_ui.cjs");
+        inicio.Environment["TALLER_UI_URL"] = url;
+        inicio.Environment["TALLER_UI_DATABASE"] = new MySqlConnector.MySqlConnectionStringBuilder(aislada.CadenaConexion).Database;
+        inicio.Environment["TALLER_UI_ACTIVA"] = activa.ToString();
+        inicio.Environment["TALLER_UI_ANULADA"] = anulada.ToString();
+        inicio.Environment["TALLER_UI_COOKIES"] = JsonSerializer.Serialize(cookies.GetCookies(new Uri(url)).Cast<Cookie>()
+            .Select(cookie => new { name = cookie.Name, value = cookie.Value, url, httpOnly = cookie.HttpOnly, secure = cookie.Secure }));
+        using Process navegador = Process.Start(inicio)!;
+        Task<string> salida = navegador.StandardOutput.ReadToEndAsync();
+        Task<string> errores = navegador.StandardError.ReadToEndAsync();
+        using var limite = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        try { await navegador.WaitForExitAsync(limite.Token); }
+        catch (OperationCanceledException) { navegador.Kill(entireProcessTree: true); throw; }
+        Assert.True(navegador.ExitCode == 0, await salida + await errores);
+    }
 
     private static async Task IniciarSesion(HttpClient cliente, string username, string password)
     {

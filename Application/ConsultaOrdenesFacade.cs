@@ -9,4 +9,6 @@ public sealed class ConsultaOrdenesFacade(ConsultaOrdenesService servicio)
     public IReadOnlyList<OrdenResumen> Obtener(
         EstadoOrden? estado = null,
         DateOnly? fecha = null) => servicio.Obtener(estado, fecha);
+
+    public OrdenDetalle? ObtenerDetalle(int id) => servicio.ObtenerDetalle(id);
 }
