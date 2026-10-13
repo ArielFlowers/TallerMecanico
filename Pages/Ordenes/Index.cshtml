@@ -78,7 +78,7 @@
                             <th scope="col">Total</th>
                             <th scope="col">Estado</th>
                             <th scope="col">Creado por</th>
-                            <th scope="col">Detalle</th>
+                            <th scope="col">Consulta</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,13 +98,18 @@
                                 </td>
                                 <td>@orden.CreadoPor</td>
                                 <td>
-                                    <button type="button" class="services-btn services-btn-secondary"
-                                            data-ver-orden
-                                            data-detalle-url="@Url.Page("./Index", "Detalle", new { id = orden.Id })"
-                                            aria-label="Ver orden @orden.Id"
-                                            aria-haspopup="dialog" aria-controls="orden-detalle-dialog">
-                                        Ver
-                                    </button>
+                                    <div class="ordenes-acciones-fila">
+                                        <button type="button" class="services-btn services-btn-secondary"
+                                                data-ver-orden
+                                                data-detalle-url="@Url.Page("./Index", "Detalle", new { id = orden.Id })"
+                                                aria-label="Ver orden @orden.Id"
+                                                aria-haspopup="dialog" aria-controls="orden-detalle-dialog">
+                                            Ver
+                                        </button>
+                                        <a asp-page="./Comprobante" asp-route-id="@orden.Id"
+                                           class="services-btn services-btn-secondary" target="_blank" rel="noopener"
+                                           aria-label="Comprobante de orden @orden.Id (nueva pestaña)">Comprobante</a>
+                                    </div>
                                 </td>
                             </tr>
                         }

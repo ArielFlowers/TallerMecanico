@@ -11,7 +11,7 @@ public sealed class ConsultaOrdenesMySqlTests
     private static int _ci = 6000000;
 
     private static ConsultaOrdenesFacade Fachada(MySqlAisladoFixture aislada) =>
-        new(new ConsultaOrdenesService(
+        SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(
             new CreadorConsultaOrdenes(aislada.Factory).CrearRepositorio(), new UsuarioPrueba()));
 
     [MySqlAisladoFact]

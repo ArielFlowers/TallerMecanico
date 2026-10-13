@@ -89,6 +89,9 @@ public sealed class ConsultaOrdenesHttpTests
             using var detalleSinSesion = new HttpRequestMessage(HttpMethod.Get, $"/Ordenes?handler=Detalle&id={activa}");
             detalleSinSesion.Headers.Add("X-Requested-With", "XMLHttpRequest");
             Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.SendAsync(detalleSinSesion)).StatusCode);
+            using var pdfSinSesion = new HttpRequestMessage(HttpMethod.Get, $"/Ordenes/Comprobante?id={activa}");
+            pdfSinSesion.Headers.Add("X-Requested-With", "XMLHttpRequest");
+            Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.SendAsync(pdfSinSesion)).StatusCode);
 
             foreach (string rol in new[] { "Administrador", "Recepcionista" })
             {
@@ -108,6 +111,8 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.Contains("ordenes-estado-anulada", html);
                 Assert.Contains("Refrescar", html);
                 Assert.Matches("<form[^>]+method=\"get\"", html);
+                Assert.Contains($"/Ordenes/Comprobante?id={activa}", html);
+                Assert.Contains("target=\"_blank\"", html);
 
                 string filtrado = WebUtility.HtmlDecode(await cliente.GetStringAsync("/Ordenes?Estado=Anulada&Fecha=2026-10-12"));
                 Assert.Equal(1, ContarFilas(filtrado));
@@ -144,6 +149,32 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.Equal(HttpStatusCode.NotFound, (await cliente.GetAsync("/Ordenes?handler=Detalle&id=2147483647")).StatusCode);
                 Assert.Equal(HttpStatusCode.BadRequest, (await cliente.GetAsync("/Ordenes?handler=Detalle&id=-1")).StatusCode);
                 Assert.Equal(HttpStatusCode.BadRequest, (await cliente.GetAsync("/Ordenes?handler=Detalle&id=abc")).StatusCode);
+                using var comprobante = await cliente.GetAsync($"/Ordenes/Comprobante?id={activa}&GeneradoPor=inventado");
+                Assert.Equal(HttpStatusCode.OK, comprobante.StatusCode);
+                Assert.Equal("application/pdf", comprobante.Content.Headers.ContentType!.MediaType);
+                Assert.Equal("inline", comprobante.Content.Headers.ContentDisposition!.DispositionType);
+                Assert.Contains($"Comprobante-Orden-{activa}.pdf", comprobante.Content.Headers.ContentDisposition.ToString());
+                byte[] pdf = await comprobante.Content.ReadAsByteArrayAsync();
+                Assert.StartsWith("%PDF-", System.Text.Encoding.ASCII.GetString(pdf, 0, 8));
+                using var copia = await cliente.GetAsync($"/Ordenes/Comprobante?id={activa}");
+                Assert.Equal(HttpStatusCode.OK, copia.StatusCode);
+                using var pdfAnulado = await cliente.GetAsync($"/Ordenes/Comprobante?id={anulada}");
+                Assert.Equal(HttpStatusCode.OK, pdfAnulado.StatusCode);
+                if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TALLER_PDF_PYTHON")))
+                {
+                    string texto = SoporteComprobantePdf.ExtraerTexto(pdf);
+                    Assert.Contains($"Copia generada por: {rol}", texto);
+                    Assert.Contains("Creado por: recepcion_prueba", texto);
+                    Assert.Contains("Son Treinta y Un Bolivianos.", texto);
+                    Assert.DoesNotContain("inventado", texto);
+                    Assert.DoesNotContain("999,99", texto);
+                    string textoAnulado = SoporteComprobantePdf.ExtraerTexto(await pdfAnulado.Content.ReadAsByteArrayAsync());
+                    Assert.Contains("ANULADA", textoAnulado);
+                    Assert.Contains("31,00", textoAnulado);
+                }
+                Assert.Equal(HttpStatusCode.BadRequest, (await cliente.GetAsync("/Ordenes/Comprobante?id=abc")).StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, (await cliente.GetAsync("/Ordenes/Comprobante?id=-1")).StatusCode);
+                Assert.Equal(HttpStatusCode.NotFound, (await cliente.GetAsync("/Ordenes/Comprobante?id=2147483647")).StatusCode);
 
                 if (rol == "Recepcionista")
                 {

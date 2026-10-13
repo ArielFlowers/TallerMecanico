@@ -16,6 +16,7 @@ using TallerMecanico.Infraestructura.Setup;
 using TallerMecanico.Infraestructura.Session;
 using TallerMecanico.Application;
 using TallerMecanico.Application.Facades;
+using TallerMecanico.Infraestructura.Pdf;
 
 var builder =
     WebApplication.CreateBuilder(args);
@@ -80,6 +81,10 @@ builder.Services.AddScoped<IConsultaOrdenesPort>(serviceProvider =>
     serviceProvider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
 builder.Services.AddScoped<ConsultaOrdenesService>();
 builder.Services.AddScoped<ConsultaOrdenesFacade>();
+builder.Services.AddSingleton<ImporteEnPalabras>();
+builder.Services.AddScoped<IComprobanteOrdenPdf, ComprobanteOrdenPdf>();
+builder.Services.AddScoped<ComprobanteOrdenService>();
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(

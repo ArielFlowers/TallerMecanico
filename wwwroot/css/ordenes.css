@@ -51,7 +51,17 @@
 }
 
 .ordenes-table {
-    min-width: 1050px;
+    min-width: 1250px;
+}
+
+.ordenes-acciones-fila {
+    display: flex;
+    gap: 8px;
+}
+
+.ordenes-acciones-fila .services-btn {
+    width: auto;
+    white-space: nowrap;
 }
 
 .ordenes-total {
