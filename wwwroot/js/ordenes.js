@@ -1,4 +1,3 @@
-<<<<<<< dev1/setup-dashboard
 (() => {
     function filtrar(inputId, selectId) {
         const input = document.getElementById(inputId);
@@ -25,7 +24,7 @@
             cantidadTotal += cantidad;
             total += cantidad * precio;
             const subtotal = fila.querySelector('[data-subtotal]');
-            if (subtotal) subtotal.textContent = `Bs. ${ (cantidad * precio).toFixed(2) }`;
+            if (subtotal) subtotal.textContent = `Bs. ${(cantidad * precio).toFixed(2)}`;
         }
         document.getElementById('resumen-lineas')?.replaceChildren(String(filas.length));
         document.getElementById('resumen-cantidad')?.replaceChildren(String(cantidadTotal));
@@ -34,7 +33,7 @@
     };
     document.querySelectorAll('[data-cantidad]').forEach(input => input.addEventListener('input', actualizarResumen));
 })();
-=======
+
 document.addEventListener("DOMContentLoaded", () => {
     const dialog = document.getElementById("orden-detalle-dialog");
     const contenido = document.getElementById("orden-detalle-contenido");
@@ -105,4 +104,3 @@ document.addEventListener("DOMContentLoaded", () => {
         botonOrigen?.focus();
     });
 });
->>>>>>> main

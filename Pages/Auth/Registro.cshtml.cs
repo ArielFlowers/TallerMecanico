@@ -107,7 +107,7 @@ public sealed class RegistroModel : PageModel
             ModelState.AddModelError(
                 string.Empty,
                 "No se pudo completar la solicitud en este momento. " +
-                "Si recibes un correo de verificacion, utiliza ese enlace.");
+                "Si recibes un correo de verificación, utiliza ese enlace.");
         }
 
         return Page();

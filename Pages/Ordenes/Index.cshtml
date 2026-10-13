@@ -44,6 +44,11 @@
 
     <div asp-validation-summary="All" class="ordenes-validacion" role="alert"></div>
 
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito))
+    {
+        <div class="service-validation" role="status">@Model.MensajeExito</div>
+    }
+
     <section class="recent-orders" aria-labelledby="ordenes-listado-titulo">
         <div class="section-header">
             <div>
@@ -109,6 +114,15 @@
                                         <a asp-page="./Comprobante" asp-route-id="@orden.Id"
                                            class="services-btn services-btn-secondary" target="_blank" rel="noopener"
                                            aria-label="Comprobante de orden @orden.Id (nueva pestaña)">Comprobante</a>
+                                        @if (orden.Estado == EstadoOrden.Activa && User.IsInRole("Administrador"))
+                                        {
+                                            <form method="post" asp-page-handler="Anular" asp-route-id="@orden.Id"
+                                                  onsubmit="return confirm('¿Anular la orden #@orden.Id? Se restituirá el stock.');"
+                                                  style="display:inline;">
+                                                <button type="submit" class="services-btn services-btn-secondary"
+                                                        aria-label="Anular orden @orden.Id">Anular</button>
+                                            </form>
+                                        }
                                     </div>
                                 </td>
                             </tr>

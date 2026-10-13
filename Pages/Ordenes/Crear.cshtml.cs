@@ -29,6 +29,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     public decimal Total => Lineas.Sum(x => x.Precio * x.Cantidad);
     public long CantidadTotal => Lineas.Sum(x => (long)x.Cantidad);
     public string? Mensaje { get; private set; }
+    public int? OrdenCreadaId { get; private set; }
 
     public IActionResult OnGet()
     {
@@ -53,6 +54,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
             AgregarProducto(nuevo, 1);
         Cargar();
         Mensaje = TempData["OrdenMensaje"] as string ?? TempData["OrdenError"] as string;
+        if (TempData["OrdenCreadaId"] is int creada) OrdenCreadaId = creada;
         return Page();
     }
 
@@ -106,6 +108,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         TempData["OrdenMensaje"] = resultado.EsReenvio
             ? $"La orden #{resultado.OrdenId} ya se había guardado. Total: Bs. {resultado.Total:0.00}."
             : $"Orden #{resultado.OrdenId} guardada correctamente. Total: Bs. {resultado.Total:0.00}.";
+        TempData["OrdenCreadaId"] = resultado.OrdenId;
         return RedirectToPage();
     }
 

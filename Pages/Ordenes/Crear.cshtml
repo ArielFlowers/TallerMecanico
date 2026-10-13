@@ -11,6 +11,17 @@
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Mensaje)) { <div class="service-validation" role="status">@Model.Mensaje</div> }
+    @if (Model.OrdenCreadaId.HasValue)
+    {
+        <div class="service-validation" role="status">
+            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value" target="_blank" rel="noopener">Ver comprobante de la orden #@Model.OrdenCreadaId.Value (se abre automáticamente)</a>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                window.open('@Url.Page("./Comprobante", new { id = Model.OrdenCreadaId.Value })', '_blank', 'noopener');
+            });
+        </script>
+    }
     <div asp-validation-summary="ModelOnly" class="service-validation" role="alert"></div>
 
     <form method="post" id="formulario-orden" asp-page-handler="Guardar" onsubmit="return confirm('¿Guardar orden?');">

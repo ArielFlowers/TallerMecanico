@@ -3,7 +3,7 @@
 
 @{
     Layout = null;
-    ViewData["Title"] = "Reenviar verificacion";
+    ViewData["Title"] = "Reenviar verificación";
 }
 
 <!DOCTYPE html>
@@ -11,7 +11,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Reenviar verificacion | AutoTaller Pro</title>
+    <title>Reenviar verificación | AutoTaller Pro</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -88,7 +88,7 @@
     <main class="panel">
         <div class="icono" aria-hidden="true">✉</div>
 
-        <h1>Reenviar verificacion</h1>
+        <h1>Reenviar verificación</h1>
 
         @if (Model.SolicitudRecibida)
         {
@@ -97,20 +97,20 @@
                 y es posible reenviar, se intentará enviar un enlace nuevo.
                 La recepción puede demorarse; si no llega el correo,
                 puedes volver a solicitarlo después del intervalo mínimo de dos minutos.
-                Revisa tambien la carpeta de spam.
+                Revisa también la carpeta de spam.
             </div>
         }
         else
         {
             <p>
-                ¿No recibiste el correo? Ingresa la direccion que
+                ¿No recibiste el correo? Ingresa la dirección que
                 utilizaste al registrarte para solicitar otro enlace.
             </p>
 
             <form method="post">
                 <div asp-validation-summary="ModelOnly" class="error"></div>
 
-                <label asp-for="Email">Correo electronico</label>
+                <label asp-for="Email">Correo electrónico</label>
 
                 <input asp-for="Email"
                        type="email"
@@ -127,7 +127,7 @@
         }
 
         <a class="volver" asp-page="/Auth/Login">
-            Volver al inicio de sesion
+            Volver al inicio de sesión
         </a>
     </main>
 </body>

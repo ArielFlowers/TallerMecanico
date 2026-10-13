@@ -22,8 +22,8 @@ public sealed class ReenviarVerificacionModel : PageModel
     }
 
     [BindProperty]
-    [Required(ErrorMessage = "Ingresa tu correo electronico.")]
-    [EmailAddress(ErrorMessage = "Ingresa un correo valido.")]
+    [Required(ErrorMessage = "Ingresa tu correo electrónico.")]
+    [EmailAddress(ErrorMessage = "Ingresa un correo válido.")]
     [StringLength(254)]
     public string Email { get; set; } = string.Empty;
 
