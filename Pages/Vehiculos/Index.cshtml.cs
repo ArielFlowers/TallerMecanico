@@ -45,12 +45,18 @@ public class IndexModel : PageModel
 
     [BindProperty]
     public Guid? BorradorId { get; set; }
+    [BindProperty(SupportsGet = true)]
+    public Guid? OrdenBorradorId { get; set; }
+    [BindProperty(SupportsGet = true)]
+    public int? ClientePreseleccionadoId { get; set; }
 
     public string? MensajeError => TempData["VehiculoError"] as string;
 
     public void OnGet()
     {
         CargarDatos();
+        if (OrdenBorradorId.HasValue) ModalAbierto = "crear";
+        if (ClientePreseleccionadoId.HasValue) Formulario.ClienteId = ClientePreseleccionadoId;
     }
 
     public IActionResult OnGetBuscar()
@@ -75,9 +81,14 @@ public class IndexModel : PageModel
     public IActionResult OnPostRegistrarCliente(string modal)
     {
         if (modal is not ("crear" or "editar")) return BadRequest();
-        if (BorradorId.HasValue) _borradores.Eliminar(BorradorId.Value);
-        Guid borradorId = _borradores.Guardar(Formulario, modal, Buscar);
-        return RedirectToPage("/Clientes/Index", new { BorradorVehiculoId = borradorId });
+        Guid? ordenBorradorId = OrdenBorradorId;
+        if (BorradorId.HasValue)
+        {
+            ordenBorradorId = _borradores.Obtener(BorradorId.Value)?.OrdenBorradorId ?? ordenBorradorId;
+            _borradores.Eliminar(BorradorId.Value);
+        }
+        Guid borradorId = _borradores.Guardar(Formulario, modal, Buscar, ordenBorradorId);
+        return RedirectToPage("/Clientes/Index", new { BorradorVehiculoId = borradorId, OrdenBorradorId = ordenBorradorId });
     }
 
     public IActionResult OnGetRetomar(Guid borradorId)
@@ -92,6 +103,7 @@ public class IndexModel : PageModel
         Formulario = borrador.Formulario;
         Buscar = borrador.Buscar;
         BorradorId = borradorId;
+        OrdenBorradorId = borrador.OrdenBorradorId;
         return MostrarModal(borrador.Modal);
     }
 
@@ -196,6 +208,11 @@ public class IndexModel : PageModel
         if (ModelState.IsValid)
         {
             if (BorradorId.HasValue) _borradores.Eliminar(BorradorId.Value);
+            if (OrdenBorradorId.HasValue)
+            {
+                Vehiculo? creado = _vehiculoService.Search(Formulario.Placa ?? string.Empty).FirstOrDefault(x => x.Placa == Formulario.Placa);
+                if (creado is not null) return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId, VehiculoNuevoId = creado.Id });
+            }
             return RedirectToPage();
         }
 

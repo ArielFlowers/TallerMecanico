@@ -11,14 +11,17 @@ public class IndexModel : PageModel
 {
     private readonly ClienteService _clienteService;
     private readonly IBorradorVehiculoPort _borradores;
+    private readonly IBorradorOrdenPort _borradoresOrden;
 
     public IndexModel(
         ClienteService clienteService,
-        IBorradorVehiculoPort borradores)
+        IBorradorVehiculoPort borradores,
+        IBorradorOrdenPort borradoresOrden)
     {
         _clienteService =
             clienteService;
         _borradores = borradores;
+        _borradoresOrden = borradoresOrden;
     }
 
     [BindProperty]
@@ -34,6 +37,9 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid? BorradorVehiculoId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public Guid? OrdenBorradorId { get; set; }
+
     public IReadOnlyList<Cliente> Clientes { get; private set; } =
         [];
 
@@ -48,6 +54,8 @@ public class IndexModel : PageModel
         CargarMensajes();
         CargarClientes();
         if (BorradorVehiculoId.HasValue && _borradores.Obtener(BorradorVehiculoId.Value) is not null)
+            FormularioActivo = "crear";
+        else if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
             FormularioActivo = "crear";
     }
 
@@ -97,6 +105,9 @@ public class IndexModel : PageModel
         {
             return RedirectToPage("/Vehiculos/Index", "Retomar", new { borradorId = BorradorVehiculoId.Value });
         }
+
+        if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
+            return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId.Value, ClienteNuevoId = ClienteInput.Id });
 
         return RedirectToPage(
             new

@@ -7,6 +7,11 @@
 
 <div class="dashboard">
 
+    @if (Model.OrdenBorradorId.HasValue)
+    {
+        <a asp-page="/Ordenes/Crear" asp-route-borradorId="@Model.OrdenBorradorId" class="services-btn services-btn-secondary">Volver a la orden</a>
+    }
+
     <div class="dashboard-header">
         <div>
             <h1>Gestión de Clientes</h1>
@@ -264,6 +269,7 @@
                value="@Model.TerminoBusqueda" />
 
         <input asp-for="BorradorVehiculoId" type="hidden" />
+        <input asp-for="OrdenBorradorId" type="hidden" />
 
         <div asp-validation-summary="ModelOnly"
              class="service-validation">
