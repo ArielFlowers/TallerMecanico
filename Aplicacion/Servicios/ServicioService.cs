@@ -1,3 +1,4 @@
+using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -7,10 +8,14 @@ namespace TallerMecanico.Aplicacion.Servicios;
 public class ServicioService : IServicioService
 {
     private readonly IRepository<Servicio> _servicioRepository;
+    private readonly ICurrentUser? _currentUser;
 
-    public ServicioService(CreadorServicio creadorServicio)
+    public ServicioService(
+        CreadorServicio creadorServicio,
+        ICurrentUser? currentUser = null)
     {
         _servicioRepository = creadorServicio.CrearRepositorio();
+        _currentUser = currentUser;
     }
 
     public List<Servicio> ObtenerTodos()
@@ -27,13 +32,28 @@ public class ServicioService : IServicioService
     {
         ValidarServicio(servicio);
 
+        servicio.CreadoPor = UsuarioActual();
+        servicio.FechaCreacion = DateTime.Now;
+
         _servicioRepository.Add(servicio);
     }
 
     public void Actualizar(Servicio servicio)
     {
         ValidarServicio(servicio);
-        ValidarExistencia(servicio.Id);
+
+        Servicio? existente = _servicioRepository.GetById(servicio.Id);
+
+        if (existente is null)
+        {
+            throw new InvalidOperationException(
+                "El servicio solicitado no existe.");
+        }
+
+        servicio.CreadoPor = existente.CreadoPor;
+        servicio.FechaCreacion = existente.FechaCreacion;
+        servicio.ModificadoPor = UsuarioActual();
+        servicio.FechaModificacion = DateTime.Now;
 
         _servicioRepository.Update(servicio);
     }
@@ -52,6 +72,13 @@ public class ServicioService : IServicioService
             throw new InvalidOperationException(
                 "El servicio solicitado no existe.");
         }
+    }
+
+    private string UsuarioActual()
+    {
+        return string.IsNullOrWhiteSpace(_currentUser?.Username)
+            ? "sistema"
+            : _currentUser!.Username!;
     }
 
     private static void ValidarServicio(Servicio servicio)

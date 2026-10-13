@@ -17,4 +17,12 @@ public class Vehiculo
     public string Observaciones { get; set; } = string.Empty;
 
     public int? ClienteId { get; set; }
+
+    public string CreadoPor { get; set; } = string.Empty;
+
+    public DateTime FechaCreacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
 }

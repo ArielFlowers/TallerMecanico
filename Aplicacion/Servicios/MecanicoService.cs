@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -16,13 +17,16 @@ public class MecanicoService
 
     private readonly MecanicoRepository _mecanicoRepository;
     private readonly ValidacionMecanicos _validacionMecanicos;
+    private readonly ICurrentUser? _currentUser;
 
     public MecanicoService(
         CreadorMecanico creadorMecanico,
-        ValidacionMecanicos validacionMecanicos)
+        ValidacionMecanicos validacionMecanicos,
+        ICurrentUser? currentUser = null)
     {
         _mecanicoRepository = (MecanicoRepository)creadorMecanico.CrearRepositorio();
         _validacionMecanicos = validacionMecanicos;
+        _currentUser = currentUser;
     }
 
     public IReadOnlyDictionary<string, string> Crear(
@@ -57,7 +61,9 @@ public class MecanicoService
             int id,
             MecanicoInputModel mecanicoInput)
     {
-        if (_mecanicoRepository.GetById(id) is null)
+        Mecanico? existente = _mecanicoRepository.GetById(id);
+
+        if (existente is null)
         {
             return (false, new Dictionary<string, string>());
         }
@@ -72,6 +78,10 @@ public class MecanicoService
 
         var mecanico = CrearMecanico(mecanicoNormalizado);
         mecanico.Id = id;
+        mecanico.CreadoPor = existente.CreadoPor;
+        mecanico.FechaCreacion = existente.FechaCreacion;
+        mecanico.ModificadoPor = UsuarioActual();
+        mecanico.FechaModificacion = DateTime.Now;
 
         _mecanicoRepository.Update(mecanico);
         return (true, errores);
@@ -157,7 +167,7 @@ public class MecanicoService
                 $"{char.ToUpperInvariant(palabra[0])}{palabra[1..].ToLowerInvariant()}"));
     }
 
-    private static Mecanico CrearMecanico(MecanicoInputModel mecanicoInput)
+    private Mecanico CrearMecanico(MecanicoInputModel mecanicoInput)
     {
         return new Mecanico
         {
@@ -168,7 +178,16 @@ public class MecanicoService
             SegundoApellido = mecanicoInput.SegundoApellido,
             Genero = mecanicoInput.Genero,
             Especialidad = mecanicoInput.Especialidad,
-            Celular = mecanicoInput.Celular
+            Celular = mecanicoInput.Celular,
+            CreadoPor = UsuarioActual(),
+            FechaCreacion = DateTime.Now
         };
+    }
+
+    private string UsuarioActual()
+    {
+        return string.IsNullOrWhiteSpace(_currentUser?.Username)
+            ? "sistema"
+            : _currentUser!.Username!;
     }
 }

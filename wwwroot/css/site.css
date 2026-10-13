@@ -1558,3 +1558,4 @@ button.service-action {
 .vehicle-plate-toggle input:checked { background: var(--vehicle-toggle-color); }
 .vehicle-plate-toggle input:checked::after { transform: translateX(1.1rem); }
 .vehicle-plate-toggle input:focus-visible { outline: 2px solid var(--vehicle-toggle-color); outline-offset: 3px; }
+.submenu-item[href="#"]{opacity:.45;cursor:not-allowed}

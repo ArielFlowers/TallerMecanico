@@ -25,18 +25,23 @@ public class DatabaseInitializer
 
         CreateMecanicosTable(connection);
         EnsureMecanicosSchema(connection);
+        EnsureAuditoriaModificacion(connection, "Mecanicos");
 
         CreateServiciosTable(connection);
+        EnsureAuditoriaModificacion(connection, "Servicios");
         CreateHistorialCostoServiciosTable(connection);
         EnsureHistorialCostoServicioTrigger(connection);
 
         CreateClientesTable(connection);
+        EnsureAuditoriaModificacion(connection, "Clientes");
 
         CreateVehiculosTable(connection);
+        EnsureAuditoriaModificacion(connection, "Vehiculos");
         EnsureVehiculosClienteSchema(connection);
         EnsureVehiculosPlacaSchema(connection);
 
         CreateProductosTable(connection);
+        EnsureAuditoriaModificacion(connection, "Productos");
         ExecuteCommand(connection, OrdenSchema.CrearTablas);
         CreateUsuariosTable(connection);
         EnsureUsuariosEmailSchema(connection);
@@ -63,6 +68,10 @@ public class DatabaseInitializer
                 Genero VARCHAR(20) NOT NULL,
                 Especialidad VARCHAR(60) NOT NULL,
                 Celular VARCHAR(20) NOT NULL,
+                CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema',
+                FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                ModificadoPor VARCHAR(50) NULL,
+                FechaModificacion DATETIME NULL,
 
                 CONSTRAINT PK_Mecanicos
                     PRIMARY KEY (Id),
@@ -668,6 +677,10 @@ public class DatabaseInitializer
                 Descripcion VARCHAR(300) NOT NULL,
                 Costo DECIMAL(10,2) NOT NULL,
                 TiempoEstimadoHoras DECIMAL(6,2) NOT NULL,
+                CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema',
+                FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                ModificadoPor VARCHAR(50) NULL,
+                FechaModificacion DATETIME NULL,
 
                 CONSTRAINT PK_Servicios
                     PRIMARY KEY (Id),
@@ -787,6 +800,8 @@ public class DatabaseInitializer
                 Celular VARCHAR(8) NOT NULL,
                 CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema',
                 FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                ModificadoPor VARCHAR(50) NULL,
+                FechaModificacion DATETIME NULL,
 
                 CONSTRAINT PK_Clientes
                     PRIMARY KEY (Id),
@@ -845,6 +860,10 @@ public class DatabaseInitializer
                 Kilometraje INT NOT NULL,
                 Observaciones VARCHAR(300) NOT NULL DEFAULT '',
                 ClienteId INT NULL,
+                CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema',
+                FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                ModificadoPor VARCHAR(50) NULL,
+                FechaModificacion DATETIME NULL,
 
                 CONSTRAINT PK_Vehiculos
                     PRIMARY KEY (Id),
@@ -1010,6 +1029,8 @@ public class DatabaseInitializer
                 StockMinimo INT NOT NULL,
                 CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema',
                 FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                ModificadoPor VARCHAR(50) NULL,
+                FechaModificacion DATETIME NULL,
 
                 CONSTRAINT PK_Productos
                     PRIMARY KEY (Id),
@@ -1245,6 +1266,39 @@ public class DatabaseInitializer
     // =====================================================
     // HELPERS
     // =====================================================
+
+    private static void EnsureAuditoriaModificacion(
+        DbConnection connection,
+        string tableName)
+    {
+        if (!ColumnExists(connection, tableName, "CreadoPor"))
+        {
+            ExecuteCommand(
+                connection,
+                $"ALTER TABLE {tableName} ADD COLUMN CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema';");
+        }
+
+        if (!ColumnExists(connection, tableName, "FechaCreacion"))
+        {
+            ExecuteCommand(
+                connection,
+                $"ALTER TABLE {tableName} ADD COLUMN FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;");
+        }
+
+        if (!ColumnExists(connection, tableName, "ModificadoPor"))
+        {
+            ExecuteCommand(
+                connection,
+                $"ALTER TABLE {tableName} ADD COLUMN ModificadoPor VARCHAR(50) NULL;");
+        }
+
+        if (!ColumnExists(connection, tableName, "FechaModificacion"))
+        {
+            ExecuteCommand(
+                connection,
+                $"ALTER TABLE {tableName} ADD COLUMN FechaModificacion DATETIME NULL;");
+        }
+    }
 
     private static bool ColumnExists(
         DbConnection connection,

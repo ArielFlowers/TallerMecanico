@@ -31,7 +31,11 @@ public class MecanicoRepository : IRepository<Mecanico>
                    SegundoApellido,
                    Genero,
                    Especialidad,
-                   Celular
+                   Celular,
+                   CreadoPor,
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Mecanicos
             ORDER BY PrimerApellido ASC,
                      SegundoApellido ASC,
@@ -71,7 +75,11 @@ public class MecanicoRepository : IRepository<Mecanico>
                    SegundoApellido,
                    Genero,
                    Especialidad,
-                   Celular
+                   Celular,
+                   CreadoPor,
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Mecanicos
             WHERE Ci LIKE @PatronBusqueda ESCAPE '!'
                OR ComplementoCi LIKE @PatronBusqueda ESCAPE '!'
@@ -122,7 +130,11 @@ public class MecanicoRepository : IRepository<Mecanico>
                    SegundoApellido,
                    Genero,
                    Especialidad,
-                   Celular
+                   Celular,
+                   CreadoPor,
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Mecanicos
             WHERE Id = @Id;
             """;
@@ -158,7 +170,11 @@ public class MecanicoRepository : IRepository<Mecanico>
                 SegundoApellido,
                 Genero,
                 Especialidad,
-                Celular
+                Celular,
+                CreadoPor,
+                FechaCreacion,
+                ModificadoPor,
+                FechaModificacion
             )
             VALUES
             (
@@ -169,7 +185,11 @@ public class MecanicoRepository : IRepository<Mecanico>
                 @SegundoApellido,
                 @Genero,
                 @Especialidad,
-                @Celular
+                @Celular,
+                @CreadoPor,
+                @FechaCreacion,
+                @ModificadoPor,
+                @FechaModificacion
             );
             """;
 
@@ -195,7 +215,9 @@ public class MecanicoRepository : IRepository<Mecanico>
                 SegundoApellido = @SegundoApellido,
                 Genero = @Genero,
                 Especialidad = @Especialidad,
-                Celular = @Celular
+                Celular = @Celular,
+                ModificadoPor = @ModificadoPor,
+                FechaModificacion = @FechaModificacion
             WHERE Id = @Id;
             """;
 
@@ -279,17 +301,21 @@ public class MecanicoRepository : IRepository<Mecanico>
         AddParameter(command, "@Genero", mecanico.Genero);
         AddParameter(command, "@Especialidad", mecanico.Especialidad);
         AddParameter(command, "@Celular", mecanico.Celular);
+        AddParameter(command, "@CreadoPor", mecanico.CreadoPor);
+        AddParameter(command, "@FechaCreacion", mecanico.FechaCreacion);
+        AddParameter(command, "@ModificadoPor", mecanico.ModificadoPor);
+        AddParameter(command, "@FechaModificacion", mecanico.FechaModificacion);
     }
 
     private static void AddParameter(
         DbCommand command,
         string nombre,
-        object valor)
+        object? valor)
     {
         DbParameter parameter = command.CreateParameter();
 
         parameter.ParameterName = nombre;
-        parameter.Value = valor;
+        parameter.Value = valor ?? DBNull.Value;
 
         command.Parameters.Add(parameter);
     }
@@ -306,7 +332,11 @@ public class MecanicoRepository : IRepository<Mecanico>
             SegundoApellido = reader.GetString(5),
             Genero = reader.GetString(6),
             Especialidad = reader.GetString(7),
-            Celular = reader.GetString(8)
+            Celular = reader.GetString(8),
+            CreadoPor = reader.GetString(9),
+            FechaCreacion = reader.GetDateTime(10),
+            ModificadoPor = reader.IsDBNull(11) ? null : reader.GetString(11),
+            FechaModificacion = reader.IsDBNull(12) ? null : reader.GetDateTime(12)
         };
     }
 

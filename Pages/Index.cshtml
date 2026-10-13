@@ -39,7 +39,7 @@
         <div class="dashboard-header">
             <div>
                 <h1>Dashboard</h1>
-                <p>Resumen general del taller mecánico</p>
+                <p>Resumen general del taller mecánico — Vista: @(User.IsInRole("Administrador") ? "Administrador" : "Recepcionista")</p>
             </div>
 
             <div class="dashboard-date">
@@ -75,13 +75,16 @@
         </div>
     </div>
 
-    <section class="home-audit">
-        <div class="home-audit-content">
-            <h2>Auditoría de Costos en Tiempo Real</h2>
-            <p>El sistema rastrea cada modificación de precios de servicios para garantizar transparencia total en tu taller.</p>
-            <a class="home-audit-link" asp-page="/Historial/Index">Ver historial de cambios</a>
-        </div>
-    </section>
+    @if (User.IsInRole("Administrador"))
+    {
+        <section class="home-audit">
+            <div class="home-audit-content">
+                <h2>Auditoría de Costos en Tiempo Real</h2>
+                <p>El sistema rastrea cada modificación de precios de servicios para garantizar transparencia total en tu taller.</p>
+                <a class="home-audit-link" asp-page="/Historial/Index">Ver historial de cambios</a>
+            </div>
+        </section>
+    }
 
     <footer class="home-footer">
         <span>@configuracion.NombreTaller - @configuracion.Version</span>

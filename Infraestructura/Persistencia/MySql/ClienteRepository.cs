@@ -35,7 +35,9 @@ public class ClienteRepository :
                    SegundoApellido,
                    Celular,
                    CreadoPor,
-                   FechaCreacion
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Clientes
             ORDER BY PrimerApellido ASC,
                      SegundoApellido ASC,
@@ -82,7 +84,9 @@ public class ClienteRepository :
                    SegundoApellido,
                    Celular,
                    CreadoPor,
-                   FechaCreacion
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Clientes
             WHERE Id = @Id;
             """;
@@ -127,7 +131,9 @@ public class ClienteRepository :
                    SegundoApellido,
                    Celular,
                    CreadoPor,
-                   FechaCreacion
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Clientes
             WHERE Ci LIKE @PatronBusqueda ESCAPE '!'
                OR ComplementoCi LIKE @PatronBusqueda ESCAPE '!'
@@ -265,7 +271,9 @@ public class ClienteRepository :
                 Nombres = @Nombres,
                 PrimerApellido = @PrimerApellido,
                 SegundoApellido = @SegundoApellido,
-                Celular = @Celular
+                Celular = @Celular,
+                ModificadoPor = @ModificadoPor,
+                FechaModificacion = @FechaModificacion
             WHERE Id = @Id;
             """;
 
@@ -280,6 +288,8 @@ public class ClienteRepository :
         AddParameter(command, "@PrimerApellido", cliente.PrimerApellido);
         AddParameter(command, "@SegundoApellido", cliente.SegundoApellido);
         AddParameter(command, "@Celular", cliente.Celular);
+        AddParameter(command, "@ModificadoPor", cliente.ModificadoPor);
+        AddParameter(command, "@FechaModificacion", cliente.FechaModificacion);
         AddParameter(command, "@Id", cliente.Id);
 
         command.ExecuteNonQuery();
@@ -381,20 +391,50 @@ public class ClienteRepository :
 
             FechaCreacion =
                 reader.GetDateTime(
-                    reader.GetOrdinal("FechaCreacion"))
+                    reader.GetOrdinal("FechaCreacion")),
+
+            ModificadoPor = LeerStringOpcional(
+                reader,
+                "ModificadoPor"),
+
+            FechaModificacion = LeerFechaOpcional(
+                reader,
+                "FechaModificacion")
         };
+    }
+
+    private static string? LeerStringOpcional(
+        DbDataReader reader,
+        string columna)
+    {
+        int indice = reader.GetOrdinal(columna);
+
+        return reader.IsDBNull(indice)
+            ? null
+            : reader.GetString(indice);
+    }
+
+    private static DateTime? LeerFechaOpcional(
+        DbDataReader reader,
+        string columna)
+    {
+        int indice = reader.GetOrdinal(columna);
+
+        return reader.IsDBNull(indice)
+            ? null
+            : reader.GetDateTime(indice);
     }
 
     private static void AddParameter(
         DbCommand command,
         string nombre,
-        object valor)
+        object? valor)
     {
         DbParameter parameter =
             command.CreateParameter();
 
         parameter.ParameterName = nombre;
-        parameter.Value = valor;
+        parameter.Value = valor ?? DBNull.Value;
 
         command.Parameters.Add(parameter);
     }

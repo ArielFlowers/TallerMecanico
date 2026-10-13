@@ -202,7 +202,15 @@ public class ClienteService
                     existente.CreadoPor,
 
                 FechaCreacion =
-                    existente.FechaCreacion
+                    existente.FechaCreacion,
+
+                ModificadoPor =
+                    _currentUser.Username
+                    ?? throw new UnauthorizedAccessException(
+                        "Se requiere un usuario autenticado."),
+
+                FechaModificacion =
+                    DateTime.Now
             };
 
         try

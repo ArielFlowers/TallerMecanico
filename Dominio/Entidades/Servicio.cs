@@ -11,4 +11,12 @@ public class Servicio
     public decimal Costo { get; set; }
 
     public decimal TiempoEstimadoHoras { get; set; }
+
+    public string CreadoPor { get; set; } = string.Empty;
+
+    public DateTime FechaCreacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
 }

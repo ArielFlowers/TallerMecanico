@@ -17,4 +17,8 @@ public class Producto
     public string CreadoPor { get; set; } = string.Empty;
 
     public DateTime FechaCreacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
 }

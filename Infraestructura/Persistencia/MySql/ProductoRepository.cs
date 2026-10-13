@@ -35,7 +35,9 @@ public class ProductoRepository :
                    Stock,
                    StockMinimo,
                    CreadoPor,
-                   FechaCreacion
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Productos
             ORDER BY Nombre ASC,
                      Codigo ASC;
@@ -80,7 +82,9 @@ public class ProductoRepository :
                    Stock,
                    StockMinimo,
                    CreadoPor,
-                   FechaCreacion
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Productos
             WHERE Id = @Id;
             """;
@@ -126,7 +130,9 @@ public class ProductoRepository :
                    Stock,
                    StockMinimo,
                    CreadoPor,
-                   FechaCreacion
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Productos
             WHERE Codigo LIKE @PatronBusqueda ESCAPE '!'
                OR Nombre LIKE @PatronBusqueda ESCAPE '!'
@@ -252,7 +258,9 @@ public class ProductoRepository :
                 Nombre = @Nombre,
                 Precio = @Precio,
                 Stock = @Stock,
-                StockMinimo = @StockMinimo
+                StockMinimo = @StockMinimo,
+                ModificadoPor = @ModificadoPor,
+                FechaModificacion = @FechaModificacion
             WHERE Id = @Id;
             """;
 
@@ -266,6 +274,16 @@ public class ProductoRepository :
             command,
             producto,
             incluirAuditoria: false);
+
+        AddParameter(
+            command,
+            "@ModificadoPor",
+            producto.ModificadoPor);
+
+        AddParameter(
+            command,
+            "@FechaModificacion",
+            producto.FechaModificacion);
 
         AddParameter(
             command,
@@ -407,7 +425,7 @@ public class ProductoRepository :
     public Producto? ObtenerParaActualizar(int id, DbConnection conexion, DbTransaction transaccion)
     {
         using DbCommand comando = RepositorioOrdenSql.CrearComandoCompartido(conexion, transaccion, """
-            SELECT Id, Codigo, Nombre, Precio, Stock, StockMinimo, CreadoPor, FechaCreacion
+            SELECT Id, Codigo, Nombre, Precio, Stock, StockMinimo, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
             FROM Productos WHERE Id = @Id FOR UPDATE;
             """, ("@Id", id));
         using DbDataReader lector = comando.ExecuteReader();
@@ -514,14 +532,44 @@ public class ProductoRepository :
 
             FechaCreacion =
                 reader.GetDateTime(
-                    reader.GetOrdinal("FechaCreacion"))
+                    reader.GetOrdinal("FechaCreacion")),
+
+            ModificadoPor = LeerStringOpcional(
+                reader,
+                "ModificadoPor"),
+
+            FechaModificacion = LeerFechaOpcional(
+                reader,
+                "FechaModificacion")
         };
+    }
+
+    private static string? LeerStringOpcional(
+        DbDataReader reader,
+        string columna)
+    {
+        int indice = reader.GetOrdinal(columna);
+
+        return reader.IsDBNull(indice)
+            ? null
+            : reader.GetString(indice);
+    }
+
+    private static DateTime? LeerFechaOpcional(
+        DbDataReader reader,
+        string columna)
+    {
+        int indice = reader.GetOrdinal(columna);
+
+        return reader.IsDBNull(indice)
+            ? null
+            : reader.GetDateTime(indice);
     }
 
     private static void AddParameter(
         DbCommand command,
         string nombre,
-        object valor)
+        object? valor)
     {
         DbParameter parameter =
             command.CreateParameter();
@@ -530,7 +578,7 @@ public class ProductoRepository :
             nombre;
 
         parameter.Value =
-            valor;
+            valor ?? DBNull.Value;
 
         command.Parameters.Add(
             parameter);

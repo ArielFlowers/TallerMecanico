@@ -214,3 +214,4 @@
         });
 
 });
+document.addEventListener("click",(e)=>{const a=e.target.closest('a.submenu-item[href="#"]');if(a){e.preventDefault();}});

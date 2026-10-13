@@ -19,4 +19,12 @@ public class Mecanico
     public string Especialidad { get; set; } = string.Empty;
 
     public string Celular { get; set; } = string.Empty;
+
+    public string CreadoPor { get; set; } = string.Empty;
+
+    public DateTime FechaCreacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
 }

@@ -20,10 +20,13 @@ public class VehiculoService
 
     private readonly ValidacionVehiculos _validacionVehiculos;
 
+    private readonly ICurrentUser? _currentUser;
+
     public VehiculoService(
         IVehiculoPort vehiculoPort,
         IClientePort clientePort,
-        ValidacionVehiculos validacionVehiculos)
+        ValidacionVehiculos validacionVehiculos,
+        ICurrentUser? currentUser = null)
     {
         _vehiculoPort =
             vehiculoPort;
@@ -33,6 +36,9 @@ public class VehiculoService
 
         _validacionVehiculos =
             validacionVehiculos;
+
+        _currentUser =
+            currentUser;
     }
 
     public List<Vehiculo> GetAll()
@@ -157,10 +163,17 @@ public class VehiculoService
                 errores);
         }
 
+        Vehiculo? existente =
+            actualizar
+                ? _vehiculoPort.GetById(id)
+                : null;
+
         Vehiculo vehiculo =
             CrearVehiculo(
                 normalizado,
-                id);
+                id,
+                existente,
+                UsuarioActual());
 
         try
         {
@@ -228,7 +241,9 @@ public class VehiculoService
 
     private static Vehiculo CrearVehiculo(
         VehiculoFormViewModel formulario,
-        int id)
+        int id,
+        Vehiculo? existente,
+        string usuario)
     {
         return new Vehiculo
         {
@@ -258,7 +273,33 @@ public class VehiculoService
                 string.Empty,
 
             ClienteId =
-                formulario.ClienteId
+                formulario.ClienteId,
+
+            CreadoPor =
+                existente?.CreadoPor
+                ?? usuario,
+
+            FechaCreacion =
+                existente?.FechaCreacion
+                ?? DateTime.Now,
+
+            ModificadoPor =
+                existente is null
+                    ? null
+                    : usuario,
+
+            FechaModificacion =
+                existente is null
+                    ? null
+                    : DateTime.Now
         };
+    }
+
+    private string UsuarioActual()
+    {
+        return string.IsNullOrWhiteSpace(
+                _currentUser?.Username)
+            ? "sistema"
+            : _currentUser!.Username!;
     }
 }

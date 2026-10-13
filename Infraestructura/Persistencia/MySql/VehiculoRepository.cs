@@ -34,7 +34,11 @@ public class VehiculoRepository :
                    Observaciones,
                    Marca,
                    ClienteId,
-                   EsPlacaExtranjera
+                   EsPlacaExtranjera,
+                   CreadoPor,
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Vehiculos
             ORDER BY Placa;
             """;
@@ -77,7 +81,11 @@ public class VehiculoRepository :
                    Observaciones,
                    Marca,
                    ClienteId,
-                   EsPlacaExtranjera
+                   EsPlacaExtranjera,
+                   CreadoPor,
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Vehiculos
             WHERE Id = @Id;
             """;
@@ -121,7 +129,11 @@ public class VehiculoRepository :
                    Observaciones,
                    Marca,
                    ClienteId,
-                   EsPlacaExtranjera
+                   EsPlacaExtranjera,
+                   CreadoPor,
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
             FROM Vehiculos
             WHERE Placa LIKE @Filtro ESCAPE '!'
                OR Modelo LIKE @Filtro ESCAPE '!'
@@ -231,7 +243,11 @@ public class VehiculoRepository :
                 Observaciones,
                 Marca,
                 ClienteId,
-                EsPlacaExtranjera
+                EsPlacaExtranjera,
+                CreadoPor,
+                FechaCreacion,
+                ModificadoPor,
+                FechaModificacion
             )
             VALUES
             (
@@ -241,7 +257,11 @@ public class VehiculoRepository :
                 @Observaciones,
                 @Marca,
                 @ClienteId,
-                @EsPlacaExtranjera
+                @EsPlacaExtranjera,
+                @CreadoPor,
+                @FechaCreacion,
+                @ModificadoPor,
+                @FechaModificacion
             );
             """;
 
@@ -273,7 +293,9 @@ public class VehiculoRepository :
                 Kilometraje = @Kilometraje,
                 Observaciones = @Observaciones,
                 ClienteId = @ClienteId,
-                EsPlacaExtranjera = @EsPlacaExtranjera
+                EsPlacaExtranjera = @EsPlacaExtranjera,
+                ModificadoPor = @ModificadoPor,
+                FechaModificacion = @FechaModificacion
             WHERE Id = @Id;
             """;
 
@@ -378,12 +400,32 @@ public class VehiculoRepository :
             vehiculo.ClienteId.HasValue
                 ? vehiculo.ClienteId.Value
                 : DBNull.Value);
+
+        AddParameter(
+            command,
+            "@CreadoPor",
+            vehiculo.CreadoPor);
+
+        AddParameter(
+            command,
+            "@FechaCreacion",
+            vehiculo.FechaCreacion);
+
+        AddParameter(
+            command,
+            "@ModificadoPor",
+            vehiculo.ModificadoPor);
+
+        AddParameter(
+            command,
+            "@FechaModificacion",
+            vehiculo.FechaModificacion);
     }
 
     private static void AddParameter(
         DbCommand command,
         string nombre,
-        object valor)
+        object? valor)
     {
         DbParameter parameter =
             command.CreateParameter();
@@ -392,7 +434,7 @@ public class VehiculoRepository :
             nombre;
 
         parameter.Value =
-            valor;
+            valor ?? DBNull.Value;
 
         command.Parameters.Add(
             parameter);
@@ -437,8 +479,46 @@ public class VehiculoRepository :
                 reader.IsDBNull(clienteIdOrdinal)
                     ? null
                     : reader.GetInt32(
-                        clienteIdOrdinal)
+                        clienteIdOrdinal),
+
+            CreadoPor =
+                reader.GetString(
+                    reader.GetOrdinal("CreadoPor")),
+
+            FechaCreacion =
+                reader.GetDateTime(
+                    reader.GetOrdinal("FechaCreacion")),
+
+            ModificadoPor = LeerStringOpcional(
+                reader,
+                "ModificadoPor"),
+
+            FechaModificacion = LeerFechaOpcional(
+                reader,
+                "FechaModificacion")
         };
+    }
+
+    private static string? LeerStringOpcional(
+        DbDataReader reader,
+        string columna)
+    {
+        int indice = reader.GetOrdinal(columna);
+
+        return reader.IsDBNull(indice)
+            ? null
+            : reader.GetString(indice);
+    }
+
+    private static DateTime? LeerFechaOpcional(
+        DbDataReader reader,
+        string columna)
+    {
+        int indice = reader.GetOrdinal(columna);
+
+        return reader.IsDBNull(indice)
+            ? null
+            : reader.GetDateTime(indice);
     }
 
     private static string EscaparPatron(

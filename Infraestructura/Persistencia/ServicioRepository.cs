@@ -23,7 +23,7 @@ public class ServicioRepository : IRepository<Servicio>
         connection.Open();
 
         const string query = """
-            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras
+            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
             FROM Servicios
             ORDER BY Nombre;
             """;
@@ -49,7 +49,7 @@ public class ServicioRepository : IRepository<Servicio>
         connection.Open();
 
         const string query = """
-            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras
+            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
             FROM Servicios
             WHERE Id = @Id;
             """;
@@ -78,9 +78,9 @@ public class ServicioRepository : IRepository<Servicio>
 
         const string query = """
             INSERT INTO Servicios
-                (Nombre, Descripcion, Costo, TiempoEstimadoHoras)
+                (Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion)
             VALUES
-                (@Nombre, @Descripcion, @Costo, @TiempoEstimadoHoras);
+                (@Nombre, @Descripcion, @Costo, @TiempoEstimadoHoras, @CreadoPor, @FechaCreacion, @ModificadoPor, @FechaModificacion);
             """;
 
         using DbCommand command = connection.CreateCommand();
@@ -103,7 +103,9 @@ public class ServicioRepository : IRepository<Servicio>
             SET Nombre = @Nombre,
                 Descripcion = @Descripcion,
                 Costo = @Costo,
-                TiempoEstimadoHoras = @TiempoEstimadoHoras
+                TiempoEstimadoHoras = @TiempoEstimadoHoras,
+                ModificadoPor = @ModificadoPor,
+                FechaModificacion = @FechaModificacion
             WHERE Id = @Id;
             """;
 
@@ -165,17 +167,21 @@ public class ServicioRepository : IRepository<Servicio>
             command,
             "@TiempoEstimadoHoras",
             servicio.TiempoEstimadoHoras);
+        AddParameter(command, "@CreadoPor", servicio.CreadoPor);
+        AddParameter(command, "@FechaCreacion", servicio.FechaCreacion);
+        AddParameter(command, "@ModificadoPor", servicio.ModificadoPor);
+        AddParameter(command, "@FechaModificacion", servicio.FechaModificacion);
     }
 
     private static void AddParameter(
         DbCommand command,
         string nombre,
-        object valor)
+        object? valor)
     {
         DbParameter parameter = command.CreateParameter();
 
         parameter.ParameterName = nombre;
-        parameter.Value = valor;
+        parameter.Value = valor ?? DBNull.Value;
 
         command.Parameters.Add(parameter);
     }
@@ -188,7 +194,11 @@ public class ServicioRepository : IRepository<Servicio>
             Nombre = reader.GetString(1),
             Descripcion = reader.GetString(2),
             Costo = reader.GetDecimal(3),
-            TiempoEstimadoHoras = reader.GetDecimal(4)
+            TiempoEstimadoHoras = reader.GetDecimal(4),
+            CreadoPor = reader.GetString(5),
+            FechaCreacion = reader.GetDateTime(6),
+            ModificadoPor = reader.IsDBNull(7) ? null : reader.GetString(7),
+            FechaModificacion = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
         };
     }
 }
