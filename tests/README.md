@@ -29,6 +29,21 @@ La prueba inicia un servidor HTTPS temporal con certificado propio, crea un usua
 
 `tests/vehiculos_ui.cjs` lo ejecuta la prueba xUnit con su configuración temporal; no inicia una aplicación SQLite ni debe apuntarse a una base del taller.
 
+## Comprobantes PDF
+
+La aplicación utiliza QuestPDF 2026.9.1 y Humanizer.Core.es 3.0.10. La licencia Community de QuestPDF se configura en el arranque para este uso académico individual. Antes de destinar el proyecto a otro uso, revisar las condiciones de licencia vigentes.
+
+```powershell
+dotnet build
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~Comprobante|FullyQualifiedName~ImporteEnPalabras|FullyQualifiedName~ConsultaOrdenes'
+```
+
+La conversión a palabras, la autorización, los errores y la generación básica no requieren MySQL. Las pruebas de persistencia y HTTPS usan `TALLER_TEST_MYSQL` y bases `autotaller_test_<guid>`, nunca `taller_mecanico`.
+
+Para comprobar texto, acentos y paginación, configurar `TALLER_PDF_PYTHON` con un ejecutable Python que tenga `pypdf`. Es una herramienta externa de verificación, no una dependencia de la aplicación. Sin esa configuración, las dos pruebas específicas de contenido aparecen como omitidas. `tests/pdf_text.py` extrae el texto de documentos temporales y no modifica el PDF.
+
+Opcionalmente, `TALLER_PDF_MUESTRAS` indica una carpeta temporal donde guardar los dos comprobantes sintéticos para revisión visual. `PLAYWRIGHT_MODULE` habilita también el recorrido en Edge del listado y modal, incluida la acción Comprobante. Las pruebas HTTPS crean su propio certificado; no cambian la confianza del sistema.
+
 ## Órdenes de la tarjeta 4
 
 ```powershell

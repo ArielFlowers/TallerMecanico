@@ -1,0 +1,108 @@
+@model TallerMecanico.Application.Ordenes.OrdenDetalle
+@using System.Globalization
+@using TallerMecanico.Models
+@using TallerMecanico.Services
+
+@{
+    var configuracion = ConfiguracionTaller.Instancia;
+    var culturaBoliviana = CultureInfo.GetCultureInfo("es-BO");
+}
+
+<section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-general">
+    <h3 id="orden-detalle-general">Información general de la orden #@Model.Id</h3>
+    <dl class="ordenes-datos">
+        <div><dt>Fecha del trabajo</dt><dd>@Model.Fecha.ToString(configuracion.FormatoFecha)</dd></div>
+        <div>
+            <dt>Estado</dt>
+            <dd><span class="ordenes-estado @(Model.Estado == EstadoOrden.Activa ? "ordenes-estado-activa" : "ordenes-estado-anulada")">@Model.Estado</span></dd>
+        </div>
+        <div><dt>Total registrado</dt><dd>@configuracion.Moneda @Model.Total.ToString("N2", culturaBoliviana)</dd></div>
+    </dl>
+    @if (Model.Estado == EstadoOrden.Anulada)
+    {
+        <p class="ordenes-anulada-aviso">Orden anulada. Se conservan los productos y los importes originales.</p>
+    }
+</section>
+
+<section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-vehiculo">
+    <h3 id="orden-detalle-vehiculo">Vehículo y cliente</h3>
+    <dl class="ordenes-datos">
+        <div><dt>Placa</dt><dd>@Model.Placa</dd></div>
+        <div><dt>Marca</dt><dd>@Model.Marca</dd></div>
+        <div><dt>Modelo</dt><dd>@Model.Modelo</dd></div>
+        <div><dt>Cliente</dt><dd>@(Model.NombreCliente ?? "Sin cliente asignado")</dd></div>
+        <div><dt>CI del cliente</dt><dd>@FormatearCi(Model.CiCliente, Model.ComplementoCiCliente)</dd></div>
+        <div><dt>Celular</dt><dd>@(string.IsNullOrWhiteSpace(Model.CelularCliente) ? "No disponible" : Model.CelularCliente)</dd></div>
+    </dl>
+</section>
+
+<section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-mecanico">
+    <h3 id="orden-detalle-mecanico">Mecánico responsable</h3>
+    <dl class="ordenes-datos">
+        <div><dt>Nombre</dt><dd>@Model.NombreMecanico</dd></div>
+        <div><dt>CI del mecánico</dt><dd>@FormatearCi(Model.CiMecanico, Model.ComplementoCiMecanico)</dd></div>
+    </dl>
+</section>
+
+<section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-productos">
+    <h3 id="orden-detalle-productos">Productos utilizados</h3>
+    @if (Model.Productos.Count == 0)
+    {
+        <p>No hay productos registrados para esta orden.</p>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="orders-table ordenes-productos-table">
+                <caption class="ordenes-solo-lectores">Productos e importes históricos de la orden #@Model.Id</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Producto</th>
+                        <th scope="col">Cantidad</th>
+                        <th scope="col">Precio unitario</th>
+                        <th scope="col">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var producto in Model.Productos)
+                    {
+                        <tr>
+                            <td>@producto.Codigo</td>
+                            <td>@producto.Nombre</td>
+                            <td>@producto.Cantidad</td>
+                            <td class="ordenes-total">@configuracion.Moneda @producto.PrecioUnitario.ToString("N2", culturaBoliviana)</td>
+                            <td class="ordenes-total">@configuracion.Moneda @producto.Subtotal.ToString("N2", culturaBoliviana)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <p class="ordenes-detalle-total">Total de la orden: <strong>@configuracion.Moneda @Model.Total.ToString("N2", culturaBoliviana)</strong></p>
+</section>
+
+<section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-auditoria">
+    <h3 id="orden-detalle-auditoria">Auditoría</h3>
+    <p class="ordenes-detalle-zona">Horas de Bolivia (UTC-4).</p>
+    <dl class="ordenes-datos">
+        <div><dt>Creado por</dt><dd>@Model.CreadoPor</dd></div>
+        <div><dt>Fecha y hora de creación</dt><dd>@FormatearFechaAuditoria(Model.FechaCreacion)</dd></div>
+        @if (Model.Estado == EstadoOrden.Anulada)
+        {
+            <div><dt>Anulado por</dt><dd>@Model.AnuladoPor</dd></div>
+            <div><dt>Fecha y hora de anulación</dt><dd>@(Model.FechaAnulacion.HasValue ? FormatearFechaAuditoria(Model.FechaAnulacion.Value) : "No disponible")</dd></div>
+        }
+    </dl>
+</section>
+
+@functions {
+    private static string FormatearCi(string? ci, string? complemento) =>
+        string.IsNullOrWhiteSpace(ci) ? "No disponible"
+            : string.IsNullOrEmpty(complemento) ? ci : $"{ci}-{complemento}";
+
+    private static string FormatearFechaAuditoria(DateTime fechaUtc) =>
+        new DateTimeOffset(DateTime.SpecifyKind(fechaUtc, DateTimeKind.Utc))
+            .ToOffset(TimeSpan.FromHours(-4))
+            .ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("es-BO"));
+}
