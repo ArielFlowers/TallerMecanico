@@ -1,0 +1,140 @@
+@page
+@model TallerMecanico.Pages.Ordenes.IndexModel
+@using System.Globalization
+@using TallerMecanico.Models
+@using TallerMecanico.Services
+
+@{
+    ViewData["Title"] = "Gestión de Órdenes";
+    var configuracion = ConfiguracionTaller.Instancia;
+    var culturaBoliviana = CultureInfo.GetCultureInfo("es-BO");
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ordenes.css" asp-append-version="true" />
+}
+
+<div class="dashboard ordenes-page">
+    <div class="dashboard-header">
+        <div>
+            <h1>Gestión de Órdenes</h1>
+            <p>Consulta y administra el historial de órdenes de trabajo.</p>
+        </div>
+    </div>
+
+    <form method="get" asp-page="./Index" class="ordenes-filtros" aria-label="Filtros de órdenes">
+        <div class="ordenes-campo">
+            <label asp-for="Estado">Estado</label>
+            <select asp-for="Estado" class="ordenes-control">
+                <option value="">Todos</option>
+                <option value="Activa">Activa</option>
+                <option value="Anulada">Anulada</option>
+            </select>
+        </div>
+        <div class="ordenes-campo">
+            <label asp-for="Fecha">Fecha del trabajo</label>
+            <input asp-for="Fecha" type="date" asp-format="{0:yyyy-MM-dd}" class="ordenes-control" />
+        </div>
+        <div class="ordenes-acciones">
+            <button type="submit" class="services-btn services-btn-primary">Filtrar</button>
+            <button type="submit" class="services-btn services-btn-secondary">Refrescar</button>
+            <a asp-page="./Index" class="services-btn services-btn-secondary">Limpiar filtros</a>
+        </div>
+    </form>
+
+    <div asp-validation-summary="All" class="ordenes-validacion" role="alert"></div>
+
+    <section class="recent-orders" aria-labelledby="ordenes-listado-titulo">
+        <div class="section-header">
+            <div>
+                <h2 id="ordenes-listado-titulo">Órdenes registradas</h2>
+                <p>@Model.Ordenes.Count orden(es) encontrada(s)</p>
+            </div>
+        </div>
+
+        @if (ViewData.ModelState.IsValid && Model.Ordenes.Count == 0)
+        {
+            <div class="services-empty">
+                <strong>
+                    @(Model.Estado.HasValue || Model.Fecha.HasValue
+                        ? "No se encontraron órdenes con los filtros seleccionados."
+                        : "No existen órdenes registradas.")
+                </strong>
+                <span>Actualiza el listado o limpia los filtros para volver a consultar.</span>
+            </div>
+        }
+        else if (ViewData.ModelState.IsValid)
+        {
+            <div class="table-container">
+                <table class="orders-table ordenes-table">
+                    <caption class="ordenes-solo-lectores">Listado de órdenes de trabajo</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Fecha del trabajo</th>
+                            <th scope="col">Placa</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Mecánico</th>
+                            <th scope="col">Total</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Creado por</th>
+                            <th scope="col">Consulta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var orden in Model.Ordenes)
+                        {
+                            <tr>
+                                <td>#@orden.Id</td>
+                                <td>@orden.Fecha.ToString(configuracion.FormatoFecha)</td>
+                                <td>@orden.Placa</td>
+                                <td>@(orden.NombreCliente ?? "Sin cliente asignado")</td>
+                                <td>@orden.NombreMecanico</td>
+                                <td class="ordenes-total">@configuracion.Moneda @orden.Total.ToString("N2", culturaBoliviana)</td>
+                                <td>
+                                    <span class="ordenes-estado @(orden.Estado == EstadoOrden.Activa ? "ordenes-estado-activa" : "ordenes-estado-anulada")">
+                                        @orden.Estado
+                                    </span>
+                                </td>
+                                <td>@orden.CreadoPor</td>
+                                <td>
+                                    <div class="ordenes-acciones-fila">
+                                        <button type="button" class="services-btn services-btn-secondary"
+                                                data-ver-orden
+                                                data-detalle-url="@Url.Page("./Index", "Detalle", new { id = orden.Id })"
+                                                aria-label="Ver orden @orden.Id"
+                                                aria-haspopup="dialog" aria-controls="orden-detalle-dialog">
+                                            Ver
+                                        </button>
+                                        <a asp-page="./Comprobante" asp-route-id="@orden.Id"
+                                           class="services-btn services-btn-secondary" target="_blank" rel="noopener"
+                                           aria-label="Comprobante de orden @orden.Id (nueva pestaña)">Comprobante</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+<dialog id="orden-detalle-dialog" class="ordenes-dialog"
+        aria-labelledby="orden-detalle-titulo" aria-describedby="orden-detalle-descripcion">
+    <div class="ordenes-dialog-header">
+        <div>
+            <h2 id="orden-detalle-titulo">Detalle de la orden</h2>
+            <p id="orden-detalle-descripcion">Consulta de solo lectura.</p>
+        </div>
+        <button type="button" class="services-btn services-btn-secondary" data-cerrar-detalle autofocus>Cerrar</button>
+    </div>
+    <div class="ordenes-dialog-body">
+        <p id="orden-detalle-estado" role="status" aria-live="polite"></p>
+        <div id="orden-detalle-contenido" aria-busy="false"></div>
+    </div>
+</dialog>
+
+@section Scripts {
+    <script src="~/js/ordenes.js" asp-append-version="true"></script>
+}
