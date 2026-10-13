@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using TallerMecanico.Application.Ports;
 using TallerMecanico.Models;
 using TallerMecanico.Services;
 using TallerMecanico.ViewModels;
@@ -9,12 +10,15 @@ namespace TallerMecanico.Pages.Productos;
 public class IndexModel : PageModel
 {
     private readonly ProductoService _productoService;
+    private readonly IBorradorOrdenPort _borradoresOrden;
 
     public IndexModel(
-        ProductoService productoService)
+        ProductoService productoService,
+        IBorradorOrdenPort borradoresOrden)
     {
         _productoService =
             productoService;
+        _borradoresOrden = borradoresOrden;
     }
 
     [BindProperty]
@@ -26,6 +30,8 @@ public class IndexModel : PageModel
 
     [BindProperty(SupportsGet = true)]
     public string? TerminoBusqueda { get; set; }
+    [BindProperty(SupportsGet = true)]
+    public Guid? OrdenBorradorId { get; set; }
 
     public IReadOnlyList<Producto> Productos { get; private set; } =
         [];
@@ -52,7 +58,11 @@ public class IndexModel : PageModel
 
     public IActionResult OnPostCrear()
     {
-        if (!User.IsInRole("Administrador"))
+        bool altaDesdeOrdenValida =
+            User.IsInRole("Recepcionista") &&
+            OrdenBorradorId.HasValue &&
+            _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null;
+        if (!User.IsInRole("Administrador") && !altaDesdeOrdenValida)
         {
             return Forbid();
         }
@@ -90,6 +100,14 @@ public class IndexModel : PageModel
 
         TempData["ProductoExito"] =
             "Producto registrado correctamente.";
+
+        if (OrdenBorradorId.HasValue)
+        {
+            Producto? creado = _productoService.Buscar(ProductoInput.Codigo ?? string.Empty)
+                .FirstOrDefault(x => string.Equals(x.Codigo, ProductoInput.Codigo, StringComparison.OrdinalIgnoreCase));
+            if (creado is not null)
+                return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId, ProductoNuevoId = creado.Id });
+        }
 
         return RedirectToPage(
             new

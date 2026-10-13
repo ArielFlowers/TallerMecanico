@@ -13,7 +13,7 @@ public sealed class BorradorVehiculoSesion(
 
     private static string Clave(Guid id) => $"Vehiculos:Borrador:{id:N}";
 
-    public Guid Guardar(VehiculoFormViewModel formulario, string modal, string? buscar)
+    public Guid Guardar(VehiculoFormViewModel formulario, string modal, string? buscar, Guid? ordenBorradorId = null)
     {
         if (!currentUser.EstaAutenticado || string.IsNullOrWhiteSpace(currentUser.Username))
             throw new UnauthorizedAccessException("Debes iniciar sesión.");
@@ -25,7 +25,8 @@ public sealed class BorradorVehiculoSesion(
             Modal = modal,
             Buscar = buscar,
             Usuario = currentUser.Username,
-            VenceUtc = DateTime.UtcNow.AddMinutes(30)
+            VenceUtc = DateTime.UtcNow.AddMinutes(30),
+            OrdenBorradorId = ordenBorradorId
         };
         Session.SetString(Clave(id), JsonSerializer.Serialize(borrador));
         return id;

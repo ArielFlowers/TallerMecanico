@@ -71,6 +71,7 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITokenOrdenPort, TokenOrdenSesion>();
+builder.Services.AddScoped<IBorradorOrdenPort, BorradorOrdenSesion>();
 builder.Services.AddScoped<IUnidadTrabajoOrdenPort, MySqlUnidadTrabajoOrden>();
 builder.Services.AddScoped<ValidacionOrdenes>();
 builder.Services.AddScoped<OrdenServicioService>();

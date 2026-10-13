@@ -7,4 +7,5 @@ public sealed class BorradorVehiculo
     public string? Buscar { get; set; }
     public string Usuario { get; set; } = string.Empty;
     public DateTime VenceUtc { get; set; }
+    public Guid? OrdenBorradorId { get; set; }
 }
