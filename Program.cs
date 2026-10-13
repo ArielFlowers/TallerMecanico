@@ -75,6 +75,12 @@ builder.Services.AddScoped<ValidacionOrdenes>();
 builder.Services.AddScoped<OrdenServicioService>();
 builder.Services.AddScoped<OrdenServicioFacade>();
 
+builder.Services.AddScoped<CreadorConsultaOrdenes>();
+builder.Services.AddScoped<IConsultaOrdenesPort>(serviceProvider =>
+    serviceProvider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
+builder.Services.AddScoped<ConsultaOrdenesService>();
+builder.Services.AddScoped<ConsultaOrdenesFacade>();
+
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(
         Argon2idOptions.SectionName));

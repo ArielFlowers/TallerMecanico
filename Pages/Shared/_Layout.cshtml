@@ -222,10 +222,9 @@
                         }
 
                         <!-- ÓRDENES: AMBOS ROLES -->
-                        <!-- Enlace pendiente de implementar -->
 
-                        <a class="submenu-item"
-                           href="#">
+                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Ordenes") ? "active" : "")"
+                           asp-page="/Ordenes/Index">
 
                             <span>
                                 Órdenes de trabajo
