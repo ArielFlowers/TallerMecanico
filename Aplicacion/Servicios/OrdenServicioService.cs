@@ -34,7 +34,7 @@ public sealed class OrdenServicioService(
             Orden? existente = transaccion.Ordenes.ObtenerPorToken(solicitud.Token);
             if (existente is not null) return RecuperarReenvio(existente);
 
-            var erroresCabecera = ValidarCabecera(transaccion.Cabecera, solicitud);
+            var (erroresCabecera, costoServicio) = ValidarCabecera(transaccion.Cabecera, solicitud);
             if (erroresCabecera.Count > 0) return ResultadoOrden.Fallo(erroresCabecera);
 
             var productos = transaccion.Productos.BloquearPorId(lineas.Select(linea => linea.ProductoId))
@@ -46,12 +46,14 @@ public sealed class OrdenServicioService(
             var erroresStock = ValidarStock(lineas, productos);
             if (erroresStock.Count > 0) return ResultadoOrden.Fallo(erroresStock);
 
-            decimal total = lineas.Sum(linea => productos[linea.ProductoId].Precio * linea.Cantidad);
+            decimal total = lineas.Sum(linea => productos[linea.ProductoId].Precio * linea.Cantidad)
+                + costoServicio;
             if (total > ImporteMaximo) return ResultadoOrden.Fallo("Lineas", "El importe total supera el máximo permitido.");
 
             var orden = new Orden
             {
                 VehiculoId = solicitud.VehiculoId, MecanicoId = solicitud.MecanicoId, Fecha = solicitud.Fecha,
+                ServicioId = solicitud.ServicioId, CostoServicio = costoServicio,
                 Token = solicitud.Token, CreadoPor = currentUser.Username!, FechaCreacion = reloj.GetUtcNow().UtcDateTime
             };
             transaccion.Ordenes.Insertar(orden);
@@ -139,7 +141,7 @@ public sealed class OrdenServicioService(
         }
     }
 
-    private static Dictionary<string, string> ValidarCabecera(ICabeceraOrdenPort cabecera, CrearOrdenSolicitud solicitud)
+    private static (Dictionary<string, string> Errores, decimal CostoServicio) ValidarCabecera(ICabeceraOrdenPort cabecera, CrearOrdenSolicitud solicitud)
     {
         var errores = new Dictionary<string, string>();
         if (!cabecera.ExisteVehiculo(solicitud.VehiculoId, out int? clienteId))
@@ -148,7 +150,14 @@ public sealed class OrdenServicioService(
             errores[nameof(solicitud.VehiculoId)] = "Asigna un cliente al vehículo antes de crear una orden.";
         if (!cabecera.ExisteMecanico(solicitud.MecanicoId))
             errores[nameof(solicitud.MecanicoId)] = "El mecánico seleccionado no existe.";
-        return errores;
+        decimal costoServicio = 0;
+        if (!solicitud.ServicioId.HasValue)
+            errores[nameof(solicitud.ServicioId)] = "Selecciona el servicio que se realizará.";
+        else if (!cabecera.ExisteServicio(solicitud.ServicioId.Value, out Servicio? servicio) || servicio is null)
+            errores[nameof(solicitud.ServicioId)] = "El servicio seleccionado no existe.";
+        else
+            costoServicio = servicio.Costo;
+        return (errores, costoServicio);
     }
 
     private static Dictionary<string, string> ValidarStock(IReadOnlyList<LineaOrdenSolicitud> lineas, IReadOnlyDictionary<int, Producto> productos)

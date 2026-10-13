@@ -9,10 +9,14 @@ public sealed class ValidacionOrdenes
         var errores = new Dictionary<string, string>();
         if (solicitud.VehiculoId <= 0) errores[nameof(solicitud.VehiculoId)] = "Selecciona un vehículo.";
         if (solicitud.MecanicoId <= 0) errores[nameof(solicitud.MecanicoId)] = "Selecciona un mecánico.";
+        if (!solicitud.ServicioId.HasValue || solicitud.ServicioId.Value <= 0)
+            errores[nameof(solicitud.ServicioId)] = "Selecciona el servicio que se realizará.";
         if (solicitud.Fecha.Year < 1000) errores[nameof(solicitud.Fecha)] = "Selecciona una fecha válida.";
         if (solicitud.Token == Guid.Empty) errores[nameof(solicitud.Token)] = "El formulario no tiene un token válido.";
-        if (solicitud.Lineas is null || solicitud.Lineas.Count == 0)
-            errores[nameof(solicitud.Lineas)] = "Añade al menos un producto.";
+        if (solicitud.Lineas is null)
+            errores[nameof(solicitud.Lineas)] = "Agrega al menos un producto o un servicio.";
+        else if (solicitud.Lineas.Count == 0 && !solicitud.ServicioId.HasValue)
+            errores[nameof(solicitud.Lineas)] = "Agrega al menos un producto o un servicio.";
         else
         {
             for (int i = 0; i < solicitud.Lineas.Count; i++)

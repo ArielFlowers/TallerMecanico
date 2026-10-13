@@ -11,7 +11,20 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class OrdenesTests
 {
-    private static CrearOrdenSolicitud Solicitud() => new(1, 1, DateTime.Today, Guid.NewGuid(), [new(1, 1)]);
+    private static CrearOrdenSolicitud Solicitud() => new(1, 1, DateTime.Today, Guid.NewGuid(), [new(1, 1)], 1);
+
+    [Fact]
+    public void Validacion_RechazaSinServicio()
+    {
+        var errores = new ValidacionOrdenes().Validar(Solicitud() with { ServicioId = null });
+        Assert.Contains("ServicioId", errores);
+    }
+
+    [Fact]
+    public void Validacion_AceptaServicioSinProductos()
+    {
+        Assert.Empty(new ValidacionOrdenes().Validar(Solicitud() with { Lineas = [] }));
+    }
 
     [Fact]
     public void Validacion_AgrupaProductosYOrdenaIds()

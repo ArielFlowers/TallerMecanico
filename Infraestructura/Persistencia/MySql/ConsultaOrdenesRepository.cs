@@ -22,15 +22,17 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
                    Vehiculo.Placa,
                    NULLIF(CONCAT_WS(' ', Cliente.Nombres,
                        Cliente.PrimerApellido, Cliente.SegundoApellido), '') AS NombreCliente,
-                   CONCAT_WS(' ', Mecanico.Nombres,
-                       Mecanico.PrimerApellido, Mecanico.SegundoApellido) AS NombreMecanico,
-                   Orden.Total,
-                   Orden.Estado,
-                   Orden.CreadoPor
-            FROM Ordenes AS Orden
-            JOIN Vehiculos AS Vehiculo ON Vehiculo.Id = Orden.VehiculoId
-            LEFT JOIN Clientes AS Cliente ON Cliente.Id = Vehiculo.ClienteId
-            JOIN Mecanicos AS Mecanico ON Mecanico.Id = Orden.MecanicoId
+                    CONCAT_WS(' ', Mecanico.Nombres,
+                        Mecanico.PrimerApellido, Mecanico.SegundoApellido) AS NombreMecanico,
+                    Servicio.Nombre AS NombreServicio,
+                    Orden.Total,
+                    Orden.Estado,
+                    Orden.CreadoPor
+             FROM Ordenes AS Orden
+             JOIN Vehiculos AS Vehiculo ON Vehiculo.Id = Orden.VehiculoId
+             LEFT JOIN Clientes AS Cliente ON Cliente.Id = Vehiculo.ClienteId
+             JOIN Mecanicos AS Mecanico ON Mecanico.Id = Orden.MecanicoId
+             LEFT JOIN Servicios AS Servicio ON Servicio.Id = Orden.ServicioId
             WHERE (@Estado IS NULL OR Orden.Estado = @Estado)
               AND (@Fecha IS NULL OR Orden.Fecha >= @Fecha)
               AND (@FechaSiguiente IS NULL OR Orden.Fecha < @FechaSiguiente)
@@ -72,14 +74,17 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
                    Cliente.Celular AS CelularCliente,
                    CONCAT_WS(' ', Mecanico.Nombres,
                        Mecanico.PrimerApellido, Mecanico.SegundoApellido) AS NombreMecanico,
-                   Mecanico.Ci AS CiMecanico, Mecanico.ComplementoCi AS ComplementoCiMecanico,
-                   Detalle.Id AS DetalleId, Detalle.Cantidad, Detalle.PrecioUnitario, Detalle.Subtotal,
-                   Producto.Codigo, Producto.Nombre
-            FROM Ordenes AS Orden
-            JOIN Vehiculos AS Vehiculo ON Vehiculo.Id = Orden.VehiculoId
-            LEFT JOIN Clientes AS Cliente ON Cliente.Id = Vehiculo.ClienteId
-            JOIN Mecanicos AS Mecanico ON Mecanico.Id = Orden.MecanicoId
-            LEFT JOIN DetalleOrdenes AS Detalle ON Detalle.OrdenId = Orden.Id
+                    Mecanico.Ci AS CiMecanico, Mecanico.ComplementoCi AS ComplementoCiMecanico,
+                    Servicio.Nombre AS ServicioNombre, Servicio.Descripcion AS ServicioDescripcion,
+                    Servicio.Costo AS ServicioCosto, Servicio.TiempoEstimadoHoras AS ServicioTiempo,
+                    Detalle.Id AS DetalleId, Detalle.Cantidad, Detalle.PrecioUnitario, Detalle.Subtotal,
+                    Producto.Codigo, Producto.Nombre
+             FROM Ordenes AS Orden
+             JOIN Vehiculos AS Vehiculo ON Vehiculo.Id = Orden.VehiculoId
+             LEFT JOIN Clientes AS Cliente ON Cliente.Id = Vehiculo.ClienteId
+             JOIN Mecanicos AS Mecanico ON Mecanico.Id = Orden.MecanicoId
+             LEFT JOIN Servicios AS Servicio ON Servicio.Id = Orden.ServicioId
+             LEFT JOIN DetalleOrdenes AS Detalle ON Detalle.OrdenId = Orden.Id
             LEFT JOIN Productos AS Producto ON Producto.Id = Detalle.ProductoId
             WHERE Orden.Id = @Id
             ORDER BY Detalle.Id;
@@ -128,8 +133,22 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
         FechaCreacion = LeerFechaUtc(lector, nameof(OrdenDetalle.FechaCreacion))!.Value,
         AnuladoPor = LeerTextoOpcional(lector, nameof(OrdenDetalle.AnuladoPor)),
         FechaAnulacion = LeerFechaUtc(lector, nameof(OrdenDetalle.FechaAnulacion)),
+        Servicio = MapearServicio(lector),
         Productos = productos
     };
+
+    private static ServicioOrdenDetalle? MapearServicio(DbDataReader lector)
+    {
+        int indice = lector.GetOrdinal("ServicioNombre");
+        if (lector.IsDBNull(indice)) return null;
+        return new ServicioOrdenDetalle
+        {
+            Nombre = lector.GetString(indice),
+            Descripcion = LeerTextoOpcional(lector, "ServicioDescripcion") ?? string.Empty,
+            Costo = lector.GetDecimal(lector.GetOrdinal("ServicioCosto")),
+            TiempoEstimadoHoras = lector.GetDecimal(lector.GetOrdinal("ServicioTiempo"))
+        };
+    }
 
     private static ProductoOrdenDetalle MapearProducto(DbDataReader lector) => new(
         lector.GetString(lector.GetOrdinal(nameof(ProductoOrdenDetalle.Codigo))),
@@ -153,6 +172,7 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
     private static OrdenResumen MapearResumen(DbDataReader lector)
     {
         var indiceCliente = lector.GetOrdinal(nameof(OrdenResumen.NombreCliente));
+        var indiceServicio = lector.GetOrdinal(nameof(OrdenResumen.NombreServicio));
 
         return new OrdenResumen(
             lector.GetInt32(lector.GetOrdinal(nameof(OrdenResumen.Id))),
@@ -160,6 +180,7 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
             lector.GetString(lector.GetOrdinal(nameof(OrdenResumen.Placa))),
             lector.IsDBNull(indiceCliente) ? null : lector.GetString(indiceCliente),
             lector.GetString(lector.GetOrdinal(nameof(OrdenResumen.NombreMecanico))),
+            lector.IsDBNull(indiceServicio) ? null : lector.GetString(indiceServicio),
             lector.GetDecimal(lector.GetOrdinal(nameof(OrdenResumen.Total))),
             Enum.Parse<EstadoOrden>(lector.GetString(lector.GetOrdinal(nameof(OrdenResumen.Estado)))),
             lector.GetString(lector.GetOrdinal(nameof(OrdenResumen.CreadoPor))));

@@ -4,6 +4,7 @@ public sealed class OrdenFormViewModel
 {
     public int VehiculoId { get; set; }
     public int MecanicoId { get; set; }
+    public int? ServicioId { get; set; }
     public DateTime Fecha { get; set; } = DateTime.Today;
     public Guid Token { get; set; }
     public int? ClienteNuevoId { get; set; }

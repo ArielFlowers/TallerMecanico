@@ -8,7 +8,7 @@ public sealed class OrdenRepository(DbConnection conexion, DbTransaction transac
     : RepositorioOrdenSql(conexion, transaccion), IOrdenPort
 {
     private const string Seleccionar = """
-        SELECT Id, VehiculoId, MecanicoId, Fecha, Estado, Total, Token,
+        SELECT Id, VehiculoId, MecanicoId, ServicioId, CostoServicio, Fecha, Estado, Total, Token,
                CreadoPor, FechaCreacion, AnuladoPor, FechaAnulacion FROM Ordenes
         """;
 
@@ -29,9 +29,10 @@ public sealed class OrdenRepository(DbConnection conexion, DbTransaction transac
     public void Insertar(Orden orden) => Ejecutar(() =>
     {
         using DbCommand comando = CrearComando("""
-            INSERT INTO Ordenes (VehiculoId, MecanicoId, Fecha, Estado, Total, Token, CreadoPor, FechaCreacion)
-            VALUES (@Vehiculo, @Mecanico, @Fecha, 'Activa', 0, @Token, @Usuario, @Creacion);
+            INSERT INTO Ordenes (VehiculoId, MecanicoId, ServicioId, CostoServicio, Fecha, Estado, Total, Token, CreadoPor, FechaCreacion)
+            VALUES (@Vehiculo, @Mecanico, @Servicio, @CostoServicio, @Fecha, 'Activa', 0, @Token, @Usuario, @Creacion);
             """, ("@Vehiculo", orden.VehiculoId), ("@Mecanico", orden.MecanicoId),
+            ("@Servicio", orden.ServicioId), ("@CostoServicio", orden.CostoServicio),
             ("@Fecha", orden.Fecha), ("@Token", orden.Token.ToString("D")),
             ("@Usuario", orden.CreadoPor), ("@Creacion", orden.FechaCreacion));
         comando.ExecuteNonQuery();
@@ -59,9 +60,11 @@ public sealed class OrdenRepository(DbConnection conexion, DbTransaction transac
     private static Orden Mapear(DbDataReader lector) => new()
     {
         Id = lector.GetInt32(0), VehiculoId = lector.GetInt32(1), MecanicoId = lector.GetInt32(2),
-        Fecha = lector.GetDateTime(3), Estado = Enum.Parse<EstadoOrden>(lector.GetString(4)),
-        Total = lector.GetDecimal(5), Token = lector.GetGuid(6), CreadoPor = lector.GetString(7),
-        FechaCreacion = lector.GetDateTime(8), AnuladoPor = lector.IsDBNull(9) ? null : lector.GetString(9),
-        FechaAnulacion = lector.IsDBNull(10) ? null : lector.GetDateTime(10)
+        ServicioId = lector.IsDBNull(3) ? null : lector.GetInt32(3),
+        CostoServicio = lector.IsDBNull(4) ? null : lector.GetDecimal(4),
+        Fecha = lector.GetDateTime(5), Estado = Enum.Parse<EstadoOrden>(lector.GetString(6)),
+        Total = lector.GetDecimal(7), Token = lector.GetGuid(8), CreadoPor = lector.GetString(9),
+        FechaCreacion = lector.GetDateTime(10), AnuladoPor = lector.IsDBNull(11) ? null : lector.GetString(11),
+        FechaAnulacion = lector.IsDBNull(12) ? null : lector.GetDateTime(12)
     };
 }

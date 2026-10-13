@@ -94,6 +94,14 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
                     $"Placa: {orden.Placa}", $"Marca: {orden.Marca}", $"Modelo: {orden.Modelo}"));
             });
             columna.Item().Element(caja => ComponerCaja(caja, "MECÁNICO RESPONSABLE", orden.NombreMecanico));
+            if (orden.Servicio is not null)
+            {
+                columna.Item().Element(caja => ComponerCaja(caja, "SERVICIO REALIZADO",
+                    orden.Servicio.Nombre,
+                    orden.Servicio.Descripcion,
+                    $"Costo: Bs. {FormatearImporte(orden.Servicio.Costo)}",
+                    $"Tiempo estimado: {orden.Servicio.TiempoEstimadoHoras.ToString("0.##", CulturaBoliviana)} h"));
+            }
         });
     }
 

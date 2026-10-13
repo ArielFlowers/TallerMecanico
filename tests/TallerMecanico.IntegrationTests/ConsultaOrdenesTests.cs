@@ -143,7 +143,7 @@ public sealed class ConsultaOrdenesTests
     private sealed class ConsultasPrueba : IConsultaOrdenesPort
     {
         public IReadOnlyList<OrdenResumen> Ordenes { get; } =
-            [new(1, new DateTime(2026, 10, 12), "1234ABC", "Ana Arce Pérez", "Juan López Núñez", 31m, EstadoOrden.Activa, "recepcion")];
+            [new(1, new DateTime(2026, 10, 12), "1234ABC", "Ana Arce Pérez", "Juan López Núñez", "Cambio de aceite", 31m, EstadoOrden.Activa, "recepcion")];
         public int Consultas { get; private set; }
         public EstadoOrden? Estado { get; private set; }
         public DateOnly? Fecha { get; private set; }

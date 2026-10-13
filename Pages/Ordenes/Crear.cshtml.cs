@@ -10,7 +10,8 @@ using TallerMecanico.Aplicacion.Dto;
 namespace TallerMecanico.Pages.Ordenes;
 
 public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort borradores,
-    VehiculoService vehiculos, MecanicoService mecanicos, ProductoService productos, ClienteService clientes) : PageModel
+    VehiculoService vehiculos, MecanicoService mecanicos, ProductoService productos, ClienteService clientes,
+    IServicioService servicios) : PageModel
 {
     [BindProperty] public OrdenFormViewModel Formulario { get; set; } = new();
     [BindProperty(SupportsGet = true)] public Guid? BorradorId { get; set; }
@@ -25,9 +26,15 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     public IReadOnlyList<Vehiculo> Vehiculos { get; private set; } = [];
     public IReadOnlyList<Mecanico> Mecanicos { get; private set; } = [];
     public IReadOnlyList<Producto> Productos { get; private set; } = [];
+    public IReadOnlyList<Servicio> Servicios { get; private set; } = [];
     public IReadOnlyList<LineaOrdenTemporalViewModel> Lineas { get; private set; } = [];
     public decimal Total => Lineas.Sum(x => x.Precio * x.Cantidad);
     public long CantidadTotal => Lineas.Sum(x => (long)x.Cantidad);
+    public decimal CostoServicioSeleccionado =>
+        Formulario.ServicioId.HasValue
+            ? Servicios.FirstOrDefault(x => x.Id == Formulario.ServicioId.Value)?.Costo ?? 0
+            : 0;
+    public decimal TotalEstimado => Total + CostoServicioSeleccionado;
     public string? Mensaje { get; private set; }
     public int? OrdenCreadaId { get; private set; }
 
@@ -94,10 +101,12 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     {
         RestaurarContextoCliente();
         Cargar();
-        if (Formulario.Lineas.Count == 0) ModelState.AddModelError("Lineas", "Agrega al menos un producto.");
+        if (Formulario.Lineas.Count == 0 && !Formulario.ServicioId.HasValue)
+            ModelState.AddModelError("", "Agrega al menos un producto o selecciona un servicio.");
         if (!ModelState.IsValid) return Page();
         var solicitud = new CrearOrdenSolicitud(Formulario.VehiculoId, Formulario.MecanicoId, Formulario.Fecha,
-            Formulario.Token, Formulario.Lineas.Select(x => new LineaOrdenSolicitud(x.ProductoId, x.Cantidad)).ToArray());
+            Formulario.Token, Formulario.Lineas.Select(x => new LineaOrdenSolicitud(x.ProductoId, x.Cantidad)).ToArray(),
+            Formulario.ServicioId);
         ResultadoOrden resultado = facade.CrearOrden(solicitud);
         if (!resultado.Exito)
         {
@@ -110,7 +119,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
             ? $"La orden #{resultado.OrdenId} ya se había guardado. Total: Bs. {resultado.Total:0.00}."
             : $"Orden #{resultado.OrdenId} guardada correctamente. Total: Bs. {resultado.Total:0.00}.";
         TempData["OrdenCreadaId"] = resultado.OrdenId;
-        return RedirectToPage();
+        return RedirectToPage("./Index");
     }
 
     public IActionResult OnPostNuevoVehiculo()
@@ -152,6 +161,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     {
         Vehiculos = vehiculos.GetAll();
         Mecanicos = mecanicos.Obtener();
+        Servicios = servicios.ObtenerTodos();
         Productos = string.IsNullOrWhiteSpace(BuscarProducto) ? productos.Obtener() : productos.Buscar(BuscarProducto);
         Lineas = Formulario.Lineas.Select(x =>
         {
@@ -177,7 +187,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     private static string MapearError(string campo) => campo switch
     {
         "VehiculoId" => "Formulario.VehiculoId", "MecanicoId" => "Formulario.MecanicoId",
-        "Fecha" => "Formulario.Fecha", "Token" => "Formulario.Token", "Lineas" => "",
+        "Fecha" => "Formulario.Fecha", "ServicioId" => "Formulario.ServicioId",
         _ => ""
     };
 }

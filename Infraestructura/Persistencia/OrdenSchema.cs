@@ -7,6 +7,8 @@ internal static class OrdenSchema
             Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             VehiculoId INT NOT NULL,
             MecanicoId INT NOT NULL,
+            ServicioId INT NULL,
+            CostoServicio DECIMAL(10,2) NULL,
             Fecha DATETIME NOT NULL,
             Estado ENUM('Activa', 'Anulada') NOT NULL DEFAULT 'Activa',
             Total DECIMAL(18,2) NOT NULL DEFAULT 0,
@@ -23,6 +25,11 @@ internal static class OrdenSchema
             ),
             CONSTRAINT FK_Ordenes_Vehiculos FOREIGN KEY (VehiculoId) REFERENCES Vehiculos(Id),
             CONSTRAINT FK_Ordenes_Mecanicos FOREIGN KEY (MecanicoId) REFERENCES Mecanicos(Id),
+            CONSTRAINT FK_Ordenes_Servicios FOREIGN KEY (ServicioId) REFERENCES Servicios(Id),
+            CONSTRAINT CK_Ordenes_Servicio CHECK (
+                (ServicioId IS NULL AND CostoServicio IS NULL)
+                OR (ServicioId IS NOT NULL AND CostoServicio > 0)
+            ),
             INDEX IX_Ordenes_Fecha_Estado (Fecha, Estado)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

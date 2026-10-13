@@ -18,7 +18,7 @@ namespace TallerMecanico.IntegrationTests;
 public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
 {
     private static int _ci = 3000000;
-    private sealed record Datos(int Vehiculo, int Mecanico, int A, int B);
+    private sealed record Datos(int Vehiculo, int Mecanico, int A, int B, int Servicio);
     private IUnidadTrabajoOrdenPort Unidad => new MySqlUnidadTrabajoOrden(basePrueba.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance);
     private OrdenServicioService Servicio(UsuarioPrueba? usuario = null, IUnidadTrabajoOrdenPort? unidad = null) =>
         new(unidad ?? Unidad, usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
@@ -40,7 +40,11 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
             """, ("@Ci", ci.ToString())));
         int a = Producto("Producto A", 12.50m, stockA);
         int b = Producto("Producto B", 7.20m, stockB);
-        return new(vehiculo, mecanico, a, b);
+        int servicio = checked((int)basePrueba.Ejecutar("""
+            INSERT INTO Servicios (Nombre, Descripcion, Costo, TiempoEstimadoHoras)
+            VALUES ('Servicio prueba', 'Servicio de prueba', 25.00, 1.5);
+            """));
+        return new(vehiculo, mecanico, a, b, servicio);
     }
 
     private int Producto(string nombre, decimal precio, int stock) => checked((int)basePrueba.Ejecutar("""
@@ -49,7 +53,7 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         """, ("@Codigo", Guid.NewGuid().ToString("N")), ("@Nombre", nombre), ("@Precio", precio), ("@Stock", stock)));
 
     private static CrearOrdenSolicitud Solicitud(Datos datos, Guid? token = null, params LineaOrdenSolicitud[] lineas) =>
-        new(datos.Vehiculo, datos.Mecanico, DateTime.Today, token ?? Guid.NewGuid(), lineas.Length == 0 ? [new LineaOrdenSolicitud(datos.A, 2), new LineaOrdenSolicitud(datos.B, 3)] : lineas);
+        new(datos.Vehiculo, datos.Mecanico, DateTime.Today, token ?? Guid.NewGuid(), lineas.Length == 0 ? [new LineaOrdenSolicitud(datos.A, 2), new LineaOrdenSolicitud(datos.B, 3)] : lineas, datos.Servicio);
 
     private int Stock(int productoId) => Convert.ToInt32(basePrueba.Escalar("SELECT Stock FROM Productos WHERE Id = @Id;", ("@Id", productoId)));
     private int ContarOrden(Guid token) => Convert.ToInt32(basePrueba.Escalar("SELECT COUNT(*) FROM Ordenes WHERE Token = @Token;", ("@Token", token.ToString("D"))));

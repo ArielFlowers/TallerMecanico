@@ -50,6 +50,17 @@
     {
         <div class="service-validation" role="status">@Model.MensajeExito</div>
     }
+    @if (Model.OrdenCreadaId.HasValue)
+    {
+        <div class="service-validation" role="status">
+            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value" target="_blank" rel="noopener">Ver comprobante de la orden #@Model.OrdenCreadaId.Value (se abre automáticamente)</a>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                window.open('@Url.Page("./Comprobante", new { id = Model.OrdenCreadaId.Value })', '_blank', 'noopener');
+            });
+        </script>
+    }
 
     <section class="recent-orders" aria-labelledby="ordenes-listado-titulo">
         <div class="section-header">
@@ -82,6 +93,7 @@
                             <th scope="col">Placa</th>
                             <th scope="col">Cliente</th>
                             <th scope="col">Mecánico</th>
+                            <th scope="col">Servicio</th>
                             <th scope="col">Total</th>
                             <th scope="col">Estado</th>
                             <th scope="col">Creado por</th>
@@ -97,6 +109,7 @@
                                 <td>@orden.Placa</td>
                                 <td>@(orden.NombreCliente ?? "Sin cliente asignado")</td>
                                 <td>@orden.NombreMecanico</td>
+                                <td>@(orden.NombreServicio ?? "—")</td>
                                 <td class="ordenes-total">@configuracion.Moneda @orden.Total.ToString("N2", culturaBoliviana)</td>
                                 <td>
                                     <span class="ordenes-estado @(orden.Estado == EstadoOrden.Activa ? "ordenes-estado-activa" : "ordenes-estado-anulada")">

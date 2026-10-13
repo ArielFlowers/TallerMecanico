@@ -1,5 +1,6 @@
 using System.Data.Common;
 using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
@@ -24,4 +25,26 @@ public sealed class CabeceraOrdenRepository(DbConnection conexion, DbTransaction
         using DbCommand comando = CrearComando("SELECT Id FROM Mecanicos WHERE Id = @Id FOR SHARE;", ("@Id", mecanicoId));
         return comando.ExecuteScalar() is not null;
     });
+
+    public bool ExisteServicio(int servicioId, out Servicio? servicio)
+    {
+        Servicio? encontrado = Ejecutar(() =>
+        {
+            using DbCommand comando = CrearComando(
+                "SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras FROM Servicios WHERE Id = @Id FOR SHARE;",
+                ("@Id", servicioId));
+            using DbDataReader lector = comando.ExecuteReader();
+            if (!lector.Read()) return (Servicio?)null;
+            return new Servicio
+            {
+                Id = lector.GetInt32(0),
+                Nombre = lector.GetString(1),
+                Descripcion = lector.GetString(2),
+                Costo = lector.GetDecimal(3),
+                TiempoEstimadoHoras = lector.GetDecimal(4)
+            };
+        });
+        servicio = encontrado;
+        return encontrado is not null;
+    }
 }

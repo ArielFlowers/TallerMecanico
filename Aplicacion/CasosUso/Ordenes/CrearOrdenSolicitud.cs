@@ -8,4 +8,5 @@ public sealed record CrearOrdenSolicitud(
     int MecanicoId,
     DateTime Fecha,
     Guid Token,
-    IReadOnlyList<LineaOrdenSolicitud> Lineas);
+    IReadOnlyList<LineaOrdenSolicitud> Lineas,
+    int? ServicioId = null);

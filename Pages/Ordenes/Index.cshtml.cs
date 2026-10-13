@@ -20,6 +20,8 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
 
     public string? MensajeExito { get; private set; }
 
+    public int? OrdenCreadaId { get; private set; }
+
     public IActionResult OnGet()
     {
         if (ModelState.IsValid)
@@ -30,6 +32,8 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
         MensajeExito = TempData?.ContainsKey("OrdenMensaje") == true
             ? TempData["OrdenMensaje"] as string
             : null;
+        if (TempData?.TryGetValue("OrdenCreadaId", out object? creada) == true && creada is int creadaId)
+            OrdenCreadaId = creadaId;
         return Page();
     }
 

@@ -8,6 +8,7 @@ public sealed record OrdenResumen(
     string Placa,
     string? NombreCliente,
     string NombreMecanico,
+    string? NombreServicio,
     decimal Total,
     EstadoOrden Estado,
     string CreadoPor);

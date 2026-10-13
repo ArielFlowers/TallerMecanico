@@ -43,6 +43,7 @@ public class DatabaseInitializer
         CreateProductosTable(connection);
         EnsureAuditoriaModificacion(connection, "Productos");
         ExecuteCommand(connection, OrdenSchema.CrearTablas);
+        EnsureOrdenesServicioSchema(connection);
         CreateUsuariosTable(connection);
         EnsureUsuariosEmailSchema(connection);
         CreateSolicitudesRegistroTable(connection);
@@ -1298,6 +1299,62 @@ public class DatabaseInitializer
                 connection,
                 $"ALTER TABLE {tableName} ADD COLUMN FechaModificacion DATETIME NULL;");
         }
+    }
+
+    private static void EnsureOrdenesServicioSchema(
+        DbConnection connection)
+    {
+        if (!ColumnExists(connection, "Ordenes", "ServicioId"))
+        {
+            ExecuteCommand(
+                connection,
+                "ALTER TABLE Ordenes ADD COLUMN ServicioId INT NULL;");
+        }
+
+        if (!ColumnExists(connection, "Ordenes", "CostoServicio"))
+        {
+            ExecuteCommand(
+                connection,
+                "ALTER TABLE Ordenes ADD COLUMN CostoServicio DECIMAL(10,2) NULL;");
+        }
+
+        if (!ConstraintExists(connection, "Ordenes", "FK_Ordenes_Servicios"))
+        {
+            ExecuteCommand(
+                connection,
+                "ALTER TABLE Ordenes ADD CONSTRAINT FK_Ordenes_Servicios " +
+                "FOREIGN KEY (ServicioId) REFERENCES Servicios(Id);");
+        }
+
+        if (!ConstraintExists(connection, "Ordenes", "CK_Ordenes_Servicio"))
+        {
+            ExecuteCommand(
+                connection,
+                "ALTER TABLE Ordenes ADD CONSTRAINT CK_Ordenes_Servicio CHECK (" +
+                "(ServicioId IS NULL AND CostoServicio IS NULL) " +
+                "OR (ServicioId IS NOT NULL AND CostoServicio > 0));");
+        }
+    }
+
+    private static bool ConstraintExists(
+        DbConnection connection,
+        string tableName,
+        string constraintName)
+    {
+        const string query = """
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = @TableName
+              AND CONSTRAINT_NAME = @ConstraintName;
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+        AddParameter(command, "@TableName", tableName);
+        AddParameter(command, "@ConstraintName", constraintName);
+
+        return Convert.ToInt64(command.ExecuteScalar()) > 0;
     }
 
     private static bool ColumnExists(
