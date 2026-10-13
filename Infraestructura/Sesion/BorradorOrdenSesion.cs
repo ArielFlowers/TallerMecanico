@@ -1,8 +1,8 @@
 using System.Text.Json;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Infraestructura.Session;
+namespace TallerMecanico.Infraestructura.Sesion;
 
 public sealed class BorradorOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario) : IBorradorOrdenPort
 {

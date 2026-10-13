@@ -1,4 +1,4 @@
-namespace TallerMecanico.Application.Exceptions;
+namespace TallerMecanico.Aplicacion.Errores;
 
 public sealed class ConfiguracionRegistroException : InvalidOperationException
 {

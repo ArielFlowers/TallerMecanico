@@ -1,6 +1,6 @@
-﻿using TallerMecanico.ViewModels;
+using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Validators;
+namespace TallerMecanico.Aplicacion.Validaciones;
 
 public class ValidacionServicios
 {

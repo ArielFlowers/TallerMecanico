@@ -1,6 +1,6 @@
-using TallerMecanico.Data;
+using TallerMecanico.Infraestructura.Persistencia;
 
-namespace TallerMecanico.Patterns.FactoryMethod;
+namespace TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 public abstract class CreadorRepositorio<T>
 {

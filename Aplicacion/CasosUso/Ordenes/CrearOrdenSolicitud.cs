@@ -1,4 +1,4 @@
-namespace TallerMecanico.Application.Ordenes;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
 public sealed record LineaOrdenSolicitud(int ProductoId, int Cantidad);
 

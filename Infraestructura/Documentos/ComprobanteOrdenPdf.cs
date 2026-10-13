@@ -2,14 +2,14 @@ using System.Globalization;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Configuracion;
 
-namespace TallerMecanico.Infraestructura.Pdf;
+namespace TallerMecanico.Infraestructura.Documentos;
 
-public sealed class ComprobanteOrdenPdf : IComprobanteOrdenPdf
+public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComprobanteOrdenPdf
 {
     private const string ColorPrincipal = "#7c3aed";
     private const string ColorFondo = "#f5f0ff";
@@ -18,7 +18,7 @@ public sealed class ComprobanteOrdenPdf : IComprobanteOrdenPdf
     private const string ColorBorde = "#e5dfee";
     private static readonly CultureInfo CulturaBoliviana = CultureInfo.GetCultureInfo("es-BO");
     private static readonly TimeSpan DesfaseBolivia = TimeSpan.FromHours(-4);
-    private readonly ConfiguracionTaller _taller = ConfiguracionTaller.Instancia;
+    private readonly ConfiguracionTaller _taller = taller;
 
     public byte[] Generar(OrdenDetalle orden, string totalLiteral, string generadoPor, DateTimeOffset fechaGeneracion)
     {

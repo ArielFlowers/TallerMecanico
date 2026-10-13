@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Pages.Auth;
 

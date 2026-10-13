@@ -1,7 +1,7 @@
-﻿using System.Text;
-using TallerMecanico.Services;
+using System.Text;
+using TallerMecanico.Aplicacion.Servicios;
 
-namespace TallerMecanico.Infraestructura.Setup;
+namespace TallerMecanico.Infraestructura.Arranque;
 
 public sealed class RestablecimientoAdminConsola
 {

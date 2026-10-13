@@ -1,6 +1,6 @@
 @model TallerMecanico.Pages.Vehiculos.IndexModel
-@using TallerMecanico.Models
-@using TallerMecanico.Validators
+@using TallerMecanico.Dominio.Entidades
+@using TallerMecanico.Aplicacion.Validaciones
 @{
     string prefijo = ViewData["Prefijo"]?.ToString() ?? "crear";
     bool extranjera = Model.Formulario.EsPlacaExtranjera;

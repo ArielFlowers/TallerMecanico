@@ -1,9 +1,9 @@
-﻿
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Infraestructura.Identity;
-using TallerMecanico.Models;
 
-namespace TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Seguridad;
+using TallerMecanico.Dominio.Entidades;
+
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public sealed class AuthenticationService : IAuthenticationService
 {

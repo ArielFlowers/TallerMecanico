@@ -1,7 +1,7 @@
-﻿
-using TallerMecanico.Application.Ports;
 
-namespace TallerMecanico.Infraestructura.Identity;
+using TallerMecanico.Aplicacion.Puertos;
+
+namespace TallerMecanico.Infraestructura.Seguridad;
 
 public sealed class AuthenticationFallbackHash
 {

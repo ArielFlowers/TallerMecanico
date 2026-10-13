@@ -1,8 +1,8 @@
 using System.Data.Common;
 using MySqlConnector;
-using TallerMecanico.Application.Ordenes;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
-namespace TallerMecanico.Infraestructura.Adapters.MySql;
+namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public abstract class RepositorioOrdenSql(DbConnection conexion, DbTransaction transaccion)
 {

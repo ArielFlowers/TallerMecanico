@@ -3,11 +3,11 @@ using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using MimeKit;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Validators;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Validaciones;
 
-namespace TallerMecanico.Infraestructura.Adapters.Gmail;
+namespace TallerMecanico.Infraestructura.Correo;
 
 public sealed class GmailEmailService : IEmailService
 {

@@ -1,8 +1,8 @@
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Servicios;
 
-namespace TallerMecanico.Application;
+namespace TallerMecanico.Aplicacion.Fachadas;
 
 public sealed class OrdenServicioFacade(OrdenServicioService servicio, ITokenOrdenPort tokens)
 {

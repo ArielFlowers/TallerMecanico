@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.Pages.Auth;
 

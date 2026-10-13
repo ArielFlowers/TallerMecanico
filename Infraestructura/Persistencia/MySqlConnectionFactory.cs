@@ -1,7 +1,7 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 using MySqlConnector;
 
-namespace TallerMecanico.Data.Factories;
+namespace TallerMecanico.Infraestructura.Persistencia;
 
 public sealed class MySqlConnectionFactory : DatabaseConnectionFactory
 {

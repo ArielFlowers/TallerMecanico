@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using TallerMecanico.Application.Facades;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 

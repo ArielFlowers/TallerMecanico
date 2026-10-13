@@ -1,7 +1,7 @@
-using TallerMecanico.Data;
-using TallerMecanico.Models;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public class HistorialCostoServicioService
     : IHistorialCostoServicioService

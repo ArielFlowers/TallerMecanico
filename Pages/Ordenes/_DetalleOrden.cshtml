@@ -1,10 +1,9 @@
-@model TallerMecanico.Application.Ordenes.OrdenDetalle
+@model TallerMecanico.Aplicacion.CasosUso.Ordenes.OrdenDetalle
 @using System.Globalization
-@using TallerMecanico.Models
-@using TallerMecanico.Services
+@using TallerMecanico.Dominio.Entidades
+@inject TallerMecanico.Infraestructura.Configuracion.ConfiguracionTaller configuracion
 
 @{
-    var configuracion = ConfiguracionTaller.Instancia;
     var culturaBoliviana = CultureInfo.GetCultureInfo("es-BO");
 }
 

@@ -1,6 +1,6 @@
-using TallerMecanico.Application.Ordenes;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
-namespace TallerMecanico.Validators;
+namespace TallerMecanico.Aplicacion.Validaciones;
 
 public sealed class ValidacionOrdenes
 {

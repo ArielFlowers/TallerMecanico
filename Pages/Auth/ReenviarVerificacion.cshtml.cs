@@ -2,8 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.Pages.Auth;
 

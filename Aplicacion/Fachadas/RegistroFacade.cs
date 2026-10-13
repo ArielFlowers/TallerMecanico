@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Servicios;
 
-namespace TallerMecanico.Application.Facades;
+namespace TallerMecanico.Aplicacion.Fachadas;
 
 /// <summary>
 /// Simplifica para la interfaz web la creación de una solicitud de registro

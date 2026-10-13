@@ -1,7 +1,7 @@
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Models;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Application.Ports;
+namespace TallerMecanico.Aplicacion.Puertos;
 
 public interface IConsultaOrdenesPort
 {

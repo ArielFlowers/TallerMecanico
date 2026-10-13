@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
-using TallerMecanico.Application.Ports;
+using TallerMecanico.Aplicacion.Puertos;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public sealed class VerificacionEmailService
 {

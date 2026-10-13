@@ -1,9 +1,8 @@
-using TallerMecanico.Data;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Infraestructura.Adapters.MySql;
-using TallerMecanico.Models;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Patterns.FactoryMethod;
+namespace TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 public class CreadorProducto :
     CreadorRepositorio<Producto>

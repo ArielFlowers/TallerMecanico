@@ -1,5 +1,5 @@
-﻿
-namespace TallerMecanico.Models;
+
+namespace TallerMecanico.Dominio.Entidades;
 
 public sealed class RegistroAuditoria
 {

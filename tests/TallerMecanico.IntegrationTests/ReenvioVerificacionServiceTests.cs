@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Servicios;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

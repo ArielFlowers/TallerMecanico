@@ -1,6 +1,6 @@
-using TallerMecanico.Models;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Application.Ordenes;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
 public sealed record OrdenDetalle
 {

@@ -1,7 +1,7 @@
-﻿
-using TallerMecanico.Models;
 
-namespace TallerMecanico.Application.Ports;
+using TallerMecanico.Dominio.Entidades;
+
+namespace TallerMecanico.Aplicacion.Puertos;
 
 public interface IAuthenticationService
 {

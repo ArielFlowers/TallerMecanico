@@ -1,11 +1,11 @@
 using System.Data;
 using System.Data.Common;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Patterns.FactoryMethod;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
-namespace TallerMecanico.Infraestructura.Adapters.MySql;
+namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class MySqlUnidadTrabajoOrden(
     DatabaseConnectionFactory connectionFactory, ILogger<MySqlUnidadTrabajoOrden> logger) : IUnidadTrabajoOrdenPort

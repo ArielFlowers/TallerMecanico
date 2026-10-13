@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
-namespace TallerMecanico.Validators;
+namespace TallerMecanico.Aplicacion.Validaciones;
 
 public static class ValidadorSolicitudRegistro
 {

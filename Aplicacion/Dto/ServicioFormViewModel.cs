@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace TallerMecanico.ViewModels;
+namespace TallerMecanico.Aplicacion.Dto;
 
 public class ServicioFormViewModel
 {

@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
-using TallerMecanico.Models;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Validators;
+namespace TallerMecanico.Aplicacion.Validaciones;
 
 public class ValidacionVehiculos
 {

@@ -1,8 +1,8 @@
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Servicios;
 
-namespace TallerMecanico.Application;
+namespace TallerMecanico.Aplicacion.Fachadas;
 
 public sealed class ConsultaOrdenesFacade(ConsultaOrdenesService servicio, ComprobanteOrdenService comprobantes)
 {

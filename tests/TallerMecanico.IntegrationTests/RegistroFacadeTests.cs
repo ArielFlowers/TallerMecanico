@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Application.Exceptions;
+using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Pages.Auth;
 using Xunit;
 

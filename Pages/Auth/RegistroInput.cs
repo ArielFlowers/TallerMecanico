@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using TallerMecanico.Validators;
+using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.Pages.Auth;
 

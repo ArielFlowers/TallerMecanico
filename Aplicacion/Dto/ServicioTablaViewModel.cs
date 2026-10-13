@@ -1,6 +1,6 @@
-﻿using TallerMecanico.Models;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.ViewModels;
+namespace TallerMecanico.Aplicacion.Dto;
 
 public class ServicioTablaViewModel
 {

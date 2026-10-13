@@ -1,6 +1,6 @@
-using TallerMecanico.Application.Exceptions;
+using TallerMecanico.Aplicacion.Errores;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public static class EnlaceVerificacion
 {

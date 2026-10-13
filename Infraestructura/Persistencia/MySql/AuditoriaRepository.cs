@@ -1,10 +1,10 @@
-﻿
-using System.Data.Common;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Models;
 
-namespace TallerMecanico.Infraestructura.Adapters.MySql;
+using System.Data.Common;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
+
+namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class AuditoriaRepository : IAuditoriaPort
 {

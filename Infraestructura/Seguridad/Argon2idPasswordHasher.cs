@@ -1,12 +1,12 @@
-﻿
+
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Konscious.Security.Cryptography;
 using Microsoft.Extensions.Options;
-using TallerMecanico.Application.Ports;
+using TallerMecanico.Aplicacion.Puertos;
 
-namespace TallerMecanico.Infraestructura.Identity;
+namespace TallerMecanico.Infraestructura.Seguridad;
 
 public sealed class Argon2idPasswordHasher : IPasswordHasher
 {

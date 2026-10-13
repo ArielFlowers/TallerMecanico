@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Validators;
+namespace TallerMecanico.Aplicacion.Validaciones;
 
 public class ValidacionProductos
 {

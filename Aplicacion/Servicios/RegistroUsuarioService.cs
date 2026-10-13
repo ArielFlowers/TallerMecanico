@@ -1,10 +1,10 @@
 using System.Security.Cryptography;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
-using TallerMecanico.Validators;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Validaciones;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public sealed class RegistroUsuarioService
 {

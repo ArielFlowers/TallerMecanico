@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TallerMecanico.Infraestructura.Session;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
-using TallerMecanico.Validators;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.IntegrationTests;
 

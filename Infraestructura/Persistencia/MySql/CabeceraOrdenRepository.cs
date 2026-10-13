@@ -1,7 +1,7 @@
 using System.Data.Common;
-using TallerMecanico.Application.Ports;
+using TallerMecanico.Aplicacion.Puertos;
 
-namespace TallerMecanico.Infraestructura.Adapters.MySql;
+namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class CabeceraOrdenRepository(DbConnection conexion, DbTransaction transaccion)
     : RepositorioOrdenSql(conexion, transaccion), ICabeceraOrdenPort

@@ -1,6 +1,6 @@
-using TallerMecanico.Models;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public interface IHistorialCostoServicioService
 {

@@ -1,6 +1,7 @@
-using TallerMecanico.Application.Ports;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Servicios;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public sealed class ComprobanteOrdenService(
     ConsultaOrdenesService consultas,

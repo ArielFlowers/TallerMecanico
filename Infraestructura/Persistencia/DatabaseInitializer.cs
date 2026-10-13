@@ -1,7 +1,7 @@
 using System.Data.Common;
-using TallerMecanico.Data.Factories;
+using TallerMecanico.Infraestructura.Persistencia;
 
-namespace TallerMecanico.Data;
+namespace TallerMecanico.Infraestructura.Persistencia;
 
 public class DatabaseInitializer
 {

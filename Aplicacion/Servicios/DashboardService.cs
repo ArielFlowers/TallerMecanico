@@ -1,8 +1,8 @@
-using TallerMecanico.Data;
-using TallerMecanico.Models;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public class DashboardService
 {

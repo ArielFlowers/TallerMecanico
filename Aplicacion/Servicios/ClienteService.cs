@@ -1,11 +1,11 @@
 using System.Text.RegularExpressions;
 using MySqlConnector;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
-using TallerMecanico.Validators;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public class ClienteService
 {

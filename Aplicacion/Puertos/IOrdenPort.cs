@@ -1,6 +1,6 @@
-using TallerMecanico.Models;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Application.Ports;
+namespace TallerMecanico.Aplicacion.Puertos;
 
 public interface IOrdenPort
 {

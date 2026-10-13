@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.Pages.Historial;
 

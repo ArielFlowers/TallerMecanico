@@ -1,4 +1,4 @@
-namespace TallerMecanico.Application.Ports;
+namespace TallerMecanico.Aplicacion.Puertos;
 
 public interface IUnidadTrabajoOrdenPort
 {

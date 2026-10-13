@@ -1,7 +1,7 @@
 using System.Text.Json;
-using TallerMecanico.Application.Ports;
+using TallerMecanico.Aplicacion.Puertos;
 
-namespace TallerMecanico.Infraestructura.Session;
+namespace TallerMecanico.Infraestructura.Sesion;
 
 public sealed class TokenOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario, TimeProvider reloj) : ITokenOrdenPort
 {

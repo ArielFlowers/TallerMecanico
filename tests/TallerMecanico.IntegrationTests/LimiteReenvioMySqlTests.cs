@@ -1,9 +1,9 @@
 using System.Data.Common;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Infraestructura.Adapters.MySql;
-using TallerMecanico.Services;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
+using TallerMecanico.Aplicacion.Servicios;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

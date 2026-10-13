@@ -1,8 +1,8 @@
-﻿
-using System.Security.Claims;
-using TallerMecanico.Application.Ports;
 
-namespace TallerMecanico.Infraestructura.Identity;
+using System.Security.Claims;
+using TallerMecanico.Aplicacion.Puertos;
+
+namespace TallerMecanico.Infraestructura.Seguridad;
 
 public sealed class CurrentUser : ICurrentUser
 {

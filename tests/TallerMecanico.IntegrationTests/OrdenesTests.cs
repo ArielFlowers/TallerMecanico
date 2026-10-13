@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
-using TallerMecanico.Application;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Infraestructura.Session;
-using TallerMecanico.Services;
-using TallerMecanico.Validators;
+using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.IntegrationTests;
 

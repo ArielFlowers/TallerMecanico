@@ -1,7 +1,7 @@
 using System.Globalization;
 using Humanizer;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Dominio.Servicios;
 
 public sealed class ImporteEnPalabras
 {

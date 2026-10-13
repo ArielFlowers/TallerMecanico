@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
-using TallerMecanico.ViewModels;
-using TallerMecanico.Application.Ports;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Pages.Vehiculos;
 

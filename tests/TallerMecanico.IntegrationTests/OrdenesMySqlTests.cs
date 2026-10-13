@@ -1,16 +1,16 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
-using TallerMecanico.Application;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Data;
-using TallerMecanico.Infraestructura.Adapters.MySql;
-using TallerMecanico.Infraestructura.Session;
-using TallerMecanico.Models;
-using TallerMecanico.Patterns.FactoryMethod;
-using TallerMecanico.Services;
-using TallerMecanico.Validators;
+using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
+using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.IntegrationTests;
 

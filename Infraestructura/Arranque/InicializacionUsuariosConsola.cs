@@ -1,8 +1,8 @@
-﻿
-using System.Text;
-using TallerMecanico.Services;
 
-namespace TallerMecanico.Infraestructura.Setup;
+using System.Text;
+using TallerMecanico.Aplicacion.Servicios;
+
+namespace TallerMecanico.Infraestructura.Arranque;
 
 public sealed class InicializacionUsuariosConsola
 {

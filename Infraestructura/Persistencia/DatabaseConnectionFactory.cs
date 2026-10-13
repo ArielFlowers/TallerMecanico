@@ -1,6 +1,6 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 
-namespace TallerMecanico.Data.Factories;
+namespace TallerMecanico.Infraestructura.Persistencia;
 
 public abstract class DatabaseConnectionFactory
 {

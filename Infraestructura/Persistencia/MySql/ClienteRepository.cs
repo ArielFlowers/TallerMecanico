@@ -1,10 +1,9 @@
 using System.Data.Common;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Data;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Models;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Infraestructura.Adapters.MySql;
+namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public class ClienteRepository :
     IRepository<Cliente>,

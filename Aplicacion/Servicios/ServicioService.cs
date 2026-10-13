@@ -1,8 +1,8 @@
-﻿using TallerMecanico.Data;
-using TallerMecanico.Models;
-using TallerMecanico.Patterns.FactoryMethod;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public class ServicioService : IServicioService
 {

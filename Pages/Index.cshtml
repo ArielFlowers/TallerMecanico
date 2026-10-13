@@ -1,5 +1,6 @@
-﻿@page
+@page
 @model IndexModel
+@inject TallerMecanico.Infraestructura.Configuracion.ConfiguracionTaller configuracion
 
 @{
     ViewData["Title"] = "Inicio";
@@ -43,7 +44,7 @@
 
             <div class="dashboard-date">
                 <span>Hoy</span>
-                <strong>@DateTime.Now.ToString(TallerMecanico.Services.ConfiguracionTaller.Instancia.FormatoFecha)</strong>
+                <strong>@DateTime.Now.ToString(configuracion.FormatoFecha)</strong>
             </div>
         </div>
 
@@ -83,6 +84,6 @@
     </section>
 
     <footer class="home-footer">
-        <span>@TallerMecanico.Services.ConfiguracionTaller.Instancia.NombreTaller - @TallerMecanico.Services.ConfiguracionTaller.Instancia.Version</span>
+        <span>@configuracion.NombreTaller - @configuracion.Version</span>
     </footer>
 </div>

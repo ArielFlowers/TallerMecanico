@@ -1,4 +1,4 @@
-namespace TallerMecanico.Models;
+namespace TallerMecanico.Dominio.Entidades;
 
 public class Cliente
 {

@@ -1,11 +1,11 @@
 using System.Text.RegularExpressions;
-using TallerMecanico.Data;
-using TallerMecanico.Models;
-using TallerMecanico.Patterns.FactoryMethod;
-using TallerMecanico.Validators;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
+using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public class MecanicoService
 {

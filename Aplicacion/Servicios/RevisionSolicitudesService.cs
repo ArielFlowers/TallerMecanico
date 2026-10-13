@@ -1,7 +1,7 @@
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Aplicacion.Servicios;
 
 public sealed class RevisionSolicitudesService
 {

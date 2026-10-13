@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Application.Facades;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Fachadas;
 
 namespace TallerMecanico.Pages.Auth;
 

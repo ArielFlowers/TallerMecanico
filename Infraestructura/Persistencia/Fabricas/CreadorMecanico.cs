@@ -1,8 +1,7 @@
-using TallerMecanico.Data;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Models;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Patterns.FactoryMethod;
+namespace TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 public class CreadorMecanico : CreadorRepositorio<Mecanico>
 {

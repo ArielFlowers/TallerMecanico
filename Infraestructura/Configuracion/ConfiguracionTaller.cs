@@ -1,4 +1,4 @@
-namespace TallerMecanico.Services;
+namespace TallerMecanico.Infraestructura.Configuracion;
 
 public sealed class ConfiguracionTaller
 {

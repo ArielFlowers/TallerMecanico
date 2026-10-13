@@ -1,8 +1,8 @@
 using System.Data.Common;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Infraestructura.Adapters.MySql;
+namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class DetalleOrdenRepository(DbConnection conexion, DbTransaction transaccion)
     : RepositorioOrdenSql(conexion, transaccion), IDetalleOrdenPort

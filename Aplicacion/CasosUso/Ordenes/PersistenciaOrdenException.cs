@@ -1,4 +1,4 @@
-namespace TallerMecanico.Application.Ordenes;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
 public class PersistenciaOrdenException(string mensaje, Exception? causa = null) : Exception(mensaje, causa);
 

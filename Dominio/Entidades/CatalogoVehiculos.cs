@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 
-namespace TallerMecanico.Models;
+namespace TallerMecanico.Dominio.Entidades;
 
 public static class CatalogoVehiculos
 {

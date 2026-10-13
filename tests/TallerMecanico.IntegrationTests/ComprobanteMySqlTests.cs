@@ -1,6 +1,6 @@
 using System.Text;
-using TallerMecanico.Patterns.FactoryMethod;
-using TallerMecanico.Services;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 

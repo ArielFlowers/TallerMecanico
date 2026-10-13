@@ -1,4 +1,4 @@
-namespace TallerMecanico.ViewModels;
+namespace TallerMecanico.Aplicacion.Dto;
 
 public class MecanicoInputModel
 {

@@ -1,8 +1,8 @@
 using System.Data.Common;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Models;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Data;
+namespace TallerMecanico.Infraestructura.Persistencia;
 
 public class MecanicoRepository : IRepository<Mecanico>
 {

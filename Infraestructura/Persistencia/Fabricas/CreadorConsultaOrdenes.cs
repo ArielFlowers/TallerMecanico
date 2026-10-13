@@ -1,8 +1,8 @@
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Infraestructura.Adapters.MySql;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
 
-namespace TallerMecanico.Patterns.FactoryMethod;
+namespace TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 public sealed class CreadorConsultaOrdenes(DatabaseConnectionFactory connectionFactory)
     : CreadorPuerto<IConsultaOrdenesPort>

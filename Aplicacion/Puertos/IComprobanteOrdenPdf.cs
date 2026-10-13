@@ -1,6 +1,6 @@
-using TallerMecanico.Application.Ordenes;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
-namespace TallerMecanico.Application.Ports;
+namespace TallerMecanico.Aplicacion.Puertos;
 
 public interface IComprobanteOrdenPdf
 {

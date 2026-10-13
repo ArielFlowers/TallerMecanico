@@ -1,4 +1,4 @@
-namespace TallerMecanico.Data;
+namespace TallerMecanico.Infraestructura.Persistencia;
 
 internal static class OrdenSchema
 {

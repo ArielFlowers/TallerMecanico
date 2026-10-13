@@ -1,5 +1,5 @@
-﻿
-namespace TallerMecanico.Infraestructura.Identity;
+
+namespace TallerMecanico.Infraestructura.Seguridad;
 
 public sealed class Argon2idOptions
 {

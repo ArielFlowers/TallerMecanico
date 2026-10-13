@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Services;
-using TallerMecanico.ViewModels;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.Pages;
 
