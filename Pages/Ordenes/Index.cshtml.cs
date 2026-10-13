@@ -27,7 +27,9 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
             Ordenes = consultas.Obtener(Estado, Fecha);
         }
 
-        MensajeExito = TempData["OrdenMensaje"] as string;
+        MensajeExito = TempData?.ContainsKey("OrdenMensaje") == true
+            ? TempData["OrdenMensaje"] as string
+            : null;
         return Page();
     }
 

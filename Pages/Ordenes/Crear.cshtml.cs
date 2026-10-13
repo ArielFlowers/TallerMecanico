@@ -53,8 +53,9 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         if (ProductoNuevoId.HasValue && productos.ObtenerPorId(ProductoNuevoId.Value) is { } nuevo)
             AgregarProducto(nuevo, 1);
         Cargar();
-        Mensaje = TempData["OrdenMensaje"] as string ?? TempData["OrdenError"] as string;
-        if (TempData["OrdenCreadaId"] is int creada) OrdenCreadaId = creada;
+        Mensaje = TempData?["OrdenMensaje"] as string ?? TempData?["OrdenError"] as string;
+        if (TempData?.TryGetValue("OrdenCreadaId", out object? creada) == true && creada is int creadaId)
+            OrdenCreadaId = creadaId;
         return Page();
     }
 
