@@ -1,7 +1,8 @@
 using System.Text;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Dominio.Servicios;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 

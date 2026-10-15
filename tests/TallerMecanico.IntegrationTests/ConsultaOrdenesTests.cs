@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
-using TallerMecanico.Application;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Infraestructura.Adapters.MySql;
-using TallerMecanico.Models;
-using TallerMecanico.Patterns.FactoryMethod;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
+using TallerMecanico.Aplicacion.Servicios;
 using OrdenesIndexModel = TallerMecanico.Pages.Ordenes.IndexModel;
 
 namespace TallerMecanico.IntegrationTests;
@@ -57,7 +57,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance)
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance)
         {
             Estado = EstadoOrden.Activa,
             Fecha = new DateOnly(2026, 10, 12)
@@ -76,7 +76,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
         pagina.ModelState.AddModelError(nameof(pagina.Estado), "Estado inválido.");
 
         Assert.IsType<PageResult>(pagina.OnGet());
@@ -91,7 +91,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         Assert.Null(fachada.ObtenerDetalle(id));
         Assert.IsType<BadRequestObjectResult>(pagina.OnGetDetalle(id));
@@ -103,7 +103,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         Assert.Null(fachada.ObtenerDetalle(999));
         Assert.IsType<NotFoundObjectResult>(pagina.OnGetDetalle(999));
@@ -115,7 +115,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba { FallarDetalle = true };
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, NullLogger<OrdenesIndexModel>.Instance);
+        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         var resultado = Assert.IsType<ObjectResult>(pagina.OnGetDetalle(1));
         Assert.Equal(503, resultado.StatusCode);
@@ -143,7 +143,7 @@ public sealed class ConsultaOrdenesTests
     private sealed class ConsultasPrueba : IConsultaOrdenesPort
     {
         public IReadOnlyList<OrdenResumen> Ordenes { get; } =
-            [new(1, new DateTime(2026, 10, 12), "1234ABC", "Ana Arce Pérez", "Juan López Núñez", 31m, EstadoOrden.Activa, "recepcion")];
+            [new(1, new DateTime(2026, 10, 12), "1234ABC", "Ana Arce Pérez", "Juan López Núñez", "Cambio de aceite", 31m, EstadoOrden.Activa, "recepcion")];
         public int Consultas { get; private set; }
         public EstadoOrden? Estado { get; private set; }
         public DateOnly? Fecha { get; private set; }

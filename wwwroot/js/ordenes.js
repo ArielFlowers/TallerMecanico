@@ -1,14 +1,27 @@
-<<<<<<< dev1/setup-dashboard
-(() => {
+document.addEventListener("DOMContentLoaded", () => {
     function filtrar(inputId, selectId) {
         const input = document.getElementById(inputId);
         const select = document.getElementById(selectId);
-        if (!input || !select) return;
+        if (!input || !(select instanceof HTMLSelectElement)) return;
+        const aviso = document.createElement("p");
+        aviso.className = "service-validation";
+        aviso.setAttribute("role", "status");
+        aviso.hidden = true;
+        aviso.textContent = "Sin coincidencias para ese filtro.";
+        select.insertAdjacentElement("afterend", aviso);
         input.addEventListener('input', () => {
-            const termino = input.value.trim().toLocaleLowerCase('es');
+            const termino = (input.value || "").trim().toLocaleLowerCase('es');
+            let visibles = 0;
             for (const opcion of select.options) {
-                if (!opcion.value) continue;
-                opcion.hidden = !opcion.dataset.search?.toLocaleLowerCase('es').includes(termino);
+                if (!opcion.value) { opcion.hidden = false; continue; }
+                const texto = (opcion.dataset.search || opcion.textContent || "").toLocaleLowerCase('es');
+                const coincide = texto.includes(termino);
+                opcion.hidden = !coincide;
+                if (coincide) visibles++;
+            }
+            aviso.hidden = visibles > 0;
+            if (select.selectedOptions.length > 0 && select.selectedOptions[0].hidden) {
+                select.selectedIndex = 0;
             }
         });
     }
@@ -25,16 +38,19 @@
             cantidadTotal += cantidad;
             total += cantidad * precio;
             const subtotal = fila.querySelector('[data-subtotal]');
-            if (subtotal) subtotal.textContent = `Bs. ${ (cantidad * precio).toFixed(2) }`;
+            if (subtotal) subtotal.textContent = `Bs. ${(cantidad * precio).toFixed(2)}`;
         }
         document.getElementById('resumen-lineas')?.replaceChildren(String(filas.length));
         document.getElementById('resumen-cantidad')?.replaceChildren(String(cantidadTotal));
         const totalEl = document.getElementById('resumen-total');
-        if (totalEl) totalEl.textContent = `Bs. ${total.toFixed(2)}`;
+        if (totalEl) {
+            const servicio = Number(totalEl.dataset.costoServicio || 0);
+            totalEl.textContent = `Bs. ${(total + servicio).toFixed(2)}`;
+        }
     };
     document.querySelectorAll('[data-cantidad]').forEach(input => input.addEventListener('input', actualizarResumen));
-})();
-=======
+});
+
 document.addEventListener("DOMContentLoaded", () => {
     const dialog = document.getElementById("orden-detalle-dialog");
     const contenido = document.getElementById("orden-detalle-contenido");
@@ -105,4 +121,3 @@ document.addEventListener("DOMContentLoaded", () => {
         botonOrigen?.focus();
     });
 });
->>>>>>> main

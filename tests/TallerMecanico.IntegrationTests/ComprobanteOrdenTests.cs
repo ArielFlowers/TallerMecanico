@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging.Abstractions;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Pages.Ordenes;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 

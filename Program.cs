@@ -1,22 +1,22 @@
-using TallerMecanico.Infraestructura.Adapters.Gmail;
-using TallerMecanico.Infraestructura.Adapters.MySql;
+using TallerMecanico.Infraestructura.Correo;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Data;
-using TallerMecanico.Data.Factories;
-using TallerMecanico.Models;
-using TallerMecanico.Patterns.FactoryMethod;
-using TallerMecanico.Services;
-using TallerMecanico.Validators;
-using TallerMecanico.Infraestructura.Identity;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Infraestructura.Seguridad;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using TallerMecanico.Infraestructura.Setup;
-using TallerMecanico.Infraestructura.Session;
-using TallerMecanico.Application;
-using TallerMecanico.Application.Facades;
-using TallerMecanico.Infraestructura.Pdf;
+using TallerMecanico.Infraestructura.Arranque;
+using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Dominio.Servicios;
+using TallerMecanico.Infraestructura.Configuracion;
+using TallerMecanico.Infraestructura.Documentos;
 
 var builder =
     WebApplication.CreateBuilder(args);
@@ -70,6 +70,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(ConfiguracionTaller.Instancia);
 builder.Services.AddScoped<ITokenOrdenPort, TokenOrdenSesion>();
 builder.Services.AddScoped<IBorradorOrdenPort, BorradorOrdenSesion>();
 builder.Services.AddScoped<IUnidadTrabajoOrdenPort, MySqlUnidadTrabajoOrden>();
@@ -95,7 +96,7 @@ builder.Services.AddSingleton<
     IPasswordHasher,
     Argon2idPasswordHasher>();
 
-builder.Services.AddSingleton<AuthenticationFallbackHash>();
+builder.Services.AddSingleton<IFallbackHash, AuthenticationFallbackHash>();
 
 
 // =====================================================

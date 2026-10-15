@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Servicios;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

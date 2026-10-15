@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using TallerMecanico.Validators;
+using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.Pages.Auth;
 
@@ -8,18 +8,18 @@ public sealed class RegistroInput : IValidatableObject
     [Required(ErrorMessage = "Ingrese un nombre de usuario.")]
     public string Username { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Ingrese su correo electronico.")]
+    [Required(ErrorMessage = "Ingrese su correo electrónico.")]
     public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Ingrese una contrasena.")]
+    [Required(ErrorMessage = "Ingrese una contraseña.")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Confirme su contrasena.")]
+    [Required(ErrorMessage = "Confirme su contraseña.")]
     [DataType(DataType.Password)]
     [Compare(
         nameof(Password),
-        ErrorMessage = "Las contrasenas no coinciden.")]
+        ErrorMessage = "Las contraseñas no coinciden.")]
     public string ConfirmarPassword { get; set; } = string.Empty;
 
     public IEnumerable<ValidationResult> Validate(
@@ -28,21 +28,21 @@ public sealed class RegistroInput : IValidatableObject
         if (!ValidadorSolicitudRegistro.UsuarioValido(Username))
         {
             yield return new ValidationResult(
-                "Use entre 3 y 50 caracteres: letras, numeros, punto, guion o guion bajo.",
+                "Use entre 3 y 50 caracteres: letras, números, punto, guion o guion bajo.",
                 new[] { nameof(Username) });
         }
 
         if (!ValidadorSolicitudRegistro.EmailValido(Email))
         {
             yield return new ValidationResult(
-                "Ingrese un correo electronico valido.",
+                "Ingrese un correo electrónico válido.",
                 new[] { nameof(Email) });
         }
 
         if (!ValidadorSolicitudRegistro.PasswordValido(Password))
         {
             yield return new ValidationResult(
-                "La contrasena debe tener entre 12 y 128 caracteres y no comenzar ni terminar con espacios.",
+                "La contraseña debe tener entre 12 y 128 caracteres y no comenzar ni terminar con espacios.",
                 new[] { nameof(Password) });
         }
     }

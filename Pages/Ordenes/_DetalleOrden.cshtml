@@ -1,10 +1,9 @@
-@model TallerMecanico.Application.Ordenes.OrdenDetalle
+@model TallerMecanico.Aplicacion.CasosUso.Ordenes.OrdenDetalle
 @using System.Globalization
-@using TallerMecanico.Models
-@using TallerMecanico.Services
+@using TallerMecanico.Dominio.Entidades
+@inject TallerMecanico.Infraestructura.Configuracion.ConfiguracionTaller configuracion
 
 @{
-    var configuracion = ConfiguracionTaller.Instancia;
     var culturaBoliviana = CultureInfo.GetCultureInfo("es-BO");
 }
 
@@ -42,6 +41,23 @@
         <div><dt>Nombre</dt><dd>@Model.NombreMecanico</dd></div>
         <div><dt>CI del mecánico</dt><dd>@FormatearCi(Model.CiMecanico, Model.ComplementoCiMecanico)</dd></div>
     </dl>
+</section>
+
+<section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-servicio">
+    <h3 id="orden-detalle-servicio">Servicio realizado</h3>
+    @if (Model.Servicio is null)
+    {
+        <p>Sin servicio registrado para esta orden.</p>
+    }
+    else
+    {
+        <dl class="ordenes-datos">
+            <div><dt>Servicio</dt><dd>@Model.Servicio.Nombre</dd></div>
+            <div><dt>Descripción</dt><dd>@Model.Servicio.Descripcion</dd></div>
+            <div><dt>Costo</dt><dd>@configuracion.Moneda @Model.Servicio.Costo.ToString("N2", culturaBoliviana)</dd></div>
+            <div><dt>Tiempo estimado</dt><dd>@Model.Servicio.TiempoEstimadoHoras.ToString("0.##", culturaBoliviana) h</dd></div>
+        </dl>
+    }
 </section>
 
 <section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-productos">

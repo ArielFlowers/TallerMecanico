@@ -6,9 +6,9 @@ using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MimeKit;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Infraestructura.Adapters.Gmail;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Correo;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

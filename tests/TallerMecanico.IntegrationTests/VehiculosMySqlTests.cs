@@ -1,6 +1,6 @@
-using TallerMecanico.Infraestructura.Adapters.MySql;
-using TallerMecanico.Models;
-using TallerMecanico.Data;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Persistencia;
 
 namespace TallerMecanico.IntegrationTests;
 

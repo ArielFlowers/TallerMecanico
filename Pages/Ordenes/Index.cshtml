@@ -1,12 +1,11 @@
 @page
 @model TallerMecanico.Pages.Ordenes.IndexModel
 @using System.Globalization
-@using TallerMecanico.Models
-@using TallerMecanico.Services
+@using TallerMecanico.Dominio.Entidades
+@inject TallerMecanico.Infraestructura.Configuracion.ConfiguracionTaller configuracion
 
 @{
     ViewData["Title"] = "Gestión de Órdenes";
-    var configuracion = ConfiguracionTaller.Instancia;
     var culturaBoliviana = CultureInfo.GetCultureInfo("es-BO");
 }
 
@@ -19,6 +18,9 @@
         <div>
             <h1>Gestión de Órdenes</h1>
             <p>Consulta y administra el historial de órdenes de trabajo.</p>
+        </div>
+        <div>
+            <a asp-page="./Crear" class="services-btn services-btn-primary">+ Nueva orden</a>
         </div>
     </div>
 
@@ -43,6 +45,22 @@
     </form>
 
     <div asp-validation-summary="All" class="ordenes-validacion" role="alert"></div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito))
+    {
+        <div class="service-validation" role="status">@Model.MensajeExito</div>
+    }
+    @if (Model.OrdenCreadaId.HasValue)
+    {
+        <div class="service-validation" role="status">
+            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value" target="_blank" rel="noopener">Ver comprobante de la orden #@Model.OrdenCreadaId.Value (se abre automáticamente)</a>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                window.open('@Url.Page("./Comprobante", new { id = Model.OrdenCreadaId.Value })', '_blank', 'noopener');
+            });
+        </script>
+    }
 
     <section class="recent-orders" aria-labelledby="ordenes-listado-titulo">
         <div class="section-header">
@@ -75,6 +93,7 @@
                             <th scope="col">Placa</th>
                             <th scope="col">Cliente</th>
                             <th scope="col">Mecánico</th>
+                            <th scope="col">Servicio</th>
                             <th scope="col">Total</th>
                             <th scope="col">Estado</th>
                             <th scope="col">Creado por</th>
@@ -90,6 +109,7 @@
                                 <td>@orden.Placa</td>
                                 <td>@(orden.NombreCliente ?? "Sin cliente asignado")</td>
                                 <td>@orden.NombreMecanico</td>
+                                <td>@(orden.NombreServicio ?? "—")</td>
                                 <td class="ordenes-total">@configuracion.Moneda @orden.Total.ToString("N2", culturaBoliviana)</td>
                                 <td>
                                     <span class="ordenes-estado @(orden.Estado == EstadoOrden.Activa ? "ordenes-estado-activa" : "ordenes-estado-anulada")">
@@ -109,6 +129,15 @@
                                         <a asp-page="./Comprobante" asp-route-id="@orden.Id"
                                            class="services-btn services-btn-secondary" target="_blank" rel="noopener"
                                            aria-label="Comprobante de orden @orden.Id (nueva pestaña)">Comprobante</a>
+                                        @if (orden.Estado == EstadoOrden.Activa && User.IsInRole("Administrador"))
+                                        {
+                                            <form method="post" asp-page-handler="Anular" asp-route-id="@orden.Id"
+                                                  onsubmit="return confirm('¿Anular la orden #@orden.Id? Se restituirá el stock.');"
+                                                  style="display:inline;">
+                                                <button type="submit" class="services-btn services-btn-secondary"
+                                                        aria-label="Anular orden @orden.Id">Anular</button>
+                                            </form>
+                                        }
                                     </div>
                                 </td>
                             </tr>

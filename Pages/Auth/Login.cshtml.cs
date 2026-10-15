@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Models;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Dominio.Entidades;
 using ILoginAuthenticationService =
-    TallerMecanico.Application.Ports.IAuthenticationService;
+    TallerMecanico.Aplicacion.Puertos.IAuthenticationService;
 
 namespace TallerMecanico.Pages.Auth;
 

@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using TallerMecanico.Infraestructura.Adapters.Gmail;
+using TallerMecanico.Infraestructura.Correo;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

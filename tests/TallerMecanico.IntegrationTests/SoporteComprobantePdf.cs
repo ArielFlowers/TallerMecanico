@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using System.Text;
-using TallerMecanico.Application;
-using TallerMecanico.Application.Ordenes;
-using TallerMecanico.Application.Ports;
-using TallerMecanico.Infraestructura.Pdf;
-using TallerMecanico.Models;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura.Documentos;
+using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Dominio.Servicios;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Infraestructura.Configuracion;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -28,7 +30,7 @@ internal static class SoporteComprobantePdf
     public static ComprobanteOrdenPdf CrearGenerador()
     {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-        return new ComprobanteOrdenPdf();
+        return new ComprobanteOrdenPdf(ConfiguracionTaller.Instancia);
     }
 
     public static OrdenDetalle Orden() => new()

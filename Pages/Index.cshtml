@@ -1,5 +1,6 @@
-﻿@page
+@page
 @model IndexModel
+@inject TallerMecanico.Infraestructura.Configuracion.ConfiguracionTaller configuracion
 
 @{
     ViewData["Title"] = "Inicio";
@@ -38,12 +39,12 @@
         <div class="dashboard-header">
             <div>
                 <h1>Dashboard</h1>
-                <p>Resumen general del taller mecánico</p>
+                <p>Resumen general del taller mecánico — Vista: @(User.IsInRole("Administrador") ? "Administrador" : "Recepcionista")</p>
             </div>
 
             <div class="dashboard-date">
                 <span>Hoy</span>
-                <strong>@DateTime.Now.ToString(TallerMecanico.Services.ConfiguracionTaller.Instancia.FormatoFecha)</strong>
+                <strong>@DateTime.Now.ToString(configuracion.FormatoFecha)</strong>
             </div>
         </div>
 
@@ -74,15 +75,18 @@
         </div>
     </div>
 
-    <section class="home-audit">
-        <div class="home-audit-content">
-            <h2>Auditoría de Costos en Tiempo Real</h2>
-            <p>El sistema rastrea cada modificación de precios de servicios para garantizar transparencia total en tu taller.</p>
-            <a class="home-audit-link" asp-page="/Historial/Index">Ver historial de cambios</a>
-        </div>
-    </section>
+    @if (User.IsInRole("Administrador"))
+    {
+        <section class="home-audit">
+            <div class="home-audit-content">
+                <h2>Auditoría de Costos en Tiempo Real</h2>
+                <p>El sistema rastrea cada modificación de precios de servicios para garantizar transparencia total en tu taller.</p>
+                <a class="home-audit-link" asp-page="/Historial/Index">Ver historial de cambios</a>
+            </div>
+        </section>
+    }
 
     <footer class="home-footer">
-        <span>@TallerMecanico.Services.ConfiguracionTaller.Instancia.NombreTaller - @TallerMecanico.Services.ConfiguracionTaller.Instancia.Version</span>
+        <span>@configuracion.NombreTaller - @configuracion.Version</span>
     </footer>
 </div>

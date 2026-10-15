@@ -1,4 +1,4 @@
-using TallerMecanico.Validators;
+using TallerMecanico.Aplicacion.Validaciones;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

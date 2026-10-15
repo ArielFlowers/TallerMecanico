@@ -1,0 +1,28 @@
+namespace TallerMecanico.Dominio.Entidades;
+
+public class Vehiculo
+{
+    public int Id { get; set; }
+
+    public string Placa { get; set; } = string.Empty;
+
+    public bool EsPlacaExtranjera { get; set; }
+
+    public string Marca { get; set; } = string.Empty;
+
+    public string Modelo { get; set; } = string.Empty;
+
+    public int Kilometraje { get; set; }
+
+    public string Observaciones { get; set; } = string.Empty;
+
+    public int? ClienteId { get; set; }
+
+    public string CreadoPor { get; set; } = string.Empty;
+
+    public DateTime FechaCreacion { get; set; }
+
+    public string? ModificadoPor { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
+}

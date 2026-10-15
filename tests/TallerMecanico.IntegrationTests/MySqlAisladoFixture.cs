@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
-using TallerMecanico.Data;
-using TallerMecanico.Data.Factories;
+using TallerMecanico.Infraestructura.Persistencia;
 
 namespace TallerMecanico.IntegrationTests;
 

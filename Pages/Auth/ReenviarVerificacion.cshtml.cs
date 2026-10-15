@@ -2,8 +2,8 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.Pages.Auth;
 
@@ -22,8 +22,8 @@ public sealed class ReenviarVerificacionModel : PageModel
     }
 
     [BindProperty]
-    [Required(ErrorMessage = "Ingresa tu correo electronico.")]
-    [EmailAddress(ErrorMessage = "Ingresa un correo valido.")]
+    [Required(ErrorMessage = "Ingresa tu correo electrónico.")]
+    [EmailAddress(ErrorMessage = "Ingresa un correo válido.")]
     [StringLength(254)]
     public string Email { get; set; } = string.Empty;
 

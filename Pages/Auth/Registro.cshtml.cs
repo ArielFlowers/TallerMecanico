@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Application.Exceptions;
-using TallerMecanico.Application.Facades;
+using TallerMecanico.Aplicacion.Errores;
+using TallerMecanico.Aplicacion.Fachadas;
 
 namespace TallerMecanico.Pages.Auth;
 
@@ -107,7 +107,7 @@ public sealed class RegistroModel : PageModel
             ModelState.AddModelError(
                 string.Empty,
                 "No se pudo completar la solicitud en este momento. " +
-                "Si recibes un correo de verificacion, utiliza ese enlace.");
+                "Si recibes un correo de verificación, utiliza ese enlace.");
         }
 
         return Page();

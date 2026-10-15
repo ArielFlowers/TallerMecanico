@@ -6,9 +6,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using TallerMecanico.Infraestructura.Adapters.MySql;
-using TallerMecanico.Infraestructura.Identity;
-using TallerMecanico.Models;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
+using TallerMecanico.Infraestructura.Seguridad;
+using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
 

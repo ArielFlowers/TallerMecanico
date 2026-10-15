@@ -1,5 +1,6 @@
 @page
 @model TallerMecanico.Pages.Historial.IndexModel
+@inject TallerMecanico.Infraestructura.Configuracion.ConfiguracionTaller configuracion
 
 @{
     ViewData["Title"] = "Historial de Costos";
@@ -85,12 +86,12 @@
                                 </td>
 
                                 <td>
-                                    @TallerMecanico.Services.ConfiguracionTaller.Instancia.Moneda
+                                    @configuracion.Moneda
                                     @cambio.CostoAnterior.ToString("0.00")
                                 </td>
 
                                 <td>
-                                    @TallerMecanico.Services.ConfiguracionTaller.Instancia.Moneda
+                                    @configuracion.Moneda
                                     @cambio.CostoNuevo.ToString("0.00")
                                 </td>
                             </tr>

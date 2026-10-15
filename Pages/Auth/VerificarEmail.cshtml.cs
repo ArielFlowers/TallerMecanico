@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Services;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.Pages.Auth;
 
@@ -36,7 +36,7 @@ public sealed class VerificarEmailModel : PageModel
         }
         else
         {
-            Mensaje = "El enlace no es valido o ha expirado.";
+            Mensaje = "El enlace no es válido o ha expirado.";
         }
     }
 
@@ -46,7 +46,7 @@ public sealed class VerificarEmailModel : PageModel
 
         if (!TokenValido(Token))
         {
-            Mensaje = "El enlace no es valido o ha expirado.";
+            Mensaje = "El enlace no es válido o ha expirado.";
             return Page();
         }
 
@@ -54,8 +54,8 @@ public sealed class VerificarEmailModel : PageModel
 
         Mensaje = Confirmado
             ? "Correo verificado correctamente. " +
-              "Tu solicitud esta pendiente de aprobacion."
-            : "El enlace no es valido, ha expirado " +
+              "Tu solicitud está pendiente de aprobación."
+            : "El enlace no es válido, ha expirado " +
               "o ya fue utilizado.";
 
         Token = string.Empty;
