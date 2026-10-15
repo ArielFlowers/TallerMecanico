@@ -298,7 +298,7 @@ public class MecanicoRepository : IRepository<Mecanico>
         AddParameter(command, "@ComplementoCi", mecanico.ComplementoCi);
         AddParameter(command, "@Nombres", mecanico.Nombres);
         AddParameter(command, "@PrimerApellido", mecanico.PrimerApellido);
-        AddParameter(command, "@SegundoApellido", mecanico.SegundoApellido);
+        AddParameter(command, "@SegundoApellido", mecanico.SegundoApellido ?? string.Empty);
         AddParameter(command, "@Genero", mecanico.Genero);
         AddParameter(command, "@Especialidad", mecanico.Especialidad);
         AddParameter(command, "@Celular", mecanico.Celular);
@@ -330,7 +330,7 @@ public class MecanicoRepository : IRepository<Mecanico>
             ComplementoCi = reader.GetString(2),
             Nombres = reader.GetString(3),
             PrimerApellido = reader.GetString(4),
-            SegundoApellido = reader.GetString(5),
+            SegundoApellido = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
             Genero = reader.GetString(6),
             Especialidad = reader.GetString(7),
             Celular = reader.GetString(8),

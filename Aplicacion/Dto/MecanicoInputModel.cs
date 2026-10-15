@@ -10,7 +10,7 @@ public class MecanicoInputModel
 
     public string PrimerApellido { get; set; } = string.Empty;
 
-    public string SegundoApellido { get; set; } = string.Empty;
+    public string? SegundoApellido { get; set; } = string.Empty;
 
     public string Genero { get; set; } = string.Empty;
 

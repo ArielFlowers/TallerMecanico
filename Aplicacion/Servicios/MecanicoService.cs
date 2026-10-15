@@ -175,7 +175,7 @@ public class MecanicoService
             ComplementoCi = mecanicoInput.ComplementoCi,
             Nombres = mecanicoInput.Nombres,
             PrimerApellido = mecanicoInput.PrimerApellido,
-            SegundoApellido = mecanicoInput.SegundoApellido,
+            SegundoApellido = mecanicoInput.SegundoApellido ?? string.Empty,
             Genero = mecanicoInput.Genero,
             Especialidad = mecanicoInput.Especialidad,
             Celular = mecanicoInput.Celular,

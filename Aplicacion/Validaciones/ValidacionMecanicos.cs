@@ -148,8 +148,6 @@ public class ValidacionMecanicos
     {
         if (string.IsNullOrWhiteSpace(segundoApellido))
         {
-            errores[nameof(MecanicoInputModel.SegundoApellido)] =
-                "El segundo apellido es obligatorio.";
             return;
         }
 

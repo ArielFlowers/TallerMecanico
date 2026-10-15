@@ -248,11 +248,13 @@
             </div>
 
             <div class="mecanicos-form-group">
-                <label asp-for="MecanicoInput.SegundoApellido">Segundo Apellido</label>
+                <div class="mecanicos-field-label">
+                    <label asp-for="MecanicoInput.SegundoApellido">Segundo Apellido</label>
+                    <span class="mecanicos-optional">Opcional</span>
+                </div>
                 <input asp-for="MecanicoInput.SegundoApellido"
                        class="mecanicos-input"
                        placeholder="Ej. Mercado"
-                       required
                        autocomplete="family-name" />
                 <span asp-validation-for="MecanicoInput.SegundoApellido"
                       class="mecanicos-validation"></span>
