@@ -17,7 +17,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         const id = page.locator('#clientes-autocompletado-id');
         const opciones = page.locator('#clientes-autocompletado-sugerencias [role="option"]');
         const filas = page.locator('[data-editar-cliente]');
-        assert.equal(await input.getAttribute('placeholder'), 'Buscar por CI, nombres o apellidos...');
+        assert.equal(await input.getAttribute('placeholder'), 'Buscar por CI, Nombres o Apellidos');
         const ids = await page.locator('[id]').evaluateAll(elementos => elementos.map(elemento => elemento.id));
         assert.equal(ids.length, new Set(ids).size);
         assert.equal(await page.locator('form form').count(), 0);
