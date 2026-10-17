@@ -1,0 +1,144 @@
+.autocompletado {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    color: var(--text-primary, #f5f3f7);
+    font-family: inherit;
+}
+
+.autocompletado-etiqueta {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.autocompletado-control {
+    position: relative;
+}
+
+.autocompletado-icono {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    transform: translateY(-50%);
+    color: var(--text-secondary, #c4bbc9);
+    font-size: 22px;
+    pointer-events: none;
+}
+
+.autocompletado-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 42px;
+    border: 1px solid var(--border-light, #33283e);
+    border-radius: var(--radius-sm, 8px);
+    background: var(--surface, #15111c);
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+}
+
+.autocompletado-input::placeholder {
+    color: var(--text-muted, #8d8194);
+}
+
+.autocompletado-input:focus {
+    outline: 2px solid var(--primary, #7c3aed);
+    outline-offset: 2px;
+    border-color: var(--primary, #7c3aed);
+}
+
+.autocompletado-sugerencias {
+    box-sizing: border-box;
+    position: absolute;
+    z-index: 50;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    max-height: min(320px, 40vh);
+    margin: 0;
+    padding: 5px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border-light, #33283e);
+    border-radius: var(--radius-sm, 8px);
+    background: var(--surface, #15111c);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 30%);
+    list-style: none;
+}
+
+.autocompletado-sugerencias[hidden] {
+    display: none;
+}
+
+.autocompletado-opcion {
+    display: grid;
+    gap: 4px;
+    min-height: 44px;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+
+.autocompletado-opcion[aria-selected="true"] {
+    border-color: var(--primary, #7c3aed);
+    background: var(--primary-soft, rgb(124 58 237 / 14%));
+}
+
+.autocompletado-principal {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.autocompletado-secundario,
+.autocompletado-estado {
+    color: var(--text-secondary, #c4bbc9);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.autocompletado-estado {
+    margin: 8px 0 0;
+}
+
+.autocompletado-estado:empty {
+    display: none;
+}
+
+.autocompletado[data-estado="error"] .autocompletado-estado {
+    color: var(--danger, #f87171);
+}
+
+.autocompletado[data-estado="error"] .autocompletado-input {
+    border-color: var(--danger, #f87171);
+}
+
+.autocompletado-carga {
+    display: none;
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-light, #33283e);
+    border-top-color: var(--primary, #7c3aed);
+    border-radius: 50%;
+    animation: autocompletado-girar 0.8s linear infinite;
+    pointer-events: none;
+}
+
+.autocompletado[data-estado="cargando"] .autocompletado-carga {
+    display: block;
+}
+
+@keyframes autocompletado-girar {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .autocompletado-carga { animation: none; }
+}

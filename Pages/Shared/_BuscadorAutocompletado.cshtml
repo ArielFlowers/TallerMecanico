@@ -1,0 +1,58 @@
+@model TallerMecanico.Pages.Shared.BuscadorAutocompletadoModel
+
+<div id="@Model.Id"
+     class="autocompletado"
+     data-autocompletado
+     data-modo="@Model.Modo"
+     data-url="@Model.UrlSugerencias"
+     data-id-seleccionado="@Model.IdSeleccionado"
+     data-minimo-caracteres="@TallerMecanico.Pages.Shared.BuscadorAutocompletadoModel.MinimoCaracteres"
+     data-espera="@TallerMecanico.Pages.Shared.BuscadorAutocompletadoModel.EsperaMilisegundos"
+     data-maximo-sugerencias="@TallerMecanico.Pages.Shared.BuscadorAutocompletadoModel.MaximoSugerencias"
+     data-mensaje-inicial="@Model.MensajeInicial"
+     data-mensaje-cargando="@Model.MensajeCargando"
+     data-mensaje-vacio="@Model.MensajeSinResultados"
+     data-mensaje-resultados="@Model.MensajeResultados"
+     data-mensaje-seleccionado="@Model.MensajeSeleccionado"
+     data-mensaje-error="@Model.MensajeError"
+     data-mensaje-sesion="@Model.MensajeSesion"
+     data-estado="inicial">
+    <label class="autocompletado-etiqueta" for="@(Model.Id)-texto">@Model.Etiqueta</label>
+    <div class="autocompletado-control">
+        <span class="autocompletado-icono" aria-hidden="true">⌕</span>
+        <input id="@(Model.Id)-texto"
+               name="@Model.NombreCampoTexto"
+               value="@Model.Texto"
+               class="autocompletado-input"
+               type="search"
+               role="combobox"
+               placeholder="@Model.Placeholder"
+               autocomplete="off"
+               aria-autocomplete="list"
+               aria-expanded="false"
+               aria-controls="@(Model.Id)-sugerencias"
+               aria-describedby="@(Model.Id)-estado"
+               data-autocompletado-texto />
+        <span class="autocompletado-carga" aria-hidden="true"></span>
+        <ul id="@(Model.Id)-sugerencias"
+            class="autocompletado-sugerencias"
+            role="listbox"
+            aria-label="@Model.Etiqueta"
+            data-autocompletado-sugerencias
+            hidden></ul>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Model.NombreCampoId))
+    {
+        <input id="@(Model.Id)-id"
+               name="@Model.NombreCampoId"
+               value="@Model.IdSeleccionado"
+               type="hidden"
+               data-autocompletado-id />
+    }
+    <p id="@(Model.Id)-estado"
+       class="autocompletado-estado"
+       role="status"
+       aria-live="polite"
+       aria-atomic="true"
+       data-autocompletado-estado>@Model.MensajeInicial</p>
+</div>
