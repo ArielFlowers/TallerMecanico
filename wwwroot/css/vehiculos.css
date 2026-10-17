@@ -1,0 +1,8 @@
+.vehiculos-toolbar {
+    margin-bottom: 20px;
+}
+
+.vehiculos-search {
+    flex: 1;
+    min-width: 0;
+}
