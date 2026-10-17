@@ -16,6 +16,12 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
     [BindProperty(SupportsGet = true)]
     public DateOnly? Fecha { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? TerminoBusqueda { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int? OrdenSeleccionadaId { get; set; }
+
     public IReadOnlyList<OrdenResumen> Ordenes { get; private set; } = [];
 
     public string? MensajeExito { get; private set; }
@@ -26,7 +32,7 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
     {
         if (ModelState.IsValid)
         {
-            Ordenes = consultas.Obtener(Estado, Fecha);
+            CargarOrdenes();
         }
 
         MensajeExito = TempData?.ContainsKey("OrdenMensaje") == true
@@ -35,6 +41,14 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
         if (TempData?.TryGetValue("OrdenCreadaId", out object? creada) == true && creada is int creadaId)
             OrdenCreadaId = creadaId;
         return Page();
+    }
+
+    public async Task<IActionResult> OnGetSugerenciasAsync(string? termino)
+    {
+        if (!ModelState.IsValid) return BadRequest("Revisa los filtros de estado y fecha.");
+
+        var sugerencias = await consultas.SugerirAsync(termino, Estado, Fecha, HttpContext.RequestAborted);
+        return new JsonResult(sugerencias);
     }
 
     public IActionResult OnGetDetalle(int id)
@@ -68,7 +82,7 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
         if (id <= 0)
         {
             ModelState.AddModelError(string.Empty, "Selecciona una orden válida.");
-            Ordenes = ModelState.IsValid ? consultas.Obtener(Estado, Fecha) : [];
+            Ordenes = [];
             return Page();
         }
 
@@ -77,11 +91,17 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
         {
             foreach (var error in resultado.Errores)
                 ModelState.AddModelError(string.Empty, error.Value);
-            Ordenes = consultas.Obtener(Estado, Fecha);
+            CargarOrdenes();
             return Page();
         }
 
         TempData["OrdenMensaje"] = $"Orden #{id} anulada correctamente. Se restituyó el stock.";
-        return RedirectToPage();
+        return RedirectToPage(new { Estado, Fecha = Fecha?.ToString("yyyy-MM-dd"), TerminoBusqueda, OrdenSeleccionadaId });
+    }
+
+    private void CargarOrdenes()
+    {
+        TerminoBusqueda = TerminoBusqueda?.Trim();
+        Ordenes = consultas.Obtener(Estado, Fecha, TerminoBusqueda, OrdenSeleccionadaId);
     }
 }
