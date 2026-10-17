@@ -18,33 +18,35 @@ public class IndexModel : PageModel
 
     public string Busqueda { get; private set; } = string.Empty;
 
+    [BindProperty(SupportsGet = true)]
+    public int? ServicioSeleccionadoId { get; set; }
+
     [TempData]
     public string? MensajeError { get; set; }
 
     [TempData]
     public string? MensajeExito { get; set; }
 
-    public void OnGet(string? buscar)
+    public async Task OnGetAsync(string? buscar)
     {
         Busqueda = buscar?.Trim() ?? string.Empty;
 
-        List<Servicio> servicios = _servicioService.ObtenerTodos();
-
-        if (string.IsNullOrWhiteSpace(Busqueda))
+        if (ServicioSeleccionadoId.HasValue)
         {
-            Servicios = servicios;
+            var servicio = _servicioService.ObtenerPorId(ServicioSeleccionadoId.Value);
+            Servicios = servicio is null ? [] : [servicio];
             return;
         }
 
-        Servicios = servicios
-            .Where(servicio =>
-                (servicio.Nombre?.Contains(
-                    Busqueda,
-                    StringComparison.OrdinalIgnoreCase) ?? false)
-                ||
-                (servicio.Descripcion?.Contains(
-                    Busqueda,
-                    StringComparison.OrdinalIgnoreCase) ?? false))
-            .ToList();
+        Servicios = string.IsNullOrWhiteSpace(Busqueda)
+            ? _servicioService.ObtenerTodos()
+            : (await _servicioService.BuscarAsync(Busqueda, HttpContext.RequestAborted)).ToList();
+    }
+
+    public async Task<JsonResult> OnGetSugerenciasAsync(string? termino)
+    {
+        Response.Headers.CacheControl = "no-store";
+        var sugerencias = await _servicioService.SugerirAsync(termino, HttpContext.RequestAborted);
+        return new JsonResult(sugerencias);
     }
 }

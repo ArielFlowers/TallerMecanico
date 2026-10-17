@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -6,7 +8,11 @@ namespace TallerMecanico.Aplicacion.Servicios;
 
 public class ServicioService : IServicioService
 {
+    private const int MinimoCaracteresSugerencias = 2;
+    private const int MaximoCaracteresSugerencias = 100;
+
     private readonly IRepository<Servicio> _servicioRepository;
+    private readonly IConsultaServiciosPort _consultaServicios;
     private readonly ICurrentUser? _currentUser;
 
     public ServicioService(
@@ -14,6 +20,7 @@ public class ServicioService : IServicioService
         ICurrentUser? currentUser = null)
     {
         _servicioRepository = creadorServicio.CrearRepositorio();
+        _consultaServicios = (IConsultaServiciosPort)_servicioRepository;
         _currentUser = currentUser;
     }
 
@@ -25,6 +32,25 @@ public class ServicioService : IServicioService
     public Servicio? ObtenerPorId(int id)
     {
         return _servicioRepository.GetById(id);
+    }
+
+    public Task<IReadOnlyList<Servicio>> BuscarAsync(
+        string? termino, CancellationToken cancellationToken = default)
+    {
+        return _consultaServicios.BuscarAsync(termino?.Trim() ?? string.Empty, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<SugerenciaServicio>> SugerirAsync(
+        string? termino, CancellationToken cancellationToken = default)
+    {
+        var terminoNormalizado = Regex.Replace(termino?.Trim() ?? string.Empty, @"\s+", " ");
+        if (terminoNormalizado.Length < MinimoCaracteresSugerencias ||
+            terminoNormalizado.Length > MaximoCaracteresSugerencias)
+        {
+            return Task.FromResult<IReadOnlyList<SugerenciaServicio>>([]);
+        }
+
+        return _consultaServicios.SugerirAsync(terminoNormalizado, cancellationToken);
     }
 
     public void Crear(Servicio servicio)

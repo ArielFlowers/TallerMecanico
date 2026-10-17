@@ -1,9 +1,10 @@
 @page
 @model TallerMecanico.Pages.Servicios.IndexModel
 @using TallerMecanico.Aplicacion.Dto
+@using TallerMecanico.Pages.Shared
 
 @{
-    ViewData["Title"] = "Servicios";
+    ViewData["Title"] = "Gestión de Servicios";
 
     ServicioTablaViewModel tablaModel = new()
     {
@@ -12,24 +13,22 @@
     };
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/autocompletado.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/servicios.css" asp-append-version="true" />
+}
+
 <div class="dashboard">
     <div class="dashboard-header">
         <div>
-            <h1>Servicios</h1>
+            <h1>Gestión de Servicios</h1>
             <p>Consulta y administra los servicios registrados.</p>
         </div>
 
-        <div class="services-actions">
-            <a asp-page="./Index"
-               class="services-btn services-btn-secondary">
-                Refrescar
-            </a>
-
-            <a asp-page="./Create"
-               class="services-btn services-btn-primary">
-                + Nuevo Servicio
-            </a>
-        </div>
+        <a asp-page="./Create"
+           class="services-btn services-btn-primary">
+            + Nuevo Servicio
+        </a>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.MensajeError))
@@ -46,6 +45,37 @@
         </div>
     }
 
+    <div class="services-actions servicios-toolbar">
+        <form method="get"
+              asp-page="./Index"
+              class="buscador services-actions servicios-search"
+              id="servicios-busqueda"
+              role="search">
+
+            <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+            {
+                Id = "servicios-autocompletado",
+                UrlSugerencias = Url.Page("./Index", "Sugerencias")!,
+                Modo = BuscadorAutocompletadoModel.ModoFiltrar,
+                Etiqueta = "Buscar servicios",
+                Placeholder = "Buscar por nombre o descripción...",
+                NombreCampoTexto = "buscar",
+                NombreCampoId = nameof(Model.ServicioSeleccionadoId),
+                Texto = Model.Busqueda,
+                IdSeleccionado = Model.ServicioSeleccionadoId
+            }' />
+
+            <button type="submit" class="services-btn services-btn-secondary">Buscar</button>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Busqueda) || Model.ServicioSeleccionadoId.HasValue)
+            {
+                <a asp-page="./Index" class="services-btn services-btn-secondary">Limpiar</a>
+            }
+        </form>
+
+        <a asp-page="./Index" class="services-btn services-btn-secondary">Refrescar</a>
+    </div>
+
     <section class="recent-orders">
         <div class="section-header">
             <div>
@@ -54,130 +84,15 @@
             </div>
         </div>
 
-        <div class="servicios-toolbar">
-    <form method="get"
-          asp-page="./Index"
-          class="servicios-search"
-          role="search">
-
-        <div class="servicios-search-field">
-            <span class="servicios-search-icon"
-                  aria-hidden="true">&#9906;</span>
-
-            <input type="search"
-                   name="buscar"
-                   value="@Model.Busqueda"
-                   class="servicios-search-input"
-                   placeholder="Buscar por nombre o descripción..."
-                   autocomplete="off"
-                   aria-label="Buscar servicios" />
-        </div>
-
-        <button type="submit"
-                class="servicios-search-button">
-            Buscar
-        </button>
-
-        @if (!string.IsNullOrWhiteSpace(Model.Busqueda))
-        {
-            <a asp-page="./Index"
-               class="servicios-search-button">
-                Limpiar
-            </a>
-        }
-    </form>
-</div>
-
         <partial name="_TablaServicios"
                  model="tablaModel" />
     </section>
 </div>
-<style>
-    .servicios-toolbar {
-        padding: 20px 24px;
-        width: 100%;
-    }
-
-    .servicios-search {
-        display: flex;
-        align-items: stretch;
-        gap: 12px;
-        width: 100%;
-    }
-
-    .servicios-search-field {
-        position: relative;
-        flex: 1;
-        min-width: 0;
-    }
-
-    .servicios-search-icon {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #a78bfa;
-        font-size: 20px;
-        pointer-events: none;
-    }
-
-    .servicios-search-input {
-        display: block;
-        width: 100%;
-        min-height: 44px;
-        padding: 10px 16px 10px 44px;
-        border: 1px solid #62409b;
-        border-radius: 10px;
-        background: #1d1428;
-        color: #f5f0ff;
-        font: inherit;
-        outline: none;
-        box-sizing: border-box;
-    }
-
-    .servicios-search-input::placeholder {
-        color: #9686ab;
-    }
-
-    .servicios-search-input:focus {
-        border-color: #8b5cf6;
-        box-shadow: 0 0 0 2px rgba(139, 92, 246, .18);
-    }
-
-    .servicios-search-button {
-        min-width: 90px;
-        min-height: 44px;
-        padding: 10px 18px;
-        border: 1px solid #392b49;
-        border-radius: 10px;
-        background: #211729;
-        color: #f5f0ff;
-        font: inherit;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .servicios-search-button:hover {
-        border-color: #8b5cf6;
-        background: #332046;
-    }
-
-    .servicios-search-button:focus-visible {
-        outline: 2px solid #a78bfa;
-        outline-offset: 2px;
-    }
-
-    @@media (max-width: 600px) {
-        .servicios-toolbar {
-            padding: 16px;
-        }
-
-        .servicios-search {
-            flex-wrap: wrap;
-        }
-
-        .servicios-search-button {
-            width: 100%;
-        }
-    }
-</style>
+@section Scripts {
+    <script src="~/js/autocompletado.js" asp-append-version="true"></script>
+    <script>
+        document.getElementById('servicios-autocompletado').addEventListener('autocompletado:seleccion', function () {
+            document.getElementById('servicios-busqueda').requestSubmit();
+        });
+    </script>
+}

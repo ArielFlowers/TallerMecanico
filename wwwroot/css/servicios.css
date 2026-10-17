@@ -1,0 +1,8 @@
+.servicios-toolbar {
+    margin-bottom: 20px;
+}
+
+.servicios-search {
+    flex: 1;
+    min-width: 0;
+}
