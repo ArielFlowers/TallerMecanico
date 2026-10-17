@@ -1,6 +1,6 @@
 # Buscador compartido
 
-El componente se integra en Mecánicos desde la Iteración 2. Los demás CRUD y Nueva Orden siguen pendientes. Los recursos se cargan solamente en la página consumidora; no se modificó `_Layout.cshtml`.
+El componente se integra en Mecánicos y Clientes. Los demás CRUD y Nueva Orden siguen pendientes. Los recursos se cargan solamente en la página consumidora; no se modificó `_Layout.cshtml`.
 
 ## Archivos y uso posterior
 
@@ -99,6 +99,31 @@ dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTest
 
 Sin `TALLER_TEST_MYSQL`, los casos que necesitan MySQL se omiten explícitamente. La comprobación móvil automatizada no sustituye una revisión con lector de pantalla ni una prueba en un teléfono físico.
 
+## Clientes
+
+`Pages/Clientes/Index` configura la misma partial en modo `filtrar`, con el placeholder `Buscar por CI, nombres o apellidos...`. Carga los mismos recursos compartidos sin cambiar el componente ni Mecánicos. El pequeño listener de selección permanece junto al JavaScript ya existente de la página. No se agregan estilos propios de autocompletado.
+
+El endpoint GET `?handler=Sugerencias&termino=...` conserva la política `PersonalAutorizado` (Administrador y Recepcionista), devuelve un arreglo directo `id/textoPrincipal/textoSecundario` y usa `Cache-Control: no-store`. `ClienteService.SugerirAsync` rechaza términos normalizados de menos de 2 o más de 100 caracteres sin consultar el puerto. La espera de 300 ms sigue siendo responsabilidad del componente.
+
+La nueva operación de lectura de `IClientePort` la implementa el `ClienteRepository` existente, que continúa siendo producto de `CreadorCliente`; no cambian las fábricas, el repositorio genérico ni DI. La consulta asíncrona parametrizada aplica `LIMIT 10` en MySQL y propaga la cancelación HTTP. Busca prefijos de CI base o CI-complemento y comienzos de palabra en nombres/apellidos, incluyendo combinaciones de palabras. Usa la misma colación `utf8mb4_0900_ai_ci` y escape de comodines que Mecánicos. Solo proyecta los datos necesarios para construir las sugerencias, sin auditoría ni teléfonos.
+
+El texto secundario muestra el CI con su complemento para distinguir registros con el mismo número base y/o nombres idénticos. La selección usa siempre `ClienteSeleccionadoId`, separado de `ClienteId` para escrituras. Sin selección se conserva intacta la consulta `Search` anterior, también por celular, complemento, fragmentos y nombre concatenado. Editar el texto elimina el ID seleccionado con el comportamiento compartido.
+
+Buscar, seleccionar, limpiar, refrescar y los formularios mantienen `BorradorVehiculoId` y `OrdenBorradorId`. Los retornos especiales después de crear un cliente continúan priorizando el borrador de Vehículos y después el de Orden, igual que antes. Los borradores mantienen sus comprobaciones de sesión/usuario y vencimiento. La selección de clientes dentro de Vehículos no se modifica. Tampoco se cambian las validaciones: en Clientes el segundo apellido sigue siendo obligatorio al registrar/editar; el autocompletado tolera registros anteriores con apellido vacío sin generar espacios sobrantes.
+
+### Pruebas de Clientes
+
+`ClientesAutocompletadoTests` verifica consultas limitadas reales, prefijos, nombres compuestos, tildes, complementos distintos, escape e inyección, ausencia de escrituras, semántica manual y retornos a ambos borradores. `ClientesHttpTests` ejecuta la aplicación real por HTTPS contra MySQL aislado y comprueba permisos, contrato JSON, límite 10, ID exacto, creación, edición, errores y conservación de filtros/contextos. Con `PLAYWRIGHT_MODULE`, ejecuta `tests/clientes_autocompletado_ui.cjs`: teclado, ratón, invalidación, limpiar, edición, contextos, IDs HTML únicos y viewport móvil. Opcionalmente `TALLER_CLIENTES_CAPTURA` guarda la captura fuera del repositorio. Reutiliza las cookies de prueba, sin cambiar el límite de login real.
+
+Con `TALLER_TEST_MYSQL` apuntando **únicamente a un servidor aislado de pruebas**, ejecutar:
+
+```powershell
+dotnet build
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~Clientes|FullyQualifiedName~Autocompletado|FullyQualifiedName~VehiculosTests'
+```
+
+Si el ejecutable Debug está abierto, se puede verificar sin interrumpirlo usando `--configuration VerificacionClientes` en ambos comandos. El host HTTPS de Clientes utiliza el ensamblado compilado de la configuración que se está probando, no una aplicación local existente. No se cambia el esquema de producción ni se accede a `taller_mecanico`.
+
 ## Integración pendiente
 
-Clientes y los demás módulos requieren autorización antes de integrarse. Nueva Orden necesitará su propio endpoint de lectura con sus permisos, sin ampliar el acceso al CRUD de Mecánicos. Las reglas de stock, transacciones e idempotencia siguen a cargo de los casos de uso existentes.
+Productos y los demás módulos requieren autorización antes de integrarse. Nueva Orden necesitará su propio endpoint de lectura con sus permisos, sin ampliar el acceso al CRUD de Mecánicos. Las reglas de stock, transacciones e idempotencia siguen a cargo de los casos de uso existentes.

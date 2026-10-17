@@ -35,6 +35,9 @@ public class IndexModel : PageModel
     public string? TerminoBusqueda { get; set; }
 
     [BindProperty(SupportsGet = true)]
+    public int? ClienteSeleccionadoId { get; set; }
+
+    [BindProperty(SupportsGet = true)]
     public Guid? BorradorVehiculoId { get; set; }
 
     [BindProperty(SupportsGet = true)]
@@ -57,6 +60,13 @@ public class IndexModel : PageModel
             FormularioActivo = "crear";
         else if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
             FormularioActivo = "crear";
+    }
+
+    public async Task<JsonResult> OnGetSugerenciasAsync(string? termino)
+    {
+        Response.Headers.CacheControl = "no-store";
+        var sugerencias = await _clienteService.SugerirAsync(termino, HttpContext.RequestAborted);
+        return new JsonResult(sugerencias);
     }
 
     public IActionResult OnPostCrear()
@@ -109,11 +119,7 @@ public class IndexModel : PageModel
         if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
             return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId.Value, ClienteNuevoId = ClienteInput.Id });
 
-        return RedirectToPage(
-            new
-            {
-                TerminoBusqueda
-            });
+        return RedirigirAlListado();
     }
 
     public IActionResult OnPostActualizar()
@@ -159,11 +165,7 @@ public class IndexModel : PageModel
         TempData["ClienteExito"] =
             "Cliente actualizado correctamente.";
 
-        return RedirectToPage(
-            new
-            {
-                TerminoBusqueda
-            });
+        return RedirigirAlListado();
     }
 
     public IActionResult OnPostEliminar()
@@ -178,25 +180,24 @@ public class IndexModel : PageModel
             TempData["ClienteError"] =
                 error;
 
-            return RedirectToPage(
-                new
-                {
-                    TerminoBusqueda
-                });
+            return RedirigirAlListado();
         }
 
         TempData["ClienteExito"] =
             "Cliente eliminado correctamente.";
 
-        return RedirectToPage(
-            new
-            {
-                TerminoBusqueda
-            });
+        return RedirigirAlListado();
     }
 
     private void CargarClientes()
     {
+        if (ClienteSeleccionadoId.HasValue)
+        {
+            var cliente = _clienteService.ObtenerPorId(ClienteSeleccionadoId.Value);
+            Clientes = cliente is null ? [] : [cliente];
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(
                 TerminoBusqueda))
         {
@@ -226,6 +227,17 @@ public class IndexModel : PageModel
                 campo,
                 error.Value);
         }
+    }
+
+    private IActionResult RedirigirAlListado()
+    {
+        return RedirectToPage(new
+        {
+            TerminoBusqueda,
+            ClienteSeleccionadoId,
+            BorradorVehiculoId,
+            OrdenBorradorId
+        });
     }
 
     private void CargarMensajes()

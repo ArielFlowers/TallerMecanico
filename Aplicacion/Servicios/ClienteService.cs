@@ -9,6 +9,9 @@ namespace TallerMecanico.Aplicacion.Servicios;
 
 public class ClienteService
 {
+    private const int MinimoCaracteresSugerencias = 2;
+    private const int MaximoCaracteresSugerencias = 100;
+
     private const string MensajeCiDuplicado =
         "Ya existe un cliente registrado con este CI y complemento.";
 
@@ -52,6 +55,19 @@ public class ClienteService
 
         return _clientePort.Search(
             terminoBusqueda.Trim());
+    }
+
+    public Task<IReadOnlyList<SugerenciaCliente>> SugerirAsync(
+        string? termino, CancellationToken cancellationToken = default)
+    {
+        var terminoNormalizado = Regex.Replace((termino ?? string.Empty).Trim(), @"\s+", " ");
+        if (terminoNormalizado.Length < MinimoCaracteresSugerencias ||
+            terminoNormalizado.Length > MaximoCaracteresSugerencias)
+        {
+            return Task.FromResult<IReadOnlyList<SugerenciaCliente>>([]);
+        }
+
+        return _clientePort.SugerirAsync(terminoNormalizado, cancellationToken);
     }
 
     public Cliente? ObtenerPorId(
