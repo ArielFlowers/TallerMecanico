@@ -1,4 +1,5 @@
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.Aplicacion.Puertos;
 
@@ -10,6 +11,9 @@ public interface IVehiculoPort
 
     IReadOnlyList<Vehiculo> Search(
         string filtro);
+
+    Task<IReadOnlyList<SugerenciaVehiculo>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default);
 
     bool ExistsByPlaca(
         string placa,

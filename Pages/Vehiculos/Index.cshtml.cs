@@ -33,6 +33,9 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? Buscar { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int? VehiculoSeleccionadoId { get; set; }
+
     public List<Vehiculo> Vehiculos { get; private set; } =
         [];
 
@@ -66,6 +69,13 @@ public class IndexModel : PageModel
         return Page();
     }
 
+    public async Task<JsonResult> OnGetSugerenciasAsync(string? termino)
+    {
+        Response.Headers.CacheControl = "no-store";
+        var sugerencias = await _vehiculoService.SugerirAsync(termino, HttpContext.RequestAborted);
+        return new JsonResult(sugerencias);
+    }
+
     public IActionResult OnPostCreate()
     {
         return GuardarFormulario(
@@ -87,7 +97,7 @@ public class IndexModel : PageModel
             ordenBorradorId = _borradores.Obtener(BorradorId.Value)?.OrdenBorradorId ?? ordenBorradorId;
             _borradores.Eliminar(BorradorId.Value);
         }
-        Guid borradorId = _borradores.Guardar(Formulario, modal, Buscar, ordenBorradorId);
+        Guid borradorId = _borradores.Guardar(Formulario, modal, Buscar, ordenBorradorId, VehiculoSeleccionadoId);
         return RedirectToPage("/Clientes/Index", new { BorradorVehiculoId = borradorId, OrdenBorradorId = ordenBorradorId });
     }
 
@@ -102,6 +112,7 @@ public class IndexModel : PageModel
 
         Formulario = borrador.Formulario;
         Buscar = borrador.Buscar;
+        VehiculoSeleccionadoId = borrador.VehiculoSeleccionadoId;
         BorradorId = borradorId;
         OrdenBorradorId = borrador.OrdenBorradorId;
         return MostrarModal(borrador.Modal);
@@ -113,7 +124,7 @@ public class IndexModel : PageModel
         string? error = _vehiculoService.Delete(id);
         if (error is not null) TempData["VehiculoError"] = error;
 
-        return RedirectToPage(new { Buscar });
+        return RedirigirAlListado();
     }
 
     public string ObtenerNombreCliente(
@@ -213,7 +224,7 @@ public class IndexModel : PageModel
                 Vehiculo? creado = _vehiculoService.Search(Formulario.Placa ?? string.Empty).FirstOrDefault(x => x.Placa == Formulario.Placa);
                 if (creado is not null) return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId, VehiculoNuevoId = creado.Id });
             }
-            return RedirectToPage();
+            return RedirigirAlListado();
         }
 
         return MostrarModal(
@@ -265,6 +276,13 @@ public class IndexModel : PageModel
 
     private void CargarVehiculos()
     {
+        if (VehiculoSeleccionadoId.HasValue)
+        {
+            var vehiculo = _vehiculoService.GetById(VehiculoSeleccionadoId.Value);
+            Vehiculos = vehiculo is null ? [] : [vehiculo];
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(
                 Buscar))
         {
@@ -277,5 +295,12 @@ public class IndexModel : PageModel
         Vehiculos =
             _vehiculoService.Search(
                 Buscar.Trim());
+    }
+
+    private IActionResult RedirigirAlListado()
+    {
+        return RedirectToPage(pageName: null,
+            pageHandler: OrdenBorradorId.HasValue ? "Buscar" : null,
+            routeValues: new { Buscar, VehiculoSeleccionadoId, OrdenBorradorId, ClientePreseleccionadoId });
     }
 }

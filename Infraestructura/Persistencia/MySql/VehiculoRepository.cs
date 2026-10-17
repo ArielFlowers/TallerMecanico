@@ -1,4 +1,5 @@
 using System.Data.Common;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
@@ -9,6 +10,7 @@ public class VehiculoRepository :
     IRepository<Vehiculo>,
     IVehiculoPort
 {
+    private const int MaximoSugerencias = 10;
     private readonly DatabaseConnectionFactory _connectionFactory;
 
     public VehiculoRepository(
@@ -161,6 +163,58 @@ public class VehiculoRepository :
         }
 
         return vehiculos;
+    }
+
+    public async Task<IReadOnlyList<SugerenciaVehiculo>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default)
+    {
+        var palabras = termino.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        if (palabras.Length == 0)
+        {
+            return [];
+        }
+
+        await using DbConnection connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using DbCommand command = connection.CreateCommand();
+        var condicionesPalabras = new List<string>();
+
+        for (int indice = 0; indice < palabras.Length; indice++)
+        {
+            condicionesPalabras.Add($"""
+                (Marca COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR Marca COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!'
+                 OR Modelo COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR Modelo COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!')
+                """);
+            var palabraEscapada = EscaparPatron(palabras[indice]);
+            AddParameter(command, $"@Inicio{indice}", $"{palabraEscapada}%");
+            AddParameter(command, $"@Palabra{indice}", $"% {palabraEscapada}%");
+        }
+
+        command.CommandText = $"""
+            SELECT Id, Placa, Marca, Modelo
+            FROM Vehiculos
+            WHERE Placa COLLATE utf8mb4_0900_ai_ci LIKE @PrefijoPlaca ESCAPE '!'
+               OR ({string.Join(" AND ", condicionesPalabras)})
+            ORDER BY Placa ASC, Id ASC
+            LIMIT @Limite;
+            """;
+        AddParameter(command, "@PrefijoPlaca", $"{EscaparPatron(termino)}%");
+        AddParameter(command, "@Limite", MaximoSugerencias);
+
+        var sugerencias = new List<SugerenciaVehiculo>();
+        await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var marca = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+            var modelo = reader.GetString(3);
+            sugerencias.Add(new SugerenciaVehiculo(
+                reader.GetInt32(0), reader.GetString(1),
+                string.Join(" · ", new[] { marca, modelo }.Where(texto => !string.IsNullOrWhiteSpace(texto)))));
+        }
+
+        return sugerencias;
     }
 
     public bool ExistsByPlaca(

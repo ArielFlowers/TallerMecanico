@@ -1,6 +1,6 @@
 # Buscador compartido
 
-El componente se integra en Mecánicos, Clientes y Productos. Los demás CRUD y Nueva Orden siguen pendientes. Los recursos se cargan solamente en la página consumidora; no se modificó `_Layout.cshtml`.
+El componente se integra en Mecánicos, Clientes, Productos y Vehículos. Los demás CRUD y Nueva Orden siguen pendientes. Los recursos se cargan solamente en la página consumidora; no se modificó `_Layout.cshtml`.
 
 ## Archivos y uso posterior
 
@@ -155,6 +155,37 @@ dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTest
 
 Sin MySQL se omiten los casos correspondientes; sin Playwright se ejecutan las verificaciones HTTP, pero no el bloque de navegador. La prueba móvil automatizada no sustituye una prueba en teléfono físico o con lector de pantalla.
 
+## Vehículos
+
+`Pages/Vehiculos/Index` utiliza la misma partial en modo `filtrar`, con el placeholder `Buscar por placa, marca o modelo...`. Carga los recursos compartidos sin modificarlos. Se retiró `Pages/Shared/_BuscadorVehiculo.cshtml` después de comprobar que esta página era su único consumidor de ejecución (la ubicación real era Shared, no Vehiculos). El listener específico solo envía el formulario GET al seleccionar, sin duplicar el componente.
+
+El endpoint GET `?handler=Sugerencias&termino=...` utiliza `VehiculoService`, `IVehiculoPort` y el repositorio existente creado por `CreadorVehiculo`. Normaliza espacios del término, acepta entre 2 y 100 caracteres y devuelve `[]` sin consultar fuera de esos límites. No cambia las validaciones ni la normalización de placas al registrar/editar, incluidas las extranjeras. No se agregan criterios por cliente u otros datos.
+
+La consulta asíncrona proyecta solamente Id, Placa, Marca y Modelo. Busca prefijo de placa o inicio de palabra en marca/modelo, combinando palabras entre ambos campos. Usa parámetros, escape literal de `!`, `%` y `_`, `LIMIT @Limite` (10) y orden `Placa, Id`. La colación de consulta `utf8mb4_0900_ai_ci` ignora caja/tildes, con los mismos requisitos de MySQL 8 y columnas utf8mb4 ya documentados; no modifica el esquema. La cancelación HTTP llega hasta ADO.NET. La respuesta contiene únicamente `id`, `textoPrincipal` (placa), `textoSecundario` (marca y modelo); no consulta ni expone información de clientes, auditoría o kilometraje.
+
+Seleccionar usa `VehiculoSeleccionadoId`, distinto de `Formulario.Id`/`id` para escrituras. El listado recupera ese ID exacto; editar el texto invalida la selección. Sin ID se conserva íntegro el `Search` manual anterior por fragmentos de placa, marca o modelo y su orden existente. Limpiar vuelve al listado completo. El formulario GET envía explícitamente `handler=Buscar`, porque un submit GET puede reemplazar los parámetros query del action; así filtrar no se confunde con el ingreso inicial desde Nueva Orden que abre el modal de creación.
+
+### Relaciones, borradores y permisos
+
+Se mantienen `OrdenBorradorId` y `ClientePreseleccionadoId` al buscar, limpiar, refrescar y enviar formularios. Los retornos especiales después de guardar continúan apuntando a Nueva Orden. `BorradorVehiculo` agrega únicamente `VehiculoSeleccionadoId` nullable; el parámetro final opcional de `IBorradorVehiculoPort.Guardar` permite guardar/restaurar ese filtro al registrar un cliente y retomar el vehículo. Las llamadas anteriores y los borradores JSON sin el nuevo atributo siguen siendo válidos. No hay migración de base de datos.
+
+`_CamposVehiculo.cshtml` solo incorpora un hidden para conservar el filtro. Los selectores de cliente, marca/modelo, el toggle extranjero y sus validaciones no se refactorizan. La asociación real sigue siendo `Formulario.ClienteId` y se mantiene su comprobación en el servicio. El buscador/selector de Nueva Orden permanece intacto. Las sugerencias son solo SELECT, sin stock ni transacciones de órdenes.
+
+Se conserva `PersonalAutorizado` de la carpeta Vehículos (Administrador y Recepcionista), incluyendo el nuevo handler. No se amplían ni restringen las operaciones previas de esos roles. Se utiliza `Cache-Control: no-store`, y los anónimos no pueden obtener sugerencias.
+
+### Pruebas de Vehículos
+
+`VehiculosAutocompletadoTests` prueba límites, espacios, placas nacionales/extranjeras, prefijos, marca/modelo compuestos, tildes, escape/inyección, límite real del repositorio, búsquedas sin escrituras y retorno a Clientes/Nueva Orden con el filtro exacto. `VehiculosAutocompletadoHttpTests` prueba el contrato y los roles sobre la aplicación real en HTTPS/MySQL aislado, además de CRUD, relaciones y filtros. Con Playwright ejecuta `tests/vehiculos_autocompletado_ui.cjs`: selección con teclado/ratón, invalidación, búsqueda manual, limpiar sin abrir otro modal, retorno real por Clientes conservando el formulario y viewport móvil. `TALLER_VEHICULOS_CAPTURA` permite guardar una captura temporal.
+
+También se ejecutan las pruebas anteriores de Vehículos y de los módulos ya integrados. Configurar `TALLER_TEST_MYSQL` exclusivamente para un servidor aislado y `PLAYWRIGHT_MODULE` con una instalación existente:
+
+```powershell
+dotnet build
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~TallerMecanico.IntegrationTests.Vehiculos|FullyQualifiedName~TallerMecanico.IntegrationTests.AutocompletadoTests'
+```
+
+Para la regresión completa de buscadores, añadir al filtro las clases de Mecánicos, Clientes y Productos. Sin MySQL se omiten los casos correspondientes; sin Playwright se omite la verificación de navegador. Las pruebas móviles usan un viewport, no un teléfono físico. No se accede a la base local `taller_mecanico`.
+
 ## Integración pendiente
 
-Vehículos y los demás módulos requieren autorización antes de integrarse. Nueva Orden necesitará sus propios endpoints de lectura con sus permisos, sin ampliar el acceso al CRUD de Mecánicos ni los permisos de escritura del inventario. Las reglas de stock, transacciones e idempotencia siguen a cargo de los casos de uso existentes.
+Servicios, el selector de clientes dentro de Vehículos y los selectores de Nueva Orden requieren autorización antes de integrarse. Nueva Orden necesitará sus propios endpoints de lectura con sus permisos, sin ampliar el acceso al CRUD de Mecánicos ni los permisos de escritura del inventario. Las reglas de stock, transacciones e idempotencia siguen a cargo de los casos de uso existentes.

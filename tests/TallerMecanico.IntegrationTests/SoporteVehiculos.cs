@@ -48,10 +48,16 @@ internal sealed class ClientesPrueba : IClientePort
 
 internal sealed class VehiculosPrueba : IVehiculoPort
 {
+    public string? UltimoTerminoSugerencias { get; private set; }
     public List<Vehiculo> Datos { get; } = [];
     public IReadOnlyList<Vehiculo> GetAll() => Datos;
     public Vehiculo? GetById(int id) => Datos.Find(vehiculo => vehiculo.Id == id);
     public IReadOnlyList<Vehiculo> Search(string filtro) => Datos;
+    public Task<IReadOnlyList<SugerenciaVehiculo>> SugerirAsync(string termino, CancellationToken cancellationToken = default)
+    {
+        UltimoTerminoSugerencias = termino;
+        return Task.FromResult<IReadOnlyList<SugerenciaVehiculo>>([]);
+    }
     public bool ExistsByPlaca(string placa, int idExcluido = 0) =>
         Datos.Any(vehiculo => vehiculo.Placa == placa && vehiculo.Id != idExcluido);
     public bool ExistsPorCliente(int clienteId) => Datos.Any(vehiculo => vehiculo.ClienteId == clienteId);
