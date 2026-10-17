@@ -25,6 +25,9 @@ public class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public string? TerminoBusqueda { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int? MecanicoSeleccionadoId { get; set; }
+
     [BindProperty]
     public MecanicoInputModel MecanicoInput { get; set; } = new();
 
@@ -42,6 +45,13 @@ public class IndexModel : PageModel
     public void OnGet()
     {
         CargarMecanicos();
+    }
+
+    public async Task<JsonResult> OnGetSugerenciasAsync(string? termino)
+    {
+        Response.Headers.CacheControl = "no-store";
+        var sugerencias = await _mecanicoService.SugerirAsync(termino, HttpContext.RequestAborted);
+        return new JsonResult(sugerencias);
     }
 
     public IActionResult OnPostCrear()
@@ -101,7 +111,9 @@ public class IndexModel : PageModel
 
     private void CargarMecanicos()
     {
-        Mecanicos = _mecanicoService.Obtener(TerminoBusqueda);
+        Mecanicos = MecanicoSeleccionadoId.HasValue
+            ? _mecanicoService.ObtenerPorId(MecanicoSeleccionadoId.Value)
+            : _mecanicoService.Obtener(TerminoBusqueda);
     }
 
     private void AgregarErroresAlModelState(
@@ -116,6 +128,10 @@ public class IndexModel : PageModel
 
     private IActionResult RedirigirAlListado()
     {
-        return RedirectToPage(new { terminoBusqueda = TerminoBusqueda });
+        return RedirectToPage(new
+        {
+            terminoBusqueda = TerminoBusqueda,
+            mecanicoSeleccionadoId = MecanicoSeleccionadoId
+        });
     }
 }

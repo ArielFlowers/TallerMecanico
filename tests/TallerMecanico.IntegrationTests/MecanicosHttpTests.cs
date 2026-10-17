@@ -4,17 +4,21 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Infraestructura.Seguridad;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.IntegrationTests;
 
 public sealed class MecanicosHttpTests
 {
     [MySqlAisladoFact]
-    public async Task FormularioHttps_CreaEditaYBuscaSinSegundoApellido()
+    public async Task FormularioHttps_CrudYAutocompletadoConservanFiltrosYPermisos()
     {
         using var aislada = new MySqlAisladoFixture();
         string password = $"Prueba_{Guid.NewGuid():N}";
@@ -46,10 +50,11 @@ public sealed class MecanicosHttpTests
             using var servidor = Process.Start(PrepararServidor(aislada, url, rutaCertificado, passwordCertificado))!;
             Task<string> salida = servidor.StandardOutput.ReadToEndAsync();
             Task<string> errores = servidor.StandardError.ReadToEndAsync();
+            var cookies = new CookieContainer();
             using var cliente = new HttpClient(new HttpClientHandler
             {
                 AllowAutoRedirect = false,
-                CookieContainer = new CookieContainer(),
+                CookieContainer = cookies,
                 ServerCertificateCustomValidationCallback = (_, _, _, _) => true
             }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(5) };
 
@@ -93,6 +98,7 @@ public sealed class MecanicosHttpTests
                 Assert.Contains("El segundo apellido solo puede contener letras y espacios.",
                     WebUtility.HtmlDecode(await invalido.Content.ReadAsStringAsync()));
                 Assert.Equal("", aislada.Escalar("SELECT SegundoApellido FROM Mecanicos;"));
+                await VerificarBuscador(cliente, aislada, url, password, id, cookies);
             }
             finally
             {
@@ -153,12 +159,12 @@ public sealed class MecanicosHttpTests
         return token;
     }
 
-    private static async Task IniciarSesion(HttpClient cliente, string password)
+    private static async Task IniciarSesion(HttpClient cliente, string password, string username = "admin_prueba")
     {
         string login = await cliente.GetStringAsync("/Auth/Login");
         using var contenido = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            ["Input.Username"] = "admin_prueba", ["Input.Password"] = password,
+            ["Input.Username"] = username, ["Input.Password"] = password,
             ["__RequestVerificationToken"] = ObtenerToken(login)
         });
         using var respuesta = await cliente.PostAsync("/Auth/Login", contenido);
@@ -166,7 +172,8 @@ public sealed class MecanicosHttpTests
     }
 
     private static async Task<HttpResponseMessage> EnviarFormulario(
-        HttpClient cliente, string html, string handler, string segundoApellido, int id)
+        HttpClient cliente, string html, string handler, string segundoApellido, int id,
+        string? termino = null, int? seleccionado = null)
     {
         var campos = new Dictionary<string, string>
         {
@@ -177,7 +184,118 @@ public sealed class MecanicosHttpTests
             ["MecanicoInput.Genero"] = "Masculino", ["MecanicoInput.Especialidad"] = "Motores",
             ["MecanicoInput.Celular"] = "71234567"
         };
+        if (termino is not null) campos["TerminoBusqueda"] = termino;
+        if (seleccionado.HasValue) campos["MecanicoSeleccionadoId"] = seleccionado.Value.ToString();
         using var contenido = new FormUrlEncodedContent(campos);
         return await cliente.PostAsync($"/Mecanicos?handler={handler}", contenido);
+    }
+
+    private static async Task VerificarBuscador(
+        HttpClient cliente, MySqlAisladoFixture aislada, string url, string password, int id, CookieContainer cookies)
+    {
+        var servicio = new MecanicoService(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos());
+        MecanicosAutocompletadoTests.Crear(servicio, "1234568", "Juan Carlos", "Pérez", "");
+        MecanicosAutocompletadoTests.Crear(servicio, "7812345", "María Fernanda", "Muñoz", "");
+        string antes = JsonSerializer.Serialize(servicio.Obtener());
+        foreach (string termino in new[] { "", "a", "  " })
+            Assert.Equal("[]", await cliente.GetStringAsync("/Mecanicos?handler=Sugerencias&termino=" + Uri.EscapeDataString(termino)));
+        using var respuesta = await cliente.GetAsync("/Mecanicos?handler=Sugerencias&termino=123");
+        Assert.True(respuesta.Headers.CacheControl?.NoStore);
+        Assert.Equal("application/json", respuesta.Content.Headers.ContentType?.MediaType);
+        using var json = JsonDocument.Parse(await respuesta.Content.ReadAsStringAsync());
+        Assert.Equal(2, json.RootElement.GetArrayLength());
+        foreach (var sugerencia in json.RootElement.EnumerateArray())
+        {
+            Assert.Equal(new[] { "id", "textoPrincipal", "textoSecundario" }, sugerencia.EnumerateObject().Select(propiedad => propiedad.Name).ToArray());
+            Assert.Contains("CI:", sugerencia.GetProperty("textoSecundario").GetString());
+        }
+
+        string seleccion = $"/Mecanicos?TerminoBusqueda=Juan+Carlos+P%C3%A9rez&MecanicoSeleccionadoId={id}";
+        string listado = await cliente.GetStringAsync(seleccion);
+        Assert.Single(Regex.Matches(listado, "data-editar-mecanico\\s"));
+        Assert.Contains($"data-id=\"{id}\"", listado);
+        Assert.Contains("Limpiar", listado);
+        Assert.Equal(3, Regex.Matches(await cliente.GetStringAsync("/Mecanicos?TerminoBusqueda=Motores"), "data-editar-mecanico\\s").Count);
+        Assert.Equal(3, Regex.Matches(await cliente.GetStringAsync("/Mecanicos"), "data-editar-mecanico\\s").Count);
+        Assert.DoesNotContain("data-editar-mecanico", await cliente.GetStringAsync("/Mecanicos?MecanicoSeleccionadoId=2147483647"));
+
+        using (var anonimo = NuevoCliente(url))
+        {
+            using var denegada = await anonimo.GetAsync("/Mecanicos?handler=Sugerencias&termino=Juan");
+            Assert.True(denegada.StatusCode is HttpStatusCode.Redirect or HttpStatusCode.Unauthorized);
+            Assert.DoesNotContain("textoPrincipal", await denegada.Content.ReadAsStringAsync());
+        }
+        var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
+        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        {
+            Username = "recepcion_prueba", Rol = "Recepcionista", PasswordHash = hasher.GenerarHash(password),
+            CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+        });
+        using (var recepcionista = NuevoCliente(url))
+        {
+            await IniciarSesion(recepcionista, password, "recepcion_prueba");
+            using var denegada = await recepcionista.GetAsync("/Mecanicos?handler=Sugerencias&termino=Juan");
+            Assert.True(denegada.StatusCode is HttpStatusCode.Redirect or HttpStatusCode.Forbidden);
+            Assert.DoesNotContain("textoPrincipal", await denegada.Content.ReadAsStringAsync());
+            if (denegada.StatusCode == HttpStatusCode.Redirect)
+                Assert.Contains("AccessDenied", denegada.Headers.Location?.ToString());
+        }
+
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")))
+            await VerificarNavegador(url, cookies);
+        Assert.Equal(antes, JsonSerializer.Serialize(servicio.Obtener()));
+
+        using var invalido = await EnviarFormulario(cliente, listado, "Actualizar", "No2", id, "Juan Carlos Pérez", id);
+        string conErrores = await invalido.Content.ReadAsStringAsync();
+        Assert.Contains($"name=\"MecanicoSeleccionadoId\" value=\"{id}\"", conErrores);
+        Assert.Single(Regex.Matches(conErrores, "data-editar-mecanico\\s"));
+        using var actualizado = await EnviarFormulario(cliente, listado, "Actualizar", "", id, "Juan Carlos Pérez", id);
+        Assert.Equal(HttpStatusCode.Redirect, actualizado.StatusCode);
+        Assert.Contains($"mecanicoSeleccionadoId={id}", actualizado.Headers.Location?.ToString());
+        Assert.Contains("terminoBusqueda=", actualizado.Headers.Location?.ToString());
+        var camposEliminar = new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = ObtenerToken(listado), ["MecanicoId"] = id.ToString(),
+            ["TerminoBusqueda"] = "Juan Carlos Pérez", ["MecanicoSeleccionadoId"] = id.ToString()
+        };
+        using var contenido = new FormUrlEncodedContent(camposEliminar);
+        using var eliminado = await cliente.PostAsync("/Mecanicos?handler=Eliminar", contenido);
+        Assert.Equal(HttpStatusCode.Redirect, eliminado.StatusCode);
+        Assert.Contains($"mecanicoSeleccionadoId={id}", eliminado.Headers.Location?.ToString());
+        Assert.DoesNotContain("data-editar-mecanico", await cliente.GetStringAsync(eliminado.Headers.Location));
+        using var creado = await EnviarFormulario(cliente, listado, "Crear", "", 0, "Juan Carlos Pérez", id);
+        Assert.Equal(HttpStatusCode.Redirect, creado.StatusCode);
+        Assert.Contains($"mecanicoSeleccionadoId={id}", creado.Headers.Location?.ToString());
+        Assert.Equal(3, Regex.Matches(await cliente.GetStringAsync("/Mecanicos"), "data-editar-mecanico\\s").Count);
+    }
+
+    private static HttpClient NuevoCliente(string url) => new(new HttpClientHandler
+    {
+        AllowAutoRedirect = false, CookieContainer = new CookieContainer(),
+        ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+    }) { BaseAddress = new Uri(url) };
+
+    private static async Task VerificarNavegador(string url, CookieContainer cookies)
+    {
+        var inicio = new ProcessStartInfo("node")
+        {
+            WorkingDirectory = MySqlAisladoFixture.RaizProyecto, UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardOutput = true, RedirectStandardError = true
+        };
+        inicio.ArgumentList.Add("tests/mecanicos_autocompletado_ui.cjs");
+        inicio.Environment["TALLER_MECANICOS_URL"] = url;
+        inicio.Environment["TALLER_MECANICOS_COOKIES"] = JsonSerializer.Serialize(
+            cookies.GetCookies(new Uri(url)).Cast<Cookie>().Select(cookie => new
+            {
+                name = cookie.Name, value = cookie.Value, url,
+                httpOnly = cookie.HttpOnly, secure = cookie.Secure
+            }));
+        using var proceso = Process.Start(inicio)!;
+        Task<string> salida = proceso.StandardOutput.ReadToEndAsync();
+        Task<string> errores = proceso.StandardError.ReadToEndAsync();
+        using var limite = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        try { await proceso.WaitForExitAsync(limite.Token); }
+        catch (OperationCanceledException) { proceso.Kill(entireProcessTree: true); throw; }
+        Assert.True(proceso.ExitCode == 0, await salida + await errores);
     }
 }

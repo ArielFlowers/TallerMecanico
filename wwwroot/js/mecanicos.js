@@ -1,4 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const buscador = document.getElementById("mecanicos-autocompletado");
+    const formularioBusqueda = document.getElementById("mecanicos-busqueda");
+    buscador?.addEventListener("autocompletado:seleccion", () => {
+        if (formularioBusqueda instanceof HTMLFormElement) {
+            formularioBusqueda.requestSubmit();
+        }
+    });
+
     const formDialog = document.getElementById("mecanico-form-dialog");
     const deleteDialog = document.getElementById("mecanico-delete-dialog");
 

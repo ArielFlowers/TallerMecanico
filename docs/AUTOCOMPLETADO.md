@@ -1,6 +1,6 @@
-# Buscador compartido - Iteración 1
+# Buscador compartido
 
-El componente todavía no está integrado en ningún CRUD ni en Nueva Orden. No hay endpoints nuevos de producción, consultas SQL ni cambios en permisos. No se modificó `_Layout.cshtml`.
+El componente se integra en Mecánicos desde la Iteración 2. Los demás CRUD y Nueva Orden siguen pendientes. Los recursos se cargan solamente en la página consumidora; no se modificó `_Layout.cshtml`.
 
 ## Archivos y uso posterior
 
@@ -49,7 +49,7 @@ Los ID deben ser números enteros positivos y únicos. `textoPrincipal` es oblig
 
 Un arreglo vacío indica ausencia de coincidencias. HTTP 401/403 o una redirección presentan el mensaje de sesión/permisos; errores HTTP, HTML en lugar de JSON, JSON mal formado, datos incompatibles y fallos de red presentan el mensaje general. No se muestran detalles técnicos del servidor.
 
-El cliente espera 300 ms, busca desde dos caracteres y representa como máximo diez opciones. **El endpoint deberá validar el término y limitar a diez en SQL**: recortar en el navegador no es una protección del servidor. También deberá comprobar roles y devolver solo los datos necesarios. No se implementa ninguno de esos endpoints en esta iteración.
+El cliente espera 300 ms, busca desde dos caracteres y representa como máximo diez opciones. **El endpoint debe validar el término y limitar a diez en SQL**: recortar en el navegador no es una protección del servidor. También debe comprobar roles y devolver solo los datos necesarios.
 
 Cada instancia cancela su temporizador y fetch anterior y comprueba una versión de petición antes de actualizar la interfaz. Cerrar, editar o resetear impide que respuestas pendientes reabran la lista. Cancelar fetch no garantiza por sí solo cancelar una consulta SQL futura.
 
@@ -72,6 +72,33 @@ dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTest
 
 Sin `PLAYWRIGHT_MODULE`, el caso de navegador se omite explícitamente; el test de configuración se ejecuta. No hacen falta paquetes nuevos ni TALLER_TEST_MYSQL. Se puede usar `TALLER_AUTOCOMPLETADO_CAPTURA` para guardar una captura móvil en una carpeta temporal.
 
+## Mecánicos - Iteración 2
+
+`Pages/Mecanicos/Index` configura el modo `filtrar` y el endpoint GET `?handler=Sugerencias&termino=...`. Conserva la política `SoloAdministrador` de la carpeta, también para este handler. La respuesta no se almacena en caché y contiene únicamente el arreglo de sugerencias.
+
+`MecanicoService.SugerirAsync` normaliza espacios y rechaza términos de menos de 2 o más de 100 caracteres con un arreglo vacío, sin consultar MySQL. El puerto específico `IConsultaMecanicosPort` lo implementa el repositorio existente, creado por `CreadorMecanico`. Se mantiene la composición actual del servicio (y su dependencia concreta anterior para el CRUD), sin añadir operaciones al repositorio genérico ni otra jerarquía de fábricas.
+
+El SQL usa parámetros y `LIMIT 10` parametrizado. CI se compara por prefijo; cada palabra del término debe coincidir al inicio de alguna palabra de Nombres, PrimerApellido o SegundoApellido. Se escapan `!`, `%` y `_`. Las cláusulas dinámicas contienen exclusivamente índices generados internamente, nunca valores del usuario. La colación de consulta `utf8mb4_0900_ai_ci` ignora tildes y diferencias de caja; requiere MySQL 8 y columnas utf8mb4, como el esquema actual. No altera las colaciones ni restricciones del esquema. Se propaga la cancelación HTTP hasta ADO.NET.
+
+La proyección incluye nombre sin espacios sobrantes y CI con complemento cuando exista, más especialidad. No expone auditoría, teléfono ni entidades completas. SegundoApellido vacío o NULL es tolerado.
+
+Seleccionar emite el evento compartido y envía el formulario GET con `MecanicoSeleccionadoId`, separado de `MecanicoId` usado para escrituras. El listado consulta ese ID exacto; un ID inexistente muestra cero registros. Editar el texto invalida el ID automáticamente. Sin ID, Enter/Buscar mantienen **sin cambios** la búsqueda manual parcial anterior, incluyendo especialidad, celular, género y complemento. Limpiar navega al listado sin filtros. Formularios POST y redirecciones conservan ambos filtros; si se elimina el registro seleccionado, queda un listado vacío hasta limpiar.
+
+### Verificación de Mecánicos
+
+`MecanicosAutocompletadoTests` comprueba términos cortos sin conexión, prefijos, palabras compuestas, tildes, apellidos vacíos/NULL, límite aplicado por el repositorio, comodines, inyección, ID exacto y regresión de búsqueda manual. Compara los registros antes y después de consultar para detectar escrituras accidentales.
+
+`MecanicosHttpTests` ejecuta la aplicación real por HTTPS contra una base aleatoria creada por `MySqlAisladoFixture`. Comprueba JSON, permisos (anónimo y Recepcionista), formularios y filtros tras crear/editar/eliminar. Con `PLAYWRIGHT_MODULE` también ejecuta `tests/mecanicos_autocompletado_ui.cjs` en Edge contra el endpoint real: selección con ratón/teclado, edición, invalidación, búsqueda manual, limpiar y viewport móvil. Reutiliza la cookie del administrador de pruebas para no consumir intentos adicionales de login. Sin Playwright se ejecutan las comprobaciones HTTP, pero no ese bloque de navegador.
+
+Configurar `TALLER_TEST_MYSQL` exclusivamente con un servidor destinado a pruebas; el fixture crea y elimina su propia base `autotaller_test_<GUID>`, nunca utiliza `taller_mecanico`. `PLAYWRIGHT_MODULE` señala el módulo Playwright ya instalado. Opcionalmente `TALLER_MECANICOS_CAPTURA` guarda una captura móvil fuera del repositorio.
+
+```powershell
+dotnet build
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~Mecanicos|FullyQualifiedName~Autocompletado'
+```
+
+Sin `TALLER_TEST_MYSQL`, los casos que necesitan MySQL se omiten explícitamente. La comprobación móvil automatizada no sustituye una revisión con lector de pantalla ni una prueba en un teléfono físico.
+
 ## Integración pendiente
 
-Mecánicos será el primer consumidor, solo con autorización: configurar URL y nombres de campos; agregar su endpoint de lectura, servicio/puerto/SQL limitado y autorización; escuchar selección e invalidación para filtrar por ID; conservar la búsqueda manual y los filtros al recargar. Después se integrarán los otros módulos. La validación final de IDs y las reglas de stock, transacciones e idempotencia seguirán a cargo de los casos de uso existentes.
+Clientes y los demás módulos requieren autorización antes de integrarse. Nueva Orden necesitará su propio endpoint de lectura con sus permisos, sin ampliar el acceso al CRUD de Mecánicos. Las reglas de stock, transacciones e idempotencia siguen a cargo de los casos de uso existentes.
