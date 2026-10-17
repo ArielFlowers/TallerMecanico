@@ -30,6 +30,10 @@ public class IndexModel : PageModel
 
     [BindProperty(SupportsGet = true)]
     public string? TerminoBusqueda { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int? ProductoSeleccionadoId { get; set; }
+
     [BindProperty(SupportsGet = true)]
     public Guid? OrdenBorradorId { get; set; }
 
@@ -54,6 +58,13 @@ public class IndexModel : PageModel
         CargarProductos();
 
         return Page();
+    }
+
+    public async Task<JsonResult> OnGetSugerenciasAsync(string? termino)
+    {
+        Response.Headers.CacheControl = "no-store";
+        var sugerencias = await _productoService.SugerirAsync(termino, HttpContext.RequestAborted);
+        return new JsonResult(sugerencias);
     }
 
     public IActionResult OnPostCrear()
@@ -109,11 +120,7 @@ public class IndexModel : PageModel
                 return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId, ProductoNuevoId = creado.Id });
         }
 
-        return RedirectToPage(
-            new
-            {
-                TerminoBusqueda
-            });
+        return RedirigirAlListado();
     }
 
     public IActionResult OnPostActualizar()
@@ -165,11 +172,7 @@ public class IndexModel : PageModel
         TempData["ProductoExito"] =
             "Producto actualizado correctamente.";
 
-        return RedirectToPage(
-            new
-            {
-                TerminoBusqueda
-            });
+        return RedirigirAlListado();
     }
 
     public IActionResult OnPostEliminar()
@@ -189,25 +192,24 @@ public class IndexModel : PageModel
             TempData["ProductoError"] =
                 error;
 
-            return RedirectToPage(
-                new
-                {
-                    TerminoBusqueda
-                });
+            return RedirigirAlListado();
         }
 
         TempData["ProductoExito"] =
             "Producto eliminado correctamente.";
 
-        return RedirectToPage(
-            new
-            {
-                TerminoBusqueda
-            });
+        return RedirigirAlListado();
     }
 
     private void CargarProductos()
     {
+        if (ProductoSeleccionadoId.HasValue)
+        {
+            var producto = _productoService.ObtenerPorId(ProductoSeleccionadoId.Value);
+            Productos = producto is null ? [] : [producto];
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(
                 TerminoBusqueda))
         {
@@ -246,5 +248,15 @@ public class IndexModel : PageModel
 
         MensajeError =
             TempData["ProductoError"] as string;
+    }
+
+    private IActionResult RedirigirAlListado()
+    {
+        return RedirectToPage(new
+        {
+            TerminoBusqueda,
+            ProductoSeleccionadoId,
+            OrdenBorradorId
+        });
     }
 }

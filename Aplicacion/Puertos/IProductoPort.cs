@@ -1,4 +1,5 @@
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.Aplicacion.Puertos;
 
@@ -11,6 +12,9 @@ public interface IProductoPort
 
     IReadOnlyList<Producto> Search(
         string terminoBusqueda);
+
+    Task<IReadOnlyList<SugerenciaProducto>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default);
 
     bool ExistsByCodigo(
         string codigo,

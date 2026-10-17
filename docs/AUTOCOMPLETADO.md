@@ -1,6 +1,6 @@
 # Buscador compartido
 
-El componente se integra en Mecánicos y Clientes. Los demás CRUD y Nueva Orden siguen pendientes. Los recursos se cargan solamente en la página consumidora; no se modificó `_Layout.cshtml`.
+El componente se integra en Mecánicos, Clientes y Productos. Los demás CRUD y Nueva Orden siguen pendientes. Los recursos se cargan solamente en la página consumidora; no se modificó `_Layout.cshtml`.
 
 ## Archivos y uso posterior
 
@@ -124,6 +124,37 @@ dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTest
 
 Si el ejecutable Debug está abierto, se puede verificar sin interrumpirlo usando `--configuration VerificacionClientes` en ambos comandos. El host HTTPS de Clientes utiliza el ensamblado compilado de la configuración que se está probando, no una aplicación local existente. No se cambia el esquema de producción ni se accede a `taller_mecanico`.
 
+## Productos
+
+`Pages/Productos/Index` configura el mismo componente en modo `filtrar`, con el placeholder `Buscar por código o nombre...`. Reutiliza los recursos compartidos y conserva el handler GET `Buscar` para la búsqueda manual. No se cambia la tabla, los modales ni sus acciones; solo se agregan los campos necesarios para conservar filtro y contexto. La partial antigua `_BuscadorProducto` queda sin cambios, aunque esta página ya no la consume.
+
+El endpoint GET `?handler=Sugerencias&termino=...` pasa por `ProductoService` e `IProductoPort` hasta el `ProductoRepository` existente, creado por `CreadorProducto`. No se modifican las fábricas ni los registros de DI. El servicio normaliza únicamente los espacios del término y devuelve `[]` sin consultar para términos de menos de 2 o más de 100 caracteres. La espera de 300 ms y cancelación/descarte de respuestas antiguas siguen siendo del componente. La cancelación HTTP también se propaga a ADO.NET.
+
+El SQL selecciona solo Id, Nombre y Codigo. Busca por prefijo del código o por inicio de palabra del nombre, combinando las palabras del término con AND. Usa parámetros para todos los valores, escapa `!`, `%` y `_`, limita con `LIMIT @Limite` (10) y ordena por Nombre, Codigo e Id. La colación de consulta `utf8mb4_0900_ai_ci` ignora caja y tildes sobre las columnas utf8mb4 del esquema actual; requiere MySQL 8 y no altera el esquema. Solo devuelve `id`, `textoPrincipal` (nombre) y `textoSecundario` (código), sin precio, stock ni auditoría.
+
+La selección envía un GET con `ProductoSeleccionadoId`, separado de `ProductoId` para escrituras, y filtra por el ID exacto. Editar el texto invalida el ID. Sin selección se mantiene intacto el `Search` anterior, con coincidencias parciales por código/nombre. Limpiar recupera todo el listado. Un ID inexistente muestra cero resultados. Los filtros y `OrdenBorradorId` se conservan en búsquedas, formularios, errores, redirecciones, limpiar y refrescar. El retorno especial tras crear desde Orden continúa siendo el existente.
+
+### Permisos e inventario
+
+Se conserva `PersonalAutorizado` para lectura (Administrador y Recepcionista), incluyendo sugerencias. Los POST de actualizar/eliminar siguen exigiendo Administrador. Crear conserva su excepción previa: Recepcionista solo con un borrador de orden válido en su sesión. No se amplía ningún permiso, ni se agrega un endpoint para Nueva Orden.
+
+Las sugerencias son exclusivamente SELECT: no descuentan/restituyen stock, calculan precios ni ejecutan transacciones de órdenes. Como pertenecen al listado administrativo existente, también pueden mostrar productos sin stock; las reglas de selección para una orden se resolverán en su futura integración, sin reutilizar permisos de escritura de inventario.
+
+### Pruebas de Productos
+
+`ProductosAutocompletadoTests` verifica límites de entrada, prefijos, nombres compuestos, caja/tildes, comodines y comillas literales, inyección, límite SQL, ID exacto, búsqueda manual, validaciones/CRUD, retorno a borrador y permisos de Recepcionista. Compara los registros completos (incluyendo precio, stock y auditoría) antes y después de las consultas.
+
+`ProductosHttpTests` utiliza el ejecutable real por HTTPS con MySQL aislado y prueba JSON, límite 10, anónimos, ambos roles de lectura, denegación de escrituras de Recepcionista, CRUD del Administrador y conservación de filtros/contexto. Con `PLAYWRIGHT_MODULE`, ejecuta `tests/productos_autocompletado_ui.cjs`: ratón, teclado, invalidación, selección de registros con nombres iguales, edición, buscar, limpiar, stock cero, IDs HTML únicos y viewport móvil. `TALLER_PRODUCTOS_CAPTURA` permite guardar una captura temporal. No usa la base local `taller_mecanico`.
+
+Con `TALLER_TEST_MYSQL` apuntando exclusivamente al servidor aislado de pruebas y Playwright configurado:
+
+```powershell
+dotnet build
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~TallerMecanico.IntegrationTests.Productos|FullyQualifiedName~TallerMecanico.IntegrationTests.AutocompletadoTests'
+```
+
+Sin MySQL se omiten los casos correspondientes; sin Playwright se ejecutan las verificaciones HTTP, pero no el bloque de navegador. La prueba móvil automatizada no sustituye una prueba en teléfono físico o con lector de pantalla.
+
 ## Integración pendiente
 
-Productos y los demás módulos requieren autorización antes de integrarse. Nueva Orden necesitará su propio endpoint de lectura con sus permisos, sin ampliar el acceso al CRUD de Mecánicos. Las reglas de stock, transacciones e idempotencia siguen a cargo de los casos de uso existentes.
+Vehículos y los demás módulos requieren autorización antes de integrarse. Nueva Orden necesitará sus propios endpoints de lectura con sus permisos, sin ampliar el acceso al CRUD de Mecánicos ni los permisos de escritura del inventario. Las reglas de stock, transacciones e idempotencia siguen a cargo de los casos de uso existentes.
