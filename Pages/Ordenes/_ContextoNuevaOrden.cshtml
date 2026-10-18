@@ -1,0 +1,19 @@
+@model TallerMecanico.Pages.Ordenes.CrearModel
+@using System.Globalization
+
+<input type="hidden" name="Formulario.VehiculoId" value="@Model.Formulario.VehiculoId" />
+<input type="hidden" name="Formulario.MecanicoId" value="@Model.Formulario.MecanicoId" />
+<input type="hidden" name="Formulario.ServicioId" value="@Model.Formulario.ServicioId" />
+<input type="hidden" name="Formulario.Fecha" value="@Model.Formulario.Fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
+<input type="hidden" name="Formulario.Token" value="@Model.Formulario.Token" />
+<input type="hidden" name="Formulario.ClienteNuevoId" value="@Model.Formulario.ClienteNuevoId" />
+<input type="hidden" name="BorradorId" value="@Model.BorradorId" />
+<input type="hidden" name="BuscarVehiculo" value="@Model.BuscarVehiculo" />
+<input type="hidden" name="TextoServicio" value="@Model.TextoServicio" />
+<input type="hidden" name="TextoMecanico" value="@Model.TextoMecanico" />
+@for (var indice = 0; indice < Model.Formulario.Lineas.Count; indice++)
+{
+    <input type="hidden" name="Formulario.Lineas[@indice].ProductoId" value="@Model.Formulario.Lineas[indice].ProductoId" />
+    <input type="hidden" name="Formulario.Lineas[@indice].Cantidad" value="@Model.Formulario.Lineas[indice].Cantidad" />
+    <input type="hidden" name="Formulario.Lineas[@indice].Precio" value="@Model.Formulario.Lineas[indice].Precio" />
+}

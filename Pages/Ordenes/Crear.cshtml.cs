@@ -9,6 +9,7 @@ using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.Pages.Ordenes;
 
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort borradores,
     VehiculoService vehiculos, MecanicoService mecanicos, ProductoService productos, ClienteService clientes,
     IServicioService servicios) : PageModel
@@ -22,21 +23,44 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     [BindProperty] public int Cantidad { get; set; } = 1;
     [BindProperty(SupportsGet = true)] public string? BuscarVehiculo { get; set; }
     [BindProperty(SupportsGet = true)] public string? BuscarProducto { get; set; }
+    [BindProperty] public string? TextoServicio { get; set; }
+    [BindProperty] public string? TextoMecanico { get; set; }
 
-    public IReadOnlyList<Vehiculo> Vehiculos { get; private set; } = [];
-    public IReadOnlyList<Mecanico> Mecanicos { get; private set; } = [];
-    public IReadOnlyList<Producto> Productos { get; private set; } = [];
-    public IReadOnlyList<Servicio> Servicios { get; private set; } = [];
+    public Vehiculo? VehiculoSeleccionado { get; private set; }
+    public Mecanico? MecanicoSeleccionado { get; private set; }
+    public Producto? ProductoSeleccionado { get; private set; }
+    public Servicio? ServicioSeleccionado { get; private set; }
     public IReadOnlyList<LineaOrdenTemporalViewModel> Lineas { get; private set; } = [];
     public decimal Total => Lineas.Sum(x => x.Precio * x.Cantidad);
     public long CantidadTotal => Lineas.Sum(x => (long)x.Cantidad);
-    public decimal CostoServicioSeleccionado =>
-        Formulario.ServicioId.HasValue
-            ? Servicios.FirstOrDefault(x => x.Id == Formulario.ServicioId.Value)?.Costo ?? 0
-            : 0;
+    public decimal CostoServicioSeleccionado => ServicioSeleccionado?.Costo ?? 0;
     public decimal TotalEstimado => Total + CostoServicioSeleccionado;
     public string? Mensaje { get; private set; }
     public int? OrdenCreadaId { get; private set; }
+
+    public async Task<JsonResult> OnGetSugerenciasVehiculosAsync(string? termino) =>
+        new(await vehiculos.SugerirAsync(termino, HttpContext.RequestAborted));
+
+    public async Task<JsonResult> OnGetSugerenciasServiciosAsync(string? termino) =>
+        new(await servicios.SugerirAsync(termino, HttpContext.RequestAborted));
+
+    public async Task<JsonResult> OnGetSugerenciasMecanicosAsync(string? termino) =>
+        new(await mecanicos.SugerirAsync(termino, HttpContext.RequestAborted, incluirEspecialidad: false));
+
+    public async Task<JsonResult> OnGetSugerenciasProductosAsync(string? termino) =>
+        new(await productos.SugerirAsync(termino, HttpContext.RequestAborted));
+
+    public IActionResult OnGetServicioSeleccionado(int id)
+    {
+        var servicio = id > 0 ? servicios.ObtenerPorId(id) : null;
+        return servicio is null ? NotFound() : new JsonResult(new { servicio.Id, servicio.Costo, servicio.TiempoEstimadoHoras });
+    }
+
+    public IActionResult OnGetVehiculoSeleccionado(int id)
+    {
+        var vehiculo = id > 0 ? vehiculos.GetById(id) : null;
+        return vehiculo is null ? NotFound() : new JsonResult(new { vehiculo.Id, RequiereCliente = !vehiculo.ClienteId.HasValue });
+    }
 
     public IActionResult OnGet()
     {
@@ -159,10 +183,16 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
 
     private void Cargar()
     {
-        Vehiculos = vehiculos.GetAll();
-        Mecanicos = mecanicos.Obtener();
-        Servicios = servicios.ObtenerTodos();
-        Productos = string.IsNullOrWhiteSpace(BuscarProducto) ? productos.Obtener() : productos.Buscar(BuscarProducto);
+        VehiculoSeleccionado = Formulario.VehiculoId > 0 ? vehiculos.GetById(Formulario.VehiculoId) : null;
+        if (VehiculoSeleccionado is not null) BuscarVehiculo = VehiculoSeleccionado.Placa;
+        MecanicoSeleccionado = Formulario.MecanicoId > 0 ? mecanicos.ObtenerPorId(Formulario.MecanicoId).SingleOrDefault() : null;
+        if (MecanicoSeleccionado is not null)
+            TextoMecanico = string.Join(" ", new[] { MecanicoSeleccionado.Nombres, MecanicoSeleccionado.PrimerApellido, MecanicoSeleccionado.SegundoApellido }
+                .Where(nombre => !string.IsNullOrWhiteSpace(nombre)));
+        ServicioSeleccionado = Formulario.ServicioId.HasValue ? servicios.ObtenerPorId(Formulario.ServicioId.Value) : null;
+        if (ServicioSeleccionado is not null) TextoServicio = ServicioSeleccionado.Nombre;
+        ProductoSeleccionado = ProductoId > 0 ? productos.ObtenerPorId(ProductoId) : null;
+        if (ProductoSeleccionado is not null) BuscarProducto = ProductoSeleccionado.Nombre;
         Lineas = Formulario.Lineas.Select(x =>
         {
             Producto? p = productos.ObtenerPorId(x.ProductoId);

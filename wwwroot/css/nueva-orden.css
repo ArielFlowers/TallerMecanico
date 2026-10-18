@@ -1,0 +1,79 @@
+.nueva-orden-page .ordenes-card {
+    margin: 18px 0;
+    padding: 22px;
+}
+
+.nueva-orden-page .ordenes-selectores-card {
+    overflow: visible;
+}
+
+.nueva-orden-page .ordenes-cabecera {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: end;
+}
+
+.nueva-orden-page .ordenes-cabecera > label,
+.nueva-orden-page .ordenes-agregar,
+.nueva-orden-page .ordenes-agregar > label {
+    display: grid;
+    gap: 8px;
+}
+
+.nueva-orden-page .ordenes-selector {
+    min-width: 0;
+}
+
+.nueva-orden-page .ordenes-cabecera > label input,
+.nueva-orden-page .ordenes-agregar > label input,
+.nueva-orden-page .ordenes-editar input {
+    padding: 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+}
+
+.nueva-orden-page .ordenes-nuevos {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+}
+
+.nueva-orden-page .ordenes-agregar {
+    grid-template-columns: minmax(0, 1fr) 110px auto;
+    align-items: end;
+    margin-top: 14px;
+}
+
+.nueva-orden-page .ordenes-editar {
+    display: flex;
+    gap: 6px;
+}
+
+.nueva-orden-page .ordenes-editar input {
+    width: 78px;
+}
+
+.nueva-orden-page .ordenes-guardar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 20px 0;
+    position: sticky;
+    bottom: 12px;
+}
+
+.nueva-orden-page .ordenes-selector:focus-within {
+    position: relative;
+    z-index: 2;
+}
+
+@media (max-width: 850px) {
+    .nueva-orden-page .ordenes-cabecera,
+    .nueva-orden-page .ordenes-agregar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

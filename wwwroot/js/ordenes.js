@@ -1,33 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    function filtrar(inputId, selectId) {
-        const input = document.getElementById(inputId);
-        const select = document.getElementById(selectId);
-        if (!input || !(select instanceof HTMLSelectElement)) return;
-        const aviso = document.createElement("p");
-        aviso.className = "service-validation";
-        aviso.setAttribute("role", "status");
-        aviso.hidden = true;
-        aviso.textContent = "Sin coincidencias para ese filtro.";
-        select.insertAdjacentElement("afterend", aviso);
-        input.addEventListener('input', () => {
-            const termino = (input.value || "").trim().toLocaleLowerCase('es');
-            let visibles = 0;
-            for (const opcion of select.options) {
-                if (!opcion.value) { opcion.hidden = false; continue; }
-                const texto = (opcion.dataset.search || opcion.textContent || "").toLocaleLowerCase('es');
-                const coincide = texto.includes(termino);
-                opcion.hidden = !coincide;
-                if (coincide) visibles++;
-            }
-            aviso.hidden = visibles > 0;
-            if (select.selectedOptions.length > 0 && select.selectedOptions[0].hidden) {
-                select.selectedIndex = 0;
-            }
-        });
-    }
-    filtrar('filtro-vehiculos', 'vehiculo-select');
-    filtrar('filtro-productos', 'producto-select');
-
     const actualizarResumen = () => {
         let cantidadTotal = 0;
         let total = 0;
@@ -42,13 +13,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         document.getElementById('resumen-lineas')?.replaceChildren(String(filas.length));
         document.getElementById('resumen-cantidad')?.replaceChildren(String(cantidadTotal));
+        const servicio = Number(document.getElementById('formulario-orden')?.dataset.costoServicio || 0);
         const totalEl = document.getElementById('resumen-total');
         if (totalEl) {
-            const servicio = Number(totalEl.dataset.costoServicio || 0);
+            totalEl.dataset.costoServicio = String(servicio);
             totalEl.textContent = `Bs. ${(total + servicio).toFixed(2)}`;
         }
+        document.querySelectorAll('[data-total-estimado]').forEach(elemento => elemento.textContent = `Bs. ${(total + servicio).toFixed(2)}`);
     };
     document.querySelectorAll('[data-cantidad]').forEach(input => input.addEventListener('input', actualizarResumen));
+    document.getElementById('formulario-orden')?.addEventListener('orden:servicio-actualizado', actualizarResumen);
 });
 
 document.addEventListener("DOMContentLoaded", () => {

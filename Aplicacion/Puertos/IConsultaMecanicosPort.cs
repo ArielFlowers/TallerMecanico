@@ -5,5 +5,5 @@ namespace TallerMecanico.Aplicacion.Puertos;
 public interface IConsultaMecanicosPort
 {
     Task<IReadOnlyList<SugerenciaMecanico>> SugerirAsync(
-        string termino, CancellationToken cancellationToken = default);
+        string termino, CancellationToken cancellationToken = default, bool incluirEspecialidad = true);
 }

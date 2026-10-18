@@ -67,7 +67,7 @@ public class MecanicoService
     }
 
     public Task<IReadOnlyList<SugerenciaMecanico>> SugerirAsync(
-        string? termino, CancellationToken cancellationToken = default)
+        string? termino, CancellationToken cancellationToken = default, bool incluirEspecialidad = true)
     {
         var terminoNormalizado = NormalizarEspacios(termino);
         if (terminoNormalizado.Length < MinimoCaracteresSugerencias ||
@@ -76,7 +76,7 @@ public class MecanicoService
             return Task.FromResult<IReadOnlyList<SugerenciaMecanico>>([]);
         }
 
-        return _consultaMecanicos.SugerirAsync(terminoNormalizado, cancellationToken);
+        return _consultaMecanicos.SugerirAsync(terminoNormalizado, cancellationToken, incluirEspecialidad);
     }
 
     public (

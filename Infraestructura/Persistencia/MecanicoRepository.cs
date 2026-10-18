@@ -118,7 +118,7 @@ public class MecanicoRepository : IRepository<Mecanico>, IConsultaMecanicosPort
     }
 
     public async Task<IReadOnlyList<SugerenciaMecanico>> SugerirAsync(
-        string termino, CancellationToken cancellationToken = default)
+        string termino, CancellationToken cancellationToken = default, bool incluirEspecialidad = true)
     {
         var palabras = termino.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
         if (palabras.Length == 0)
@@ -162,13 +162,13 @@ public class MecanicoRepository : IRepository<Mecanico>, IConsultaMecanicosPort
         await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            sugerencias.Add(MapSugerencia(reader));
+            sugerencias.Add(MapSugerencia(reader, incluirEspecialidad));
         }
 
         return sugerencias;
     }
 
-    private static SugerenciaMecanico MapSugerencia(DbDataReader reader)
+    private static SugerenciaMecanico MapSugerencia(DbDataReader reader, bool incluirEspecialidad)
     {
         var nombres = new[]
         {
@@ -181,7 +181,7 @@ public class MecanicoRepository : IRepository<Mecanico>, IConsultaMecanicosPort
         return new SugerenciaMecanico(
             reader.GetInt32(0),
             string.Join(" ", nombres.Where(nombre => !string.IsNullOrWhiteSpace(nombre))),
-            $"CI: {ciCompleto} · {reader.GetString(6)}");
+            incluirEspecialidad ? $"CI: {ciCompleto} · {reader.GetString(6)}" : $"CI: {ciCompleto}");
     }
 
     public Mecanico? GetById(int id)
