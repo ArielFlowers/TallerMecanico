@@ -1,12 +1,15 @@
 using System.Data.Common;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia;
 
-public class ServicioRepository : IRepository<Servicio>
+public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
 {
+    private const int MaximoSugerencias = 10;
+    private const int LongitudDescripcionBreve = 100;
     private readonly DatabaseConnectionFactory _connectionFactory;
 
     public ServicioRepository(DatabaseConnectionFactory connectionFactory)
@@ -26,7 +29,7 @@ public class ServicioRepository : IRepository<Servicio>
         const string query = """
             SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
             FROM Servicios
-            ORDER BY Nombre;
+            ORDER BY Nombre, Id;
             """;
 
         using DbCommand command = connection.CreateCommand();
@@ -68,6 +71,86 @@ public class ServicioRepository : IRepository<Servicio>
         }
 
         return MapServicio(reader);
+    }
+
+    public async Task<IReadOnlyList<Servicio>> BuscarAsync(
+        string termino, CancellationToken cancellationToken = default)
+    {
+        await using DbConnection connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using DbCommand command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras,
+                   CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
+            FROM Servicios
+            WHERE Nombre COLLATE utf8mb4_0900_ai_ci LIKE @Filtro ESCAPE '!'
+               OR Descripcion COLLATE utf8mb4_0900_ai_ci LIKE @Filtro ESCAPE '!'
+            ORDER BY Nombre, Id;
+            """;
+        AddParameter(command, "@Filtro", $"%{EscaparPatron(termino)}%");
+
+        var servicios = new List<Servicio>();
+        await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            servicios.Add(MapServicio(reader));
+        }
+
+        return servicios;
+    }
+
+    public async Task<IReadOnlyList<SugerenciaServicio>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default)
+    {
+        var palabras = termino.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        if (palabras.Length == 0)
+        {
+            return [];
+        }
+
+        await using DbConnection connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using DbCommand command = connection.CreateCommand();
+        var condicionesPalabras = new List<string>();
+        for (int indice = 0; indice < palabras.Length; indice++)
+        {
+            condicionesPalabras.Add($"""
+                (Nombre COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR Nombre COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!'
+                 OR Descripcion COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR Descripcion COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!')
+                """);
+            string palabraEscapada = EscaparPatron(palabras[indice]);
+            AddParameter(command, $"@Inicio{indice}", $"{palabraEscapada}%");
+            AddParameter(command, $"@Palabra{indice}", $"% {palabraEscapada}%");
+        }
+
+        command.CommandText = $"""
+            SELECT Id, Nombre,
+                   CASE WHEN CHAR_LENGTH(Descripcion) > @LongitudDescripcion
+                        THEN CONCAT(LEFT(Descripcion, @LongitudDescripcion), '…')
+                        ELSE Descripcion END
+            FROM Servicios
+            WHERE {string.Join(" AND ", condicionesPalabras)}
+            ORDER BY Nombre, Id
+            LIMIT @Limite;
+            """;
+        AddParameter(command, "@LongitudDescripcion", LongitudDescripcionBreve);
+        AddParameter(command, "@Limite", MaximoSugerencias);
+
+        var sugerencias = new List<SugerenciaServicio>();
+        await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            sugerencias.Add(new SugerenciaServicio(reader.GetInt32(0), reader.GetString(1), reader.GetString(2)));
+        }
+
+        return sugerencias;
+    }
+
+    private static string EscaparPatron(string termino)
+    {
+        return termino.Replace("!", "!!").Replace("%", "!%").Replace("_", "!_");
     }
 
     public void Add(Servicio servicio)

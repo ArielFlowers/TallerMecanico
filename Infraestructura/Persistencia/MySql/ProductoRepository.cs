@@ -1,4 +1,5 @@
 using System.Data.Common;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
@@ -9,6 +10,7 @@ public class ProductoRepository :
     IRepository<Producto>,
     IProductoPort
 {
+    private const int MaximoSugerencias = 10;
     private readonly DatabaseConnectionFactory _connectionFactory;
 
     public ProductoRepository(
@@ -161,6 +163,53 @@ public class ProductoRepository :
         }
 
         return productos;
+    }
+
+    public async Task<IReadOnlyList<SugerenciaProducto>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default)
+    {
+        var palabras = termino.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        if (palabras.Length == 0)
+        {
+            return [];
+        }
+
+        await using DbConnection connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using DbCommand command = connection.CreateCommand();
+        var condicionesPalabras = new List<string>();
+
+        for (int indice = 0; indice < palabras.Length; indice++)
+        {
+            condicionesPalabras.Add($"""
+                (Nombre COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR Nombre COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!')
+                """);
+            var palabraEscapada = EscaparPatron(palabras[indice]);
+            AddParameter(command, $"@Inicio{indice}", $"{palabraEscapada}%");
+            AddParameter(command, $"@Palabra{indice}", $"% {palabraEscapada}%");
+        }
+
+        command.CommandText = $"""
+            SELECT Id, Nombre, Codigo
+            FROM Productos
+            WHERE Codigo COLLATE utf8mb4_0900_ai_ci LIKE @PrefijoCodigo ESCAPE '!'
+               OR ({string.Join(" AND ", condicionesPalabras)})
+            ORDER BY Nombre ASC, Codigo ASC, Id ASC
+            LIMIT @Limite;
+            """;
+        AddParameter(command, "@PrefijoCodigo", $"{EscaparPatron(termino)}%");
+        AddParameter(command, "@Limite", MaximoSugerencias);
+
+        var sugerencias = new List<SugerenciaProducto>();
+        await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            sugerencias.Add(new SugerenciaProducto(
+                reader.GetInt32(0), reader.GetString(1), $"Código: {reader.GetString(2)}"));
+        }
+
+        return sugerencias;
     }
 
     public bool ExistsByCodigo(

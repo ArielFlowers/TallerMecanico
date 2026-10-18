@@ -2,6 +2,7 @@
 @model TallerMecanico.Pages.Ordenes.IndexModel
 @using System.Globalization
 @using TallerMecanico.Dominio.Entidades
+@using TallerMecanico.Pages.Shared
 @inject TallerMecanico.Infraestructura.Configuracion.ConfiguracionTaller configuracion
 
 @{
@@ -10,6 +11,7 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/autocompletado.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ordenes.css" asp-append-version="true" />
 }
 
@@ -19,28 +21,45 @@
             <h1>Gestión de Órdenes</h1>
             <p>Consulta y administra el historial de órdenes de trabajo.</p>
         </div>
-        <div>
-            <a asp-page="./Crear" class="services-btn services-btn-primary">+ Nueva orden</a>
-        </div>
+        <a asp-page="./Crear" class="services-btn services-btn-primary">+ Nueva orden</a>
     </div>
 
-    <form method="get" asp-page="./Index" class="ordenes-filtros" aria-label="Filtros de órdenes">
-        <div class="ordenes-campo">
-            <label asp-for="Estado">Estado</label>
-            <select asp-for="Estado" class="ordenes-control">
-                <option value="">Todos</option>
-                <option value="Activa">Activa</option>
-                <option value="Anulada">Anulada</option>
-            </select>
-        </div>
-        <div class="ordenes-campo">
-            <label asp-for="Fecha">Fecha del trabajo</label>
-            <input asp-for="Fecha" type="date" asp-format="{0:yyyy-MM-dd}" class="ordenes-control" />
-        </div>
-        <div class="ordenes-acciones">
-            <button type="submit" class="services-btn services-btn-primary">Filtrar</button>
+    <form method="get" asp-page="./Index" id="ordenes-busqueda" aria-label="Filtros de órdenes">
+        <div class="services-actions ordenes-buscador-toolbar" role="search">
+            <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+            {
+                Id = "ordenes-autocompletado",
+                UrlSugerencias = Url.Page("./Index", "Sugerencias", new { Model.Estado, Fecha = Model.Fecha?.ToString("yyyy-MM-dd") })!,
+                Modo = BuscadorAutocompletadoModel.ModoFiltrar,
+                Etiqueta = "Buscar órdenes",
+                Placeholder = "Buscar por número de orden o placa...",
+                NombreCampoTexto = nameof(Model.TerminoBusqueda),
+                NombreCampoId = nameof(Model.OrdenSeleccionadaId),
+                Texto = Model.TerminoBusqueda ?? string.Empty,
+                IdSeleccionado = Model.OrdenSeleccionadaId,
+                MensajeInicial = "Escribe al menos 2 caracteres para ver sugerencias. Para un número de un dígito, pulsa Buscar."
+            }' />
+            <button type="submit" class="services-btn services-btn-secondary">Buscar</button>
             <button type="submit" class="services-btn services-btn-secondary">Refrescar</button>
-            <a asp-page="./Index" class="services-btn services-btn-secondary">Limpiar filtros</a>
+        </div>
+
+        <div class="ordenes-filtros">
+            <div class="ordenes-campo">
+                <label asp-for="Estado">Estado</label>
+                <select asp-for="Estado" class="ordenes-control">
+                    <option value="">Todos</option>
+                    <option value="Activa">Activa</option>
+                    <option value="Anulada">Anulada</option>
+                </select>
+            </div>
+            <div class="ordenes-campo">
+                <label asp-for="Fecha">Fecha del trabajo</label>
+                <input asp-for="Fecha" type="date" asp-format="{0:yyyy-MM-dd}" class="ordenes-control" />
+            </div>
+            <div class="ordenes-acciones">
+                <button type="submit" class="services-btn services-btn-primary">Filtrar</button>
+                <a asp-page="./Index" class="services-btn services-btn-secondary">Limpiar filtros</a>
+            </div>
         </div>
     </form>
 
@@ -52,14 +71,13 @@
     }
     @if (Model.OrdenCreadaId.HasValue)
     {
+        var tokenComprobante = TempData["OrdenComprobanteToken"] as string;
         <div class="service-validation" role="status">
-            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value" target="_blank" rel="noopener">Ver comprobante de la orden #@Model.OrdenCreadaId.Value (se abre automáticamente)</a>
+            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value" target="_blank" rel="noopener"
+               data-comprobante-creado data-token="@tokenComprobante">Ver comprobante de la orden #@Model.OrdenCreadaId.Value</a>
+            <span>Si no se abrió automáticamente, utiliza este enlace. No es necesario volver a guardar la orden.</span>
         </div>
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                window.open('@Url.Page("./Comprobante", new { id = Model.OrdenCreadaId.Value })', '_blank', 'noopener');
-            });
-        </script>
+        <script src="~/js/orden-comprobante.js" asp-append-version="true"></script>
     }
 
     <section class="recent-orders" aria-labelledby="ordenes-listado-titulo">
@@ -74,7 +92,8 @@
         {
             <div class="services-empty">
                 <strong>
-                    @(Model.Estado.HasValue || Model.Fecha.HasValue
+                    @(Model.Estado.HasValue || Model.Fecha.HasValue ||
+                        !string.IsNullOrWhiteSpace(Model.TerminoBusqueda) || Model.OrdenSeleccionadaId.HasValue
                         ? "No se encontraron órdenes con los filtros seleccionados."
                         : "No existen órdenes registradas.")
                 </strong>
@@ -134,6 +153,10 @@
                                             <form method="post" asp-page-handler="Anular" asp-route-id="@orden.Id"
                                                   onsubmit="return confirm('¿Anular la orden #@orden.Id? Se restituirá el stock.');"
                                                   style="display:inline;">
+                                                <input type="hidden" name="Estado" value="@Model.Estado" />
+                                                <input type="hidden" name="Fecha" value="@Model.Fecha?.ToString("yyyy-MM-dd")" />
+                                                <input type="hidden" name="TerminoBusqueda" value="@Model.TerminoBusqueda" />
+                                                <input type="hidden" name="OrdenSeleccionadaId" value="@Model.OrdenSeleccionadaId" />
                                                 <button type="submit" class="services-btn services-btn-secondary"
                                                         aria-label="Anular orden @orden.Id">Anular</button>
                                             </form>
@@ -165,5 +188,7 @@
 </dialog>
 
 @section Scripts {
+    <script src="~/js/autocompletado.js" asp-append-version="true"></script>
+    <script src="~/js/ordenes-buscador.js" asp-append-version="true"></script>
     <script src="~/js/ordenes.js" asp-append-version="true"></script>
 }

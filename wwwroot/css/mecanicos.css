@@ -112,6 +112,10 @@
     pointer-events: none;
 }
 
+.mecanicos-search > .autocompletado {
+    flex: 1;
+}
+
 .mecanicos-search-input,
 .mecanicos-input {
     width: 100%;

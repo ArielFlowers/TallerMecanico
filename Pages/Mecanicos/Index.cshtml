@@ -1,5 +1,6 @@
 @page
 @model TallerMecanico.Pages.Mecanicos.IndexModel
+@using TallerMecanico.Pages.Shared
 
 @{
     ViewData["Title"] = "Gestión de Mecánicos";
@@ -7,6 +8,7 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/mecanicos.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/autocompletado.css" asp-append-version="true" />
 }
 
 <div class="dashboard mecanicos-page">
@@ -39,20 +41,24 @@
     }
 
     <div class="mecanicos-toolbar">
-        <form method="get" class="mecanicos-search" role="search">
-            <label asp-for="TerminoBusqueda" class="visually-hidden">
-                Buscar mecánicos
-            </label>
-            <span class="mecanicos-search-icon" aria-hidden="true">⌕</span>
-            <input asp-for="TerminoBusqueda"
-                   class="mecanicos-search-input"
-                   placeholder="Buscar por CI, nombre, especialidad o celular"
-                   autocomplete="off" />
+        <form method="get" class="mecanicos-search" id="mecanicos-busqueda" role="search">
+            <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+            {
+                Id = "mecanicos-autocompletado",
+                UrlSugerencias = Url.Page("./Index", "Sugerencias")!,
+                Modo = BuscadorAutocompletadoModel.ModoFiltrar,
+                Etiqueta = "Buscar mecánicos",
+                Placeholder = "Buscar por CI, Nombre o Apellido",
+                NombreCampoTexto = nameof(Model.TerminoBusqueda),
+                NombreCampoId = nameof(Model.MecanicoSeleccionadoId),
+                Texto = Model.TerminoBusqueda ?? string.Empty,
+                IdSeleccionado = Model.MecanicoSeleccionadoId
+            }' />
             <button type="submit" class="mecanicos-btn mecanicos-btn-secondary">
                 Buscar
             </button>
 
-            @if (!string.IsNullOrWhiteSpace(Model.TerminoBusqueda))
+            @if (!string.IsNullOrWhiteSpace(Model.TerminoBusqueda) || Model.MecanicoSeleccionadoId.HasValue)
             {
                 <a asp-page="./Index" class="mecanicos-clear-search">
                     Limpiar
@@ -74,12 +80,12 @@
             <div class="mecanicos-empty">
                 <div class="mecanicos-empty-icon" aria-hidden="true">👨‍🔧</div>
                 <strong>
-                    @(string.IsNullOrWhiteSpace(Model.TerminoBusqueda)
+                    @(string.IsNullOrWhiteSpace(Model.TerminoBusqueda) && !Model.MecanicoSeleccionadoId.HasValue
                         ? "No existen mecánicos registrados"
                         : "No se encontraron coincidencias")
                 </strong>
                 <span>
-                    @(string.IsNullOrWhiteSpace(Model.TerminoBusqueda)
+                    @(string.IsNullOrWhiteSpace(Model.TerminoBusqueda) && !Model.MecanicoSeleccionadoId.HasValue
                         ? "Registra un mecánico para comenzar a administrar el personal."
                         : "Prueba con otro CI, nombre, especialidad o celular.")
                 </span>
@@ -177,6 +183,7 @@
         <input type="hidden"
                name="TerminoBusqueda"
                value="@Model.TerminoBusqueda" />
+        <input type="hidden" name="MecanicoSeleccionadoId" value="@Model.MecanicoSeleccionadoId" />
 
         <div asp-validation-summary="ModelOnly"
              class="mecanicos-validation-summary"></div>
@@ -334,6 +341,7 @@
         <input type="hidden"
                name="TerminoBusqueda"
                value="@Model.TerminoBusqueda" />
+        <input type="hidden" name="MecanicoSeleccionadoId" value="@Model.MecanicoSeleccionadoId" />
 
         <div class="mecanicos-delete-warning">
             <span aria-hidden="true">!</span>
@@ -357,5 +365,6 @@
 </dialog>
 
 @section Scripts {
+    <script src="~/js/autocompletado.js" asp-append-version="true"></script>
     <script src="~/js/mecanicos.js" asp-append-version="true"></script>
 }

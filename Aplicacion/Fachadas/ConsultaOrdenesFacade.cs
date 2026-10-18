@@ -8,7 +8,17 @@ public sealed class ConsultaOrdenesFacade(ConsultaOrdenesService servicio, Compr
 {
     public IReadOnlyList<OrdenResumen> Obtener(
         EstadoOrden? estado = null,
-        DateOnly? fecha = null) => servicio.Obtener(estado, fecha);
+        DateOnly? fecha = null,
+        string? terminoBusqueda = null,
+        int? ordenSeleccionadaId = null) =>
+        servicio.Obtener(estado, fecha, terminoBusqueda, ordenSeleccionadaId);
+
+    public Task<IReadOnlyList<SugerenciaOrden>> SugerirAsync(
+        string? termino,
+        EstadoOrden? estado = null,
+        DateOnly? fecha = null,
+        CancellationToken cancellationToken = default) =>
+        servicio.SugerirAsync(termino, estado, fecha, cancellationToken);
 
     public OrdenDetalle? ObtenerDetalle(int id) => servicio.ObtenerDetalle(id);
 

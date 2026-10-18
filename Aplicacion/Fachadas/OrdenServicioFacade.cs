@@ -6,6 +6,8 @@ namespace TallerMecanico.Aplicacion.Fachadas;
 
 public sealed class OrdenServicioFacade(OrdenServicioService servicio, ITokenOrdenPort tokens)
 {
+    public DateTime FechaActual => servicio.FechaActual;
+
     public Guid GenerarTokenFormulario()
     {
         if (!servicio.PuedeCrear) throw new UnauthorizedAccessException("No tienes permiso para crear órdenes.");

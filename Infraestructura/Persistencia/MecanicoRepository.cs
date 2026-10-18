@@ -1,12 +1,14 @@
 using System.Data.Common;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia;
 
-public class MecanicoRepository : IRepository<Mecanico>
+public class MecanicoRepository : IRepository<Mecanico>, IConsultaMecanicosPort
 {
+    private const int MaximoSugerencias = 10;
     private readonly DatabaseConnectionFactory _connectionFactory;
 
     public MecanicoRepository(DatabaseConnectionFactory connectionFactory)
@@ -113,6 +115,73 @@ public class MecanicoRepository : IRepository<Mecanico>
         }
 
         return mecanicos;
+    }
+
+    public async Task<IReadOnlyList<SugerenciaMecanico>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default, bool incluirEspecialidad = true)
+    {
+        var palabras = termino.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        if (palabras.Length == 0)
+        {
+            return [];
+        }
+
+        await using DbConnection connection = _connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using DbCommand command = connection.CreateCommand();
+        var condicionesPalabras = new List<string>();
+
+        for (int indice = 0; indice < palabras.Length; indice++)
+        {
+            condicionesPalabras.Add($"""
+                (Nombres COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR Nombres COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!'
+                 OR PrimerApellido COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR PrimerApellido COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!'
+                 OR SegundoApellido COLLATE utf8mb4_0900_ai_ci LIKE @Inicio{indice} ESCAPE '!'
+                 OR SegundoApellido COLLATE utf8mb4_0900_ai_ci LIKE @Palabra{indice} ESCAPE '!')
+                """);
+            var palabraEscapada = EscaparPatron(palabras[indice]);
+            AddParameter(command, $"@Inicio{indice}", $"{palabraEscapada}%");
+            AddParameter(command, $"@Palabra{indice}", $"% {palabraEscapada}%");
+        }
+
+        command.CommandText = $"""
+            SELECT Id, Ci, ComplementoCi, Nombres, PrimerApellido, SegundoApellido, Especialidad
+            FROM Mecanicos
+            WHERE Ci LIKE @PrefijoCi ESCAPE '!'
+               OR ({string.Join(" AND ", condicionesPalabras)})
+            ORDER BY PrimerApellido ASC, SegundoApellido ASC, Nombres ASC,
+                     Ci ASC, ComplementoCi ASC, Id ASC
+            LIMIT @Limite;
+            """;
+        AddParameter(command, "@PrefijoCi", $"{EscaparPatron(termino)}%");
+        AddParameter(command, "@Limite", MaximoSugerencias);
+
+        var sugerencias = new List<SugerenciaMecanico>();
+        await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            sugerencias.Add(MapSugerencia(reader, incluirEspecialidad));
+        }
+
+        return sugerencias;
+    }
+
+    private static SugerenciaMecanico MapSugerencia(DbDataReader reader, bool incluirEspecialidad)
+    {
+        var nombres = new[]
+        {
+            reader.GetString(3), reader.GetString(4),
+            reader.IsDBNull(5) ? string.Empty : reader.GetString(5)
+        };
+        var ci = reader.GetString(1);
+        var complemento = reader.GetString(2);
+        var ciCompleto = string.IsNullOrEmpty(complemento) ? ci : $"{ci}-{complemento}";
+        return new SugerenciaMecanico(
+            reader.GetInt32(0),
+            string.Join(" ", nombres.Where(nombre => !string.IsNullOrWhiteSpace(nombre))),
+            incluirEspecialidad ? $"CI: {ciCompleto} · {reader.GetString(6)}" : $"CI: {ciCompleto}");
     }
 
     public Mecanico? GetById(int id)

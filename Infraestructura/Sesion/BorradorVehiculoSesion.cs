@@ -13,7 +13,8 @@ public sealed class BorradorVehiculoSesion(
 
     private static string Clave(Guid id) => $"Vehiculos:Borrador:{id:N}";
 
-    public Guid Guardar(VehiculoFormViewModel formulario, string modal, string? buscar, Guid? ordenBorradorId = null)
+    public Guid Guardar(VehiculoFormViewModel formulario, string modal, string? buscar,
+        Guid? ordenBorradorId = null, int? vehiculoSeleccionadoId = null)
     {
         if (!currentUser.EstaAutenticado || string.IsNullOrWhiteSpace(currentUser.Username))
             throw new UnauthorizedAccessException("Debes iniciar sesión.");
@@ -24,6 +25,7 @@ public sealed class BorradorVehiculoSesion(
             Formulario = formulario,
             Modal = modal,
             Buscar = buscar,
+            VehiculoSeleccionadoId = vehiculoSeleccionadoId,
             Usuario = currentUser.Username,
             VenceUtc = DateTime.UtcNow.AddMinutes(30),
             OrdenBorradorId = ordenBorradorId

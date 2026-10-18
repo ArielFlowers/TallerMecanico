@@ -10,12 +10,16 @@ namespace TallerMecanico.Aplicacion.Servicios;
 
 public class MecanicoService
 {
+    private const int MinimoCaracteresSugerencias = 2;
+    private const int MaximoCaracteresSugerencias = 100;
+
     private const string MensajeCiDuplicado =
         "Ya existe un mecánico registrado con este CI.";
 
     private static readonly Regex EspaciosConsecutivos = new(@"\s+", RegexOptions.Compiled);
 
     private readonly MecanicoRepository _mecanicoRepository;
+    private readonly IConsultaMecanicosPort _consultaMecanicos;
     private readonly ValidacionMecanicos _validacionMecanicos;
     private readonly ICurrentUser? _currentUser;
 
@@ -25,6 +29,7 @@ public class MecanicoService
         ICurrentUser? currentUser = null)
     {
         _mecanicoRepository = (MecanicoRepository)creadorMecanico.CrearRepositorio();
+        _consultaMecanicos = _mecanicoRepository;
         _validacionMecanicos = validacionMecanicos;
         _currentUser = currentUser;
     }
@@ -53,6 +58,25 @@ public class MecanicoService
         }
 
         return _mecanicoRepository.Search(terminoBusqueda);
+    }
+
+    public IReadOnlyList<Mecanico> ObtenerPorId(int id)
+    {
+        var mecanico = _mecanicoRepository.GetById(id);
+        return mecanico is null ? [] : [mecanico];
+    }
+
+    public Task<IReadOnlyList<SugerenciaMecanico>> SugerirAsync(
+        string? termino, CancellationToken cancellationToken = default, bool incluirEspecialidad = true)
+    {
+        var terminoNormalizado = NormalizarEspacios(termino);
+        if (terminoNormalizado.Length < MinimoCaracteresSugerencias ||
+            terminoNormalizado.Length > MaximoCaracteresSugerencias)
+        {
+            return Task.FromResult<IReadOnlyList<SugerenciaMecanico>>([]);
+        }
+
+        return _consultaMecanicos.SugerirAsync(terminoNormalizado, cancellationToken, incluirEspecialidad);
     }
 
     public (

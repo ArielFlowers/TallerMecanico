@@ -105,7 +105,11 @@ public sealed class ComprobanteOrdenTests
         public OrdenDetalle Orden { get; } = SoporteComprobantePdf.Orden();
         public int Consultas { get; private set; }
         public bool Fallar { get; init; }
-        public IReadOnlyList<OrdenResumen> Obtener(EstadoOrden? estado = null, DateOnly? fecha = null) => [];
+        public IReadOnlyList<OrdenResumen> Obtener(EstadoOrden? estado = null, DateOnly? fecha = null,
+            string? terminoBusqueda = null, int? ordenSeleccionadaId = null) => [];
+        public Task<IReadOnlyList<SugerenciaOrden>> SugerirAsync(string termino, EstadoOrden? estado = null,
+            DateOnly? fecha = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SugerenciaOrden>>([]);
         public OrdenDetalle? ObtenerDetalle(int id)
         {
             Consultas++;

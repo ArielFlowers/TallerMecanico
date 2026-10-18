@@ -1,4 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const buscador = document.getElementById("vehiculos-autocompletado");
+    const formularioBusqueda = document.getElementById("vehiculos-busqueda");
+    buscador?.addEventListener("autocompletado:seleccion", () => {
+        if (formularioBusqueda instanceof HTMLFormElement) {
+            formularioBusqueda.requestSubmit();
+        }
+    });
+
     const catalogo = JSON.parse(document.getElementById("catalogo-vehiculos").textContent);
 
     const validarPlaca = formulario => {

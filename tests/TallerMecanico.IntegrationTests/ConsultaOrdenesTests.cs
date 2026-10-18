@@ -158,7 +158,12 @@ public sealed class ConsultaOrdenesTests
             return id == Detalle.Id ? Detalle : null;
         }
 
-        public IReadOnlyList<OrdenResumen> Obtener(EstadoOrden? estado = null, DateOnly? fecha = null)
+        public Task<IReadOnlyList<SugerenciaOrden>> SugerirAsync(string termino, EstadoOrden? estado = null,
+            DateOnly? fecha = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SugerenciaOrden>>([]);
+
+        public IReadOnlyList<OrdenResumen> Obtener(EstadoOrden? estado = null, DateOnly? fecha = null,
+            string? terminoBusqueda = null, int? ordenSeleccionadaId = null)
         {
             Consultas++;
             Estado = estado;

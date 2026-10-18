@@ -1,4 +1,5 @@
 using MySqlConnector;
+using System.Text.RegularExpressions;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Validaciones;
@@ -8,6 +9,9 @@ namespace TallerMecanico.Aplicacion.Servicios;
 
 public class VehiculoService
 {
+    private const int MinimoCaracteresSugerencias = 2;
+    private const int MaximoCaracteresSugerencias = 100;
+
     private const string MensajePlacaDuplicada =
         "Esta placa ya está registrada.";
 
@@ -59,6 +63,19 @@ public class VehiculoService
             .OrderBy(vehiculo => vehiculo.Placa, CatalogoVehiculos.ComparadorAlfabetico)
             .ThenBy(vehiculo => vehiculo.Id)
             .ToList();
+    }
+
+    public Task<IReadOnlyList<SugerenciaVehiculo>> SugerirAsync(
+        string? termino, CancellationToken cancellationToken = default)
+    {
+        var terminoNormalizado = Regex.Replace((termino ?? string.Empty).Trim(), @"\s+", " ");
+        if (terminoNormalizado.Length < MinimoCaracteresSugerencias ||
+            terminoNormalizado.Length > MaximoCaracteresSugerencias)
+        {
+            return Task.FromResult<IReadOnlyList<SugerenciaVehiculo>>([]);
+        }
+
+        return _vehiculoPort.SugerirAsync(terminoNormalizado, cancellationToken);
     }
 
     public Vehiculo? GetById(

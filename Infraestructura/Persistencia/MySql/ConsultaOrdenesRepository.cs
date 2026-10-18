@@ -9,9 +9,13 @@ namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connectionFactory)
     : IConsultaOrdenesPort
 {
+    private const int MaximoSugerencias = 10;
+
     public IReadOnlyList<OrdenResumen> Obtener(
         EstadoOrden? estado = null,
-        DateOnly? fecha = null)
+        DateOnly? fecha = null,
+        string? terminoBusqueda = null,
+        int? ordenSeleccionadaId = null)
     {
         using DbConnection conexion = connectionFactory.CreateConnection();
         conexion.Open();
@@ -36,17 +40,21 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
             WHERE (@Estado IS NULL OR Orden.Estado = @Estado)
               AND (@Fecha IS NULL OR Orden.Fecha >= @Fecha)
               AND (@FechaSiguiente IS NULL OR Orden.Fecha < @FechaSiguiente)
+              AND (@OrdenId IS NULL OR Orden.Id = @OrdenId)
+              AND (@Prefijo IS NULL
+                   OR CAST(Orden.Id AS CHAR) LIKE @Prefijo ESCAPE '!'
+                   OR Vehiculo.Placa COLLATE utf8mb4_0900_ai_ci LIKE @Prefijo ESCAPE '!')
             ORDER BY Orden.Fecha DESC, Orden.Id DESC;
             """;
 
         using DbCommand comando = conexion.CreateCommand();
         comando.CommandText = consulta;
-        AgregarParametro(comando, "@Estado", estado?.ToString());
-        AgregarParametro(comando, "@Fecha", fecha?.ToDateTime(TimeOnly.MinValue));
-        AgregarParametro(comando, "@FechaSiguiente",
-            fecha.HasValue && fecha.Value < DateOnly.MaxValue
-                ? fecha.Value.AddDays(1).ToDateTime(TimeOnly.MinValue)
-                : null);
+        AgregarFiltros(comando, estado, fecha);
+        AgregarParametro(comando, "@OrdenId", ordenSeleccionadaId);
+        AgregarParametro(comando, "@Prefijo",
+            ordenSeleccionadaId.HasValue || string.IsNullOrWhiteSpace(terminoBusqueda)
+                ? null
+                : $"{EscaparPatron(terminoBusqueda)}%");
 
         using DbDataReader lector = comando.ExecuteReader();
         var ordenes = new List<OrdenResumen>();
@@ -57,6 +65,60 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
         }
 
         return ordenes;
+    }
+
+    public async Task<IReadOnlyList<SugerenciaOrden>> SugerirAsync(
+        string termino,
+        EstadoOrden? estado = null,
+        DateOnly? fecha = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using DbConnection conexion = connectionFactory.CreateConnection();
+        await conexion.OpenAsync(cancellationToken);
+        await using DbCommand comando = conexion.CreateCommand();
+        comando.CommandText = """
+            SELECT Orden.Id, Vehiculo.Placa,
+                   NULLIF(CONCAT_WS(' ', NULLIF(Cliente.Nombres, ''),
+                       NULLIF(Cliente.PrimerApellido, ''), NULLIF(Cliente.SegundoApellido, '')), '')
+            FROM Ordenes AS Orden
+            JOIN Vehiculos AS Vehiculo ON Vehiculo.Id = Orden.VehiculoId
+            LEFT JOIN Clientes AS Cliente ON Cliente.Id = Vehiculo.ClienteId
+            WHERE (@Estado IS NULL OR Orden.Estado = @Estado)
+              AND (@Fecha IS NULL OR Orden.Fecha >= @Fecha)
+              AND (@FechaSiguiente IS NULL OR Orden.Fecha < @FechaSiguiente)
+              AND (CAST(Orden.Id AS CHAR) LIKE @Prefijo ESCAPE '!'
+                   OR Vehiculo.Placa COLLATE utf8mb4_0900_ai_ci LIKE @Prefijo ESCAPE '!')
+            ORDER BY Orden.Fecha DESC, Orden.Id DESC
+            LIMIT @Limite;
+            """;
+        AgregarFiltros(comando, estado, fecha);
+        AgregarParametro(comando, "@Prefijo", $"{EscaparPatron(termino)}%");
+        AgregarParametro(comando, "@Limite", MaximoSugerencias);
+
+        var sugerencias = new List<SugerenciaOrden>();
+        await using DbDataReader lector = await comando.ExecuteReaderAsync(cancellationToken);
+        while (await lector.ReadAsync(cancellationToken))
+        {
+            int id = lector.GetInt32(0);
+            string placa = lector.GetString(1);
+            string textoSecundario = lector.IsDBNull(2) ? placa : $"{placa} · {lector.GetString(2)}";
+            sugerencias.Add(new SugerenciaOrden(id, $"Orden #{id}", textoSecundario));
+        }
+
+        return sugerencias;
+    }
+
+    private static string EscaparPatron(string termino) =>
+        termino.Replace("!", "!!").Replace("%", "!%").Replace("_", "!_");
+
+    private static void AgregarFiltros(DbCommand comando, EstadoOrden? estado, DateOnly? fecha)
+    {
+        AgregarParametro(comando, "@Estado", estado?.ToString());
+        AgregarParametro(comando, "@Fecha", fecha?.ToDateTime(TimeOnly.MinValue));
+        AgregarParametro(comando, "@FechaSiguiente",
+            fecha.HasValue && fecha.Value < DateOnly.MaxValue
+                ? fecha.Value.AddDays(1).ToDateTime(TimeOnly.MinValue)
+                : null);
     }
 
     public OrdenDetalle? ObtenerDetalle(int id)

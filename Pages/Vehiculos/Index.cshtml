@@ -2,11 +2,17 @@
 @model TallerMecanico.Pages.Vehiculos.IndexModel
 @using TallerMecanico.Dominio.Entidades
 @using TallerMecanico.Aplicacion.Validaciones
+@using TallerMecanico.Pages.Shared
 
 @{
     ViewData["Title"] = "Vehículos";
     var datosCrear = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["Prefijo"] = "crear" };
     var datosEditar = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["Prefijo"] = "editar" };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/autocompletado.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/vehiculos.css" asp-append-version="true" />
 }
 
 <div class="dashboard">
@@ -20,23 +26,11 @@
             </p>
         </div>
 
-        <div class="services-actions">
-
-            <partial name="_BuscadorVehiculo"
-                     model="Model.Buscar" />
-
-            <a asp-page="./Index"
-               class="services-btn services-btn-secondary">
-                Refrescar
-            </a>
-
-            <button type="button"
-                    class="services-btn services-btn-primary"
-                    data-modal-abrir="modal-crear">
-                + Nuevo Registro
-            </button>
-
-        </div>
+        <button type="button"
+                class="services-btn services-btn-primary"
+                data-modal-abrir="modal-crear">
+            + Nuevo Registro
+        </button>
 
     </div>
 
@@ -44,6 +38,44 @@
     {
         <div class="service-validation" role="alert">@Model.MensajeError</div>
     }
+
+    <div class="services-actions vehiculos-toolbar">
+        <form method="get" asp-page-handler="Buscar"
+              class="buscador services-actions vehiculos-search" id="vehiculos-busqueda"
+              role="search">
+            <input type="hidden" name="handler" value="Buscar" />
+            <input type="hidden" name="OrdenBorradorId" value="@Model.OrdenBorradorId" />
+            <input type="hidden" name="ClientePreseleccionadoId" value="@Model.ClientePreseleccionadoId" />
+            <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+            {
+                Id = "vehiculos-autocompletado",
+                UrlSugerencias = Url.Page("./Index", "Sugerencias")!,
+                Modo = BuscadorAutocompletadoModel.ModoFiltrar,
+                Etiqueta = "Buscar vehículos",
+                Placeholder = "Buscar por placa, marca o modelo...",
+                NombreCampoTexto = nameof(Model.Buscar),
+                NombreCampoId = nameof(Model.VehiculoSeleccionadoId),
+                Texto = Model.Buscar ?? string.Empty,
+                IdSeleccionado = Model.VehiculoSeleccionadoId
+            }' />
+            <button type="submit" class="services-btn services-btn-secondary">Buscar</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Buscar) || Model.VehiculoSeleccionadoId.HasValue)
+            {
+                <a asp-page="./Index" asp-page-handler="Buscar"
+                   asp-route-ordenBorradorId="@Model.OrdenBorradorId"
+                   asp-route-clientePreseleccionadoId="@Model.ClientePreseleccionadoId"
+                   class="services-btn services-btn-secondary">Limpiar</a>
+            }
+        </form>
+
+        <a asp-page="./Index"
+           asp-page-handler="Buscar"
+           asp-route-ordenBorradorId="@Model.OrdenBorradorId"
+           asp-route-clientePreseleccionadoId="@Model.ClientePreseleccionadoId"
+           class="services-btn services-btn-secondary">
+            Refrescar
+        </a>
+    </div>
 
     <section class="recent-orders">
 
@@ -364,6 +396,10 @@
             <input type="hidden"
                    name="id"
                    id="eliminar-id" />
+            <input type="hidden" name="Buscar" value="@Model.Buscar" />
+            <input type="hidden" name="VehiculoSeleccionadoId" value="@Model.VehiculoSeleccionadoId" />
+            <input type="hidden" name="OrdenBorradorId" value="@Model.OrdenBorradorId" />
+            <input type="hidden" name="ClientePreseleccionadoId" value="@Model.ClientePreseleccionadoId" />
 
             <div class="service-delete-warning">
 
@@ -400,6 +436,8 @@
 
 
 @section Scripts {
+
+    <script src="~/js/autocompletado.js" asp-append-version="true"></script>
 
     <script id="catalogo-vehiculos"
             type="application/json">

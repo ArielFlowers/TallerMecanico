@@ -1,4 +1,5 @@
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.Aplicacion.Puertos;
 
@@ -9,6 +10,9 @@ public interface IClientePort
     Cliente? GetById(int id);
 
     IReadOnlyList<Cliente> Search(string terminoBusqueda);
+
+    Task<IReadOnlyList<SugerenciaCliente>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default);
 
     bool ExistsByCi(
         string ci,

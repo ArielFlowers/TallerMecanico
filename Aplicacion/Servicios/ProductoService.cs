@@ -1,4 +1,5 @@
 using MySqlConnector;
+using System.Text.RegularExpressions;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Validaciones;
@@ -8,6 +9,9 @@ namespace TallerMecanico.Aplicacion.Servicios;
 
 public class ProductoService
 {
+    private const int MinimoCaracteresSugerencias = 2;
+    private const int MaximoCaracteresSugerencias = 100;
+
     private const string MensajeCodigoDuplicado =
         "Ya existe un producto registrado con este código.";
 
@@ -44,6 +48,19 @@ public class ProductoService
 
         return _productoPort.Search(
             terminoBusqueda.Trim());
+    }
+
+    public Task<IReadOnlyList<SugerenciaProducto>> SugerirAsync(
+        string? termino, CancellationToken cancellationToken = default)
+    {
+        var terminoNormalizado = Regex.Replace((termino ?? string.Empty).Trim(), @"\s+", " ");
+        if (terminoNormalizado.Length < MinimoCaracteresSugerencias ||
+            terminoNormalizado.Length > MaximoCaracteresSugerencias)
+        {
+            return Task.FromResult<IReadOnlyList<SugerenciaProducto>>([]);
+        }
+
+        return _productoPort.SugerirAsync(terminoNormalizado, cancellationToken);
     }
 
     public Producto? ObtenerPorId(
