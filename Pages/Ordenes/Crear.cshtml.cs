@@ -37,6 +37,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     public decimal TotalEstimado => Total + CostoServicioSeleccionado;
     public string? Mensaje { get; private set; }
     public int? OrdenCreadaId { get; private set; }
+    public DateTime FechaOrden => facade.FechaActual;
 
     public async Task<JsonResult> OnGetSugerenciasVehiculosAsync(string? termino) =>
         new(await vehiculos.SugerirAsync(termino, HttpContext.RequestAborted));
@@ -128,7 +129,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         if (Formulario.Lineas.Count == 0 && !Formulario.ServicioId.HasValue)
             ModelState.AddModelError("", "Agrega al menos un producto o selecciona un servicio.");
         if (!ModelState.IsValid) return Page();
-        var solicitud = new CrearOrdenSolicitud(Formulario.VehiculoId, Formulario.MecanicoId, Formulario.Fecha,
+        var solicitud = new CrearOrdenSolicitud(Formulario.VehiculoId, Formulario.MecanicoId, FechaOrden,
             Formulario.Token, Formulario.Lineas.Select(x => new LineaOrdenSolicitud(x.ProductoId, x.Cantidad)).ToArray(),
             Formulario.ServicioId);
         ResultadoOrden resultado = facade.CrearOrden(solicitud);
@@ -143,6 +144,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
             ? $"La orden #{resultado.OrdenId} ya se había guardado. Total: Bs. {resultado.Total:0.00}."
             : $"Orden #{resultado.OrdenId} guardada correctamente. Total: Bs. {resultado.Total:0.00}.";
         TempData["OrdenCreadaId"] = resultado.OrdenId;
+        TempData["OrdenComprobanteToken"] = Formulario.Token.ToString("N");
         return RedirectToPage("./Index");
     }
 

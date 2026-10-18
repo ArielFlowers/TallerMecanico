@@ -71,14 +71,13 @@
     }
     @if (Model.OrdenCreadaId.HasValue)
     {
+        var tokenComprobante = TempData["OrdenComprobanteToken"] as string;
         <div class="service-validation" role="status">
-            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value" target="_blank" rel="noopener">Ver comprobante de la orden #@Model.OrdenCreadaId.Value (se abre automáticamente)</a>
+            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value" target="_blank" rel="noopener"
+               data-comprobante-creado data-token="@tokenComprobante">Ver comprobante de la orden #@Model.OrdenCreadaId.Value</a>
+            <span>Si no se abrió automáticamente, utiliza este enlace. No es necesario volver a guardar la orden.</span>
         </div>
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                window.open('@Url.Page("./Comprobante", new { id = Model.OrdenCreadaId.Value })', '_blank', 'noopener');
-            });
-        </script>
+        <script src="~/js/orden-comprobante.js" asp-append-version="true"></script>
     }
 
     <section class="recent-orders" aria-labelledby="ordenes-listado-titulo">

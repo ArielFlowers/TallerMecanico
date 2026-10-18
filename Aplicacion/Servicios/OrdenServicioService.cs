@@ -13,7 +13,9 @@ public sealed class OrdenServicioService(
     ILogger<OrdenServicioService> logger)
 {
     private const decimal ImporteMaximo = 9999999999999999.99m;
+    private static readonly TimeSpan DesfaseBolivia = TimeSpan.FromHours(-4);
 
+    public DateTime FechaActual => reloj.GetUtcNow().ToOffset(DesfaseBolivia).Date;
     public bool PuedeCrear => UsuarioValido && currentUser.Rol is "Administrador" or "Recepcionista";
     public bool PuedeAnular => UsuarioValido && currentUser.Rol == "Administrador";
     private bool UsuarioValido => currentUser.EstaAutenticado && !string.IsNullOrWhiteSpace(currentUser.Username);
@@ -21,6 +23,7 @@ public sealed class OrdenServicioService(
     public ResultadoOrden CrearOrden(CrearOrdenSolicitud solicitud)
     {
         if (!PuedeCrear) return ResultadoOrden.Fallo(string.Empty, "No tienes permiso para crear órdenes.");
+        solicitud = solicitud with { Fecha = FechaActual };
         var errores = validador.Validar(solicitud);
         if (errores.Count > 0) return ResultadoOrden.Fallo(errores);
 

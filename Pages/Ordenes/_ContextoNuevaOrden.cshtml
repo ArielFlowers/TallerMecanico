@@ -1,10 +1,8 @@
 @model TallerMecanico.Pages.Ordenes.CrearModel
-@using System.Globalization
 
 <input type="hidden" name="Formulario.VehiculoId" value="@Model.Formulario.VehiculoId" />
 <input type="hidden" name="Formulario.MecanicoId" value="@Model.Formulario.MecanicoId" />
 <input type="hidden" name="Formulario.ServicioId" value="@Model.Formulario.ServicioId" />
-<input type="hidden" name="Formulario.Fecha" value="@Model.Formulario.Fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" />
 <input type="hidden" name="Formulario.Token" value="@Model.Formulario.Token" />
 <input type="hidden" name="Formulario.ClienteNuevoId" value="@Model.Formulario.ClienteNuevoId" />
 <input type="hidden" name="BorradorId" value="@Model.BorradorId" />

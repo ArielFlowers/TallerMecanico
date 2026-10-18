@@ -130,7 +130,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
         finally { File.Delete(rutaCertificado); }
     }
 
-    private static ProcessStartInfo PrepararServidor(MySqlAisladoFixture aislada, string url, string certificado, string password)
+    internal static ProcessStartInfo PrepararServidor(MySqlAisladoFixture aislada, string url, string certificado, string password)
     {
         var inicio = new ProcessStartInfo("dotnet")
         {
@@ -145,12 +145,12 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
         return inicio;
     }
-    private static HttpClient NuevoCliente(string url, CookieContainer cookies) => new(new HttpClientHandler
+    internal static HttpClient NuevoCliente(string url, CookieContainer cookies) => new(new HttpClientHandler
     {
         AllowAutoRedirect = false, CookieContainer = cookies, ServerCertificateCustomValidationCallback = (_, _, _, _) => true
     }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(5) };
 
-    private static async Task IniciarSesion(HttpClient cliente, string usuario, string password)
+    internal static async Task IniciarSesion(HttpClient cliente, string usuario, string password)
     {
         string html = await cliente.GetStringAsync("/Auth/Login");
         string campo = Regex.Match(html, "<input[^>]+name=\"__RequestVerificationToken\"[^>]*>").Value;

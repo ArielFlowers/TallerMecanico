@@ -4,6 +4,7 @@
 @using TallerMecanico.Pages.Shared
 @{
     ViewData["Title"] = "Crear orden";
+    var fechaOrden = Model.FechaOrden;
 }
 
 <div class="dashboard ordenes-page nueva-orden-page">
@@ -14,7 +15,7 @@
     @if (!string.IsNullOrWhiteSpace(Model.Mensaje)) { <div class="service-validation" role="status">@Model.Mensaje</div> }
     <div asp-validation-summary="ModelOnly" class="service-validation" role="alert"></div>
 
-    <form method="post" id="formulario-orden" asp-page-handler="Guardar" onsubmit="return confirm('¿Guardar orden?');"
+    <form method="post" id="formulario-orden" asp-page-handler="Guardar"
           data-vehiculo-url="@Url.Page("./Crear", "VehiculoSeleccionado")"
           data-servicio-url="@Url.Page("./Crear", "ServicioSeleccionado")"
           data-costo-servicio="@Model.CostoServicioSeleccionado.ToString(CultureInfo.InvariantCulture)">
@@ -71,10 +72,11 @@
                     }' />
                     <span asp-validation-for="Formulario.MecanicoId" class="service-validation"></span>
                 </div>
-                <label>Fecha
-                    <input asp-for="Formulario.Fecha" class="service-input" type="date" value="@Model.Formulario.Fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" required />
-                    <span asp-validation-for="Formulario.Fecha" class="service-validation"></span>
-                </label>
+                <div class="ordenes-fecha">
+                    <span id="orden-fecha-etiqueta">Fecha de la orden</span>
+                    <time class="service-input" aria-labelledby="orden-fecha-etiqueta"
+                          datetime="@fechaOrden.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">@fechaOrden.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</time>
+                </div>
             </div>
             @if (Model.Formulario.ClienteNuevoId.HasValue)
             {
@@ -181,4 +183,5 @@
     <script src="~/js/autocompletado.js" asp-append-version="true"></script>
     <script src="~/js/ordenes.js" asp-append-version="true"></script>
     <script src="~/js/nueva-orden.js" asp-append-version="true"></script>
+    <script src="~/js/orden-comprobante.js" asp-append-version="true"></script>
 }

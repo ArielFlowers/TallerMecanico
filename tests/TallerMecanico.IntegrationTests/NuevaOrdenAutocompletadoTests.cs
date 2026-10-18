@@ -54,7 +54,6 @@ public sealed class NuevaOrdenAutocompletadoTests
         var pagina = CrearPagina(aislada, sesion);
         pagina.OnGet();
         pagina.Formulario.VehiculoId = 1; pagina.Formulario.MecanicoId = 1; pagina.Formulario.ServicioId = 1;
-        pagina.Formulario.Fecha = new DateTime(2026, 10, 12);
         pagina.ProductoId = 1; pagina.Cantidad = 2;
         var agregado = Assert.IsType<RedirectToPageResult>(pagina.OnPostAgregarLinea());
         Guid id = (Guid)agregado.RouteValues!["BorradorId"]!;
@@ -147,14 +146,15 @@ public sealed class NuevaOrdenAutocompletadoTests
         Assert.Equal(15L, Convert.ToInt64(aislada.Escalar("SELECT SUM(Stock) FROM Productos;")));
     }
 
-    internal static PaginaOrden CrearPagina(MySqlAisladoFixture aislada, SesionPrueba? sesion = null)
+    internal static PaginaOrden CrearPagina(MySqlAisladoFixture aislada, SesionPrueba? sesion = null, TimeProvider? reloj = null)
     {
+        reloj ??= TimeProvider.System;
         var contexto = new DefaultHttpContext { Session = sesion ?? new SesionPrueba() };
         var acceso = new HttpContextAccessor { HttpContext = contexto };
         var usuario = new UsuarioPrueba();
         var ordenes = new OrdenServicioService(new MySqlUnidadTrabajoOrden(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance),
-            usuario, new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
-        var pagina = new PaginaOrden(new OrdenServicioFacade(ordenes, new TokenOrdenSesion(acceso, usuario, TimeProvider.System)),
+            usuario, new ValidacionOrdenes(), reloj, NullLogger<OrdenServicioService>.Instance);
+        var pagina = new PaginaOrden(new OrdenServicioFacade(ordenes, new TokenOrdenSesion(acceso, usuario, reloj)),
             new BorradorOrdenSesion(acceso, usuario), VehiculosAutocompletadoTests.CrearServicio(aislada),
             new MecanicoService(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos(), usuario),
             ProductosAutocompletadoTests.CrearServicio(aislada), ClientesAutocompletadoTests.CrearServicio(aislada),

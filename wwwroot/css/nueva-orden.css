@@ -15,6 +15,7 @@
 }
 
 .nueva-orden-page .ordenes-cabecera > label,
+.nueva-orden-page .ordenes-fecha,
 .nueva-orden-page .ordenes-agregar,
 .nueva-orden-page .ordenes-agregar > label {
     display: grid;

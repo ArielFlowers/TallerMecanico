@@ -10,7 +10,7 @@
                 formulario.elements.namedItem("ProductoId").value = producto.value;
                 formulario.elements.namedItem("BuscarProducto").value = document.getElementById("orden-producto-texto").value;
             }
-            for (const nombre of ["Formulario.VehiculoId", "Formulario.MecanicoId", "Formulario.ServicioId", "Formulario.Fecha", "Formulario.ClienteNuevoId", "BuscarVehiculo", "TextoServicio", "TextoMecanico"]) {
+            for (const nombre of ["Formulario.VehiculoId", "Formulario.MecanicoId", "Formulario.ServicioId", "Formulario.ClienteNuevoId", "BuscarVehiculo", "TextoServicio", "TextoMecanico"]) {
                 const origen = formulario.elements.namedItem(nombre);
                 const campo = destino.elements.namedItem(nombre);
                 if (!origen || !campo) continue;
