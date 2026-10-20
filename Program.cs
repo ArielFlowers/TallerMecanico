@@ -2,6 +2,7 @@ using TallerMecanico.Infraestructura.Correo;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -21,6 +22,23 @@ using TallerMecanico.Infraestructura.Documentos;
 
 var builder =
     WebApplication.CreateBuilder(args);
+
+// =====================================================
+// H1: CABECERAS DEL PROXY INVERSO NGINX
+// =====================================================
+// Nginx termina HTTPS y se comunica por HTTP con Kestrel.
+// Confiamos exclusivamente en la red Docker de desarrollo
+// detectada con: docker network inspect tallermecanico_default.
+// Si Docker cambia de subred, actualizar este valor.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownIPNetworks.Add(
+        System.Net.IPNetwork.Parse("172.19.0.0/16"));
+});
 
 // =====================================================
 // H1: DATA PROTECTION COMPARTIDA ENTRE RÉPLICAS
@@ -434,13 +452,18 @@ using (IServiceScope scope =
             .GetRequiredService<DatabaseInitializer>();
     databaseInitializer.Initialize();
 }
+
+// Debe ejecutarse antes de HSTS, redirecciones y autenticación,
+// para que Request.Scheme refleje el HTTPS recibido por Nginx.
+app.UseForwardedHeaders();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-// Nginx escucha HTTP únicamente en localhost durante esta práctica.
-// HTTPS debe habilitarse en Nginx antes de usar un entorno real.
+// En Development mantenemos HTTP local para las pruebas de H1.
+// Nginx también acepta HTTPS con mkcert en el puerto 443.
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
