@@ -46,6 +46,11 @@
                 <span>Hoy</span>
                 <strong>@DateTime.Now.ToString(configuracion.FormatoFecha)</strong>
             </div>
+
+            <div class="dashboard-date" title="Identificador real del contenedor que atendió esta solicitud">
+                <span>Réplica activa</span>
+                <strong>@System.Environment.MachineName</strong>
+            </div>
         </div>
 
         <div class="metrics-grid">
