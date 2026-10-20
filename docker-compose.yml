@@ -1,17 +1,119 @@
+
+# ============================================
+# CONFIGURACIÓN COMÚN DE LAS 3 RÉPLICAS
+# ============================================
+
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+
+  image: taller-mecanico:h1
+
+  environment:
+    ASPNETCORE_ENVIRONMENT: Development
+    ASPNETCORE_URLS: http://+:8080
+
+    ConnectionStrings__MySqlConnection: "Server=mysql;Port=3306;Database=taller_mecanico;User ID=taller;Password=${MYSQL_PASSWORD:?Configura MYSQL_PASSWORD en .env};"
+
+    DataProtection__KeysPath: /app/shared-keys
+
+  volumes:
+    - taller-dpkeys:/app/shared-keys
+
+  depends_on:
+    mysql:
+      condition: service_healthy
+
+  restart: unless-stopped
+
+# ============================================
+# SERVICIOS
+# ============================================
+
 services:
+
+  # ------------------------------------------
+  # BASE DE DATOS MYSQL
+  # ------------------------------------------
   mysql:
     image: mysql:8.0
     container_name: taller-mecanico-mysql
+
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
       MYSQL_DATABASE: taller_mecanico
       MYSQL_USER: taller
-      MYSQL_PASSWORD: taller123
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Configura MYSQL_PASSWORD en .env}
+
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3307:3306"
+
     command: --log-bin-trust-function-creators=1
+
     volumes:
       - taller-mysql-data:/var/lib/mysql
 
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+    restart: unless-stopped
+
+  # ------------------------------------------
+  # RÉPLICA 1
+  # ------------------------------------------
+  app1:
+    <<: *app-common
+
+    ports:
+      - "127.0.0.1:5000:8080"
+
+  # ------------------------------------------
+  # RÉPLICA 2
+  # ------------------------------------------
+  app2:
+    <<: *app-common
+
+    ports:
+      - "127.0.0.1:5001:8080"
+
+  # ------------------------------------------
+  # RÉPLICA 3
+  # ------------------------------------------
+  app3:
+    <<: *app-common
+
+    ports:
+      - "127.0.0.1:5002:8080"
+
+  # ------------------------------------------
+  # NGINX - BALANCEADOR DE CARGA
+  # ------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+
+    ports:
+      - "127.0.0.1:8088:80"
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+    depends_on:
+      - app1
+      - app2
+      - app3
+
+    restart: unless-stopped
+
+# ============================================
+# VOLÚMENES PERSISTENTES
+# ============================================
+
 volumes:
   taller-mysql-data:
+  taller-dpkeys:

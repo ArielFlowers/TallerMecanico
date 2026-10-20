@@ -1,6 +1,7 @@
 using TallerMecanico.Infraestructura.Correo;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -21,27 +22,48 @@ using TallerMecanico.Infraestructura.Documentos;
 var builder =
     WebApplication.CreateBuilder(args);
 
+// =====================================================
+// H1: DATA PROTECTION COMPARTIDA ENTRE RÉPLICAS
+// =====================================================
+// Se configura DataProtection__KeysPath en Docker Compose.
+// Las 3 réplicas usan el mismo volumen para sus claves.
+var dataProtection = builder.Services
+    .AddDataProtection()
+    .SetApplicationName("AutoTallerPro");
+
+string? directorioClaves =
+    builder.Configuration["DataProtection:KeysPath"];
+
+if (!string.IsNullOrWhiteSpace(directorioClaves))
+{
+    Directory.CreateDirectory(directorioClaves);
+    dataProtection.PersistKeysToFileSystem(
+        new DirectoryInfo(directorioClaves));
+}
+
+// En Development solamente: permitir cookies sobre HTTP para
+// pruebas en localhost:80 y localhost:5000-5002.
+// En cualquier otro entorno las cookies exigen HTTPS.
+var politicaCookieSegura = builder.Environment.IsDevelopment()
+    ? CookieSecurePolicy.SameAsRequest
+    : CookieSecurePolicy.Always;
 
 builder.Services.AddRazorPages(options =>
 {
     // Todas las páginas requieren iniciar sesión.
     options.Conventions.AuthorizeFolder("/");
-
     // Páginas públicas de autenticación.
     options.Conventions.AllowAnonymousToPage("/Auth/Login");
     options.Conventions.AllowAnonymousToPage("/Auth/VerificarEmail");
     options.Conventions.AllowAnonymousToPage("/Auth/Registro");
     options.Conventions.AllowAnonymousToPage("/Auth/ReenviarVerificacion");
-
     // Administración exclusiva.
     options.Conventions.AuthorizeFolder(
         "/Historial",
         "SoloAdministrador");
-
     options.Conventions.AuthorizeFolder(
         "/Servicios",
         "SoloAdministrador");
-
     // Páginas disponibles para ambos roles.
     options.Conventions.AuthorizeFolder(
         "/Administracion",
@@ -49,13 +71,10 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder(
         "/Clientes",
         "PersonalAutorizado");
-
     options.Conventions.AuthorizeFolder(
         "/Vehiculos",
         "PersonalAutorizado");
-
     options.Conventions.AuthorizeFolder("/Ordenes", "PersonalAutorizado");
-
     options.Conventions.AuthorizeFolder(
         "/Productos",
         "PersonalAutorizado");
@@ -63,10 +82,7 @@ builder.Services.AddRazorPages(options =>
     "/Mecanicos",
     "SoloAdministrador");
 });
-
-
 builder.Services.AddHttpContextAccessor();
-
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
 builder.Services.AddSingleton(TimeProvider.System);
@@ -77,7 +93,6 @@ builder.Services.AddScoped<IUnidadTrabajoOrdenPort, MySqlUnidadTrabajoOrden>();
 builder.Services.AddScoped<ValidacionOrdenes>();
 builder.Services.AddScoped<OrdenServicioService>();
 builder.Services.AddScoped<OrdenServicioFacade>();
-
 builder.Services.AddScoped<CreadorConsultaOrdenes>();
 builder.Services.AddScoped<IConsultaOrdenesPort>(serviceProvider =>
     serviceProvider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
@@ -87,73 +102,51 @@ builder.Services.AddSingleton<ImporteEnPalabras>();
 builder.Services.AddScoped<IComprobanteOrdenPdf, ComprobanteOrdenPdf>();
 builder.Services.AddScoped<ComprobanteOrdenService>();
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(
         Argon2idOptions.SectionName));
-
 builder.Services.AddSingleton<
     IPasswordHasher,
     Argon2idPasswordHasher>();
-
 builder.Services.AddSingleton<IFallbackHash, AuthenticationFallbackHash>();
-
-
 // =====================================================
 // AUTENTICACIÓN DE USUARIOS
 // =====================================================
-
 builder.Services.AddScoped<
     IUsuarioPort,
     UsuarioRepository>();
-
 builder.Services.AddScoped<
     ISolicitudRegistroPort,
     SolicitudRegistroRepository>();
-
 builder.Services.AddScoped<RegistroUsuarioService>();
-
 builder.Services.AddScoped<VerificacionEmailService>();
-
 builder.Services.AddScoped<IEmailService, GmailEmailService>();
 builder.Services.AddScoped<RegistroFacade>();
 builder.Services.AddScoped<ReenvioVerificacionService>();
-
 builder.Services.AddScoped<
     IRevisionSolicitudesPort,
     RevisionSolicitudesRepository>();
-
 builder.Services.AddScoped<RevisionSolicitudesService>();
-
 builder.Services.AddScoped<
     IAuthenticationService,
     AuthenticationService>();
-
 builder.Services.AddScoped<
     IAuditoriaPort,
     AuditoriaRepository>();
-
 builder.Services.AddScoped<
     DatabaseConnectionFactory,
     MySqlConnectionFactory>();
-
 builder.Services.AddScoped<
     InicializadorUsuarios>();
-
 builder.Services.AddScoped<
     InicializacionUsuariosConsola>();
-
 builder.Services.AddScoped<
     RestablecimientoAdminConsola>();
-
 builder.Services.AddScoped<
     DatabaseInitializer>();
-
-
 // =====================================================
 // AUTENTICACIÓN POR COOKIES
 // =====================================================
-
 builder.Services
     .AddAuthentication(
         CookieAuthenticationDefaults.AuthenticationScheme)
@@ -161,22 +154,18 @@ builder.Services
     {
         options.LoginPath = "/Auth/Login";
         options.AccessDeniedPath = "/Auth/AccessDenied";
-
         options.Cookie.Name = "AutoTaller.Auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy =
-            CookieSecurePolicy.Always;
-
+            politicaCookieSegura;
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         options.SlidingExpiration = true;
     });
 
-
 // =====================================================
 // AUTORIZACIÓN POR ROLES
 // =====================================================
-
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SoloAdministrador", policy =>
@@ -184,7 +173,6 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser();
         policy.RequireRole("Administrador");
     });
-
     options.AddPolicy("PersonalAutorizado", policy =>
     {
         policy.RequireAuthenticatedUser();
@@ -194,41 +182,33 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
-
 // =====================================================
 // SESSION
 // =====================================================
-
 builder.Services.AddDistributedMemoryCache();
-
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
-
     options.Cookie.Name = "AutoTaller.Session";
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy =
-        CookieSecurePolicy.Always;
+        politicaCookieSegura;
 });
-
 
 // =====================================================
 // PROTECCIÓN CONTRA INTENTOS REPETIDOS DE LOGIN
 // =====================================================
-
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode =
         StatusCodes.Status429TooManyRequests;
-
     options.AddPolicy("EmailVerificationRateLimit", context =>
     {
         string direccionIp =
             context.Connection.RemoteIpAddress?
                 .ToString() ?? "desconocida";
-
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: direccionIp,
             factory: _ => new FixedWindowRateLimiterOptions
@@ -244,7 +224,6 @@ builder.Services.AddRateLimiter(options =>
         string direccionIp =
             context.Connection.RemoteIpAddress?
                 .ToString() ?? "desconocida";
-
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: direccionIp,
             factory: _ => new FixedWindowRateLimiterOptions
@@ -255,13 +234,11 @@ builder.Services.AddRateLimiter(options =>
                 AutoReplenishment = true
             });
     });
-
     options.AddPolicy("RegistroRateLimit", context =>
     {
         string direccionIp =
             context.Connection.RemoteIpAddress?
                 .ToString() ?? "desconocida";
-
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: direccionIp,
             factory: _ => new FixedWindowRateLimiterOptions
@@ -277,7 +254,6 @@ builder.Services.AddRateLimiter(options =>
         string direccionIp =
             context.Connection.RemoteIpAddress?
                 .ToString() ?? "desconocida";
-
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: direccionIp,
             factory: _ => new FixedWindowRateLimiterOptions
@@ -290,145 +266,110 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-
-
 // =====================================================
 // FACTORY METHOD
 // =====================================================
-
 builder.Services.AddScoped<CreadorMecanico>();
 builder.Services.AddScoped<CreadorVehiculo>();
 builder.Services.AddScoped<CreadorServicio>();
 builder.Services.AddScoped<CreadorCliente>();
 builder.Services.AddScoped<CreadorProducto>();
-
 builder.Services.AddScoped<IRepository<Mecanico>>(
     serviceProvider =>
         serviceProvider
             .GetRequiredService<CreadorMecanico>()
             .CrearRepositorio());
-
 builder.Services.AddScoped<IRepository<Servicio>>(
     serviceProvider =>
         serviceProvider
             .GetRequiredService<CreadorServicio>()
             .CrearRepositorio());
-
 builder.Services.AddScoped<IRepository<Vehiculo>>(
     serviceProvider =>
         serviceProvider
             .GetRequiredService<CreadorVehiculo>()
             .CrearRepositorio());
-
 builder.Services.AddScoped<IRepository<Cliente>>(
     serviceProvider =>
         serviceProvider
             .GetRequiredService<CreadorCliente>()
             .CrearRepositorio());
-
 builder.Services.AddScoped<IRepository<Producto>>(
     serviceProvider =>
         serviceProvider
             .GetRequiredService<CreadorProducto>()
             .CrearRepositorio());
-
 // =====================================================
 // PUERTOS HEXAGONALES
 // =====================================================
-
 builder.Services.AddScoped<IClientePort>(
     serviceProvider =>
         (IClientePort)
         serviceProvider
             .GetRequiredService<IRepository<Cliente>>());
-
 builder.Services.AddScoped<IVehiculoPort>(
     serviceProvider =>
         (IVehiculoPort)
         serviceProvider
             .GetRequiredService<IRepository<Vehiculo>>());
-
 builder.Services.AddScoped<IProductoPort>(
     serviceProvider =>
         (IProductoPort)
         serviceProvider
             .GetRequiredService<IRepository<Producto>>());
-
 // =====================================================
 // MECÁNICOS
 // =====================================================
-
 builder.Services.AddScoped<ValidacionMecanicos>();
 builder.Services.AddScoped<MecanicoService>();
-
 // =====================================================
 // SERVICIOS
 // =====================================================
-
 builder.Services.AddScoped<
     IServicioService,
     ServicioService>();
-
 builder.Services.AddScoped<
     ValidacionServicios>();
-
 // =====================================================
 // HISTORIAL
 // =====================================================
-
 builder.Services.AddScoped<
     IHistorialCostoServicioRepository,
     HistorialCostoServicioRepository>();
-
 builder.Services.AddScoped<
     IHistorialCostoServicioService,
     HistorialCostoServicioService>();
-
 // =====================================================
 // VEHÍCULOS
 // =====================================================
-
 builder.Services.AddScoped<
     ValidacionVehiculos>();
-
 builder.Services.AddScoped<
     VehiculoService>();
-
 // =====================================================
 // CLIENTES
 // =====================================================
-
 builder.Services.AddScoped<
     ValidacionClientes>();
-
 builder.Services.AddScoped<
     ClienteService>();
-
 // =====================================================
 // PRODUCTOS
 // =====================================================
-
 builder.Services.AddScoped<
     ValidacionProductos>();
-
 builder.Services.AddScoped<
     ProductoService>();
-
 // =====================================================
 // DASHBOARD
 // =====================================================
-
 builder.Services.AddScoped<
     DashboardService>();
-
-
 var app =
     builder.Build();
-
 // =====================================================
 // RESTABLECIMIENTO ADMINISTRATIVO DE CONTRASEÑA
 // =====================================================
-
 if (args.Contains(
         "--restablecer-admin",
         StringComparer.OrdinalIgnoreCase))
@@ -438,30 +379,25 @@ if (args.Contains(
         throw new InvalidOperationException(
             "El comando no admite argumentos adicionales.");
     }
-
     if (!app.Environment.IsDevelopment())
     {
         throw new InvalidOperationException(
             "El restablecimiento solo está permitido en Development.");
     }
-
     using (IServiceScope scope =
            app.Services.CreateScope())
     {
         RestablecimientoAdminConsola restablecimiento =
             scope.ServiceProvider
                 .GetRequiredService<RestablecimientoAdminConsola>();
-
         restablecimiento.Ejecutar();
     }
-
     return;
 }
 
 // =====================================================
 // INICIALIZACION ADMINISTRATIVA DE USUARIOS
 // =====================================================
-
 if (args.Contains(
         "--inicializar-usuarios",
         StringComparer.OrdinalIgnoreCase))
@@ -471,64 +407,61 @@ if (args.Contains(
         throw new InvalidOperationException(
             "El comando administrativo no admite argumentos adicionales.");
     }
-
     if (!app.Environment.IsDevelopment())
     {
         throw new InvalidOperationException(
             "La inicialización de usuarios solo está permitida en Development.");
     }
-
     using (IServiceScope scope =
            app.Services.CreateScope())
     {
         InicializacionUsuariosConsola inicializacion =
             scope.ServiceProvider
                 .GetRequiredService<InicializacionUsuariosConsola>();
-
         inicializacion.Ejecutar();
     }
-
     return;
 }
 
 // =====================================================
 // INICIALIZACION NORMAL DE BASE DE DATOS
 // =====================================================
-
 using (IServiceScope scope =
        app.Services.CreateScope())
 {
     DatabaseInitializer databaseInitializer =
         scope.ServiceProvider
             .GetRequiredService<DatabaseInitializer>();
-
     databaseInitializer.Initialize();
 }
-
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-
-app.UseHttpsRedirection();
+// Nginx escucha HTTP únicamente en localhost durante esta práctica.
+// HTTPS debe habilitarse en Nginx antes de usar un entorno real.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseRouting();
-
 app.UseRateLimiter();
-
 app.UseSession();
-
 app.UseAuthentication();
-
 app.UseAuthorization();
-
-
+// H1: endpoint liviano para comprobar balanceo y réplica real.
+// No reemplaza la identificación visible que agregaremos en Index.
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/h1/replica", () => Results.Ok(new
+    {
+        replica = Environment.MachineName
+    })).AllowAnonymous();
+}
 
 app.MapStaticAssets();
-
 app.MapRazorPages()
     .WithStaticAssets();
-
 app.Run();
