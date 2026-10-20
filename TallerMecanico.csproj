@@ -12,6 +12,7 @@
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <PackageReference Include="Humanizer.Core.es" Version="3.0.10" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="tests\**\*.cs" />
