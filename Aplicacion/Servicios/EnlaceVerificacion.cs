@@ -21,11 +21,19 @@ public static class EnlaceVerificacion
         return uri;
     }
 
-    public static string Crear(Uri uriBase, string token)
+    public static string CrearVerificacion(Uri uriBase, string token)
     {
         return new Uri(
             uriBase,
             "/Auth/VerificarEmail?token=" + Uri.EscapeDataString(token))
+            .AbsoluteUri;
+    }
+
+    public static string CrearActivacionInvitacion(Uri uriBase, string token)
+    {
+        return new Uri(
+            uriBase,
+            "/Auth/ActivarInvitacion?token=" + Uri.EscapeDataString(token))
             .AbsoluteUri;
     }
 }

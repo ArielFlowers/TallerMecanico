@@ -16,4 +16,6 @@ public sealed class RegistroAuditoria
     public string? EntidadId { get; set; }
 
     public DateTime Fecha { get; set; } = DateTime.UtcNow;
+
+    public string? Detalle { get; set; }
 }

@@ -73,6 +73,7 @@ builder.Services.AddRazorPages(options =>
     // Páginas públicas de autenticación.
     options.Conventions.AllowAnonymousToPage("/Auth/Login");
     options.Conventions.AllowAnonymousToPage("/Auth/VerificarEmail");
+    options.Conventions.AllowAnonymousToPage("/Auth/ActivarInvitacion");
     options.Conventions.AllowAnonymousToPage("/Auth/Registro");
     options.Conventions.AllowAnonymousToPage("/Auth/ReenviarVerificacion");
     // Administración exclusiva.
@@ -134,6 +135,9 @@ builder.Services.AddScoped<
     IUsuarioPort,
     UsuarioRepository>();
 builder.Services.AddScoped<
+    IUsuarioConsultaPort,
+    UsuarioRepository>();
+builder.Services.AddScoped<
     ISolicitudRegistroPort,
     SolicitudRegistroRepository>();
 builder.Services.AddScoped<RegistroUsuarioService>();
@@ -145,6 +149,10 @@ builder.Services.AddScoped<
     IRevisionSolicitudesPort,
     RevisionSolicitudesRepository>();
 builder.Services.AddScoped<RevisionSolicitudesService>();
+builder.Services.AddScoped<
+    IUsuarioAdministracionPort,
+    UsuarioRepository>();
+builder.Services.AddScoped<UsuarioAdministracionService>();
 builder.Services.AddScoped<
     IAuthenticationService,
     AuthenticationService>();
@@ -474,6 +482,7 @@ app.UseRateLimiter();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseValidarUsuarioActivo();
 // H1: endpoint liviano para comprobar balanceo y réplica real.
 // No reemplaza la identificación visible que agregaremos en Index.
 if (app.Environment.IsDevelopment())

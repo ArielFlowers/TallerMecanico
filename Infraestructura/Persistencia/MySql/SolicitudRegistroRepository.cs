@@ -57,7 +57,8 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
                 FechaSolicitud,
                 UltimoIntentoVerificacionEn,
                 FechaResolucion,
-                RevisadoPorUsuarioId
+                RevisadoPorUsuarioId,
+                Rol
             )
             VALUES
             (
@@ -71,7 +72,8 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
                 @FechaSolicitud,
                 @UltimoIntentoVerificacionEn,
                 @FechaResolucion,
-                @RevisadoPorUsuarioId
+                @RevisadoPorUsuarioId,
+                @Rol
             );
             """;
 
@@ -170,12 +172,12 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
 
         return command.ExecuteNonQuery() == 1;
     }
-    public bool ConfirmarEmail(string tokenHash)
+    public SolicitudRegistro? ConfirmarEmail(string tokenHash)
     {
         if (string.IsNullOrWhiteSpace(tokenHash) ||
             tokenHash.Length != 64)
         {
-            return false;
+            return null;
         }
 
         using DbConnection connection =
@@ -200,7 +202,26 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
 
         AgregarParametro(command, "@TokenHash", tokenHash);
 
-        return command.ExecuteNonQuery() == 1;
+        if (command.ExecuteNonQuery() != 1)
+        {
+            return null;
+        }
+
+        const string selectSql = """
+            SELECT *
+            FROM SolicitudesRegistro
+            WHERE Estado = 'PendienteAprobacion'
+              AND EmailVerificadoEn IS NOT NULL
+              AND TokenVerificacionHash IS NULL
+            ORDER BY EmailVerificadoEn DESC
+            LIMIT 1;
+            """;
+
+        using DbCommand selectCommand = connection.CreateCommand();
+        selectCommand.CommandText = selectSql;
+
+        using DbDataReader reader = selectCommand.ExecuteReader();
+        return reader.Read() ? Mapear(reader) : null;
     }
     public void Actualizar(SolicitudRegistro solicitud)
     {
@@ -221,7 +242,8 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
                 FechaSolicitud = @FechaSolicitud,
                 UltimoIntentoVerificacionEn = @UltimoIntentoVerificacionEn,
                 FechaResolucion = @FechaResolucion,
-                RevisadoPorUsuarioId = @RevisadoPorUsuarioId
+                RevisadoPorUsuarioId = @RevisadoPorUsuarioId,
+                Rol = @Rol
             WHERE Id = @Id;
             """;
 
@@ -291,25 +313,50 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
             FechaSolicitud = reader.GetDateTime(reader.GetOrdinal("FechaSolicitud")),
             UltimoIntentoVerificacionEn = LeerFecha(reader, "UltimoIntentoVerificacionEn"),
             FechaResolucion = LeerFecha(reader, "FechaResolucion"),
-            RevisadoPorUsuarioId = LeerEntero(reader, "RevisadoPorUsuarioId")
+            RevisadoPorUsuarioId = LeerEntero(reader, "RevisadoPorUsuarioId"),
+            Rol = LeerString(reader, "Rol")
         };
+    }
+
+    private static int TryGetOrdinal(DbDataReader reader, string columna)
+    {
+        try
+        {
+            return reader.GetOrdinal(columna);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return -1;
+        }
     }
 
     private static string? LeerString(DbDataReader reader, string columna)
     {
-        int indice = reader.GetOrdinal(columna);
+        int indice = TryGetOrdinal(reader, columna);
+        if (indice == -1)
+        {
+            return null;
+        }
         return reader.IsDBNull(indice) ? null : reader.GetString(indice);
     }
 
     private static DateTime? LeerFecha(DbDataReader reader, string columna)
     {
-        int indice = reader.GetOrdinal(columna);
+        int indice = TryGetOrdinal(reader, columna);
+        if (indice == -1)
+        {
+            return null;
+        }
         return reader.IsDBNull(indice) ? null : reader.GetDateTime(indice);
     }
 
     private static int? LeerEntero(DbDataReader reader, string columna)
     {
-        int indice = reader.GetOrdinal(columna);
+        int indice = TryGetOrdinal(reader, columna);
+        if (indice == -1)
+        {
+            return null;
+        }
         return reader.IsDBNull(indice) ? null : reader.GetInt32(indice);
     }
 
@@ -328,6 +375,7 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
         AgregarParametro(command, "@UltimoIntentoVerificacionEn", solicitud.UltimoIntentoVerificacionEn);
         AgregarParametro(command, "@FechaResolucion", solicitud.FechaResolucion);
         AgregarParametro(command, "@RevisadoPorUsuarioId", solicitud.RevisadoPorUsuarioId);
+        AgregarParametro(command, "@Rol", solicitud.Rol);
     }
 
     private static void AgregarParametro(

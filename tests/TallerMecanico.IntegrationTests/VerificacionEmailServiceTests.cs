@@ -79,10 +79,10 @@ public class VerificacionEmailServiceTests
         {
             return false;
         }
-        public bool ConfirmarEmail(string tokenHash)
+        public SolicitudRegistro? ConfirmarEmail(string tokenHash)
         {
             HashRecibido = tokenHash;
-            return ResultadoConfirmacion;
+            return ResultadoConfirmacion ? new SolicitudRegistro() : null;
         }
 
         public bool ExisteUsername(string username) => false;

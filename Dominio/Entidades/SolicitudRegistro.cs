@@ -25,4 +25,8 @@ public class SolicitudRegistro
     public DateTime? FechaResolucion { get; set; }
 
     public int? RevisadoPorUsuarioId { get; set; }
+
+    public string? Rol { get; set; }
+
+    public bool EsInvitacionAdministrativa => !string.IsNullOrEmpty(Rol);
 }

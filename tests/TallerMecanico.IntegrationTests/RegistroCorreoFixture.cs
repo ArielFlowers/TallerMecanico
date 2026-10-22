@@ -85,7 +85,7 @@ internal sealed class RegistroCorreoFixture
         }
         public SolicitudRegistro? ObtenerPorId(long id) => Guardada;
         public SolicitudRegistro? ObtenerPorTokenHash(string hash) => null;
-        public bool ConfirmarEmail(string hash) => false;
+        public SolicitudRegistro? ConfirmarEmail(string hash) => null;
         public void Actualizar(SolicitudRegistro solicitud) => throw new NotSupportedException();
     }
 

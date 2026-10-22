@@ -20,7 +20,7 @@ public interface ISolicitudRegistroPort
         long solicitudId,
         string nuevoTokenHash,
         DateTime nuevaExpiracion);
-    bool ConfirmarEmail(string tokenHash);
+    SolicitudRegistro? ConfirmarEmail(string tokenHash);
 
 
     void Actualizar(SolicitudRegistro solicitud);
