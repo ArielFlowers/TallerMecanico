@@ -23,3 +23,6 @@
 ## Equipo y resúmenes (insumo del informe Anexo 1)
 - Ver `docs/CLASES_CLAVE.md` → sección "Aportes por integrante": US01 Dashboard (Ariel), US02 Mecánicos (Santiago), US03 Vehículos (Adrian), US04 Servicios (Aldair), US05 Historial de Costos (Alex).
 - Ver `docs/RUBRICA.md` → estados 10/09/2026 y mapeo SOLID por integrante.
+
+## H2 - Redis como caché distribuida
+- Ver [docs/H2-REDIS.md](docs/H2-REDIS.md): servicio `redis` en Docker Compose, caché del dashboard (MISS/HIT), sesión compartida entre réplicas, expiración e invalidación.

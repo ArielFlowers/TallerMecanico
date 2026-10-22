@@ -2,6 +2,7 @@
 # ============================================
 # H1 - AUTO TALLER PRO
 # DOCKER + NGINX + 3 REPLICAS + HTTPS
+# H2 - REDIS COMO CACHE DISTRIBUIDA
 # ============================================
 
 x-app-common: &app-common
@@ -19,11 +20,18 @@ x-app-common: &app-common
 
     DataProtection__KeysPath: /app/shared-keys
 
+    # H2: las 3 replicas comparten la misma instancia de Redis
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    Redis__ExpiracionDashboardSegundos: 60
+
   volumes:
     - taller-dpkeys:/app/shared-keys
 
   depends_on:
     mysql:
+      condition: service_healthy
+    redis:
       condition: service_healthy
 
   restart: unless-stopped
@@ -62,6 +70,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 15
+
+    restart: unless-stopped
+
+  # ------------------------------------------
+  # REDIS - CACHE DISTRIBUIDA (H2)
+  # ------------------------------------------
+  redis:
+    image: redis:7.4-alpine
+    container_name: taller-mecanico-redis
+
+    # Cache volatil: sin persistencia en disco y con limite de memoria.
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+
+    ports:
+      - "127.0.0.1:6379:6379"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
     restart: unless-stopped
 
