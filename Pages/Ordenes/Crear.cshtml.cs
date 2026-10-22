@@ -144,7 +144,6 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
             ? $"La orden #{resultado.OrdenId} ya se había guardado. Total: Bs. {resultado.Total:0.00}."
             : $"Orden #{resultado.OrdenId} guardada correctamente. Total: Bs. {resultado.Total:0.00}.";
         TempData["OrdenCreadaId"] = resultado.OrdenId;
-        TempData["OrdenComprobanteToken"] = Formulario.Token.ToString("N");
         return RedirectToPage("./Index");
     }
 
