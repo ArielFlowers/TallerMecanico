@@ -37,6 +37,25 @@ public sealed class MySqlAisladoFixture : IDisposable
     {
         string? configurada = Environment.GetEnvironmentVariable("TALLER_TEST_MYSQL");
         if (string.IsNullOrWhiteSpace(configurada)) return;
+
+        const string prefijoEsperado = "autotaller_test_";
+        _base = $"{prefijoEsperado}{Guid.NewGuid():N}";
+
+        if (string.IsNullOrWhiteSpace(_base) || _base.Length <= prefijoEsperado.Length)
+        {
+            throw new InvalidOperationException("Nombre de base de datos generado inválido o vacío.");
+        }
+
+        if (string.Equals(_base, "taller_mecanico", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Nombre de base de datos prohibido: 'taller_mecanico' está reservado para la aplicación principal.");
+        }
+
+        if (!_base.StartsWith(prefijoEsperado, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Nombre de base de datos no usa el prefijo obligatorio '{prefijoEsperado}'.");
+        }
+
         var cadena = new MySqlConnectionStringBuilder(configurada) { Database = string.Empty, AllowUserVariables = true };
         _servidor = cadena.ConnectionString;
         using var conexion = new MySqlConnection(_servidor);
@@ -80,6 +99,12 @@ public sealed class MySqlAisladoFixture : IDisposable
     public void Dispose()
     {
         if (!_creada) return;
+        if (string.IsNullOrWhiteSpace(_base)) return;
+        if (string.Equals(_base, "taller_mecanico", StringComparison.OrdinalIgnoreCase)) return;
+
+        const string prefijoEsperado = "autotaller_test_";
+        if (!_base.StartsWith(prefijoEsperado, StringComparison.Ordinal)) return;
+
         MySqlConnection.ClearAllPools();
         using var conexion = new MySqlConnection(_servidor);
         conexion.Open();

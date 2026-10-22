@@ -1,12 +1,13 @@
 
 using System.Data.Common;
+using TallerMecanico.Aplicacion.DTOs;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
-public sealed class UsuarioRepository : IUsuarioPort
+public sealed class UsuarioRepository : IUsuarioAdministracionPort
 {
     private readonly DatabaseConnectionFactory _connectionFactory;
 
@@ -318,5 +319,294 @@ public sealed class UsuarioRepository : IUsuarioPort
         parameter.Value = valor ?? DBNull.Value;
 
         command.Parameters.Add(parameter);
+    }
+
+    public IReadOnlyList<UsuarioListadoDto> Listar(int pagina, int tamanoPagina)
+    {
+        if (pagina < 1) pagina = 1;
+        if (tamanoPagina < 1) tamanoPagina = 10;
+        if (tamanoPagina > 100) tamanoPagina = 100;
+        if (pagina > 10000) pagina = 10000;
+
+        long offset = (long)(pagina - 1) * tamanoPagina;
+
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            SELECT Id,
+                   Username,
+                   Email,
+                   Rol,
+                   Activo,
+                   FechaCreacion
+            FROM Usuarios
+            ORDER BY FechaCreacion DESC, Id DESC
+            LIMIT @TamanoPagina OFFSET @Offset;
+            """;
+
+        using DbCommand command =
+            connection.CreateCommand();
+
+        command.CommandText = query;
+
+        AddParameter(command, "@TamanoPagina", tamanoPagina);
+        AddParameter(command, "@Offset", offset);
+
+        using DbDataReader reader =
+            command.ExecuteReader();
+
+        var resultados = new List<UsuarioListadoDto>();
+
+        while (reader.Read())
+        {
+            resultados.Add(MapUsuarioListado(reader));
+        }
+
+        return resultados;
+    }
+
+    public int ContarTotal()
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            SELECT COUNT(*)
+            FROM Usuarios;
+            """;
+
+        using DbCommand command =
+            connection.CreateCommand();
+
+        command.CommandText = query;
+
+        object? resultado = command.ExecuteScalar();
+
+        return Convert.ToInt32(resultado ?? 0);
+    }
+
+    public int ContarAdministradoresActivos()
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            SELECT COUNT(*)
+            FROM Usuarios
+            WHERE Rol = 'Administrador' AND Activo = 1;
+            """;
+
+        using DbCommand command =
+            connection.CreateCommand();
+
+        command.CommandText = query;
+
+        object? resultado = command.ExecuteScalar();
+
+        return Convert.ToInt32(resultado ?? 0);
+    }
+
+    public bool ActualizarUsuarioAtomico(int id, string email, string rol, bool activo, string modificadoPor, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        using DbConnection connection = _connectionFactory.CreateConnection();
+        connection.Open();
+
+        using DbTransaction transaction = connection.BeginTransaction();
+
+        try
+        {
+            using DbCommand lockCommand = connection.CreateCommand();
+            lockCommand.Transaction = transaction;
+
+            lockCommand.CommandText = """
+                SELECT Id FROM Usuarios
+                WHERE Rol = 'Administrador' AND Activo = 1
+                FOR UPDATE;
+                """;
+
+            using DbDataReader reader = lockCommand.ExecuteReader();
+            var adminIds = new List<int>();
+            while (reader.Read())
+            {
+                adminIds.Add(reader.GetInt32(0));
+            }
+            reader.Close();
+
+            int adminsActivos = adminIds.Count;
+
+            bool esAdminActual = adminIds.Contains(id);
+            bool seraAdminActivo = activo && rol == "Administrador";
+
+            if (esAdminActual && !seraAdminActivo && adminsActivos <= 1)
+            {
+                transaction.Rollback();
+                errorMessage = "No puede desactivar el último administrador activo.";
+                return false;
+            }
+
+            using DbCommand updateCommand = connection.CreateCommand();
+            updateCommand.Transaction = transaction;
+
+            updateCommand.CommandText = """
+                UPDATE Usuarios
+                SET Email = @Email,
+                    Rol = @Rol,
+                    Activo = @Activo,
+                    ModificadoPor = @ModificadoPor,
+                    FechaModificacion = UTC_TIMESTAMP(6)
+                WHERE Id = @Id;
+                """;
+
+            AddParameter(updateCommand, "@Id", id);
+            AddParameter(updateCommand, "@Email", email);
+            AddParameter(updateCommand, "@Rol", rol);
+            AddParameter(updateCommand, "@Activo", activo);
+            AddParameter(updateCommand, "@ModificadoPor", modificadoPor);
+
+            int filas = updateCommand.ExecuteNonQuery();
+
+            if (filas != 1)
+            {
+                transaction.Rollback();
+                errorMessage = "Usuario no encontrado.";
+                return false;
+            }
+
+            transaction.Commit();
+            return true;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    public bool DesactivarUsuarioAtomico(int id, string modificadoPor, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        using DbConnection connection = _connectionFactory.CreateConnection();
+        connection.Open();
+
+        using DbTransaction transaction = connection.BeginTransaction();
+
+        try
+        {
+            using DbCommand lockCommand = connection.CreateCommand();
+            lockCommand.Transaction = transaction;
+
+            lockCommand.CommandText = """
+                SELECT Id FROM Usuarios
+                WHERE Rol = 'Administrador' AND Activo = 1
+                FOR UPDATE;
+                """;
+
+            using DbDataReader reader = lockCommand.ExecuteReader();
+            var adminIds = new List<int>();
+            while (reader.Read())
+            {
+                adminIds.Add(reader.GetInt32(0));
+            }
+            reader.Close();
+
+            int adminsActivos = adminIds.Count;
+
+            if (adminIds.Contains(id) && adminsActivos <= 1)
+            {
+                transaction.Rollback();
+                errorMessage = "No puede desactivar el último administrador activo.";
+                return false;
+            }
+
+            using DbCommand updateCommand = connection.CreateCommand();
+            updateCommand.Transaction = transaction;
+
+            updateCommand.CommandText = """
+                UPDATE Usuarios
+                SET Activo = 0,
+                    ModificadoPor = @ModificadoPor,
+                    FechaModificacion = UTC_TIMESTAMP(6)
+                WHERE Id = @Id AND Activo = 1;
+                """;
+
+            AddParameter(updateCommand, "@Id", id);
+            AddParameter(updateCommand, "@ModificadoPor", modificadoPor);
+
+            int filas = updateCommand.ExecuteNonQuery();
+
+            if (filas != 1)
+            {
+                transaction.Rollback();
+                errorMessage = "El usuario ya está desactivado o no existe.";
+                return false;
+            }
+
+            transaction.Commit();
+            return true;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    public Usuario? ObtenerPorIdConCredenciales(int id)
+    {
+        using DbConnection connection =
+            _connectionFactory.CreateConnection();
+
+        connection.Open();
+
+        const string query = """
+            SELECT Id,
+                   Username,
+                   PasswordHash,
+                   Email,
+                   EmailVerificado,
+                   Rol,
+                   Activo,
+                   CreadoPor,
+                   FechaCreacion,
+                   ModificadoPor,
+                   FechaModificacion
+            FROM Usuarios
+            WHERE Id = @Id;
+            """;
+
+        using DbCommand command =
+            connection.CreateCommand();
+
+        command.CommandText = query;
+
+        AddParameter(command, "@Id", id);
+
+        using DbDataReader reader =
+            command.ExecuteReader();
+
+        return reader.Read()
+            ? MapUsuario(reader)
+            : null;
+    }
+
+    private static UsuarioListadoDto MapUsuarioListado(DbDataReader reader)
+    {
+        return new UsuarioListadoDto(
+            reader.GetInt32(reader.GetOrdinal("Id")),
+            reader.GetString(reader.GetOrdinal("Username")),
+            LeerStringOpcional(reader, "Email") ?? string.Empty,
+            reader.GetString(reader.GetOrdinal("Rol")),
+            reader.GetBoolean(reader.GetOrdinal("Activo")),
+            reader.GetDateTime(reader.GetOrdinal("FechaCreacion")));
     }
 }

@@ -169,7 +169,7 @@ public class RegistroUsuarioServiceTests
         {
             return false;
         }
-        public bool ConfirmarEmail(string tokenHash) => false;
+        public SolicitudRegistro? ConfirmarEmail(string tokenHash) => null;
 
         public void Actualizar(SolicitudRegistro solicitud) { }
     }

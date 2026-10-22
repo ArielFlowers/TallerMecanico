@@ -44,7 +44,7 @@ public sealed class RegistroFacade
         {
             await _emailService.EnviarVerificacionAsync(
                 email.Trim().ToLowerInvariant(),
-                EnlaceVerificacion.Crear(uriBase, token),
+                EnlaceVerificacion.CrearVerificacion(uriBase, token),
                 cancellationToken);
         }
         catch (Exception ex) when (

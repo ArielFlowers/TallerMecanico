@@ -28,11 +28,18 @@ public class LoginModel : PageModel
     [BindProperty]
     public LoginInput Input { get; set; } = new();
 
-    public IActionResult OnGet()
+    public string? MensajeExpirado { get; private set; }
+
+    public IActionResult OnGet(string? expired)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
             return RedirectToPage("/Index");
+        }
+
+        if (expired == "1")
+        {
+            MensajeExpirado = "Su sesión ha expirado porque su cuenta fue desactivada. Contacte al administrador.";
         }
 
         return Page();

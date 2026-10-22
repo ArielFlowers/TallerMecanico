@@ -51,15 +51,15 @@ public class ConfirmacionEmailMySqlTests
                 tokenVencido,
                 DateTime.UtcNow.AddMinutes(-30));
 
-            Assert.True(repositorio.ConfirmarEmail(tokenVigente));
-            Assert.False(repositorio.ConfirmarEmail(tokenVigente));
+            Assert.NotNull(repositorio.ConfirmarEmail(tokenVigente));
+            Assert.Null(repositorio.ConfirmarEmail(tokenVigente));
 
-            Assert.False(repositorio.ConfirmarEmail(tokenVencido));
+            Assert.Null(repositorio.ConfirmarEmail(tokenVencido));
 
             string tokenInexistente = Convert.ToHexString(
                 RandomNumberGenerator.GetBytes(32));
 
-            Assert.False(
+            Assert.Null(
                 repositorio.ConfirmarEmail(tokenInexistente));
 
             var verificada = repositorio.ObtenerPorId(idVigente.Value);

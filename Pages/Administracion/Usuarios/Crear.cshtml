@@ -1,0 +1,72 @@
+@page
+@model TallerMecanico.Pages.Administracion.Usuarios.CrearModel
+
+@{
+    ViewData["Title"] = "Crear Usuario";
+}
+
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="fw-bold">Crear Usuario</h1>
+        <p class="text-muted">
+            Invite a un nuevo usuario al sistema. El usuario recibirá un correo electrónico
+            para establecer su contraseña y activar su cuenta.
+        </p>
+    </div>
+
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["MensajeExito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <div class="row mb-3">
+                    <label asp-for="Input.Username" class="col-sm-2 col-form-label"></label>
+                    <div class="col-sm-10">
+                        <input asp-for="Input.Username" class="form-control" autocomplete="username" />
+                        <span asp-validation-for="Input.Username" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label asp-for="Input.Email" class="col-sm-2 col-form-label"></label>
+                    <div class="col-sm-10">
+                        <input asp-for="Input.Email" class="form-control" autocomplete="email" />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label asp-for="Input.Rol" class="col-sm-2 col-form-label"></label>
+                    <div class="col-sm-10">
+                        <select asp-for="Input.Rol" class="form-select">
+                            <option value="">Seleccione un rol</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Recepcionista">Recepcionista</option>
+                        </select>
+                        <span asp-validation-for="Input.Rol" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-10">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Enviar Invitación
+                        </button>
+                        <a asp-page="./Index" class="btn btn-secondary ms-2">Cancelar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

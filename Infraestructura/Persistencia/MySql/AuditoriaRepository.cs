@@ -33,7 +33,8 @@ public sealed class AuditoriaRepository : IAuditoriaPort
                 Accion,
                 Entidad,
                 EntidadId,
-                Fecha
+                Fecha,
+                Detalle
             )
             VALUES
             (
@@ -42,7 +43,8 @@ public sealed class AuditoriaRepository : IAuditoriaPort
                 @Accion,
                 @Entidad,
                 @EntidadId,
-                @Fecha
+                @Fecha,
+                @Detalle
             );
             """;
 
@@ -57,6 +59,7 @@ public sealed class AuditoriaRepository : IAuditoriaPort
         AddParameter(command, "@Entidad", registro.Entidad);
         AddParameter(command, "@EntidadId", registro.EntidadId);
         AddParameter(command, "@Fecha", registro.Fecha);
+        AddParameter(command, "@Detalle", registro.Detalle);
 
         command.ExecuteNonQuery();
     }
@@ -121,6 +124,9 @@ public sealed class AuditoriaRepository : IAuditoriaPort
         int indiceEntidadId =
             reader.GetOrdinal("EntidadId");
 
+        int indiceDetalle =
+            reader.GetOrdinal("Detalle");
+
         return new RegistroAuditoria
         {
             Id = reader.GetInt64(
@@ -147,7 +153,11 @@ public sealed class AuditoriaRepository : IAuditoriaPort
             Fecha = DateTime.SpecifyKind(
                 reader.GetDateTime(
                     reader.GetOrdinal("Fecha")),
-                DateTimeKind.Utc)
+                DateTimeKind.Utc),
+
+            Detalle = reader.IsDBNull(indiceDetalle)
+                ? null
+                : reader.GetString(indiceDetalle)
         };
     }
 

@@ -361,6 +361,13 @@
                     Ingresa tus credenciales para continuar.
                 </p>
 
+                @if (Model.MensajeExpirado != null)
+                {
+                    <div class="validation-summary" style="color: #fca5a5; background: #3a1a1a; padding: 12px; border-radius: 8px; border: 1px solid #7a2a2a;">
+                        @Model.MensajeExpirado
+                    </div>
+                }
+
                 <form method="post">
                     <div asp-validation-summary="ModelOnly"
                          class="validation-summary"

@@ -17,6 +17,10 @@
     </title>
 
     <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
           href="~/css/site.css"
           asp-append-version="true" />
 
@@ -107,9 +111,8 @@
 
                             </a>
 
-                            <!-- Pendiente: Gestión de usuarios -->
-                            <a class="submenu-item"
-                               href="#">
+                            <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Administracion/Usuarios") ? "active" : "")"
+                               asp-page="/Administracion/Usuarios/Index">
 
                                 <span>
                                     Usuarios
@@ -482,6 +485,8 @@
 
 
     <script src="~/lib/jquery/dist/jquery.min.js" asp-append-version="true"></script>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
 
     <script src="~/js/site.js"
             asp-append-version="true">

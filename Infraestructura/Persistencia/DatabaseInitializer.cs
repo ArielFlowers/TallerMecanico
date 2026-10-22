@@ -48,7 +48,9 @@ public class DatabaseInitializer
         EnsureUsuariosEmailSchema(connection);
         CreateSolicitudesRegistroTable(connection);
         EnsureSolicitudesRegistroReenvioSchema(connection);
+        EnsureSolicitudesRegistroRolSchema(connection);
         CreateAuditoriaTable(connection);
+        EnsureAuditoriaDetalleSchema(connection);
     }
 
     // =====================================================
@@ -1201,6 +1203,7 @@ public class DatabaseInitializer
                 UltimoIntentoVerificacionEn DATETIME(6) NULL,
                 FechaResolucion DATETIME(6) NULL,
                 RevisadoPorUsuarioId INT NULL,
+                Rol VARCHAR(20) NULL,
 
                 CONSTRAINT PK_SolicitudesRegistro PRIMARY KEY (Id),
                 CONSTRAINT UQ_SolicitudesRegistro_Username UNIQUE (Username),
@@ -1233,6 +1236,44 @@ public class DatabaseInitializer
             """);
     }
 
+    private static void EnsureSolicitudesRegistroRolSchema(
+        DbConnection connection)
+    {
+        if (ColumnExists(
+                connection,
+                "SolicitudesRegistro",
+                "Rol"))
+        {
+            return;
+        }
+
+        ExecuteCommand(
+            connection,
+            """
+            ALTER TABLE SolicitudesRegistro
+            ADD COLUMN Rol VARCHAR(20) NULL;
+            """);
+    }
+
+    private static void EnsureAuditoriaDetalleSchema(
+        DbConnection connection)
+    {
+        if (ColumnExists(
+                connection,
+                "Auditoria",
+                "Detalle"))
+        {
+            return;
+        }
+
+        ExecuteCommand(
+            connection,
+            """
+            ALTER TABLE Auditoria
+            ADD COLUMN Detalle VARCHAR(500) NULL;
+            """);
+    }
+
 
     // =====================================================
     // AUDITORIA
@@ -1251,6 +1292,7 @@ public class DatabaseInitializer
                 Entidad VARCHAR(60) NOT NULL,
                 EntidadId VARCHAR(100) NULL,
                 Fecha DATETIME(6) NOT NULL,
+                Detalle VARCHAR(500) NULL,
 
                 CONSTRAINT PK_Auditoria
                     PRIMARY KEY (Id),

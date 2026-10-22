@@ -209,7 +209,7 @@ public class ReenvioVerificacionServiceTests
         public SolicitudRegistro? ObtenerPorTokenHash(
             string tokenHash) => null;
 
-        public bool ConfirmarEmail(string tokenHash) => false;
+        public SolicitudRegistro? ConfirmarEmail(string tokenHash) => null;
 
         public void Actualizar(SolicitudRegistro solicitud) { }
     }

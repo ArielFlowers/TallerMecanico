@@ -35,6 +35,6 @@ public sealed class VerificacionEmailService
         string tokenHash = Convert.ToHexString(
             SHA256.HashData(tokenBytes));
 
-        return _solicitudes.ConfirmarEmail(tokenHash);
+        return _solicitudes.ConfirmarEmail(tokenHash) != null;
     }
 }
