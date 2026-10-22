@@ -116,6 +116,63 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         Assert.Equal(1, port.ContarAdministradoresActivos());
     }
 
+    [MySqlAisladoFact]
+    public void ListarFiltrados_VerificaBusquedaRolEstadoPaginacionYContadores()
+    {
+        LimpiarDatosPrueba();
+
+        var (_, admin) = CrearUsuarioAdmin();
+        string activo1 = Unique("filtro_activo");
+        string activo2 = Unique("filtro_activo");
+        string inactivo = Unique("filtro_inactivo");
+
+        CrearUsuarioRecepcionista(activo1, $"{activo1}@test.com");
+        CrearUsuarioRecepcionista(activo2, $"{activo2}@test.com");
+        CrearUsuarioRecepcionista(inactivo, $"{inactivo}@test.com", activo: false);
+
+        var repositorio = new UsuarioRepository(_fixture.Factory);
+
+        Assert.Equal(4, repositorio.ContarTotal());
+        Assert.Equal(3, repositorio.ContarUsuariosActivos());
+        Assert.Equal(1, repositorio.ContarAdministradoresActivosListado());
+
+        Assert.Equal(4, repositorio.ContarFiltrados(null, null, null));
+        Assert.Equal(3, repositorio.ContarFiltrados(null, null, true));
+        Assert.Equal(1, repositorio.ContarFiltrados(null, null, false));
+        Assert.Equal(3, repositorio.ContarFiltrados(null, "Recepcionista", null));
+        Assert.Equal(1, repositorio.ContarFiltrados(null, "Administrador", true));
+
+        var porUsuario = repositorio.ListarFiltrados(activo1, null, null, 1, 10);
+        Assert.Single(porUsuario);
+        Assert.Equal(activo1, porUsuario[0].Username);
+
+        var porCorreo = repositorio.ListarFiltrados($"{inactivo}@test.com", null, null, 1, 10);
+        Assert.Single(porCorreo);
+        Assert.Equal(inactivo, porCorreo[0].Username);
+
+        var combinados = repositorio.ListarFiltrados(
+            "filtro_activo", "Recepcionista", true, 1, 10);
+
+        Assert.Equal(2, combinados.Count);
+        Assert.All(combinados, usuario =>
+        {
+            Assert.Equal("Recepcionista", usuario.Rol);
+            Assert.True(usuario.Activo);
+        });
+
+        var pagina1 = repositorio.ListarFiltrados(
+            null, "Recepcionista", null, 1, 2);
+
+        var pagina2 = repositorio.ListarFiltrados(
+            null, "Recepcionista", null, 2, 2);
+
+        Assert.Equal(2, pagina1.Count);
+        Assert.Single(pagina2);
+        Assert.DoesNotContain(pagina1, u => u.Id == pagina2[0].Id);
+
+        Assert.Empty(repositorio.ListarFiltrados(
+            "usuario_inexistente_xyz", null, null, 1, 10));
+    }
     // =====================================================
     // CRITERIO 2: Nombres de usuario únicos (5 pts)
     // =====================================================
@@ -336,6 +393,42 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
     }
 
     // =====================================================
+    [MySqlAisladoFact]
+    public void ActivarUsuarioDesdeInvitacion_RechazaTokenExpirado()
+    {
+        LimpiarDatosPrueba();
+        CrearUsuarioAdmin();
+
+        var servicio = CrearServicio();
+        string username = Unique("invitacion_expirada");
+        string email = $"{username}@test.com";
+
+        string token = servicio.CrearInvitacion(
+            username, email, "Recepcionista");
+
+        // Simular expiracion sin esperar una hora.
+        _fixture.Ejecutar("""
+            UPDATE SolicitudesRegistro
+            SET TokenExpiraEn = UTC_TIMESTAMP(6) - INTERVAL 1 HOUR
+            WHERE Username = @Username;
+            """, ("@Username", username));
+
+        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(
+            token, "Password123456", out string? error);
+
+        Assert.False(resultado);
+        Assert.Equal(
+            "El enlace de invitación no es válido o ha expirado.",
+            error);
+
+        Assert.Equal(0, Convert.ToInt32(_fixture.Escalar(
+            "SELECT COUNT(*) FROM Usuarios WHERE Username = @Username;",
+            ("@Username", username))));
+
+        Assert.Equal("PendienteVerificacion", _fixture.Escalar(
+            "SELECT Estado FROM SolicitudesRegistro WHERE Username = @Username;",
+            ("@Username", username)));
+    }
     // CRITERIO 4: Desactivación lógica y bloqueo de sesión (2 pts)
     // =====================================================
 
