@@ -1,5 +1,37 @@
+.ordenes-page .dashboard-header {
+    align-items: flex-end;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.ordenes-page .ordenes-kicker {
+    margin: 0 0 7px;
+    color: var(--primary-hover);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+
+.ordenes-page > form {
+    margin-bottom: 22px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
 .ordenes-buscador-toolbar {
-    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) auto;
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.ordenes-buscador-toolbar > .services-btn {
+    min-height: 44px;
+    min-width: 96px;
 }
 
 .ordenes-filtros {
@@ -7,11 +39,11 @@
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 16px;
-    margin-bottom: 20px;
-    padding: 20px;
-    background: var(--surface);
+    margin-bottom: 0;
+    padding: 16px;
+    background: var(--surface-light);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
 }
 
 .ordenes-campo {
@@ -55,17 +87,71 @@
 }
 
 .ordenes-table {
-    min-width: 1250px;
+    min-width: 1180px;
+}
+
+.ordenes-page > .recent-orders {
+    overflow: hidden;
+    border-color: var(--border-light);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+}
+
+.ordenes-page > .recent-orders .section-header {
+    padding: 20px 24px;
+}
+
+.ordenes-resultado {
+    display: inline-flex;
+    margin: 4px 0 0 !important;
+    padding: 5px 10px;
+    color: var(--text-secondary) !important;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 11px !important;
+}
+
+.ordenes-id {
+    color: var(--text-muted);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.ordenes-placa {
+    display: inline-block;
+    padding: 5px 9px;
+    color: var(--text-primary);
+    background: var(--surface-light);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    white-space: nowrap;
 }
 
 .ordenes-acciones-fila {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
 .ordenes-acciones-fila .services-btn {
     width: auto;
+    min-height: 34px;
+    padding: 0 11px;
     white-space: nowrap;
+}
+
+.ordenes-acciones-fila form {
+    margin: 0;
+}
+
+.ordenes-anular-btn {
+    color: var(--danger) !important;
+}
+
+.ordenes-page .ordenes-table tbody tr:hover {
+    background: rgba(124, 58, 237, 0.055);
 }
 
 .ordenes-total {
@@ -81,6 +167,7 @@
     border-radius: var(--radius-sm);
     font-size: 11px;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .ordenes-estado-activa {
@@ -166,6 +253,105 @@
     overscroll-behavior: contain;
 }
 
+.ordenes-comprobante-dialog {
+    width: min(1100px, calc(100% - 32px));
+    height: min(850px, calc(100vh - 40px));
+    max-height: calc(100vh - 40px);
+    padding: 0;
+    overflow: hidden;
+}
+
+.ordenes-comprobante-contenido {
+    height: calc(100% - 78px);
+    min-height: 320px;
+    background: #21192b;
+}
+
+.ordenes-comprobante-contenido iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #fff;
+}
+
+.orden-comprobante-aviso {
+    margin-bottom: 16px;
+    padding: 14px 18px;
+    color: var(--success);
+    background: rgba(74, 222, 128, 0.09);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: var(--radius-md);
+}
+
+.orden-confirmacion-dialog {
+    width: min(480px, calc(100% - 32px));
+    max-height: calc(100vh - 40px);
+    padding: 0;
+    overflow: hidden;
+    color: var(--text-primary);
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.orden-confirmacion-dialog::backdrop {
+    background: rgba(8, 6, 11, 0.78);
+    backdrop-filter: blur(3px);
+}
+
+.orden-confirmacion-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.orden-confirmacion-icono {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    color: var(--danger);
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    border-radius: 50%;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.orden-confirmacion-cabecera h2 {
+    margin: 0 0 5px;
+    font-size: 19px;
+}
+
+.orden-confirmacion-cabecera p,
+.orden-confirmacion-mensaje {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.orden-confirmacion-mensaje {
+    padding: 22px 24px;
+}
+
+.orden-confirmacion-acciones {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 24px 22px;
+    border-top: 1px solid var(--border);
+}
+
+.orden-confirmacion-acciones .services-btn {
+    width: auto;
+}
+
 .ordenes-detalle-seccion + .ordenes-detalle-seccion {
     margin-top: 24px;
     padding-top: 20px;
@@ -212,4 +398,49 @@
 .ordenes-anulada-aviso {
     color: var(--danger);
     font-size: 13px;
+}
+
+@media (max-width: 760px) {
+    .ordenes-page .dashboard-header {
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .ordenes-page > form {
+        padding: 14px;
+    }
+
+    .ordenes-buscador-toolbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .ordenes-filtros {
+        align-items: stretch;
+    }
+
+    .ordenes-acciones {
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .ordenes-page .dashboard-header {
+        flex-direction: column;
+    }
+
+    .ordenes-page .dashboard-header > .services-btn {
+        width: 100%;
+    }
+
+    .ordenes-buscador-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .ordenes-buscador-toolbar > .services-btn {
+        width: 100%;
+    }
+
+    .ordenes-acciones > .services-btn {
+        flex: 1 1 100%;
+    }
 }

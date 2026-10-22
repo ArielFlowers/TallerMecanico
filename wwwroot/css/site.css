@@ -1105,7 +1105,7 @@ body {
         display: flex;
     }
 
-.modal-dialog {
+.app-modal-dialog {
     width: 100%;
     max-width: 520px;
     max-height: 90vh;
@@ -1115,7 +1115,7 @@ body {
     border-radius: var(--radius-lg);
 }
 
-    .modal-dialog .service-form-header {
+    .app-modal-dialog .service-form-header {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
@@ -1152,7 +1152,7 @@ button.service-action {
         padding: 12px;
     }
 
-    .modal-dialog {
+    .app-modal-dialog {
         max-height: 95vh;
     }
 }

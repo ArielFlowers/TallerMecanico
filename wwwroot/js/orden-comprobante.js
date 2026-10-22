@@ -1,74 +1,104 @@
 (() => {
-    const claveReserva = "autotaller:comprobante-pendiente";
+    const dialogoAnulacion = document.getElementById("anular-orden-dialog");
+    const botonConfirmarAnulacion = dialogoAnulacion?.querySelector("[data-confirmar-anulacion]");
+    const botonCancelarAnulacion = dialogoAnulacion?.querySelector("[data-cancelar-anulacion]");
+    const descripcionAnulacion = dialogoAnulacion?.querySelector("#anular-orden-descripcion");
+    let formularioAnulacion = null;
+    let anulacionConfirmada = false;
 
-    function consumirReserva() {
-        try {
-            const reserva = JSON.parse(sessionStorage.getItem(claveReserva));
-            sessionStorage.removeItem(claveReserva);
-            return reserva && /^[a-f0-9]{32}$/.test(reserva.token) ? reserva : null;
-        } catch {
-            return null;
+    document.addEventListener("submit", evento => {
+        const formulario = evento.target;
+        if (!(formulario instanceof HTMLFormElement) || !formulario.matches("[data-confirmar-anulacion]")) return;
+        if (anulacionConfirmada) {
+            anulacionConfirmada = false;
+            return;
         }
-    }
 
-    const nombrePestana = reserva => `comprobante-orden-${reserva.token}`;
-    const enlace = document.querySelector("[data-comprobante-creado]");
-    if (enlace) {
-        const reserva = consumirReserva();
-        if (reserva?.reservada && reserva.token === enlace.dataset.token) {
-            try {
-                const pestana = window.open(enlace.href, nombrePestana(reserva));
-                if (pestana) pestana.opener = null;
-            } catch {
-                // El enlace permanece disponible aunque el navegador impida abrir el PDF.
-            }
+        evento.preventDefault();
+        formularioAnulacion = formulario;
+        if (descripcionAnulacion) {
+            descripcionAnulacion.textContent = `¿Deseas anular la orden #${formulario.dataset.ordenId}?`;
         }
-        return;
-    }
+        dialogoAnulacion?.showModal();
+    });
+
+    botonCancelarAnulacion?.addEventListener("click", () => dialogoAnulacion.close());
+    botonConfirmarAnulacion?.addEventListener("click", () => {
+        if (!formularioAnulacion) return;
+        anulacionConfirmada = true;
+        dialogoAnulacion.close();
+        formularioAnulacion.requestSubmit();
+        formularioAnulacion = null;
+    });
 
     const formulario = document.getElementById("formulario-orden");
-    if (!formulario) return;
+    if (formulario) {
+        const dialogoConfirmacion = document.getElementById("confirmar-orden-dialog");
+        const botonConfirmar = dialogoConfirmacion?.querySelector("[data-confirmar-orden]");
+        const botonCancelar = dialogoConfirmacion?.querySelector("[data-cancelar-confirmacion]");
+        const botonGuardar = document.querySelector('[type="submit"][form="formulario-orden"]');
+        let confirmada = false;
+        let enviando = false;
 
-    const anterior = consumirReserva();
-    if (anterior?.reservada) {
-        try { window.open("", nombrePestana(anterior))?.close(); } catch { }
+        formulario.addEventListener("submit", evento => {
+            if (enviando) {
+                evento.preventDefault();
+                return;
+            }
+            if (evento.defaultPrevented) return;
+            if (!confirmada) {
+                evento.preventDefault();
+                dialogoConfirmacion?.showModal();
+                return;
+            }
+
+            confirmada = false;
+            enviando = true;
+            document.querySelectorAll('[type="submit"][form="formulario-orden"]').forEach(boton => {
+                boton.disabled = true;
+            });
+        });
+
+        botonCancelar?.addEventListener("click", () => dialogoConfirmacion.close());
+        botonConfirmar?.addEventListener("click", () => {
+            confirmada = true;
+            dialogoConfirmacion.close();
+            if (botonGuardar instanceof HTMLButtonElement) formulario.requestSubmit(botonGuardar);
+            else formulario.requestSubmit();
+        });
+
+        window.addEventListener("pageshow", evento => {
+            if (!evento.persisted) return;
+            enviando = false;
+            document.querySelectorAll('[type="submit"][form="formulario-orden"]').forEach(boton => {
+                boton.disabled = false;
+            });
+        });
     }
 
-    let enviando = false;
-    formulario.addEventListener("submit", evento => {
-        if (enviando) { evento.preventDefault(); return; }
-        if (evento.defaultPrevented) return;
-        if (!window.confirm("¿Guardar orden?")) { evento.preventDefault(); return; }
-        enviando = true;
-        document.querySelectorAll('[type="submit"][form="formulario-orden"]').forEach(boton => { boton.disabled = true; });
+    const dialogoComprobante = document.getElementById("comprobante-orden-dialog");
+    if (!dialogoComprobante) return;
 
-        const seleccionCompleta = ["VehiculoId", "MecanicoId", "ServicioId"]
-            .every(campo => Number(formulario.elements.namedItem(`Formulario.${campo}`)?.value) > 0);
-        if (!seleccionCompleta) return;
+    const frame = dialogoComprobante.querySelector("[data-comprobante-frame]");
+    const botonCerrar = dialogoComprobante.querySelector("[data-cerrar-comprobante]");
 
-        const reserva = {
-            token: formulario.elements.namedItem("Formulario.Token").value.replaceAll("-", ""),
-            reservada: false
-        };
-        if (!/^[a-f0-9]{32}$/.test(reserva.token) || /^0+$/.test(reserva.token)) return;
-        let pestana;
-        try {
-            sessionStorage.setItem(claveReserva, JSON.stringify(reserva));
-            pestana = window.open("about:blank", nombrePestana(reserva));
-            if (pestana) {
-                pestana.document.title = "Comprobante de la orden";
-                pestana.document.body.textContent = "Guardando la orden. El comprobante se mostrará únicamente si se confirma el registro.";
-                reserva.reservada = true;
-                sessionStorage.setItem(claveReserva, JSON.stringify(reserva));
-            }
-        } catch {
-            pestana?.close();
-        }
+    const mostrarComprobante = url => {
+        if (!url || !frame) return;
+        frame.src = url;
+        if (!dialogoComprobante.open) dialogoComprobante.showModal();
+    };
+
+    document.querySelectorAll("[data-comprobante-url]").forEach(enlace => {
+        enlace.addEventListener("click", evento => {
+            evento.preventDefault();
+            mostrarComprobante(enlace.dataset.comprobanteUrl);
+        });
     });
 
-    window.addEventListener("pageshow", evento => {
-        if (!evento.persisted) return;
-        enviando = false;
-        document.querySelectorAll('[type="submit"][form="formulario-orden"]').forEach(boton => { boton.disabled = false; });
+    botonCerrar?.addEventListener("click", () => dialogoComprobante.close());
+    dialogoComprobante.addEventListener("close", () => {
+        if (frame) frame.src = "about:blank";
     });
+
+    mostrarComprobante(dialogoComprobante.dataset.comprobanteInicial);
 })();

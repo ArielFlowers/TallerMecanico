@@ -9,7 +9,8 @@
 
 <div class="dashboard ordenes-page nueva-orden-page">
     <div class="dashboard-header">
-        <div><h1>Nueva orden de trabajo</h1><p>Selecciona el vehículo, el mecánico y los productos requeridos.</p></div>
+        <div><p class="ordenes-kicker">GESTIÓN DE ÓRDENES</p><h1>Nueva orden de trabajo</h1><p>Completa los datos del trabajo y revisa el total antes de guardar.</p></div>
+        <a asp-page="./Index" class="services-btn services-btn-secondary">Volver a órdenes</a>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(Model.Mensaje)) { <div class="service-validation" role="status">@Model.Mensaje</div> }
@@ -20,7 +21,6 @@
           data-servicio-url="@Url.Page("./Crear", "ServicioSeleccionado")"
           data-costo-servicio="@Model.CostoServicioSeleccionado.ToString(CultureInfo.InvariantCulture)">
         <input type="hidden" asp-for="Formulario.Token" />
-        <input type="hidden" asp-for="Formulario.ClienteNuevoId" />
         <input type="hidden" asp-for="BorradorId" />
         <input type="hidden" name="ProductoId" value="@Model.ProductoId" />
         <input type="hidden" name="BuscarProducto" value="@Model.BuscarProducto" />
@@ -31,7 +31,7 @@
             <input type="hidden" name="Formulario.Lineas[@indice].Precio" value="@Model.Formulario.Lineas[indice].Precio" />
         }
         <section class="recent-orders ordenes-card ordenes-selectores-card">
-            <h2>Datos de la orden</h2>
+            <div class="ordenes-titulo-seccion"><span class="ordenes-paso">1</span><div><h2>Datos del trabajo</h2><p>Selecciona los registros existentes que participarán en la orden.</p></div></div>
             <div class="ordenes-cabecera">
                 <div class="ordenes-selector">
                     <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
@@ -42,12 +42,9 @@
                         NombreCampoTexto = nameof(Model.BuscarVehiculo), NombreCampoId = "Formulario.VehiculoId",
                         Texto = Model.BuscarVehiculo ?? string.Empty, IdSeleccionado = Model.VehiculoSeleccionado?.Id
                     }' />
+                    <p class="ordenes-ayuda">El cliente de la orden será el asociado al vehículo seleccionado.</p>
                     <p id="orden-vehiculo-aviso" role="status" hidden="@(Model.VehiculoSeleccionado?.ClienteId.HasValue != false)">El vehículo requiere un cliente antes de guardar la orden.</p>
                     <span asp-validation-for="Formulario.VehiculoId" class="service-validation"></span>
-                </div>
-                <div class="ordenes-nuevos">
-                    <button type="submit" form="nuevo-vehiculo" class="services-btn services-btn-secondary">+ Nuevo vehículo</button>
-                    <button type="submit" form="nuevo-cliente" class="services-btn services-btn-secondary">+ Nuevo cliente</button>
                 </div>
                 <div class="ordenes-selector">
                     <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
@@ -78,22 +75,11 @@
                           datetime="@fechaOrden.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">@fechaOrden.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</time>
                 </div>
             </div>
-            @if (Model.Formulario.ClienteNuevoId.HasValue)
-            {
-                <p role="status">Cliente seleccionado para vincular: <strong>@(Model.NombreClienteNuevo ?? $"ID {Model.Formulario.ClienteNuevoId}")</strong>. Al crear el vehículo podrás asociarlo a este cliente.</p>
-            }
         </section>
     </form>
 
-    <form method="post" id="nuevo-vehiculo" asp-page-handler="NuevoVehiculo">
-        <partial name="_ContextoNuevaOrden" model="Model" />
-    </form>
-
     <section class="recent-orders ordenes-card ordenes-selectores-card">
-        <div class="section-header">
-            <div><h2>Paso 1 · Productos del detalle (opcional)</h2><p>Añade uno o varios repuestos al detalle temporal. Solo se descuenta stock al guardar la orden.</p></div>
-            <button type="submit" form="nuevo-producto" class="services-btn services-btn-secondary">+ Nuevo producto</button>
-        </div>
+        <div class="ordenes-titulo-seccion"><span class="ordenes-paso">2</span><div><h2>Repuestos <span class="ordenes-opcional">Opcional</span></h2><p>Agrega productos existentes. El stock se actualiza al guardar.</p></div></div>
         <form method="post" id="orden-agregar-producto" asp-page-handler="AgregarLinea" class="ordenes-agregar">
             <partial name="_ContextoNuevaOrden" model="Model" />
             <div class="ordenes-selector">
@@ -109,16 +95,15 @@
             <label>Cantidad
                 <input asp-for="Cantidad" class="service-input" type="number" min="1" required />
             </label>
-            <button type="submit" class="services-btn services-btn-primary">Añadir producto al detalle</button>
+            <button type="submit" class="services-btn services-btn-primary">Añadir repuesto</button>
         </form>
         <span asp-validation-for="ProductoId" class="service-validation"></span><span asp-validation-for="Cantidad" class="service-validation"></span>
     </section>
 
     <section class="recent-orders ordenes-card">
-        <h2>Paso 2 · Detalle temporal (@Model.Lineas.Count líneas)</h2>
-        <p>Todavía no está guardado: revisa el servicio y los productos y pulsa ✓ Guardar orden para registrarla.</p>
+        <div class="ordenes-titulo-seccion"><span class="ordenes-paso">3</span><div><h2>Resumen de la orden <span class="ordenes-conteo">@Model.Lineas.Count @(Model.Lineas.Count == 1 ? "repuesto" : "repuestos")</span></h2><p>Revisa los conceptos y el total estimado antes de guardar.</p></div></div>
         <p id="orden-servicio-detalle" role="status" hidden="@(Model.ServicioSeleccionado is null)">Servicio: <strong>@Model.ServicioSeleccionado?.Nombre</strong></p>
-        @if (Model.Lineas.Count == 0) { <p>Aún no agregaste productos.</p> }
+        @if (Model.Lineas.Count == 0) { <div class="ordenes-vacio-detalle"><span aria-hidden="true">＋</span><p><strong>Aún no hay repuestos</strong><br />Puedes guardar la orden solo con un servicio.</p></div> }
         else
         {
             <div class="table-container">
@@ -161,19 +146,35 @@
             </div>
         }
         <div class="ordenes-guardar">
-            <span>Estimado: <strong data-total-estimado>Bs. @Model.TotalEstimado.ToString("0.00")</strong></span>
+            <span class="ordenes-total-estimado">Total estimado <strong data-total-estimado>Bs. @Model.TotalEstimado.ToString("0.00")</strong></span>
             <span asp-validation-for="Formulario.Lineas" class="service-validation"></span>
             <button type="submit" form="formulario-orden" class="services-btn services-btn-primary">✓ Guardar orden</button>
         </div>
     </section>
 
-    <form method="post" id="nuevo-producto" asp-page-handler="NuevoProducto">
-        <partial name="_ContextoNuevaOrden" model="Model" />
-    </form>
-    <form method="post" id="nuevo-cliente" asp-page-handler="NuevoCliente">
-        <partial name="_ContextoNuevaOrden" model="Model" />
-    </form>
 </div>
+
+<dialog id="confirmar-orden-dialog" class="orden-confirmacion-dialog"
+        aria-labelledby="confirmar-orden-titulo" aria-describedby="confirmar-orden-descripcion">
+    <div class="orden-confirmacion-cabecera">
+        <span class="orden-confirmacion-icono" aria-hidden="true">✓</span>
+        <div>
+            <h2 id="confirmar-orden-titulo">Confirmar orden</h2>
+            <p id="confirmar-orden-descripcion">Revisa los datos antes de registrar esta orden.</p>
+        </div>
+    </div>
+    <p class="orden-confirmacion-mensaje">
+        Al confirmar, se guardará la orden y podrás consultar el comprobante en esta misma página.
+    </p>
+    <div class="orden-confirmacion-acciones">
+        <button type="button" class="services-btn services-btn-secondary" data-cancelar-confirmacion>
+            Seguir revisando
+        </button>
+        <button type="button" class="services-btn services-btn-primary" data-confirmar-orden>
+            Confirmar y guardar
+        </button>
+    </div>
+</dialog>
 
 @section Styles {
     <link rel="stylesheet" href="~/css/autocompletado.css" asp-append-version="true" />

@@ -235,15 +235,6 @@
 
                         </a>
 
-                        <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Ordenes/Crear") ? "active" : "")"
-                           asp-page="/Ordenes/Crear">
-
-                            <span>
-                                + Nueva orden
-                            </span>
-
-                        </a>
-
                         <!-- HISTORIAL: SOLO ADMINISTRADOR -->
                         @if (esAdministrador)
                         {
