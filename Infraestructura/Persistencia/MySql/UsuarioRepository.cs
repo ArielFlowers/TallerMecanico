@@ -368,6 +368,83 @@ public sealed class UsuarioRepository : IUsuarioAdministracionPort
         return resultados;
     }
 
+    public IReadOnlyList<UsuarioListadoDto> ListarFiltrados(
+        string? busqueda, string? rol, bool? activo,
+        int pagina, int tamanoPagina)
+    {
+        pagina = Math.Clamp(pagina, 1, 10000);
+        tamanoPagina = Math.Clamp(tamanoPagina, 1, 100);
+        long offset = (long)(pagina - 1) * tamanoPagina;
+
+        using DbConnection connection = _connectionFactory.CreateConnection();
+        connection.Open();
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT Id, Username, Email, Rol, Activo, FechaCreacion
+            FROM Usuarios
+            WHERE (@Busqueda IS NULL OR Username LIKE CONCAT('%', @Busqueda, '%')
+                   OR Email LIKE CONCAT('%', @Busqueda, '%'))
+              AND (@Rol IS NULL OR Rol = @Rol)
+              AND (@Activo IS NULL OR Activo = @Activo)
+            ORDER BY FechaCreacion DESC, Id DESC
+            LIMIT @TamanoPagina OFFSET @Offset;
+            """;
+
+        AddParameter(command, "@Busqueda", string.IsNullOrWhiteSpace(busqueda) ? null : busqueda.Trim());
+        AddParameter(command, "@Rol", string.IsNullOrWhiteSpace(rol) ? null : rol.Trim());
+        AddParameter(command, "@Activo", activo.HasValue ? (object)activo.Value : DBNull.Value);
+        AddParameter(command, "@TamanoPagina", tamanoPagina);
+        AddParameter(command, "@Offset", offset);
+
+        using DbDataReader reader = command.ExecuteReader();
+        var resultados = new List<UsuarioListadoDto>();
+
+        while (reader.Read())
+        {
+            resultados.Add(MapUsuarioListado(reader));
+        }
+
+        return resultados;
+    }
+
+    public int ContarFiltrados(string? busqueda, string? rol, bool? activo)
+    {
+        using DbConnection connection = _connectionFactory.CreateConnection();
+        connection.Open();
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT COUNT(*)
+            FROM Usuarios
+            WHERE (@Busqueda IS NULL OR Username LIKE CONCAT('%', @Busqueda, '%')
+                   OR Email LIKE CONCAT('%', @Busqueda, '%'))
+              AND (@Rol IS NULL OR Rol = @Rol)
+              AND (@Activo IS NULL OR Activo = @Activo);
+            """;
+
+        AddParameter(command, "@Busqueda", string.IsNullOrWhiteSpace(busqueda) ? null : busqueda.Trim());
+        AddParameter(command, "@Rol", string.IsNullOrWhiteSpace(rol) ? null : rol.Trim());
+        AddParameter(command, "@Activo", activo.HasValue ? (object)activo.Value : DBNull.Value);
+
+        return Convert.ToInt32(command.ExecuteScalar() ?? 0);
+    }
+
+    public int ContarUsuariosActivos()
+    {
+        using DbConnection connection = _connectionFactory.CreateConnection();
+        connection.Open();
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM Usuarios WHERE Activo = 1;";
+
+        return Convert.ToInt32(command.ExecuteScalar() ?? 0);
+    }
+
+    public int ContarAdministradoresActivosListado()
+    {
+        return ContarAdministradoresActivos();
+    }
     public int ContarTotal()
     {
         using DbConnection connection =
