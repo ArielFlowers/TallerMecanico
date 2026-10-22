@@ -31,6 +31,10 @@ La migración `004_ordenes_transaccionales.sql` crea `Ordenes` y
 Requiere las tablas de clientes, vehículos, mecánicos y productos.
 `DatabaseInitializer` también crea estas tablas automáticamente.
 
+La migración `006_servicios_multiples_por_orden.sql` crea el detalle de servicios
+por orden y copia los servicios de órdenes existentes conservando el costo
+registrado. `DatabaseInitializer` aplica este cambio automáticamente al iniciar.
+
 ## Base de datos existente
 
 El inicializador comprueba las columnas y el índice único antes de agregarlos. Conserva tablas, registros, contraseñas, correos, roles y marcas de verificación existentes.

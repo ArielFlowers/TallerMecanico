@@ -42,6 +42,18 @@ public sealed class OrdenRepository(DbConnection conexion, DbTransaction transac
         return orden.Id;
     }, insertandoToken: true);
 
+    public void InsertarServicio(DetalleServicioOrden servicio) => Ejecutar(() =>
+    {
+        using DbCommand comando = CrearComando("""
+            INSERT INTO DetalleServiciosOrdenes
+                (OrdenId, ServicioId, NombreServicio, DescripcionServicio, Costo, TiempoEstimadoHoras)
+            VALUES (@Orden, @Servicio, @Nombre, @Descripcion, @Costo, @Tiempo);
+            """, ("@Orden", servicio.OrdenId), ("@Servicio", servicio.ServicioId),
+            ("@Nombre", servicio.Nombre), ("@Descripcion", servicio.Descripcion),
+            ("@Costo", servicio.Costo), ("@Tiempo", servicio.TiempoEstimadoHoras));
+        return comando.ExecuteNonQuery();
+    });
+
     public void ActualizarTotal(int ordenId, decimal total) => Ejecutar(() =>
     {
         using DbCommand comando = CrearComando("UPDATE Ordenes SET Total = @Total WHERE Id = @Id;", ("@Total", total), ("@Id", ordenId));

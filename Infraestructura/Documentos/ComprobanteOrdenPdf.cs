@@ -94,13 +94,21 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
                     $"Placa: {orden.Placa}", $"Marca: {orden.Marca}", $"Modelo: {orden.Modelo}"));
             });
             columna.Item().Element(caja => ComponerCaja(caja, "MECÁNICO RESPONSABLE", orden.NombreMecanico));
-            if (orden.Servicio is not null)
+            IReadOnlyList<ServicioOrdenDetalle> servicios = orden.Servicios.Count > 0
+                ? orden.Servicios
+                : orden.Servicio is null ? [] : [orden.Servicio];
+            if (servicios.Count > 0)
             {
-                columna.Item().Element(caja => ComponerCaja(caja, "SERVICIO REALIZADO",
-                    orden.Servicio.Nombre,
-                    orden.Servicio.Descripcion,
-                    $"Costo: Bs. {FormatearImporte(orden.Servicio.Costo)}",
-                    $"Tiempo estimado: {orden.Servicio.TiempoEstimadoHoras.ToString("0.##", CulturaBoliviana)} h"));
+                string[] lineasServicio = servicios.SelectMany(servicio => new[]
+                {
+                    servicio.Nombre,
+                    servicio.Descripcion,
+                    $"Costo: Bs. {FormatearImporte(servicio.Costo)}",
+                    $"Tiempo estimado: {servicio.TiempoEstimadoHoras.ToString("0.##", CulturaBoliviana)} h"
+                }).ToArray();
+                columna.Item().Element(caja => ComponerCaja(caja,
+                    servicios.Count == 1 ? "SERVICIO REALIZADO" : "SERVICIOS REALIZADOS",
+                    lineasServicio));
             }
         });
     }

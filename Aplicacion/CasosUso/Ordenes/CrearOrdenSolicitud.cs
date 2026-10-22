@@ -9,4 +9,10 @@ public sealed record CrearOrdenSolicitud(
     DateTime Fecha,
     Guid Token,
     IReadOnlyList<LineaOrdenSolicitud> Lineas,
-    int? ServicioId = null);
+    int? ServicioId = null,
+    IReadOnlyList<int>? ServicioIds = null)
+{
+    public IReadOnlyList<int> ServiciosSeleccionados => ServicioIds is { Count: > 0 }
+        ? ServicioIds
+        : ServicioId.HasValue ? [ServicioId.Value] : [];
+}

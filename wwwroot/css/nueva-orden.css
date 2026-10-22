@@ -131,6 +131,113 @@
     font-size: 11px;
 }
 
+.nueva-orden-page .ordenes-servicio-agregar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.nueva-orden-page #orden-servicio-costo {
+    margin: 0;
+}
+
+.nueva-orden-page #orden-agregar-servicio {
+    min-height: 34px;
+    padding: 7px 12px;
+    white-space: nowrap;
+}
+
+.nueva-orden-page #orden-agregar-servicio:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.nueva-orden-page .ordenes-servicios-seleccionados {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.nueva-orden-page .ordenes-servicio-seleccionado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--surface-light);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+}
+
+.nueva-orden-page .ordenes-servicio-seleccionado > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.nueva-orden-page .ordenes-servicio-seleccionado strong {
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.nueva-orden-page .ordenes-servicio-seleccionado span {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nueva-orden-page .ordenes-servicio-seleccionado .services-btn {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 6px 10px;
+}
+
+.nueva-orden-page .ordenes-servicios-resumen {
+    margin: 12px 0 18px;
+    padding: 14px 16px;
+    background: var(--surface-light);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+}
+
+.nueva-orden-page .ordenes-servicios-resumen h3 {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.nueva-orden-page .ordenes-servicios-resumen h3 span {
+    color: var(--text-muted);
+}
+
+.nueva-orden-page .ordenes-servicios-resumen p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nueva-orden-page .ordenes-servicios-resumen ul {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nueva-orden-page .ordenes-servicios-resumen li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.nueva-orden-page .ordenes-servicios-resumen li strong {
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
 .nueva-orden-page .ordenes-cabecera > label input,
 .nueva-orden-page .ordenes-agregar > label input,
 .nueva-orden-page .ordenes-editar input {

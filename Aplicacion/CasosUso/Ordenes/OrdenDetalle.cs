@@ -23,5 +23,6 @@ public sealed record OrdenDetalle
     public string? AnuladoPor { get; init; }
     public DateTime? FechaAnulacion { get; init; }
     public ServicioOrdenDetalle? Servicio { get; init; }
+    public IReadOnlyList<ServicioOrdenDetalle> Servicios { get; init; } = [];
     public IReadOnlyList<ProductoOrdenDetalle> Productos { get; init; } = [];
 }
