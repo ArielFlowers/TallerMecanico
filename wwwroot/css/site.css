@@ -305,6 +305,75 @@ body {
     margin-bottom: 28px;
 }
 
+/* =========================
+   H2: ESTADO DE CACHÉ REDIS
+   ========================= */
+
+.cache-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 20px;
+    margin-bottom: 28px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.cache-panel strong {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.cache-estado {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+
+.cache-estado-hit {
+    color: var(--success);
+    background: rgba(74, 222, 128, 0.12);
+}
+
+.cache-estado-miss {
+    color: var(--warning);
+    background: rgba(251, 191, 36, 0.12);
+}
+
+.cache-estado-no-disponible {
+    color: var(--danger);
+    background: rgba(248, 113, 113, 0.12);
+}
+
+.cache-form {
+    margin: 0 0 0 auto;
+}
+
+.cache-boton {
+    padding: 6px 12px;
+    color: var(--text-primary);
+    background: var(--primary-soft);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.cache-boton:hover {
+    background: var(--primary);
+}
+
+.cache-mensaje {
+    margin: -16px 0 28px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
 .metric-card {
     display: flex;
     align-items: center;
