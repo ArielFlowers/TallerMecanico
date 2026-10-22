@@ -1,11 +1,176 @@
 @page
 @model TallerMecanico.Pages.Administracion.Usuarios.IndexModel
 
+<style>
+    .hu3-usuarios {
+        color: var(--text-primary);
+        max-width: 1440px;
+    }
+
+    .hu3-usuarios h1 {
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+
+    .hu3-usuarios .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .hu3-usuarios .table-responsive {
+        background: var(--surface);
+        border: 1px solid var(--surface-hover);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+        overflow-x: auto;
+    }
+
+    .hu3-usuarios .table {
+        --bs-table-bg: transparent;
+        --bs-table-color: var(--text-primary);
+        --bs-table-striped-bg: var(--surface-light);
+        --bs-table-striped-color: var(--text-primary);
+        --bs-table-hover-bg: var(--surface-hover);
+        --bs-table-hover-color: var(--text-primary);
+        --bs-table-border-color: var(--surface-hover);
+        color: var(--text-primary);
+        margin-bottom: 0;
+        width: 100%;
+    }
+
+    .hu3-usuarios .table th {
+        background: var(--surface-light);
+        color: var(--text-secondary);
+        padding: 16px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .hu3-usuarios .table td {
+        color: var(--text-primary);
+        padding: 15px 16px;
+        vertical-align: middle;
+    }
+
+    .hu3-usuarios .btn-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        padding: 10px 18px;
+    }
+
+    .hu3-usuarios .btn-primary:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+
+    .hu3-usuarios .btn-outline-primary {
+        color: var(--primary-hover);
+        border-color: var(--primary);
+    }
+
+    .hu3-usuarios .btn-outline-primary:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .hu3-usuarios .btn-outline-warning {
+        color: var(--warning);
+        border-color: var(--warning);
+    }
+
+    .hu3-usuarios .btn-outline-success {
+        color: var(--success);
+        border-color: var(--success);
+    }
+
+    .hu3-usuarios .btn-group .btn {
+        border-radius: var(--radius-sm);
+        min-width: 38px;
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hu3-usuarios .btn-group {
+        gap: 8px;
+    }
+
+    .hu3-usuarios .badge {
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-weight: 600;
+    }
+
+    .hu3-usuarios .badge.bg-primary {
+        background: var(--primary-soft) !important;
+        color: var(--primary-hover);
+    }
+
+    .hu3-usuarios .badge.bg-danger {
+        background: rgba(248, 113, 113, 0.14) !important;
+        color: var(--danger);
+    }
+
+    .hu3-usuarios .badge.bg-success {
+        background: rgba(74, 222, 128, 0.12) !important;
+        color: var(--success);
+    }
+
+    .hu3-usuarios .badge.bg-secondary {
+        background: var(--surface-hover) !important;
+        color: var(--text-secondary);
+    }
+
+    .hu3-usuarios .alert {
+        background: var(--surface-light);
+        color: var(--text-primary);
+        border-radius: var(--radius-md);
+    }
+
+    .hu3-usuarios .page-link {
+        background: var(--surface);
+        border-color: var(--surface-hover);
+        color: var(--text-secondary);
+    }
+
+    .hu3-usuarios .page-item.active .page-link {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .hu3-usuarios .page-link:hover {
+        background: var(--surface-hover);
+        color: var(--text-primary);
+    }
+
+    .hu3-usuarios .page-item.disabled .page-link {
+        background: var(--surface);
+        color: var(--text-subtle);
+    }
+
+    .hu3-usuarios .btn-group .btn {
+        min-width: 96px;
+        width: auto;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .hu3-usuarios .btn-group form {
+        margin: 0;
+    }
+
+</style>
+
 @{
     ViewData["Title"] = "Gestión de Usuarios";
 }
 
-<div class="container py-4">
+<div class="container py-4 hu3-usuarios">
 
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <div>
@@ -83,7 +248,7 @@
                                        asp-route-id="@usuario.Id"
                                        class="btn btn-outline-primary"
                                        title="Editar">
-                                        <i class="bi bi-pencil"></i>
+                                        Editar
                                     </a>
                                     @if (usuario.Activo)
                                     {
@@ -94,7 +259,7 @@
                                             <button type="submit"
                                                     class="btn btn-outline-warning"
                                                     title="Desactivar">
-                                                <i class="bi bi-person-x"></i>
+                                                Desactivar
                                             </button>
                                         </form>
                                     }
@@ -107,7 +272,7 @@
                                             <button type="submit"
                                                     class="btn btn-outline-success"
                                                     title="Reactivar">
-                                                <i class="bi bi-person-check"></i>
+                                                Activar
                                             </button>
                                         </form>
                                     }

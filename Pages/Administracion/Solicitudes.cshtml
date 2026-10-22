@@ -5,7 +5,120 @@
     ViewData["Title"] = "Aprobacion de empleados";
 }
 
-<div class="container py-4">
+<style>
+    .solicitudes-panel {
+        max-width: 1100px;
+        margin-inline: auto;
+        color: var(--text-primary);
+    }
+
+    .solicitudes-panel h1 {
+        color: var(--text-primary);
+    }
+
+    .solicitudes-panel .text-muted {
+        color: var(--text-muted) !important;
+    }
+
+    .solicitudes-empty {
+        padding: 44px 28px;
+        text-align: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+    }
+
+    .solicitudes-empty h2 {
+        color: var(--text-primary);
+        font-size: 1.35rem;
+        margin-bottom: 12px;
+    }
+
+    .solicitudes-empty p {
+        color: var(--text-secondary);
+        margin-bottom: 0;
+    }
+
+    .solicitudes-panel .table-responsive {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+    }
+
+    .solicitudes-panel .table {
+        --bs-table-bg: transparent;
+        --bs-table-color: var(--text-primary);
+        --bs-table-striped-bg: var(--surface-light);
+        --bs-table-striped-color: var(--text-primary);
+        --bs-table-hover-bg: var(--surface-hover);
+        --bs-table-hover-color: var(--text-primary);
+        --bs-table-border-color: var(--border);
+        color: var(--text-primary);
+        margin-bottom: 0;
+        min-width: 760px;
+    }
+
+    .solicitudes-panel .table th,
+    .solicitudes-panel .table td {
+        padding: 14px;
+        vertical-align: middle;
+    }
+
+    .solicitudes-panel .table th {
+        color: var(--text-secondary);
+        background: var(--surface-light);
+    }
+
+    .solicitudes-panel .badge.bg-warning {
+        background: rgba(251,191,36,.12) !important;
+        color: var(--warning) !important;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+    }
+
+    .solicitudes-panel .btn {
+        min-width: 90px;
+        padding: 9px 14px;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+    }
+
+    .solicitudes-panel .btn-success {
+        background: rgba(74,222,128,.12);
+        color: var(--success);
+        border-color: var(--success);
+    }
+
+    .solicitudes-panel .btn-danger {
+        background: rgba(248,113,113,.12);
+        color: var(--danger);
+        border-color: var(--danger);
+    }
+
+    .solicitudes-panel .btn-success:hover {
+        background: var(--success);
+        color: var(--background);
+    }
+
+    .solicitudes-panel .btn-danger:hover {
+        background: var(--danger);
+        color: var(--background);
+    }
+
+    .solicitudes-panel .alert-success {
+        background: rgba(74,222,128,.1);
+        border-color: var(--success);
+        color: var(--success);
+    }
+
+    .solicitudes-panel .alert-danger {
+        background: rgba(248,113,113,.1);
+        border-color: var(--danger);
+        color: var(--danger);
+    }
+</style>
+<div class="container py-4 solicitudes-panel">
 
     <div class="mb-4">
         <h1 class="fw-bold">Aprobacion de empleados</h1>
@@ -30,9 +143,11 @@
 
     @if (Model.Solicitudes.Count == 0)
     {
-        <div class="alert alert-info">
-            No hay solicitudes pendientes de aprobacion.
-        </div>
+        <section class="solicitudes-empty" role="status">
+    <h2>Todo al día</h2>
+    <p>No hay solicitudes pendientes de aprobación.</p>
+    <p>Las nuevas solicitudes aparecerán aquí cuando estén listas para su revisión.</p>
+</section>
     }
     else
     {
