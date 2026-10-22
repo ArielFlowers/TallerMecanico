@@ -33,6 +33,21 @@ public sealed class IndexModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int TamanoPagina { get; set; } = TamanoPaginaPredeterminado;
 
+    [BindProperty(SupportsGet = true)]
+    public string? Busqueda { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? RolFiltro { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public bool? ActivoFiltro { get; set; }
+
+    public int TotalUsuarios { get; private set; }
+
+    public int UsuariosActivos { get; private set; }
+
+    public int AdministradoresActivos { get; private set; }
+
     public int TotalRegistros { get; private set; }
 
     public int TotalPaginas { get; private set; }
@@ -45,8 +60,23 @@ public sealed class IndexModel : PageModel
     {
         ValidarPaginacion();
 
-        TotalRegistros = _usuarioConsultaPort.ContarTotal();
-        TotalPaginas = (int)Math.Ceiling((double)TotalRegistros / TamanoPagina);
+        Busqueda = string.IsNullOrWhiteSpace(Busqueda)
+            ? null
+            : Busqueda.Trim();
+
+        RolFiltro = RolFiltro is "Administrador" or "Recepcionista"
+            ? RolFiltro
+            : null;
+
+        TotalUsuarios = _usuarioConsultaPort.ContarTotal();
+        UsuariosActivos = _usuarioConsultaPort.ContarUsuariosActivos();
+        AdministradoresActivos = _usuarioConsultaPort.ContarAdministradoresActivosListado();
+
+        TotalRegistros = _usuarioConsultaPort.ContarFiltrados(
+            Busqueda, RolFiltro, ActivoFiltro);
+
+        TotalPaginas = (int)Math.Ceiling(
+            (double)TotalRegistros / TamanoPagina);
 
         if (Pagina > TotalPaginas && TotalPaginas > 0)
         {
@@ -55,7 +85,7 @@ public sealed class IndexModel : PageModel
 
         if (TotalRegistros > 0)
         {
-            var dtos = _usuarioConsultaPort.Listar(Pagina, TamanoPagina);
+            var dtos = _usuarioConsultaPort.ListarFiltrados(Busqueda, RolFiltro, ActivoFiltro, Pagina, TamanoPagina);
             Usuarios = MapearAViewModel(dtos);
         }
     }
@@ -73,7 +103,7 @@ public sealed class IndexModel : PageModel
             TempData["MensajeExito"] = "Usuario desactivado correctamente.";
         }
 
-        return RedirectToPage(new { Pagina, TamanoPagina });
+        return RedirectToPage(new { Pagina, TamanoPagina, Busqueda, RolFiltro, ActivoFiltro });
     }
 
     public IActionResult OnPostReactivar(int id)
@@ -89,7 +119,7 @@ public sealed class IndexModel : PageModel
             TempData["MensajeExito"] = "Usuario reactivado correctamente.";
         }
 
-        return RedirectToPage(new { Pagina, TamanoPagina });
+        return RedirectToPage(new { Pagina, TamanoPagina, Busqueda, RolFiltro, ActivoFiltro });
     }
 
     private void ValidarPaginacion()
