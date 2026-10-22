@@ -19,6 +19,8 @@ using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Dominio.Servicios;
 using TallerMecanico.Infraestructura.Configuracion;
 using TallerMecanico.Infraestructura.Documentos;
+using TallerMecanico.Infraestructura.Cache;
+using StackExchange.Redis;
 
 var builder =
     WebApplication.CreateBuilder(args);
@@ -209,9 +211,59 @@ builder.Services.AddAuthorization(options =>
 });
 
 // =====================================================
+// H2: REDIS COMO CACHÉ DISTRIBUIDA
+// =====================================================
+// Docker Compose define REDIS_HOST=redis para las 3 réplicas.
+// Sin REDIS_HOST (dotnet run local o pruebas) se usa memoria local
+// para la sesión y la caché del dashboard queda deshabilitada.
+string? hostRedis =
+    builder.Configuration["REDIS_HOST"] ??
+    builder.Configuration["Redis:Host"];
+
+builder.Services.AddSingleton(new OpcionesCacheDashboard
+{
+    Expiracion = TimeSpan.FromSeconds(
+        builder.Configuration.GetValue("Redis:ExpiracionDashboardSegundos", 60))
+});
+builder.Services.AddScoped<DashboardCacheService>();
+
+if (!string.IsNullOrWhiteSpace(hostRedis))
+{
+    var opcionesRedis = new ConfigurationOptions
+    {
+        AbortOnConnectFail = false,
+        ConnectTimeout = 2000,
+        SyncTimeout = 1000,
+        AsyncTimeout = 1000,
+        ClientName = $"autotaller-{Environment.MachineName}"
+    };
+    opcionesRedis.EndPoints.Add(
+        hostRedis,
+        builder.Configuration.GetValue("REDIS_PORT", 6379));
+
+    IConnectionMultiplexer conexionRedis =
+        ConnectionMultiplexer.Connect(opcionesRedis);
+
+    builder.Services.AddSingleton(conexionRedis);
+    builder.Services.AddSingleton<ICacheDistribuidaPort, RedisCacheAdapter>();
+
+    // La sesión (borradores y tokens de órdenes) se comparte entre réplicas.
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.InstanceName = "autotaller:sesion:";
+        options.ConnectionMultiplexerFactory =
+            () => Task.FromResult(conexionRedis);
+    });
+}
+else
+{
+    builder.Services.AddSingleton<ICacheDistribuidaPort, CacheDistribuidaDeshabilitada>();
+    builder.Services.AddDistributedMemoryCache();
+}
+
+// =====================================================
 // SESSION
 // =====================================================
-builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -491,6 +543,35 @@ if (app.Environment.IsDevelopment())
     {
         replica = Environment.MachineName
     })).AllowAnonymous();
+
+    // H2: equivalente a redis-cli ping desde cada réplica.
+    app.MapGet("/h2/redis", (ICacheDistribuidaPort cache, IServiceProvider servicios) =>
+    {
+        IConnectionMultiplexer? redis =
+            servicios.GetService<IConnectionMultiplexer>();
+        TimeSpan? latencia = null;
+
+        if (redis?.IsConnected == true)
+        {
+            try
+            {
+                latencia = redis.GetDatabase().Ping();
+            }
+            catch (Exception error) when (error is RedisException or TimeoutException)
+            {
+                latencia = null;
+            }
+        }
+
+        return Results.Ok(new
+        {
+            replica = Environment.MachineName,
+            redis = latencia.HasValue ? "PONG" : "NO DISPONIBLE",
+            latenciaMs = latencia?.TotalMilliseconds,
+            clave = ClavesCache.DashboardResumen,
+            ttlSegundos = cache.TiempoRestante(ClavesCache.DashboardResumen)?.TotalSeconds
+        });
+    }).AllowAnonymous();
 }
 
 app.MapStaticAssets();

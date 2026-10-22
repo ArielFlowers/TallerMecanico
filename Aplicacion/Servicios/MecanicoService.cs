@@ -22,16 +22,19 @@ public class MecanicoService
     private readonly IConsultaMecanicosPort _consultaMecanicos;
     private readonly ValidacionMecanicos _validacionMecanicos;
     private readonly ICurrentUser? _currentUser;
+    private readonly ICacheDistribuidaPort? _cache;
 
     public MecanicoService(
         CreadorMecanico creadorMecanico,
         ValidacionMecanicos validacionMecanicos,
-        ICurrentUser? currentUser = null)
+        ICurrentUser? currentUser = null,
+        ICacheDistribuidaPort? cache = null)
     {
         _mecanicoRepository = (MecanicoRepository)creadorMecanico.CrearRepositorio();
         _consultaMecanicos = _mecanicoRepository;
         _validacionMecanicos = validacionMecanicos;
         _currentUser = currentUser;
+        _cache = cache;
     }
 
     public IReadOnlyDictionary<string, string> Crear(
@@ -46,6 +49,7 @@ public class MecanicoService
         }
 
         _mecanicoRepository.Add(CrearMecanico(mecanicoNormalizado));
+        _cache?.Eliminar(ClavesCache.DashboardResumen);
 
         return errores;
     }
@@ -121,6 +125,7 @@ public class MecanicoService
         try { _mecanicoRepository.Delete(id); }
         catch (MySqlConnector.MySqlException error) when (error.Number == 1451)
         { return "No se puede eliminar el mecánico porque tiene órdenes asociadas."; }
+        _cache?.Eliminar(ClavesCache.DashboardResumen);
         return null;
     }
 
