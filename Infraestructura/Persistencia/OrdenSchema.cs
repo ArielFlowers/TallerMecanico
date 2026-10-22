@@ -47,5 +47,20 @@ internal static class OrdenSchema
             CONSTRAINT FK_DetalleOrdenes_Ordenes FOREIGN KEY (OrdenId) REFERENCES Ordenes(Id) ON DELETE CASCADE,
             CONSTRAINT FK_DetalleOrdenes_Productos FOREIGN KEY (ProductoId) REFERENCES Productos(Id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+        CREATE TABLE IF NOT EXISTS DetalleServiciosOrdenes (
+            Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            OrdenId INT NOT NULL,
+            ServicioId INT NOT NULL,
+            NombreServicio VARCHAR(100) NOT NULL,
+            DescripcionServicio VARCHAR(300) NOT NULL,
+            Costo DECIMAL(10,2) NOT NULL,
+            TiempoEstimadoHoras DECIMAL(6,2) NOT NULL,
+            CONSTRAINT UQ_DetalleServiciosOrdenes_Orden_Servicio UNIQUE (OrdenId, ServicioId),
+            CONSTRAINT CK_DetalleServiciosOrdenes_Costo CHECK (Costo > 0),
+            CONSTRAINT CK_DetalleServiciosOrdenes_Tiempo CHECK (TiempoEstimadoHoras > 0),
+            CONSTRAINT FK_DetalleServiciosOrdenes_Ordenes FOREIGN KEY (OrdenId) REFERENCES Ordenes(Id) ON DELETE CASCADE,
+            CONSTRAINT FK_DetalleServiciosOrdenes_Servicios FOREIGN KEY (ServicioId) REFERENCES Servicios(Id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """;
 }

@@ -30,11 +30,12 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     public Mecanico? MecanicoSeleccionado { get; private set; }
     public Producto? ProductoSeleccionado { get; private set; }
     public Servicio? ServicioSeleccionado { get; private set; }
+    public IReadOnlyList<ServicioSeleccionadoOrdenViewModel> ServiciosSeleccionados { get; private set; } = [];
     public IReadOnlyList<LineaOrdenTemporalViewModel> Lineas { get; private set; } = [];
     public decimal Total => Lineas.Sum(x => x.Precio * x.Cantidad);
     public long CantidadTotal => Lineas.Sum(x => (long)x.Cantidad);
-    public decimal CostoServicioSeleccionado => ServicioSeleccionado?.Costo ?? 0;
-    public decimal TotalEstimado => Total + CostoServicioSeleccionado;
+    public decimal CostoServiciosSeleccionados => ServiciosSeleccionados.Sum(x => x.Costo);
+    public decimal TotalEstimado => Total + CostoServiciosSeleccionados;
     public string? Mensaje { get; private set; }
     public int? OrdenCreadaId { get; private set; }
     public DateTime FechaOrden => facade.FechaActual;
@@ -54,7 +55,10 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     public IActionResult OnGetServicioSeleccionado(int id)
     {
         var servicio = id > 0 ? servicios.ObtenerPorId(id) : null;
-        return servicio is null ? NotFound() : new JsonResult(new { servicio.Id, servicio.Costo, servicio.TiempoEstimadoHoras });
+        return servicio is null ? NotFound() : new JsonResult(new
+        {
+            servicio.Id, servicio.Nombre, servicio.Descripcion, servicio.Costo, servicio.TiempoEstimadoHoras
+        });
     }
 
     public IActionResult OnGetVehiculoSeleccionado(int id)
@@ -71,6 +75,13 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
             if (guardado is null) { TempData["OrdenError"] = "El borrador venció. Inicia una orden nueva."; return RedirectToPage(); }
             Formulario = guardado;
         }
+        if (Formulario.ServicioIds.Count == 0 && Formulario.ServicioId.HasValue)
+        {
+            Formulario.ServicioIds.Add(Formulario.ServicioId.Value);
+            Formulario.ServicioId = null;
+            TextoServicio = null;
+        }
+        Formulario.ServicioIds = Formulario.ServicioIds.Where(id => id > 0).Distinct().ToList();
         if (Formulario.Token == Guid.Empty) Formulario.Token = facade.GenerarTokenFormulario();
         if (VehiculoNuevoId.HasValue) Formulario.VehiculoId = VehiculoNuevoId.Value;
         if (ClienteNuevoId.HasValue)
@@ -126,12 +137,12 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     {
         RestaurarContextoCliente();
         Cargar();
-        if (Formulario.Lineas.Count == 0 && !Formulario.ServicioId.HasValue)
-            ModelState.AddModelError("", "Agrega al menos un producto o selecciona un servicio.");
+        if (Formulario.ServicioIds.Count == 0)
+            ModelState.AddModelError("Formulario.ServicioIds", "Agrega al menos un servicio a la orden.");
         if (!ModelState.IsValid) return Page();
         var solicitud = new CrearOrdenSolicitud(Formulario.VehiculoId, Formulario.MecanicoId, FechaOrden,
             Formulario.Token, Formulario.Lineas.Select(x => new LineaOrdenSolicitud(x.ProductoId, x.Cantidad)).ToArray(),
-            Formulario.ServicioId);
+            Formulario.ServicioIds[0], Formulario.ServicioIds.ToArray());
         ResultadoOrden resultado = facade.CrearOrden(solicitud);
         if (!resultado.Exito)
         {
@@ -191,7 +202,21 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
             TextoMecanico = string.Join(" ", new[] { MecanicoSeleccionado.Nombres, MecanicoSeleccionado.PrimerApellido, MecanicoSeleccionado.SegundoApellido }
                 .Where(nombre => !string.IsNullOrWhiteSpace(nombre)));
         ServicioSeleccionado = Formulario.ServicioId.HasValue ? servicios.ObtenerPorId(Formulario.ServicioId.Value) : null;
-        if (ServicioSeleccionado is not null) TextoServicio = ServicioSeleccionado.Nombre;
+        if (ServicioSeleccionado is not null && string.IsNullOrWhiteSpace(TextoServicio))
+            TextoServicio = ServicioSeleccionado.Nombre;
+        ServiciosSeleccionados = Formulario.ServicioIds
+            .Distinct()
+            .Select(servicios.ObtenerPorId)
+            .Where(servicio => servicio is not null)
+            .Select(servicio => new ServicioSeleccionadoOrdenViewModel
+            {
+                Id = servicio!.Id,
+                Nombre = servicio.Nombre,
+                Descripcion = servicio.Descripcion,
+                Costo = servicio.Costo,
+                TiempoEstimadoHoras = servicio.TiempoEstimadoHoras
+            })
+            .ToArray();
         ProductoSeleccionado = ProductoId > 0 ? productos.ObtenerPorId(ProductoId) : null;
         if (ProductoSeleccionado is not null) BuscarProducto = ProductoSeleccionado.Nombre;
         Lineas = Formulario.Lineas.Select(x =>
@@ -218,7 +243,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     private static string MapearError(string campo) => campo switch
     {
         "VehiculoId" => "Formulario.VehiculoId", "MecanicoId" => "Formulario.MecanicoId",
-        "Fecha" => "Formulario.Fecha", "ServicioId" => "Formulario.ServicioId",
+        "Fecha" => "Formulario.Fecha", "ServicioId" or "ServicioIds" => "Formulario.ServicioIds",
         _ => ""
     };
 }

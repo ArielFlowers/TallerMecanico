@@ -7,6 +7,7 @@ public sealed class Orden
     public int MecanicoId { get; set; }
     public int? ServicioId { get; set; }
     public decimal? CostoServicio { get; set; }
+    public List<DetalleServicioOrden> Servicios { get; set; } = [];
     public DateTime Fecha { get; set; }
     public EstadoOrden Estado { get; set; } = EstadoOrden.Activa;
     public decimal Total { get; set; }

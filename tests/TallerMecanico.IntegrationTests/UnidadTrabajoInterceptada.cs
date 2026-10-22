@@ -48,6 +48,7 @@ internal sealed class UnidadTrabajoInterceptada(
             public Orden? ObtenerPorToken(Guid token) => contexto.Ejecutar("ObtenerToken", () => real.ObtenerPorToken(token));
             public Orden? ObtenerParaAnular(int id) => contexto.Ejecutar("ObtenerAnular", () => real.ObtenerParaAnular(id));
             public void Insertar(Orden orden) => real.Insertar(orden);
+            public void InsertarServicio(DetalleServicioOrden servicio) => real.InsertarServicio(servicio);
             public void ActualizarTotal(int ordenId, decimal total) => real.ActualizarTotal(ordenId, total);
             public bool MarcarAnulada(int ordenId, string usuario, DateTime fechaUtc) => real.MarcarAnulada(ordenId, usuario, fechaUtc);
         }

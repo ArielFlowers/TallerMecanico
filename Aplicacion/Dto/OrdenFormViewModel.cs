@@ -4,10 +4,21 @@ public sealed class OrdenFormViewModel
 {
     public int VehiculoId { get; set; }
     public int MecanicoId { get; set; }
+    // ServicioId mantiene compatibilidad con borradores previos.
     public int? ServicioId { get; set; }
+    public List<int> ServicioIds { get; set; } = [];
     public Guid Token { get; set; }
     public int? ClienteNuevoId { get; set; }
     public List<LineaOrdenFormViewModel> Lineas { get; set; } = [];
+}
+
+public sealed class ServicioSeleccionadoOrdenViewModel
+{
+    public int Id { get; init; }
+    public string Nombre { get; init; } = string.Empty;
+    public string Descripcion { get; init; } = string.Empty;
+    public decimal Costo { get; init; }
+    public decimal TiempoEstimadoHoras { get; init; }
 }
 
 public sealed class LineaOrdenFormViewModel

@@ -19,7 +19,7 @@
     <form method="post" id="formulario-orden" asp-page-handler="Guardar"
           data-vehiculo-url="@Url.Page("./Crear", "VehiculoSeleccionado")"
           data-servicio-url="@Url.Page("./Crear", "ServicioSeleccionado")"
-          data-costo-servicio="@Model.CostoServicioSeleccionado.ToString(CultureInfo.InvariantCulture)">
+          data-costo-servicio="@Model.CostoServiciosSeleccionados.ToString(CultureInfo.InvariantCulture)">
         <input type="hidden" asp-for="Formulario.Token" />
         <input type="hidden" asp-for="BorradorId" />
         <input type="hidden" name="ProductoId" value="@Model.ProductoId" />
@@ -46,17 +46,36 @@
                     <p id="orden-vehiculo-aviso" role="status" hidden="@(Model.VehiculoSeleccionado?.ClienteId.HasValue != false)">El vehículo requiere un cliente antes de guardar la orden.</p>
                     <span asp-validation-for="Formulario.VehiculoId" class="service-validation"></span>
                 </div>
-                <div class="ordenes-selector">
+                <div class="ordenes-selector ordenes-servicios-selector"
+                     data-servicio-pendiente-id="@Model.ServicioSeleccionado?.Id"
+                     data-servicio-pendiente-nombre="@Model.ServicioSeleccionado?.Nombre"
+                     data-servicio-pendiente-costo="@(Model.ServicioSeleccionado?.Costo.ToString(CultureInfo.InvariantCulture) ?? "")"
+                     data-servicio-pendiente-tiempo="@(Model.ServicioSeleccionado?.TiempoEstimadoHoras.ToString(CultureInfo.InvariantCulture) ?? "")">
                     <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
                     {
                         Id = "orden-servicio", UrlSugerencias = Url.Page("./Crear", "SugerenciasServicios")!,
                         Modo = BuscadorAutocompletadoModel.ModoSeleccionar,
-                        Etiqueta = "Servicio a realizar", Placeholder = "Buscar por nombre o descripción...",
+                        Etiqueta = "Servicios a realizar", Placeholder = "Buscar un servicio por nombre...",
                         NombreCampoTexto = nameof(Model.TextoServicio), NombreCampoId = "Formulario.ServicioId",
                         Texto = Model.TextoServicio ?? string.Empty, IdSeleccionado = Model.ServicioSeleccionado?.Id
                     }' />
-                    <p id="orden-servicio-costo" role="status">@(Model.ServicioSeleccionado is null ? "Selecciona un servicio para consultar su costo." : $"Bs. {Model.CostoServicioSeleccionado:0.00} · {Model.ServicioSeleccionado.TiempoEstimadoHoras:0.##} h")</p>
-                    <span asp-validation-for="Formulario.ServicioId" class="service-validation"></span>
+                    <div class="ordenes-servicio-agregar">
+                        <p id="orden-servicio-costo" role="status">@(Model.ServicioSeleccionado is null ? "Busca y selecciona un servicio para agregarlo." : $"Bs. {Model.ServicioSeleccionado.Costo:0.00} · {Model.ServicioSeleccionado.TiempoEstimadoHoras:0.##} h")</p>
+                        <button type="button" id="orden-agregar-servicio" class="services-btn services-btn-secondary" disabled="@(Model.ServicioSeleccionado is null)">Agregar servicio</button>
+                    </div>
+                    <p id="orden-servicio-mensaje" class="ordenes-ayuda" role="status" aria-live="polite"></p>
+                    <span asp-validation-for="Formulario.ServicioIds" class="service-validation"></span>
+                    <div id="orden-servicios-seleccionados" class="ordenes-servicios-seleccionados" aria-label="Servicios agregados a la orden">
+                        @for (var indice = 0; indice < Model.ServiciosSeleccionados.Count; indice++)
+                        {
+                            var servicio = Model.ServiciosSeleccionados[indice];
+                            <article class="ordenes-servicio-seleccionado" data-servicio-seleccionado data-servicio-id="@servicio.Id" data-costo="@servicio.Costo.ToString(CultureInfo.InvariantCulture)">
+                                <input type="hidden" name="Formulario.ServicioIds" value="@servicio.Id" />
+                                <div><strong data-servicio-nombre>@servicio.Nombre</strong><span>Bs. @servicio.Costo.ToString("0.00") · @servicio.TiempoEstimadoHoras.ToString("0.##") h</span></div>
+                                <button type="button" class="services-btn services-btn-secondary" data-quitar-servicio aria-label="Quitar @servicio.Nombre">Quitar</button>
+                            </article>
+                        }
+                    </div>
                 </div>
                 <div class="ordenes-selector">
                     <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
@@ -102,7 +121,22 @@
 
     <section class="recent-orders ordenes-card">
         <div class="ordenes-titulo-seccion"><span class="ordenes-paso">3</span><div><h2>Resumen de la orden <span class="ordenes-conteo">@Model.Lineas.Count @(Model.Lineas.Count == 1 ? "repuesto" : "repuestos")</span></h2><p>Revisa los conceptos y el total estimado antes de guardar.</p></div></div>
-        <p id="orden-servicio-detalle" role="status" hidden="@(Model.ServicioSeleccionado is null)">Servicio: <strong>@Model.ServicioSeleccionado?.Nombre</strong></p>
+        <div class="ordenes-servicios-resumen" aria-live="polite">
+            <h3>Servicios incluidos <span id="orden-servicios-cantidad">@Model.ServiciosSeleccionados.Count</span></h3>
+            @if (Model.ServiciosSeleccionados.Count == 0)
+            {
+                <p id="orden-servicios-vacio">Agrega uno o más servicios para completar la orden.</p>
+            }
+            else
+            {
+                <ul id="orden-servicios-resumen-lista">
+                    @foreach (var servicio in Model.ServiciosSeleccionados)
+                    {
+                        <li data-servicio-resumen="@servicio.Id"><span>@servicio.Nombre</span><strong>Bs. @servicio.Costo.ToString("0.00")</strong></li>
+                    }
+                </ul>
+            }
+        </div>
         @if (Model.Lineas.Count == 0) { <div class="ordenes-vacio-detalle"><span aria-hidden="true">＋</span><p><strong>Aún no hay repuestos</strong><br />Puedes guardar la orden solo con un servicio.</p></div> }
         else
         {
@@ -139,7 +173,7 @@
                         <tr>
                             <th colspan="2">Resumen (<span id="resumen-lineas">@Model.Lineas.Count</span> líneas)</th>
                             <th colspan="2"><span id="resumen-cantidad">@Model.CantidadTotal</span> unidades</th>
-                            <th id="resumen-total" data-costo-servicio="@Model.CostoServicioSeleccionado.ToString(CultureInfo.InvariantCulture)">Bs. @Model.TotalEstimado.ToString("0.00")</th><th></th>
+                            <th id="resumen-total" data-costo-servicio="@Model.CostoServiciosSeleccionados.ToString(CultureInfo.InvariantCulture)">Bs. @Model.TotalEstimado.ToString("0.00")</th><th></th>
                         </tr>
                     </tfoot>
                 </table>
@@ -148,6 +182,7 @@
         <div class="ordenes-guardar">
             <span class="ordenes-total-estimado">Total estimado <strong data-total-estimado>Bs. @Model.TotalEstimado.ToString("0.00")</strong></span>
             <span asp-validation-for="Formulario.Lineas" class="service-validation"></span>
+            <span asp-validation-for="Formulario.ServicioIds" class="service-validation"></span>
             <button type="submit" form="formulario-orden" class="services-btn services-btn-primary">✓ Guardar orden</button>
         </div>
     </section>

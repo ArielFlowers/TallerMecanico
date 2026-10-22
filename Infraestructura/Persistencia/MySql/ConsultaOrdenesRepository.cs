@@ -28,7 +28,11 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
                        Cliente.PrimerApellido, Cliente.SegundoApellido), '') AS NombreCliente,
                     CONCAT_WS(' ', Mecanico.Nombres,
                         Mecanico.PrimerApellido, Mecanico.SegundoApellido) AS NombreMecanico,
-                    Servicio.Nombre AS NombreServicio,
+                    COALESCE(
+                        (SELECT GROUP_CONCAT(DetalleServicio.NombreServicio ORDER BY DetalleServicio.Id SEPARATOR ', ')
+                         FROM DetalleServiciosOrdenes AS DetalleServicio
+                         WHERE DetalleServicio.OrdenId = Orden.Id),
+                        Servicio.Nombre) AS NombreServicio,
                     Orden.Total,
                     Orden.Estado,
                     Orden.CreadoPor
@@ -138,7 +142,8 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
                        Mecanico.PrimerApellido, Mecanico.SegundoApellido) AS NombreMecanico,
                     Mecanico.Ci AS CiMecanico, Mecanico.ComplementoCi AS ComplementoCiMecanico,
                     Servicio.Nombre AS ServicioNombre, Servicio.Descripcion AS ServicioDescripcion,
-                    Servicio.Costo AS ServicioCosto, Servicio.TiempoEstimadoHoras AS ServicioTiempo,
+                    COALESCE(Orden.CostoServicio, Servicio.Costo) AS ServicioCosto,
+                    Servicio.TiempoEstimadoHoras AS ServicioTiempo,
                     Detalle.Id AS DetalleId, Detalle.Cantidad, Detalle.PrecioUnitario, Detalle.Subtotal,
                     Producto.Codigo, Producto.Nombre
              FROM Ordenes AS Orden
@@ -155,23 +160,56 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
         using DbCommand comando = conexion.CreateCommand();
         comando.CommandText = consulta;
         AgregarParametro(comando, "@Id", id);
-        using DbDataReader lector = comando.ExecuteReader();
-
-        if (!lector.Read()) return null;
-
+        OrdenDetalle detalle;
         var productos = new List<ProductoOrdenDetalle>();
-        var detalle = MapearDetalle(lector, productos.AsReadOnly());
-        int indiceDetalle = lector.GetOrdinal("DetalleId");
-
-        do
+        using (DbDataReader lector = comando.ExecuteReader())
         {
-            if (!lector.IsDBNull(indiceDetalle))
-            {
-                productos.Add(MapearProducto(lector));
-            }
-        } while (lector.Read());
+            if (!lector.Read()) return null;
 
-        return detalle;
+            detalle = MapearDetalle(lector, productos.AsReadOnly());
+            int indiceDetalle = lector.GetOrdinal("DetalleId");
+            do
+            {
+                if (!lector.IsDBNull(indiceDetalle))
+                    productos.Add(MapearProducto(lector));
+            } while (lector.Read());
+        }
+
+        IReadOnlyList<ServicioOrdenDetalle> servicios = ObtenerServicios(id);
+        if (servicios.Count == 0 && detalle.Servicio is not null)
+            servicios = [detalle.Servicio];
+        return detalle with
+        {
+            Servicios = servicios,
+            Servicio = servicios.FirstOrDefault()
+        };
+    }
+
+    private IReadOnlyList<ServicioOrdenDetalle> ObtenerServicios(int ordenId)
+    {
+        using DbConnection conexion = connectionFactory.CreateConnection();
+        conexion.Open();
+        using DbCommand comando = conexion.CreateCommand();
+        comando.CommandText = """
+            SELECT NombreServicio, DescripcionServicio, Costo, TiempoEstimadoHoras
+            FROM DetalleServiciosOrdenes
+            WHERE OrdenId = @Id
+            ORDER BY Id;
+            """;
+        AgregarParametro(comando, "@Id", ordenId);
+        using DbDataReader lector = comando.ExecuteReader();
+        var servicios = new List<ServicioOrdenDetalle>();
+        while (lector.Read())
+        {
+            servicios.Add(new ServicioOrdenDetalle
+            {
+                Nombre = lector.GetString(0),
+                Descripcion = lector.GetString(1),
+                Costo = lector.GetDecimal(2),
+                TiempoEstimadoHoras = lector.GetDecimal(3)
+            });
+        }
+        return servicios;
     }
 
     private static OrdenDetalle MapearDetalle(
