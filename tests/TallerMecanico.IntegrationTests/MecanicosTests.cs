@@ -9,6 +9,30 @@ public sealed class MecanicosTests
 {
     private readonly ValidacionMecanicos _validador = new();
 
+    [Theory]
+    [InlineData("51234567", null)]
+    [InlineData("61234567", null)]
+    [InlineData("71234567", null)]
+    [InlineData("", "El celular es obligatorio.")]
+    [InlineData("6123456", "El celular debe tener exactamente 8 dígitos.")]
+    [InlineData("612345678", "El celular debe tener exactamente 8 dígitos.")]
+    [InlineData("6A234567", "El celular debe contener únicamente números.")]
+    [InlineData("6123 456", "El celular no debe contener espacios.")]
+    [InlineData("41234567", "El celular debe comenzar en 5, 6 o 7.")]
+    public void Celular_ConservaReglasYMensajesDelServidor(string celular, string? mensajeEsperado)
+    {
+        var formulario = FormularioValido();
+        formulario.Celular = celular;
+        var errores = _validador.Validar(formulario);
+        if (mensajeEsperado is null) Assert.Empty(errores);
+        else
+        {
+            var error = Assert.Single(errores);
+            Assert.Equal(nameof(MecanicoInputModel.Celular), error.Key);
+            Assert.Equal(mensajeEsperado, error.Value);
+        }
+    }
+
     internal static MecanicoInputModel FormularioValido(string ci = "1234567") => new()
     {
         Ci = ci,

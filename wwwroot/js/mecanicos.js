@@ -54,6 +54,29 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    celular.addEventListener("input", () => {
+        const posicion = celular.selectionStart ?? celular.value.length;
+        const posicionNumerica = celular.value.slice(0, posicion).replace(/[^0-9]/g, "").length;
+        const digitos = celular.value.replace(/[^0-9]/g, "").slice(0, celular.maxLength);
+        if (celular.value !== digitos) {
+            celular.value = digitos;
+            const nuevaPosicion = Math.min(posicionNumerica, digitos.length);
+            celular.setSelectionRange(nuevaPosicion, nuevaPosicion);
+        }
+    });
+
+    celular.addEventListener("paste", evento => {
+        if (!evento.clipboardData) return;
+        evento.preventDefault();
+        const inicio = celular.selectionStart ?? celular.value.length;
+        const fin = celular.selectionEnd ?? inicio;
+        const espacioDisponible = Math.max(0, celular.maxLength - celular.value.length + fin - inicio);
+        const digitos = evento.clipboardData.getData("text").replace(/[^0-9]/g, "");
+        if (!digitos) return;
+        celular.setRangeText(digitos.slice(0, espacioDisponible), inicio, fin, "end");
+        celular.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
     const configurarFormulario = (modo, datos = null, conservarValores = false) => {
         const esEdicion = modo === "editar";
 
