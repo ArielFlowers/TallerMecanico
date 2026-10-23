@@ -475,3 +475,28 @@ Modificados:
 
 La evidencia JSON incluye resultados, TTL, valores del resumen, identificadores de
 réplicas y logs pertinentes, pero no contraseñas, cookies ni tokens antiforgery.
+
+## Iteración 5: configuración y sesiones
+
+Ver `INFORME-ITERACION5.md` para defectos reproducidos, cambios, pruebas, límites de
+durabilidad y alternativas de infraestructura pendientes de autorización.
+La evidencia anterior/posterior se conserva en `resultado-iteracion5.json`.
+`sesiones_real.cjs` detiene y arranca únicamente Redis H2, después de verificar su
+aislamiento; el reinicio elimina las sesiones volátiles de pruebas. No ejecutarlo
+en paralelo con otras pruebas H2 que dependan de conservar esos borradores/tokens.
+
+## Iteración 6: regresión final e integración
+
+Ver `INFORME-ITERACION6.md` y `resultado-iteracion6.json`: H2 específico/real pasa.
+En el cierre, los nueve fallos de integración se reprodujeron con idéntico mensaje
+en main intacto; no se detectaron regresiones nuevas de H2. El equipo aceptó el
+riesgo de appsettings.json. Lista para commit final, push y PR, declarando que la
+regresión completa no está verde. No se realizó merge, push ni commit.
+
+`autenticacion_real.cjs` prueba login A, logout B y acceso posterior C, con
+antiforgery y credenciales exclusivamente H2. Requiere PLAYWRIGHT_MODULE y local.env.
+`ejecutar_regresion_mysql.sh` se ejecuta dentro de un SDK temporal conectado solo
+a la red H2, con fuente/paquetes de solo lectura y resultados ignorados. Usa
+credenciales H2 para bases autotaller_test_* y excluye las seis clases inseguras;
+no habilita correo ni navegador Linux. No debe ejecutarse en paralelo con la
+prueba que reinicia Redis ni con sus comprobaciones de aislamiento de red.

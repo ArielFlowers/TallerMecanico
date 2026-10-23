@@ -6,7 +6,7 @@ namespace TallerMecanico.Infraestructura.Sesion;
 public sealed class TokenOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario, TimeProvider reloj) : ITokenOrdenPort
 {
     private sealed record TokenFormulario(string Usuario, DateTime VenceUtc);
-    private ISession Session => contexto.HttpContext?.Session ?? throw new InvalidOperationException("No hay sesión disponible.");
+    private ISession Session => SesionDisponible.Obtener(contexto.HttpContext);
     private static string Clave(Guid token) => $"Ordenes:Token:{token:N}";
 
     public Guid Generar()
