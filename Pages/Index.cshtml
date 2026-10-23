@@ -92,7 +92,12 @@
 
             <div class="cache-panel" title="Origen de los datos del dashboard (Redis compartido entre réplicas)">
                 <span class="cache-estado @claseCache">Cache: @estadoCache</span>
-                @if (Model.Cache.Almacenado == false)
+                @if (Model.Cache.Publicacion is TallerMecanico.Aplicacion.Dto.EstadoPublicacionResumen.RechazadaPorGeneracion
+                    or TallerMecanico.Aplicacion.Dto.EstadoPublicacionResumen.EntradaExistente)
+                {
+                    <span>El resumen no se publicó porque hubo un cambio concurrente; se muestran los datos consultados en MySQL.</span>
+                }
+                else if (Model.Cache.Almacenado == false)
                 {
                     <span>No se pudo guardar el resumen en caché; se muestran datos de MySQL.</span>
                 }

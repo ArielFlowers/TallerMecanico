@@ -14,15 +14,16 @@ public sealed class OpcionesCacheDashboard
 // HIT: devuelve el valor guardado en Redis sin tocar MySQL.
 public class DashboardCacheService
 {
+    private const int MaximoReintentosPublicacion = 1;
     private readonly DashboardService _dashboardService;
-    private readonly ICacheDistribuidaPort _cache;
+    private readonly ICacheResumenDashboardPort _cache;
     private readonly OpcionesCacheDashboard _opciones;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<DashboardCacheService> _logger;
 
     public DashboardCacheService(
         DashboardService dashboardService,
-        ICacheDistribuidaPort cache,
+        ICacheResumenDashboardPort cache,
         OpcionesCacheDashboard opciones,
         TimeProvider timeProvider,
         ILogger<DashboardCacheService> logger)
@@ -34,11 +35,14 @@ public class DashboardCacheService
         _logger = logger;
     }
 
-    public ResultadoDashboard Obtener()
+    public ResultadoDashboard Obtener() => Obtener(0);
+
+    private ResultadoDashboard Obtener(int reintentos)
     {
         string replicaActual = Environment.MachineName;
 
-        ResultadoLecturaCache lectura = _cache.Obtener(ClavesCache.DashboardResumen);
+        LecturaResumenDashboard captura = _cache.ObtenerResumen();
+        ResultadoLecturaCache lectura = captura.Lectura;
         EntradaCacheDashboard? entrada = lectura.Estado == EstadoLecturaCache.Hit
             ? Deserializar(lectura.Valor)
             : null;
@@ -57,7 +61,7 @@ public class DashboardCacheService
                 entrada.Replica,
                 replicaActual,
                 entrada.GeneradoEn,
-                _cache.TiempoRestante(ClavesCache.DashboardResumen));
+                _cache.TiempoRestanteResumen());
         }
 
         EstadoCache estado = lectura.Estado switch
@@ -68,13 +72,14 @@ public class DashboardCacheService
             _ => EstadoCache.NoDisponible
         };
 
-        return RecuperarDesdeMySql(estado, lectura.Estado, replicaActual);
+        return RecuperarDesdeMySql(estado, captura, replicaActual, reintentos);
     }
 
     private ResultadoDashboard RecuperarDesdeMySql(
         EstadoCache estado,
-        EstadoLecturaCache lectura,
-        string replicaActual)
+        LecturaResumenDashboard captura,
+        string replicaActual,
+        int reintentos)
     {
         DashboardViewModel dashboard = _dashboardService.GetDashboardData();
 
@@ -83,14 +88,24 @@ public class DashboardCacheService
             replicaActual,
             _timeProvider.GetLocalNow());
 
-        bool? almacenado = estado == EstadoCache.Deshabilitado
-            ? null
-            : _cache.Guardar(
-                ClavesCache.DashboardResumen,
+        EstadoPublicacionResumen publicacion = estado == EstadoCache.Deshabilitado
+            ? EstadoPublicacionResumen.Deshabilitado
+            : _cache.PublicarResumen(
+                captura,
                 JsonSerializer.Serialize(nuevaEntrada),
                 _opciones.Expiracion);
 
-        RegistrarRecuperacion(estado, lectura, almacenado, replicaActual);
+        if (publicacion is EstadoPublicacionResumen.RechazadaPorGeneracion or EstadoPublicacionResumen.EntradaExistente)
+        {
+            _logger.LogInformation("PUBLICACION RECHAZADA | clave {Clave} | réplica {Replica} | resultado {Resultado} | reintento {Reintento}",
+                ClavesCache.DashboardResumen, replicaActual, publicacion, reintentos);
+            if (reintentos < MaximoReintentosPublicacion) return Obtener(reintentos + 1);
+        }
+
+        bool? almacenado = publicacion == EstadoPublicacionResumen.Deshabilitado
+            ? null : publicacion == EstadoPublicacionResumen.Publicada;
+
+        RegistrarRecuperacion(estado, captura.Lectura.Estado, almacenado, replicaActual, publicacion);
 
         return new ResultadoDashboard(
             dashboard,
@@ -98,19 +113,23 @@ public class DashboardCacheService
             replicaActual,
             replicaActual,
             nuevaEntrada.GeneradoEn,
-            almacenado == true ? _cache.TiempoRestante(ClavesCache.DashboardResumen) : null,
-            almacenado);
+            almacenado == true ? _cache.TiempoRestanteResumen() : null,
+            almacenado,
+            publicacion);
     }
 
     private void RegistrarRecuperacion(
         EstadoCache estado,
         EstadoLecturaCache lectura,
         bool? almacenado,
-        string replicaActual)
+        string replicaActual,
+        EstadoPublicacionResumen publicacion)
     {
         string recorrido = estado switch
         {
             EstadoCache.Miss when almacenado == true => "MISS -> MySQL -> Redis",
+            EstadoCache.Miss when publicacion is EstadoPublicacionResumen.RechazadaPorGeneracion or EstadoPublicacionResumen.EntradaExistente
+                => "MISS -> MySQL | publicación descartada por concurrencia",
             EstadoCache.Miss => "MISS -> MySQL | SET fallido",
             EstadoCache.Deshabilitado => "DESHABILITADO -> MySQL",
             EstadoCache.EntradaInvalida => "ENTRADA INVALIDA -> MySQL",
@@ -119,6 +138,8 @@ public class DashboardCacheService
         string escritura = almacenado switch
         {
             true => "Exitosa",
+            false when publicacion is EstadoPublicacionResumen.RechazadaPorGeneracion or EstadoPublicacionResumen.EntradaExistente
+                => "RechazadaPorConcurrencia",
             false => "Fallida",
             null => "NoIntentada"
         };
@@ -130,13 +151,13 @@ public class DashboardCacheService
             : LogLevel.Information;
 
         _logger.Log(nivel,
-            "{Recorrido} | operación GET/SET | clave {Clave} | réplica {Replica} | lectura {Lectura} | estado {Estado} | escritura {Escritura}",
-            recorrido, ClavesCache.DashboardResumen, replicaActual, resultadoLectura, estado, escritura);
+            "{Recorrido} | operación GET/SET | clave {Clave} | réplica {Replica} | lectura {Lectura} | estado {Estado} | escritura {Escritura} | publicación {Publicacion}",
+            recorrido, ClavesCache.DashboardResumen, replicaActual, resultadoLectura, estado, escritura, publicacion);
     }
 
     public ResultadoEliminacionCache Invalidar()
     {
-        ResultadoEliminacionCache resultado = _cache.Eliminar(ClavesCache.DashboardResumen);
+        ResultadoEliminacionCache resultado = _cache.InvalidarResumen();
 
         _logger.Log(resultado is ResultadoEliminacionCache.Error or ResultadoEliminacionCache.NoDisponible
                 ? LogLevel.Warning : LogLevel.Information,

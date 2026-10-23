@@ -143,7 +143,7 @@ public sealed class DashboardCacheServiceTests
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(false, false)]
-    public void GetFallido_ConservaErrorIndependientementeDelSet(bool timeout, bool guardar)
+    public void GeneracionFallida_NoPermitePublicarAunqueSetPudieraResponder(bool timeout, bool guardar)
     {
         var redis = new ConexionRedisPrueba
         {
@@ -157,14 +157,15 @@ public sealed class DashboardCacheServiceTests
         ResultadoDashboard resultado = CrearServicio(adapter).Obtener();
 
         Assert.Equal(EstadoCache.NoDisponible, resultado.Estado);
-        Assert.Equal(guardar, resultado.Almacenado);
+        Assert.False(resultado.Almacenado);
+        Assert.Equal(EstadoPublicacionResumen.NoDisponible, resultado.Publicacion);
         Assert.Equal(1, redis.Lecturas);
-        Assert.Equal(1, redis.Escrituras);
+        Assert.Equal(0, redis.Escrituras);
         Assert.Equal(1, _mecanicos.Consultas);
         Assert.Equal(1, _vehiculos.Consultas);
         Assert.Equal(1, _servicios.Consultas);
         Assert.Contains(_logger.Mensajes, mensaje => mensaje.Contains("ERROR GET -> MySQL")
-            && mensaje.Contains("lectura Error") && mensaje.Contains(guardar ? "escritura Exitosa" : "escritura Fallida"));
+            && mensaje.Contains("lectura Error") && mensaje.Contains("escritura Fallida"));
         Assert.DoesNotContain(_logger.Mensajes, mensaje => mensaje.Contains("MISS") || mensaje.Contains("HIT")
             || mensaje.Contains("secreto-no-registrar"));
     }
@@ -279,7 +280,7 @@ public sealed class DashboardCacheServiceTests
         ["GeneradoEn"] = "2026-10-22T12:00:00Z"
     };
 
-    private DashboardCacheService CrearServicio(ICacheDistribuidaPort? cache = null)
+    private DashboardCacheService CrearServicio(ICacheResumenDashboardPort? cache = null)
     {
         return new DashboardCacheService(
             new DashboardService(_servicios, _vehiculos, _mecanicos),
@@ -290,13 +291,14 @@ public sealed class DashboardCacheServiceTests
     }
 
     [Fact]
-    public void Concurrencia_MissPuedePublicarConteoAnteriorTrasInvalidacion()
+    public void Concurrencia_InvalidacionDuranteMiss_RechazaConteoAnteriorYReintenta()
     {
         var servicio = CrearServicio();
         _servicios.AlContar = () =>
         {
             _mecanicos.Total = 4;
-            _cache.Eliminar(ClavesCache.DashboardResumen);
+            _cache.InvalidarResumen();
+            _servicios.AlContar = null;
         };
 
         ResultadoDashboard missAnterior = servicio.Obtener();
@@ -304,12 +306,74 @@ public sealed class DashboardCacheServiceTests
 
         Assert.Equal(EstadoCache.Miss, missAnterior.Estado);
         Assert.Equal(EstadoCache.Hit, hitDesactualizado.Estado);
-        Assert.Equal(3, hitDesactualizado.Dashboard.MecanicosDisponibles);
+        Assert.Equal(4, hitDesactualizado.Dashboard.MecanicosDisponibles);
         Assert.Equal(4, _mecanicos.Total);
+        Assert.Equal(2, _mecanicos.Consultas);
+        Assert.Equal(1, _cache.Rechazos);
+        Assert.Contains(_logger.Mensajes, mensaje => mensaje.Contains("RechazadaPorGeneracion"));
     }
 
-    private sealed class CacheEnMemoria : ICacheDistribuidaPort
+    [Fact]
+    public void Concurrencia_InvalidacionesContinuas_LimitaReintentoYNoPublica()
     {
+        _servicios.AlContar = () => _cache.InvalidarResumen();
+        ResultadoDashboard resultado = CrearServicio().Obtener();
+        Assert.Equal(2, _mecanicos.Consultas);
+        Assert.Equal(2, _cache.Rechazos);
+        Assert.False(resultado.Almacenado);
+        Assert.Equal(EstadoPublicacionResumen.RechazadaPorGeneracion, resultado.Publicacion);
+        Assert.Empty(_cache.Valores);
+        Assert.DoesNotContain(_logger.Mensajes, mensaje => mensaje.Contains("SET fallido") || mensaje.Contains("escritura Exitosa"));
+    }
+
+    [Fact]
+    public void DosMiss_MismaGeneracion_NoSobrescribenGanadorNiRenuevanTtl()
+    {
+        var lecturaA = _cache.ObtenerResumen();
+        var lecturaB = _cache.ObtenerResumen();
+        Assert.Equal(EstadoPublicacionResumen.Publicada, _cache.PublicarResumen(lecturaA, "primero", TimeSpan.FromSeconds(10)));
+        Assert.Equal(EstadoPublicacionResumen.EntradaExistente, _cache.PublicarResumen(lecturaB, "segundo", TimeSpan.FromSeconds(60)));
+        Assert.Equal("primero", _cache.Valores[ClavesCache.DashboardResumen]);
+        Assert.Equal(TimeSpan.FromSeconds(10), _cache.TiempoRestanteResumen());
+    }
+
+    [Fact]
+    public void DosInstancias_InvalidacionManualDuranteMiss_ReintentaConDatosActuales()
+    {
+        var replicaB = CrearServicio();
+        _servicios.AlContar = () =>
+        {
+            _mecanicos.Total = 8;
+            Assert.Equal(ResultadoEliminacionCache.Inexistente, replicaB.Invalidar());
+            _servicios.AlContar = null;
+        };
+        Assert.Equal(8, CrearServicio().Obtener().Dashboard.MecanicosDisponibles);
+        Assert.Equal(8, replicaB.Obtener().Dashboard.MecanicosDisponibles);
+        Assert.Equal(1, _cache.Rechazos);
+    }
+
+    private sealed class CacheEnMemoria : ICacheDistribuidaPort, ICacheResumenDashboardPort
+    {
+        private string _generacion = Guid.NewGuid().ToString("N");
+        public int Rechazos { get; private set; }
+        public LecturaResumenDashboard ObtenerResumen() => new(Obtener(ClavesCache.DashboardResumen), Disponible ? _generacion : null);
+        public EstadoPublicacionResumen PublicarResumen(LecturaResumenDashboard lectura, string valor, TimeSpan expiracion)
+        {
+            if (!Disponible || lectura.Generacion is null) return EstadoPublicacionResumen.NoDisponible;
+            if (!PermitirGuardar) return EstadoPublicacionResumen.Error;
+            if (lectura.Generacion != _generacion) { Rechazos++; return EstadoPublicacionResumen.RechazadaPorGeneracion; }
+            Valores.TryGetValue(ClavesCache.DashboardResumen, out string? actual);
+            if (actual != lectura.Lectura.Valor) return EstadoPublicacionResumen.EntradaExistente;
+            Guardar(ClavesCache.DashboardResumen, valor, expiracion);
+            return EstadoPublicacionResumen.Publicada;
+        }
+        public ResultadoEliminacionCache InvalidarResumen()
+        {
+            if (!Disponible) return ResultadoEliminacionCache.NoDisponible;
+            _generacion = Guid.NewGuid().ToString("N");
+            return Eliminar(ClavesCache.DashboardResumen);
+        }
+        public TimeSpan? TiempoRestanteResumen() => TiempoRestante(ClavesCache.DashboardResumen);
         public Dictionary<string, string> Valores { get; } = [];
 
         public Dictionary<string, TimeSpan> Expiraciones { get; } = [];

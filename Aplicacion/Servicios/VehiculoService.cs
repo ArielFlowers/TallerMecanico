@@ -26,14 +26,14 @@ public class VehiculoService
 
     private readonly ICurrentUser? _currentUser;
 
-    private readonly ICacheDistribuidaPort? _cache;
+    private readonly ICacheResumenDashboardPort? _cache;
 
     public VehiculoService(
         IVehiculoPort vehiculoPort,
         IClientePort clientePort,
         ValidacionVehiculos validacionVehiculos,
         ICurrentUser? currentUser = null,
-        ICacheDistribuidaPort? cache = null)
+        ICacheResumenDashboardPort? cache = null)
     {
         _vehiculoPort =
             vehiculoPort;
@@ -99,7 +99,7 @@ public class VehiculoService
         try { _vehiculoPort.Delete(id); }
         catch (MySqlException error) when (error.Number == 1451)
         { return "No se puede eliminar el vehículo porque tiene órdenes asociadas."; }
-        _cache?.Eliminar(ClavesCache.DashboardResumen);
+        _cache?.InvalidarResumen();
         return null;
     }
 
@@ -211,8 +211,7 @@ public class VehiculoService
                 _vehiculoPort.Add(
                     vehiculo);
 
-                _cache?.Eliminar(
-                    ClavesCache.DashboardResumen);
+                _cache?.InvalidarResumen();
             }
         }
         catch (MySqlException exception)

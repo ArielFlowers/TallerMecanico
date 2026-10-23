@@ -16,4 +16,5 @@ public sealed record ResultadoDashboard(
     string ReplicaActual,
     DateTimeOffset GeneradoEn,
     TimeSpan? TiempoRestante,
-    bool? Almacenado = null);
+    bool? Almacenado = null,
+    EstadoPublicacionResumen Publicacion = EstadoPublicacionResumen.NoIntentada);

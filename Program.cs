@@ -245,7 +245,9 @@ if (!string.IsNullOrWhiteSpace(hostRedis))
         ConnectionMultiplexer.Connect(opcionesRedis);
 
     builder.Services.AddSingleton(conexionRedis);
-    builder.Services.AddSingleton<ICacheDistribuidaPort, RedisCacheAdapter>();
+    builder.Services.AddSingleton<RedisCacheAdapter>();
+    builder.Services.AddSingleton<ICacheDistribuidaPort>(servicios => servicios.GetRequiredService<RedisCacheAdapter>());
+    builder.Services.AddSingleton<ICacheResumenDashboardPort>(servicios => servicios.GetRequiredService<RedisCacheAdapter>());
 
     // La sesión (borradores y tokens de órdenes) se comparte entre réplicas.
     builder.Services.AddStackExchangeRedisCache(options =>
@@ -257,7 +259,9 @@ if (!string.IsNullOrWhiteSpace(hostRedis))
 }
 else
 {
-    builder.Services.AddSingleton<ICacheDistribuidaPort, CacheDistribuidaDeshabilitada>();
+    builder.Services.AddSingleton<CacheDistribuidaDeshabilitada>();
+    builder.Services.AddSingleton<ICacheDistribuidaPort>(servicios => servicios.GetRequiredService<CacheDistribuidaDeshabilitada>());
+    builder.Services.AddSingleton<ICacheResumenDashboardPort>(servicios => servicios.GetRequiredService<CacheDistribuidaDeshabilitada>());
     builder.Services.AddDistributedMemoryCache();
 }
 

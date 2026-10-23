@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Infraestructura.Cache;
+using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -110,10 +111,103 @@ public sealed class RedisCacheAdapterTests
     }
 
     private RedisCacheAdapter CrearAdapter() => new(_redis.Conexion, _logger);
+
+    [Fact]
+    public void Resumen_PublicacionCondicionalRechazaGeneracionAnterior()
+    {
+        var adapter = CrearAdapter();
+        LecturaResumenDashboard lectura = adapter.ObtenerResumen();
+        string? anterior = lectura.Generacion;
+        adapter.InvalidarResumen();
+        Assert.NotEqual(anterior, _redis.Generacion);
+        Assert.Equal(EstadoPublicacionResumen.RechazadaPorGeneracion,
+            adapter.PublicarResumen(lectura, "anterior", TimeSpan.FromSeconds(60)));
+        Assert.True(_redis.Valor.IsNull);
+        Assert.Contains(_logger.Mensajes, mensaje => mensaje.Contains("RechazadaPorGeneracion"));
+    }
+
+    [Fact]
+    public void Resumen_DosMiss_NoSobrescribenLaPrimeraPublicacion()
+    {
+        var adapter = CrearAdapter();
+        var lecturaA = adapter.ObtenerResumen();
+        var lecturaB = adapter.ObtenerResumen();
+        Assert.Equal(EstadoPublicacionResumen.Publicada, adapter.PublicarResumen(lecturaA, "primero", TimeSpan.FromSeconds(60)));
+        Assert.Equal(EstadoPublicacionResumen.EntradaExistente, adapter.PublicarResumen(lecturaB, "segundo", TimeSpan.FromSeconds(60)));
+        Assert.Equal("primero", _redis.Valor.ToString());
+    }
+
+    [Fact]
+    public void Resumen_GeneracionPerdida_RechazaEscritorAnteriorInclusoTrasRecrear()
+    {
+        var adapter = CrearAdapter();
+        var anterior = adapter.ObtenerResumen();
+        _redis.Generacion = null;
+        Assert.Equal(EstadoPublicacionResumen.RechazadaPorGeneracion,
+            adapter.PublicarResumen(anterior, "anterior", TimeSpan.FromSeconds(60)));
+        _redis.Valor = "entrada-sin-generacion";
+        var nueva = adapter.ObtenerResumen();
+        Assert.NotEqual(anterior.Generacion, nueva.Generacion);
+        Assert.Equal(EstadoLecturaCache.Miss, nueva.Lectura.Estado);
+        Assert.Equal(EstadoPublicacionResumen.RechazadaPorGeneracion,
+            adapter.PublicarResumen(anterior, "anterior", TimeSpan.FromSeconds(60)));
+    }
+
+    [Fact]
+    public void Resumen_EntradaInvalida_NoSobrescribeReparacionConcurrente()
+    {
+        _redis.Valor = "invalido";
+        var adapter = CrearAdapter();
+        var anterior = adapter.ObtenerResumen();
+        Assert.Equal(EstadoPublicacionResumen.Publicada, adapter.PublicarResumen(anterior, "corregido", TimeSpan.FromSeconds(60)));
+        Assert.Equal(EstadoPublicacionResumen.EntradaExistente, adapter.PublicarResumen(anterior, "segunda-correccion", TimeSpan.FromSeconds(60)));
+        Assert.Equal("corregido", _redis.Valor.ToString());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Resumen_PublicacionFallida_NoEsRechazoConcurrenteNiExito(bool conectado)
+    {
+        var adapter = CrearAdapter();
+        var lectura = adapter.ObtenerResumen();
+        _redis.Conectado = conectado;
+        _redis.FalloSet = new TimeoutException("secreto-no-registrar");
+        Assert.Equal(conectado ? EstadoPublicacionResumen.Error : EstadoPublicacionResumen.NoDisponible,
+            adapter.PublicarResumen(lectura, "contenido", TimeSpan.FromSeconds(60)));
+        Assert.True(_redis.Valor.IsNull);
+        Assert.DoesNotContain(_logger.Mensajes, mensaje => mensaje.Contains("secreto-no-registrar") || mensaje.Contains("PUBLICACION RECHAZADA"));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Resumen_InvalidacionFallida_NoConfirmaAvanceNiEliminacion(bool conectado)
+    {
+        _redis.Conectado = conectado;
+        _redis.FalloDel = new TimeoutException("secreto-no-registrar");
+        string? anterior = _redis.Generacion;
+        Assert.Equal(conectado ? ResultadoEliminacionCache.Error : ResultadoEliminacionCache.NoDisponible,
+            CrearAdapter().InvalidarResumen());
+        Assert.Equal(anterior, _redis.Generacion);
+        Assert.Contains(_logger.Mensajes, mensaje => mensaje.Contains("hasta su expiración"));
+    }
+
+    [Fact]
+    public void Resumen_Deshabilitado_NoSimulaLecturaNiPublicacion()
+    {
+        var cache = new CacheDistribuidaDeshabilitada();
+        var lectura = cache.ObtenerResumen();
+        Assert.Equal(EstadoLecturaCache.Deshabilitado, lectura.Lectura.Estado);
+        Assert.Null(lectura.Generacion);
+        Assert.Equal(EstadoPublicacionResumen.Deshabilitado, cache.PublicarResumen(lectura, "contenido", TimeSpan.FromSeconds(60)));
+        Assert.Equal(ResultadoEliminacionCache.Deshabilitado, cache.InvalidarResumen());
+    }
 }
 
 internal sealed class ConexionRedisPrueba
 {
+    public string? Generacion { get; set; } = "generacion-prueba";
     public bool Conectado { get; set; } = true;
     public RedisValue Valor { get; set; } = RedisValue.Null;
     public Exception? FalloGet { get; set; }
@@ -129,21 +223,46 @@ internal sealed class ConexionRedisPrueba
     public ConexionRedisPrueba()
     {
         IDatabase baseDatos = DispatchProxy.Create<IDatabase, ProxyRedisPrueba>();
-        ((ProxyRedisPrueba)baseDatos).Responder = nombre => nombre switch
+        ((ProxyRedisPrueba)baseDatos).Responder = (nombre, argumentos) => nombre switch
         {
             nameof(IDatabase.StringGet) => Leer(),
             nameof(IDatabase.StringSet) => Guardar(),
             nameof(IDatabase.KeyTimeToLive) => TimeSpan.FromSeconds(30),
             nameof(IDatabase.KeyDelete) => Eliminar(),
+            nameof(IDatabase.ScriptEvaluate) => EjecutarScript((string)argumentos![0]!, (RedisValue[])argumentos[2]!),
             _ => throw new NotSupportedException(nombre)
         };
         Conexion = DispatchProxy.Create<IConnectionMultiplexer, ProxyRedisPrueba>();
-        ((ProxyRedisPrueba)Conexion).Responder = nombre => nombre switch
+        ((ProxyRedisPrueba)Conexion).Responder = (nombre, _) => nombre switch
         {
             "get_IsConnected" => Conectado,
             nameof(IConnectionMultiplexer.GetDatabase) => baseDatos,
             _ => throw new NotSupportedException(nombre)
         };
+    }
+
+    private RedisResult EjecutarScript(string script, RedisValue[] argumentos)
+    {
+        if (script.Contains("return {generacion"))
+        {
+            RedisValue contenido = Leer();
+            if (Generacion is null) { Generacion = argumentos[0].ToString(); Valor = RedisValue.Null; contenido = Valor; }
+            return RedisResult.Create(new[] { RedisResult.Create((RedisValue)Generacion), RedisResult.Create(contenido) });
+        }
+        if (script.Contains("return redis.call('DEL'"))
+        {
+            bool eliminado = Eliminar();
+            Generacion = argumentos[0].ToString();
+            Valor = RedisValue.Null;
+            return RedisResult.Create((RedisValue)(eliminado ? 1 : 0));
+        }
+        Escrituras++;
+        if (FalloSet is not null) throw FalloSet;
+        if (Generacion != argumentos[0].ToString()) return RedisResult.Create((RedisValue)0);
+        bool igual = argumentos[3] == "0" ? Valor.IsNull : Valor == argumentos[4];
+        if (!igual) return RedisResult.Create((RedisValue)2);
+        Valor = argumentos[1];
+        return RedisResult.Create((RedisValue)1);
     }
 
     private RedisValue Leer()
@@ -171,8 +290,8 @@ internal sealed class ConexionRedisPrueba
 
 public class ProxyRedisPrueba : DispatchProxy
 {
-    public Func<string, object?> Responder { get; set; } = _ => throw new NotSupportedException();
-    protected override object? Invoke(MethodInfo? metodo, object?[]? argumentos) => Responder(metodo!.Name);
+    public Func<string, object?[]?, object?> Responder { get; set; } = (_, _) => throw new NotSupportedException();
+    protected override object? Invoke(MethodInfo? metodo, object?[]? argumentos) => Responder(metodo!.Name, argumentos);
 }
 
 internal sealed class RegistradorCachePrueba<T> : ILogger<T>

@@ -119,14 +119,13 @@ public sealed class InvalidacionDashboardTests
         };
     }
 
-    private sealed class CachePrueba(ResultadoEliminacionCache resultado) : ICacheDistribuidaPort
+    private sealed class CachePrueba(ResultadoEliminacionCache resultado) : ICacheResumenDashboardPort
     {
         public List<string> ClavesEliminadas { get; } = [];
-        public bool EstaDisponible => true;
-        public ResultadoLecturaCache Obtener(string clave) => throw new NotSupportedException();
-        public bool Guardar(string clave, string valor, TimeSpan expiracion) => throw new NotSupportedException();
-        public TimeSpan? TiempoRestante(string clave) => null;
-        public ResultadoEliminacionCache Eliminar(string clave) { ClavesEliminadas.Add(clave); return resultado; }
+        public LecturaResumenDashboard ObtenerResumen() => throw new NotSupportedException();
+        public EstadoPublicacionResumen PublicarResumen(LecturaResumenDashboard lectura, string valor, TimeSpan expiracion) => throw new NotSupportedException();
+        public TimeSpan? TiempoRestanteResumen() => null;
+        public ResultadoEliminacionCache InvalidarResumen() { ClavesEliminadas.Add(ClavesCache.DashboardResumen); return resultado; }
     }
 
     private sealed class TempDataPrueba : ITempDataProvider

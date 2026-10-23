@@ -316,7 +316,7 @@ Forbid a AccessDenied y no ejecuta DEL. No se detiene Redis para simular errores
 timeouts, desconexiones y fallos posteriores a escrituras confirmadas se verifican
 mediante dobles en las pruebas .NET.
 
-### Concurrencia pendiente (sin coordinación implementada)
+### Diagnóstico de concurrencia al cierre de la Iteración 3
 
 La prueba `Concurrencia_MissPuedePublicarConteoAnteriorTrasInvalidacion` reproduce
 determinísticamente, con dobles, este intercalado del coordinador real: A obtiene
@@ -336,3 +336,142 @@ Existe además una ventana GetById/Delete: los contratos actuales Delete devuelv
 void, por lo que no informan filas afectadas si otro actor borró entre ambas llamadas.
 Los no-op secuenciales están cubiertos; esta carrera no se corrige ampliando los
 contratos CRUD en esta iteración de análisis de concurrencia.
+
+## Iteración 4: publicación condicional entre réplicas
+
+El punto vulnerable era el SET incondicional posterior a los tres COUNT: un DEL
+intermedio no impedía que una consulta anterior repusiera el resumen antiguo.
+Ahora `ICacheResumenDashboardPort` separa esta coordinación del contrato genérico
+`ICacheDistribuidaPort`, que no se modificó. El mismo adaptador y multiplexer
+implementan ambos puertos; sesiones y Data Protection conservan su configuración.
+
+Tres scripts Lua pequeños realizan operaciones indivisibles en el Redis compartido:
+
+1. Leer generación y resumen juntos. Si falta la generación, crear un identificador
+   aleatorio nuevo y descartar un posible resumen huérfano, dentro del mismo script.
+2. Publicar solo si la generación y el contenido capturados no han cambiado.
+   La comparación del contenido evita que dos MISS (o reparaciones de JSON inválido)
+   sobrescriban al primer publicador y renueven innecesariamente su TTL.
+3. Invalidar cambiando la generación por otro identificador y eliminando el resumen.
+   Incluso si DEL devuelve cero, se cambia la generación para rechazar escritores
+   que ya estaban en curso. Se conservan los cinco resultados de invalidación.
+
+La clave del resumen sigue siendo `autotaller:dashboard:resumen`, con TTL absoluto
+configurable (60 segundos, aplicado con PX). Los HIT no escriben ni renuevan el TTL.
+`autotaller:dashboard:generacion` es metadato sin expiración (TTL=-1); no es una sesión.
+No utiliza un contador que vuelva a cero: identificadores nuevos evitan reutilizar
+versiones cuando se pierde/expulsa el metadato o Redis reinicia. Un publicador nunca
+crea la generación ausente. La prueba de pérdida borra solamente este metadato H2;
+no reinicia Redis ni borra sesiones para simularla.
+
+El servicio diferencia Publicada, RechazadaPorGeneracion, EntradaExistente y errores.
+Relee caché/MySQL como máximo una vez ante concurrencia. Si vuelve a cambiar, devuelve
+los últimos datos consultados sin publicarlos; el panel explica el descarte, no lo
+confunde con desconexión. Una lectura de generación fallida nunca habilita SET sin
+protección. Se preservan HIT/MISS/EntradaInvalida/NoDisponible/Deshabilitado y el JSON.
+
+La adaptación mínima de MecanicoService, VehiculoService y ServicioService cambia
+solo el puerto inyectado y las llamadas posteriores a Add/Delete por InvalidarResumen.
+Actualizar sigue sin invalidar conteos. La acción manual sigue protegida por el rol
+Administrador y antiforgery. No cambian SQL, transacciones ni esquema MySQL.
+
+### Prueba distribuida reproducible
+
+Compilar el auxiliar (sin paquetes nuevos), copiarlo exclusivamente a /tmp de las
+réplicas H2 ya desplegadas con la imagen de esta iteración, y ejecutar:
+
+```powershell
+dotnet restore tests/h2/ConcurrenciaDashboard/ConcurrenciaDashboard.csproj
+dotnet publish tests/h2/ConcurrenciaDashboard/ConcurrenciaDashboard.csproj -c Release --no-restore --no-self-contained -p:UseAppHost=false -o tests/h2/ConcurrenciaDashboard/bin/publicado
+docker compose --env-file tests/h2/local.env -f tests/h2/docker-compose.yml cp tests/h2/ConcurrenciaDashboard/bin/publicado/. app1:/tmp/h2-concurrencia
+docker compose --env-file tests/h2/local.env -f tests/h2/docker-compose.yml cp tests/h2/ConcurrenciaDashboard/bin/publicado/. app2:/tmp/h2-concurrencia
+node tests/h2/concurrencia_real.cjs
+node tests/h2/invalidacion_real.cjs
+node tests/h2/redis_real.cjs --validar-datos --esperar-expiracion
+```
+
+El auxiliar valida servidor, usuario, base H2, Redis y entorno antes de operar.
+Ejecuta DashboardCacheService, repositorios ADO.NET y RedisCacheAdapter reales en
+procesos .NET distintos dentro de app1/app2. Un decorador exclusivo de pruebas pausa
+la primera publicación y espera una señal por stdin. No agrega rutas de depuración
+a la aplicación. El anfitrión realiza un INSERT o invalidación manual por el servidor
+HTTP real de app2 antes de liberar A. No son dobles en memoria ni se atribuye el
+auxiliar a una solicitud HTTP de app1: es una invocación del servicio real dentro
+de esa réplica. Las aserciones inspeccionan los resultados reales del script Lua.
+
+La prueba comprueba dos MISS, rechazo tras INSERT, invalidación manual, pérdida de
+generación y recreación por otra réplica (sin ABA); además mide COUNT en general_log,
+HIT cruzado, JSON y TTL. El único servicio creado se elimina mediante su CRUD normal
+y exclusivamente por su Id de prueba. No se utiliza FLUSHALL/FLUSHDB ni MySQL local.
+El informe de ejecución se conserva en `resultado-iteracion4.json`.
+
+### Garantías y límites
+
+Con una invalidación confirmada, una consulta con generación anterior no puede
+republicar el resumen: comparar y escribir, así como avanzar y borrar, son atómicos.
+Los errores se diagnostican sin incluir secretos; MySQL sigue siendo la fuente de
+verdad y no se revierte una operación confirmada por un fallo de Redis. Un timeout
+significa falta de confirmación, no certeza de que el servidor no ejecutó el script.
+
+No hay transacción distribuida MySQL/Redis: queda una ventana entre commit e
+invalidación, y una invalidación fallida puede dejar datos temporales anteriores.
+El TTL limita cada publicación, pero no garantiza frescura estricta desde el momento
+del commit si esa invalidación falla. Los tres COUNT tampoco constituyen un snapshot
+MySQL transaccional único. Tras agotar el reintento se entrega una lectura sin caché,
+no una promesa de ausencia de escrituras concurrentes posteriores.
+
+Todos los procesos que invaliden/publican deben usar el puerto nuevo; no se garantiza
+la protección mientras convivan réplicas antiguas que hagan SET/DEL incondicional.
+Esta configuración usa Redis único, no Redis Cluster (los dos nombres actuales no
+comparten hash tag para un script multiclave en Cluster). No se refactoriza para un
+Cluster no utilizado. La ventana GetById/Delete de los CRUD continúa como pendiente
+separado, sin ampliar sus contratos.
+
+### Archivos de la Iteración 4
+
+Nuevos:
+
+- Aplicacion/Puertos/ICacheResumenDashboardPort.cs
+- Aplicacion/Dto/LecturaResumenDashboard.cs (captura y resultado de publicación)
+- tests/h2/ConcurrenciaDashboard/ConcurrenciaDashboard.csproj
+- tests/h2/ConcurrenciaDashboard/Program.cs
+- tests/h2/concurrencia_real.cjs
+- tests/h2/resultado-iteracion4.json
+
+Modificados:
+
+- Aplicacion/Dto/ResultadoDashboard.cs
+- Aplicacion/Servicios/ClavesCache.cs
+- Aplicacion/Servicios/DashboardCacheService.cs
+- Aplicacion/Servicios/MecanicoService.cs
+- Aplicacion/Servicios/VehiculoService.cs
+- Aplicacion/Servicios/ServicioService.cs
+- Infraestructura/Cache/RedisCacheAdapter.cs
+- Infraestructura/Cache/CacheDistribuidaDeshabilitada.cs
+- Program.cs (registros de ambos puertos sobre el mismo singleton)
+- Pages/Index.cshtml (mensaje específico de descarte por concurrencia)
+- tests/TallerMecanico.IntegrationTests/DashboardCacheServiceTests.cs
+- tests/TallerMecanico.IntegrationTests/RedisCacheAdapterTests.cs
+- tests/TallerMecanico.IntegrationTests/InvalidacionDashboardTests.cs
+- tests/h2/README.md
+
+### Resultados observados
+
+- Build: 0 errores y 0 advertencias; auxiliar de pruebas también compilado sin advertencias.
+- Pruebas específicas: 72 aprobadas, 0 fallos.
+- Regresión segura: 322 aprobadas, 107 omitidas, 0 fallos. Se excluyeron expresamente
+  las seis clases que podrían consultar MySQL local o enviar correo real.
+- Cinco escenarios sincronizados reales aprobados; no se reinició Redis para simular
+  pérdida de metadatos y no se probaron caídas reales de contenedores.
+- Regresión HTTP de invalidación: seis altas/bajas, diez casos sin invalidación,
+  permisos/antiforgery correctos y cuatro sesiones existentes preservadas.
+- MISS normal: cada COUNT pasó de 55 a 56; HIT desde B permaneció en 56.
+- PTTL de resumen: 58363 ms tras MISS y 55760 ms tras HIT. Expiró naturalmente a -2;
+  la generación permaneció idéntica y con TTL=-1. Se repararon tres entradas inválidas.
+- MySQL, Redis y Nginx conservaron sus contenedores. Las tres réplicas se actualizaron
+  únicamente dentro de H2. El contenedor ajeno permaneció detenido, sin cambios.
+- Se eliminaron únicamente registros creados por estas pruebas, mediante sus CRUD.
+  El cliente fixture H2 Id=3 y el historial de precio generado se conservan para auditoría.
+
+La evidencia JSON incluye resultados, TTL, valores del resumen, identificadores de
+réplicas y logs pertinentes, pero no contraseñas, cookies ni tokens antiforgery.
