@@ -191,7 +191,7 @@ public class ProductoRepository :
         }
 
         command.CommandText = $"""
-            SELECT Id, Nombre, Codigo
+            SELECT Id, Nombre, Codigo, Stock
             FROM Productos
             WHERE Codigo COLLATE utf8mb4_0900_ai_ci LIKE @PrefijoCodigo ESCAPE '!'
                OR ({string.Join(" AND ", condicionesPalabras)})
@@ -205,8 +205,12 @@ public class ProductoRepository :
         await using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var stock = reader.GetInt32(3);
             sugerencias.Add(new SugerenciaProducto(
-                reader.GetInt32(0), reader.GetString(1), $"Código: {reader.GetString(2)}"));
+                reader.GetInt32(0), reader.GetString(1), $"Código: {reader.GetString(2)} · {(stock > 0 ? $"{stock} disponibles" : "Sin stock")}")
+            {
+                Stock = stock
+            });
         }
 
         return sugerencias;

@@ -136,5 +136,9 @@ public class ServicioService : IServicioService
             throw new ArgumentException(
                 "El tiempo estimado debe ser mayor a cero.");
         }
+
+        if (servicio.UnidadCantidad is not null &&
+            servicio.UnidadCantidad is not ("llanta" or "retrovisor" or "unidad"))
+            throw new ArgumentException("Selecciona una unidad de cobro válida.");
     }
 }

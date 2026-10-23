@@ -37,6 +37,15 @@
             this.input.addEventListener("input", () => {
                 if (!this.componiendo) this.programarBusqueda();
             });
+            this.input.addEventListener("focus", () => {
+                if (this.configuracion.mostrarAlEnfocar !== "true") return;
+                if (this.seleccion) {
+                    this.input.select();
+                    this.programarBusqueda(true, "", true);
+                } else {
+                    this.programarBusqueda(false, "", true);
+                }
+            });
             this.input.addEventListener("compositionstart", () => {
                 this.componiendo = true;
                 this.cancelar();
@@ -114,13 +123,17 @@
             if (idAnterior) this.comunicar("invalidacion", { idAnterior });
         }
 
-        programarBusqueda() {
+        programarBusqueda(preservarSeleccion = false, terminoForzado = null, permitirVacio = false) {
             this.cancelar();
             this.cerrar();
             this.sugerencias = [];
             this.lista.replaceChildren();
-            this.invalidarSeleccion();
-            const termino = this.input.value.trim();
+            if (!preservarSeleccion) this.invalidarSeleccion();
+            const termino = terminoForzado === null ? this.input.value.trim() : terminoForzado;
+            if (!termino && !permitirVacio) {
+                this.mostrarEstado("inicial", "mensajeInicial");
+                return;
+            }
             if (termino.length < this.minimo) {
                 this.mostrarEstado("inicial", "mensajeInicial");
                 return;
@@ -174,8 +187,13 @@
                     throw new Error("mensajeError");
                 }
                 ids.add(sugerencia.id);
-                return { id: sugerencia.id, textoPrincipal: sugerencia.textoPrincipal,
+                const normalizada = { id: sugerencia.id, textoPrincipal: sugerencia.textoPrincipal,
                     textoSecundario: sugerencia.textoSecundario ?? "" };
+                if (sugerencia.stock !== undefined) {
+                    if (!Number.isSafeInteger(sugerencia.stock) || sugerencia.stock < 0) throw new Error("mensajeError");
+                    normalizada.stock = sugerencia.stock;
+                }
+                return normalizada;
             });
         }
 

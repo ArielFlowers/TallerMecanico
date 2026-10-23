@@ -34,7 +34,7 @@
 <div class="service-form-row">
     <div class="service-form-group">
         <label asp-for="Costo">
-            Costo (Bs.)
+            Costo por trabajo o unidad (Bs.)
         </label>
 
         <input asp-for="Costo"
@@ -63,4 +63,16 @@
               class="service-validation">
         </span>
     </div>
+</div>
+
+<div class="service-form-group">
+    <label asp-for="UnidadCantidad">Cobro por cantidad (opcional)</label>
+    <select asp-for="UnidadCantidad" class="service-input">
+        <option value="">Precio fijo por trabajo completo</option>
+        <option value="llanta">Por llanta</option>
+        <option value="retrovisor">Por retrovisor</option>
+        <option value="unidad">Por unidad</option>
+    </select>
+    <small>Úsalo solo cuando el costo del servicio se cobre por cada pieza. Ejemplo: cambio de llanta.</small>
+    <span asp-validation-for="UnidadCantidad" class="service-validation"></span>
 </div>

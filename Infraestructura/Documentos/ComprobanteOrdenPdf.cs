@@ -103,9 +103,10 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
                 {
                     servicio.Nombre,
                     servicio.Descripcion,
+                    servicio.UnidadCantidad is null ? "" : $"Cantidad: {servicio.Cantidad} {servicio.UnidadCantidad}",
                     $"Costo: Bs. {FormatearImporte(servicio.Costo)}",
                     $"Tiempo estimado: {servicio.TiempoEstimadoHoras.ToString("0.##", CulturaBoliviana)} h"
-                }).ToArray();
+                }).Where(linea => !string.IsNullOrWhiteSpace(linea)).ToArray();
                 columna.Item().Element(caja => ComponerCaja(caja,
                     servicios.Count == 1 ? "SERVICIO REALIZADO" : "SERVICIOS REALIZADOS",
                     lineasServicio));

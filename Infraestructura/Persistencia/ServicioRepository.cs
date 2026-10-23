@@ -27,7 +27,7 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         connection.Open();
 
         const string query = """
-            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
+            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad
             FROM Servicios
             ORDER BY Nombre, Id;
             """;
@@ -53,7 +53,7 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         connection.Open();
 
         const string query = """
-            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
+            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad
             FROM Servicios
             WHERE Id = @Id;
             """;
@@ -81,7 +81,7 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         await using DbCommand command = connection.CreateCommand();
         command.CommandText = """
             SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras,
-                   CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion
+                   CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad
             FROM Servicios
             WHERE Nombre COLLATE utf8mb4_0900_ai_ci LIKE @Filtro ESCAPE '!'
                OR Descripcion COLLATE utf8mb4_0900_ai_ci LIKE @Filtro ESCAPE '!'
@@ -162,9 +162,9 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
 
         const string query = """
             INSERT INTO Servicios
-                (Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion)
+                (Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad)
             VALUES
-                (@Nombre, @Descripcion, @Costo, @TiempoEstimadoHoras, @CreadoPor, @FechaCreacion, @ModificadoPor, @FechaModificacion);
+                (@Nombre, @Descripcion, @Costo, @TiempoEstimadoHoras, @CreadoPor, @FechaCreacion, @ModificadoPor, @FechaModificacion, @UnidadCantidad);
             """;
 
         using DbCommand command = connection.CreateCommand();
@@ -189,7 +189,8 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
                 Costo = @Costo,
                 TiempoEstimadoHoras = @TiempoEstimadoHoras,
                 ModificadoPor = @ModificadoPor,
-                FechaModificacion = @FechaModificacion
+                FechaModificacion = @FechaModificacion,
+                UnidadCantidad = @UnidadCantidad
             WHERE Id = @Id;
             """;
 
@@ -255,6 +256,7 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         AddParameter(command, "@FechaCreacion", servicio.FechaCreacion);
         AddParameter(command, "@ModificadoPor", servicio.ModificadoPor);
         AddParameter(command, "@FechaModificacion", servicio.FechaModificacion);
+        AddParameter(command, "@UnidadCantidad", servicio.UnidadCantidad);
     }
 
     private static void AddParameter(
@@ -282,7 +284,8 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
             CreadoPor = reader.GetString(5),
             FechaCreacion = reader.GetDateTime(6),
             ModificadoPor = reader.IsDBNull(7) ? null : reader.GetString(7),
-            FechaModificacion = reader.IsDBNull(8) ? null : reader.GetDateTime(8)
+            FechaModificacion = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+            UnidadCantidad = reader.IsDBNull(9) ? null : reader.GetString(9)
         };
     }
 }

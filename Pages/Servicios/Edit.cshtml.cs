@@ -92,7 +92,8 @@ public class EditModel : PageModel
             Nombre = servicio.Nombre,
             Descripcion = servicio.Descripcion,
             Costo = servicio.Costo,
-            TiempoEstimadoHoras = servicio.TiempoEstimadoHoras
+            TiempoEstimadoHoras = servicio.TiempoEstimadoHoras,
+            UnidadCantidad = servicio.UnidadCantidad
         };
     }
 
@@ -104,7 +105,8 @@ public class EditModel : PageModel
             Nombre = Formulario.Nombre,
             Descripcion = Formulario.Descripcion,
             Costo = Formulario.Costo,
-            TiempoEstimadoHoras = Formulario.TiempoEstimadoHoras
+            TiempoEstimadoHoras = Formulario.TiempoEstimadoHoras,
+            UnidadCantidad = string.IsNullOrWhiteSpace(Formulario.UnidadCantidad) ? null : Formulario.UnidadCantidad.Trim()
         };
     }
 }

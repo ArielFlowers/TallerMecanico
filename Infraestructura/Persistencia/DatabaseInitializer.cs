@@ -44,6 +44,7 @@ public class DatabaseInitializer
         EnsureAuditoriaModificacion(connection, "Productos");
         ExecuteCommand(connection, OrdenSchema.CrearTablas);
         EnsureOrdenesServicioSchema(connection);
+        EnsureServicioUnidadCantidadSchema(connection);
         CreateUsuariosTable(connection);
         EnsureUsuariosEmailSchema(connection);
         CreateSolicitudesRegistroTable(connection);
@@ -680,6 +681,7 @@ public class DatabaseInitializer
                 Descripcion VARCHAR(300) NOT NULL,
                 Costo DECIMAL(10,2) NOT NULL,
                 TiempoEstimadoHoras DECIMAL(6,2) NOT NULL,
+                UnidadCantidad VARCHAR(20) NULL,
                 CreadoPor VARCHAR(50) NOT NULL DEFAULT 'sistema',
                 FechaCreacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 ModificadoPor VARCHAR(50) NULL,
@@ -697,6 +699,17 @@ public class DatabaseInitializer
             """;
 
         ExecuteCommand(connection, query);
+    }
+
+    private static void EnsureServicioUnidadCantidadSchema(DbConnection connection)
+    {
+        if (!ColumnExists(connection, "Servicios", "UnidadCantidad"))
+            ExecuteCommand(connection, "ALTER TABLE Servicios ADD COLUMN UnidadCantidad VARCHAR(20) NULL;");
+
+        if (!ColumnExists(connection, "DetalleServiciosOrdenes", "Cantidad"))
+            ExecuteCommand(connection, "ALTER TABLE DetalleServiciosOrdenes ADD COLUMN Cantidad INT NOT NULL DEFAULT 1;");
+        if (!ColumnExists(connection, "DetalleServiciosOrdenes", "UnidadCantidad"))
+            ExecuteCommand(connection, "ALTER TABLE DetalleServiciosOrdenes ADD COLUMN UnidadCantidad VARCHAR(20) NULL;");
     }
 
     // =====================================================
@@ -1386,6 +1399,8 @@ public class DatabaseInitializer
                 DescripcionServicio VARCHAR(300) NOT NULL,
                 Costo DECIMAL(10,2) NOT NULL,
                 TiempoEstimadoHoras DECIMAL(6,2) NOT NULL,
+                Cantidad INT NOT NULL DEFAULT 1,
+                UnidadCantidad VARCHAR(20) NULL,
                 CONSTRAINT UQ_DetalleServiciosOrdenes_Orden_Servicio UNIQUE (OrdenId, ServicioId),
                 CONSTRAINT CK_DetalleServiciosOrdenes_Costo CHECK (Costo > 0),
                 CONSTRAINT CK_DetalleServiciosOrdenes_Tiempo CHECK (TiempoEstimadoHoras > 0),

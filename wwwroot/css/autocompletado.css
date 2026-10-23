@@ -50,6 +50,16 @@
     border-color: var(--primary, #7c3aed);
 }
 
+.autocompletado[data-estado="seleccionado"] .autocompletado-input {
+    border-color: var(--success, #22c55e);
+    background: color-mix(in srgb, var(--success, #22c55e) 8%, var(--surface, #15111c));
+}
+
+.autocompletado[data-estado="seleccionado"] .autocompletado-estado {
+    color: var(--success, #22c55e);
+    font-weight: 600;
+}
+
 .autocompletado-sugerencias {
     box-sizing: border-box;
     position: absolute;

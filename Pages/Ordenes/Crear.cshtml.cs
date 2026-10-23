@@ -21,6 +21,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     [BindProperty(SupportsGet = true)] public int? ClienteNuevoId { get; set; }
     [BindProperty] public int ProductoId { get; set; }
     [BindProperty] public int Cantidad { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int ScrollY { get; set; }
     [BindProperty(SupportsGet = true)] public string? BuscarVehiculo { get; set; }
     [BindProperty(SupportsGet = true)] public string? BuscarProducto { get; set; }
     [BindProperty] public string? TextoServicio { get; set; }
@@ -34,20 +35,29 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     public IReadOnlyList<LineaOrdenTemporalViewModel> Lineas { get; private set; } = [];
     public decimal Total => Lineas.Sum(x => x.Precio * x.Cantidad);
     public long CantidadTotal => Lineas.Sum(x => (long)x.Cantidad);
-    public decimal CostoServiciosSeleccionados => ServiciosSeleccionados.Sum(x => x.Costo);
+    public decimal CostoServiciosSeleccionados => ServiciosSeleccionados.Sum(x => x.Subtotal);
     public decimal TotalEstimado => Total + CostoServiciosSeleccionados;
     public string? Mensaje { get; private set; }
     public int? OrdenCreadaId { get; private set; }
     public DateTime FechaOrden => facade.FechaActual;
 
     public async Task<JsonResult> OnGetSugerenciasVehiculosAsync(string? termino) =>
-        new(await vehiculos.SugerirAsync(termino, HttpContext.RequestAborted));
+        string.IsNullOrWhiteSpace(termino)
+            ? new JsonResult(vehiculos.GetAll().Select(vehiculo => new SugerenciaVehiculo(
+                vehiculo.Id, vehiculo.Placa, $"{vehiculo.Marca} {vehiculo.Modelo}".Trim())))
+            : new JsonResult(await vehiculos.SugerirAsync(termino, HttpContext.RequestAborted));
 
     public async Task<JsonResult> OnGetSugerenciasServiciosAsync(string? termino) =>
-        new(await servicios.SugerirAsync(termino, HttpContext.RequestAborted));
+        string.IsNullOrWhiteSpace(termino)
+            ? new JsonResult(servicios.ObtenerTodos().Select(servicio => new SugerenciaServicio(
+                servicio.Id, servicio.Nombre, servicio.Descripcion)))
+            : new JsonResult(await servicios.SugerirAsync(termino, HttpContext.RequestAborted));
 
     public async Task<JsonResult> OnGetSugerenciasMecanicosAsync(string? termino) =>
-        new(await mecanicos.SugerirAsync(termino, HttpContext.RequestAborted, incluirEspecialidad: false));
+        string.IsNullOrWhiteSpace(termino)
+            ? new JsonResult(mecanicos.Obtener().Select(mecanico => new SugerenciaMecanico(
+                mecanico.Id, $"{mecanico.Nombres} {mecanico.PrimerApellido} {mecanico.SegundoApellido}".Trim(), mecanico.Ci)))
+            : new JsonResult(await mecanicos.SugerirAsync(termino, HttpContext.RequestAborted, incluirEspecialidad: false));
 
     public async Task<JsonResult> OnGetSugerenciasProductosAsync(string? termino) =>
         new(await productos.SugerirAsync(termino, HttpContext.RequestAborted));
@@ -57,7 +67,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         var servicio = id > 0 ? servicios.ObtenerPorId(id) : null;
         return servicio is null ? NotFound() : new JsonResult(new
         {
-            servicio.Id, servicio.Nombre, servicio.Descripcion, servicio.Costo, servicio.TiempoEstimadoHoras
+            servicio.Id, servicio.Nombre, servicio.Descripcion, servicio.Costo, servicio.TiempoEstimadoHoras, servicio.UnidadCantidad
         });
     }
 
@@ -65,6 +75,15 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     {
         var vehiculo = id > 0 ? vehiculos.GetById(id) : null;
         return vehiculo is null ? NotFound() : new JsonResult(new { vehiculo.Id, RequiereCliente = !vehiculo.ClienteId.HasValue });
+    }
+
+    public IActionResult OnGetProductoSeleccionado(int id)
+    {
+        Producto? producto = id > 0 ? productos.ObtenerPorId(id) : null;
+        return producto is null ? NotFound() : new JsonResult(new
+        {
+            producto.Id, producto.Nombre, producto.Codigo, producto.Stock
+        });
     }
 
     public IActionResult OnGet()
@@ -105,12 +124,38 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     public IActionResult OnPostAgregarLinea()
     {
         RestaurarContextoCliente();
-        if (ProductoId <= 0 || Cantidad <= 0) ModelState.AddModelError(nameof(Cantidad), "La cantidad debe ser mayor que cero.");
+        bool datosValidos = true;
+        if (ProductoId <= 0)
+        {
+            ModelState.AddModelError(nameof(ProductoId), "Selecciona un producto de la lista.");
+            datosValidos = false;
+        }
+        if (Cantidad <= 0)
+        {
+            ModelState.AddModelError(nameof(Cantidad), "La cantidad debe ser mayor que cero.");
+            datosValidos = false;
+        }
         Producto? producto = productos.ObtenerPorId(ProductoId);
-        if (producto is null) ModelState.AddModelError(nameof(ProductoId), "Selecciona un producto válido.");
-        if (!ModelState.IsValid) { Cargar(); return Page(); }
+        if (ProductoId > 0 && producto is null)
+        {
+            ModelState.AddModelError(nameof(ProductoId), "El producto seleccionado ya no existe. Vuelve a elegirlo.");
+            datosValidos = false;
+        }
+        else if (producto is not null && producto.Stock <= 0)
+        {
+            ModelState.AddModelError(nameof(ProductoId), $"No hay stock disponible de {producto.Nombre}.");
+            datosValidos = false;
+        }
+        else if (producto is not null && Cantidad > producto.Stock)
+        {
+            ModelState.AddModelError(nameof(Cantidad), $"Stock insuficiente: hay {producto.Stock} unidades disponibles.");
+            datosValidos = false;
+        }
+        // Esta operación valida el repuesto, no todos los campos aún incompletos de la orden.
+        if (!datosValidos) { Cargar(); return Page(); }
         Formulario.Lineas.RemoveAll(x => x.ProductoId == producto!.Id);
         Formulario.Lineas.Add(new() { ProductoId = producto!.Id, Cantidad = Cantidad, Precio = producto.Precio });
+        TempData["OrdenMensaje"] = $"{producto.Nombre} se añadió a la orden.";
         return PersistirYVolver();
     }
 
@@ -120,9 +165,25 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         var linea = Formulario.Lineas.FirstOrDefault(x => x.ProductoId == productoId);
         Producto? producto = productos.ObtenerPorId(productoId);
         if (linea is null || producto is null) return BadRequest();
-        if (cantidad <= 0) ModelState.AddModelError(nameof(Cantidad), "La cantidad debe ser mayor que cero.");
-        if (!ModelState.IsValid) { Cargar(); return Page(); }
+        bool cantidadValida = true;
+        if (cantidad <= 0)
+        {
+            ModelState.AddModelError(nameof(Cantidad), "La cantidad debe ser mayor que cero.");
+            cantidadValida = false;
+        }
+        else if (producto.Stock <= 0)
+        {
+            ModelState.AddModelError(nameof(Cantidad), $"No hay stock disponible de {producto.Nombre}.");
+            cantidadValida = false;
+        }
+        else if (cantidad > producto.Stock)
+        {
+            ModelState.AddModelError(nameof(Cantidad), $"Stock insuficiente: hay {producto.Stock} unidades disponibles.");
+            cantidadValida = false;
+        }
+        if (!cantidadValida) { Cargar(); return Page(); }
         linea.Cantidad = cantidad;
+        TempData["OrdenMensaje"] = "La cantidad del repuesto se actualizó.";
         return PersistirYVolver();
     }
 
@@ -130,6 +191,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
     {
         RestaurarContextoCliente();
         Formulario.Lineas.RemoveAll(x => x.ProductoId == productoId);
+        TempData["OrdenMensaje"] = "El repuesto se quitó de la orden.";
         return PersistirYVolver();
     }
 
@@ -142,7 +204,8 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         if (!ModelState.IsValid) return Page();
         var solicitud = new CrearOrdenSolicitud(Formulario.VehiculoId, Formulario.MecanicoId, FechaOrden,
             Formulario.Token, Formulario.Lineas.Select(x => new LineaOrdenSolicitud(x.ProductoId, x.Cantidad)).ToArray(),
-            Formulario.ServicioIds[0], Formulario.ServicioIds.ToArray());
+            Formulario.ServicioIds[0], Formulario.ServicioIds.ToArray(),
+            ServiciosSeleccionados.Select(servicio => new LineaServicioOrdenSolicitud(servicio.Id, servicio.Cantidad)).ToArray());
         ResultadoOrden resultado = facade.CrearOrden(solicitud);
         if (!resultado.Exito)
         {
@@ -183,7 +246,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
             if (productos.ObtenerPorId(linea.ProductoId) is { } producto) linea.Precio = producto.Precio;
         if (BorradorId.HasValue) borradores.Eliminar(BorradorId.Value);
         BorradorId = borradores.Guardar(Formulario);
-        return RedirectToPage(new { BorradorId });
+        return RedirectToPage(new { BorradorId, ScrollY });
     }
 
     private void RestaurarContextoCliente()
@@ -214,7 +277,9 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
                 Nombre = servicio.Nombre,
                 Descripcion = servicio.Descripcion,
                 Costo = servicio.Costo,
-                TiempoEstimadoHoras = servicio.TiempoEstimadoHoras
+                TiempoEstimadoHoras = servicio.TiempoEstimadoHoras,
+                UnidadCantidad = servicio.UnidadCantidad,
+                Cantidad = Formulario.CantidadesServicios.GetValueOrDefault(servicio.Id, 1)
             })
             .ToArray();
         ProductoSeleccionado = ProductoId > 0 ? productos.ObtenerPorId(ProductoId) : null;

@@ -64,7 +64,8 @@ public class CreateModel : PageModel
             Nombre = Formulario.Nombre,
             Descripcion = Formulario.Descripcion,
             Costo = Formulario.Costo,
-            TiempoEstimadoHoras = Formulario.TiempoEstimadoHoras
+            TiempoEstimadoHoras = Formulario.TiempoEstimadoHoras,
+            UnidadCantidad = string.IsNullOrWhiteSpace(Formulario.UnidadCantidad) ? null : Formulario.UnidadCantidad.Trim()
         };
     }
 }

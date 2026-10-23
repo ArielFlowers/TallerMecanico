@@ -191,7 +191,7 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
         conexion.Open();
         using DbCommand comando = conexion.CreateCommand();
         comando.CommandText = """
-            SELECT NombreServicio, DescripcionServicio, Costo, TiempoEstimadoHoras
+            SELECT NombreServicio, DescripcionServicio, Costo, TiempoEstimadoHoras, Cantidad, UnidadCantidad
             FROM DetalleServiciosOrdenes
             WHERE OrdenId = @Id
             ORDER BY Id;
@@ -206,7 +206,9 @@ public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connecti
                 Nombre = lector.GetString(0),
                 Descripcion = lector.GetString(1),
                 Costo = lector.GetDecimal(2),
-                TiempoEstimadoHoras = lector.GetDecimal(3)
+                TiempoEstimadoHoras = lector.GetDecimal(3),
+                Cantidad = lector.GetInt32(4),
+                UnidadCantidad = lector.IsDBNull(5) ? null : lector.GetString(5)
             });
         }
         return servicios;
