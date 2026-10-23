@@ -36,9 +36,19 @@ public class IndexModel : PageModel
             return Forbid();
         }
 
-        MensajeCache = _dashboardCacheService.Invalidar()
-            ? "Caché invalidada. La siguiente consulta será MISS y se repoblará desde MySQL."
-            : "La caché ya estaba vacía o Redis no está disponible.";
+        MensajeCache = _dashboardCacheService.Invalidar() switch
+        {
+            ResultadoEliminacionCache.Eliminada =>
+                "Redis confirmó la invalidación del resumen. Al seguir la redirección, el dashboard puede regenerar la caché desde MySQL.",
+            ResultadoEliminacionCache.Inexistente =>
+                "Redis confirmó que el resumen ya no estaba en caché. Al seguir la redirección, el dashboard puede regenerarlo desde MySQL.",
+            ResultadoEliminacionCache.NoDisponible =>
+                "Redis no está disponible. No se confirmó la invalidación; el resumen anterior puede persistir hasta su expiración.",
+            ResultadoEliminacionCache.Deshabilitado =>
+                "La caché está deshabilitada. No se ejecutó una invalidación en Redis.",
+            _ =>
+                "Falló la invalidación del resumen. No se confirmó su eliminación; puede persistir hasta su expiración."
+        };
 
         return RedirectToPage();
     }

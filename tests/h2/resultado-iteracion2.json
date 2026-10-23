@@ -1,0 +1,129 @@
+{
+  "fechaUtc": "2026-10-23T02:20:14.430Z",
+  "clave": "autotaller:dashboard:resumen",
+  "replicas": [
+    {
+      "servicio": "app1",
+      "url": "http://127.0.0.1:32772",
+      "replica": "9163b59c0b8a",
+      "redis": "PONG",
+      "latenciaMs": 0.3541,
+      "clave": "autotaller:dashboard:resumen",
+      "ttlSegundos": null
+    },
+    {
+      "servicio": "app2",
+      "url": "http://127.0.0.1:32773",
+      "replica": "0f7687360b99",
+      "redis": "PONG",
+      "latenciaMs": 0.5411,
+      "clave": "autotaller:dashboard:resumen",
+      "ttlSegundos": null
+    },
+    {
+      "servicio": "app3",
+      "url": "http://127.0.0.1:32774",
+      "replica": "f956655339a7",
+      "redis": "PONG",
+      "latenciaMs": 0.472,
+      "clave": "autotaller:dashboard:resumen",
+      "ttlSegundos": null
+    }
+  ],
+  "ping": "PONG",
+  "clientesDeLasTresReplicasEnElMismoRedis": true,
+  "nginxUrl": "http://127.0.0.1:32771",
+  "replicasObservadasPorNginx": [
+    "9163b59c0b8a",
+    "0f7687360b99",
+    "f956655339a7"
+  ],
+  "loginReal": "302 a /; no se siguió la redirección antes de medir",
+  "ttlInicial": -2,
+  "antes": {
+    "Mecanicos": 4,
+    "Vehiculos": 4,
+    "Servicios": 4
+  },
+  "despuesMiss": {
+    "Mecanicos": 5,
+    "Vehiculos": 5,
+    "Servicios": 5
+  },
+  "entrada": {
+    "Dashboard": {
+      "MecanicosDisponibles": 0,
+      "VehiculosRegistrados": 0,
+      "ServiciosRegistrados": 0
+    },
+    "Replica": "9163b59c0b8a",
+    "GeneradoEn": "2026-10-23T02:20:20.476264+00:00"
+  },
+  "pttlDespuesMiss": 58909,
+  "despuesHit": {
+    "Mecanicos": 5,
+    "Vehiculos": 5,
+    "Servicios": 5
+  },
+  "pttlDespuesHit": 57112,
+  "consultasUsuariosDuranteHit": 1,
+  "entradasInvalidas": [
+    {
+      "caso": "JSON mal formado",
+      "antes": {
+        "Mecanicos": 5,
+        "Vehiculos": 5,
+        "Servicios": 5
+      },
+      "despues": {
+        "Mecanicos": 6,
+        "Vehiculos": 6,
+        "Servicios": 6
+      },
+      "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+    },
+    {
+      "caso": "Resumen nulo",
+      "antes": {
+        "Mecanicos": 6,
+        "Vehiculos": 6,
+        "Servicios": 6
+      },
+      "despues": {
+        "Mecanicos": 7,
+        "Vehiculos": 7,
+        "Servicios": 7
+      },
+      "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+    },
+    {
+      "caso": "Conteo obligatorio ausente",
+      "antes": {
+        "Mecanicos": 7,
+        "Vehiculos": 7,
+        "Servicios": 7
+      },
+      "despues": {
+        "Mecanicos": 8,
+        "Vehiculos": 8,
+        "Servicios": 8
+      },
+      "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+    }
+  ],
+  "logsCache": [
+    "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 0f7687360b99 | generado por 9163b59c0b8a | lectura Hit | escritura NoIntentada",
+    "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 0f7687360b99 | generado por 9163b59c0b8a | lectura Hit | escritura NoIntentada",
+    "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 0f7687360b99 | generado por 9163b59c0b8a | lectura Hit | escritura NoIntentada",
+    "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 0f7687360b99 | generado por 9163b59c0b8a | lectura Hit | escritura NoIntentada",
+    "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9163b59c0b8a | lectura Miss | estado Miss | escritura Exitosa",
+    "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9163b59c0b8a | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa",
+    "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9163b59c0b8a | lectura Miss | estado Miss | escritura Exitosa",
+    "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9163b59c0b8a | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa",
+    "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9163b59c0b8a | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa",
+    "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9163b59c0b8a | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa",
+    "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 0f7687360b99 | generado por 9163b59c0b8a | lectura Hit | escritura NoIntentada"
+  ],
+  "ttlTrasExpiracionNatural": -2,
+  "resultado": "PASS: Redis real, 3 replicas, Nginx, login real, MISS A y HIT B; +3 COUNT en MISS, +0 en HIT."
+}

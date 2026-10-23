@@ -102,7 +102,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder(
     "/Mecanicos",
     "SoloAdministrador");
-});
+}).AddMvcOptions(options => options.Filters.Add<ConfirmarSesionFilter>());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
@@ -214,20 +214,17 @@ builder.Services.AddAuthorization(options =>
 // H2: REDIS COMO CACHÉ DISTRIBUIDA
 // =====================================================
 // Docker Compose define REDIS_HOST=redis para las 3 réplicas.
-// Sin REDIS_HOST (dotnet run local o pruebas) se usa memoria local
+// Sin host en REDIS_HOST ni Redis:Host se usa memoria local
 // para la sesión y la caché del dashboard queda deshabilitada.
-string? hostRedis =
-    builder.Configuration["REDIS_HOST"] ??
-    builder.Configuration["Redis:Host"];
+ConfiguracionRedis configuracionRedis = ConfiguracionRedis.Leer(builder.Configuration);
 
 builder.Services.AddSingleton(new OpcionesCacheDashboard
 {
-    Expiracion = TimeSpan.FromSeconds(
-        builder.Configuration.GetValue("Redis:ExpiracionDashboardSegundos", 60))
+    Expiracion = TimeSpan.FromSeconds(configuracionRedis.ExpiracionDashboardSegundos)
 });
 builder.Services.AddScoped<DashboardCacheService>();
 
-if (!string.IsNullOrWhiteSpace(hostRedis))
+if (configuracionRedis.Habilitado)
 {
     var opcionesRedis = new ConfigurationOptions
     {
@@ -238,14 +235,16 @@ if (!string.IsNullOrWhiteSpace(hostRedis))
         ClientName = $"autotaller-{Environment.MachineName}"
     };
     opcionesRedis.EndPoints.Add(
-        hostRedis,
-        builder.Configuration.GetValue("REDIS_PORT", 6379));
+        configuracionRedis.Host!,
+        configuracionRedis.Puerto);
 
     IConnectionMultiplexer conexionRedis =
         ConnectionMultiplexer.Connect(opcionesRedis);
 
     builder.Services.AddSingleton(conexionRedis);
-    builder.Services.AddSingleton<ICacheDistribuidaPort, RedisCacheAdapter>();
+    builder.Services.AddSingleton<RedisCacheAdapter>();
+    builder.Services.AddSingleton<ICacheDistribuidaPort>(servicios => servicios.GetRequiredService<RedisCacheAdapter>());
+    builder.Services.AddSingleton<ICacheResumenDashboardPort>(servicios => servicios.GetRequiredService<RedisCacheAdapter>());
 
     // La sesión (borradores y tokens de órdenes) se comparte entre réplicas.
     builder.Services.AddStackExchangeRedisCache(options =>
@@ -257,7 +256,9 @@ if (!string.IsNullOrWhiteSpace(hostRedis))
 }
 else
 {
-    builder.Services.AddSingleton<ICacheDistribuidaPort, CacheDistribuidaDeshabilitada>();
+    builder.Services.AddSingleton<CacheDistribuidaDeshabilitada>();
+    builder.Services.AddSingleton<ICacheDistribuidaPort>(servicios => servicios.GetRequiredService<CacheDistribuidaDeshabilitada>());
+    builder.Services.AddSingleton<ICacheResumenDashboardPort>(servicios => servicios.GetRequiredService<CacheDistribuidaDeshabilitada>());
     builder.Services.AddDistributedMemoryCache();
 }
 
@@ -445,6 +446,8 @@ builder.Services.AddScoped<
     DashboardService>();
 var app =
     builder.Build();
+configuracionRedis.RegistrarDiagnostico(app.Logger,
+    app.Services.GetService<IConnectionMultiplexer>()?.IsConnected == true);
 // =====================================================
 // RESTABLECIMIENTO ADMINISTRATIVO DE CONTRASEÑA
 // =====================================================

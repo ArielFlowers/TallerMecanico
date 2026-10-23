@@ -1,0 +1,1471 @@
+{
+  "verificacion": {
+    "build": {
+      "resultado": "Correcto",
+      "errores": 0,
+      "advertencias": 0
+    },
+    "cacheYConcurrencia": {
+      "aprobadas": 72,
+      "omitidas": 0,
+      "fallidas": 0
+    },
+    "regresionSegura": {
+      "aprobadas": 322,
+      "omitidas": 107,
+      "fallidas": 0,
+      "totalSeleccionadas": 429,
+      "excluidasPorSeguridad": [
+        "RepositoriosMySqlTests",
+        "ConfirmacionEmailMySqlTests",
+        "LimiteReenvioMySqlTests",
+        "RenovacionTokenMySqlTests",
+        "RevisionSolicitudesMySqlTests",
+        "EnvioGmailRealTests"
+      ]
+    },
+    "fallosRedis": "Verificados con dobles; no se detuvo Redis real.",
+    "concurrencia": "Procesos auxiliares .NET con servicios/repositorios/adaptador reales en app1/app2; escrituras e invalidación mediante servidor HTTP real de app2. No se instrumentaron rutas de producción."
+  },
+  "concurrenciaReal": {
+    "fechaUtc": "2026-10-23T03:33:48.619Z",
+    "clave": "autotaller:dashboard:resumen",
+    "claveGeneracion": "autotaller:dashboard:generacion",
+    "replicas": [
+      {
+        "servicio": "app1",
+        "url": "http://127.0.0.1:32783",
+        "replica": "3a9f0b15600f",
+        "redis": "PONG",
+        "latenciaMs": 1.3252,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": 5.105
+      },
+      {
+        "servicio": "app2",
+        "url": "http://127.0.0.1:32782",
+        "replica": "3f6a4c0c16b2",
+        "redis": "PONG",
+        "latenciaMs": 0.6078,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": 3.9
+      },
+      {
+        "servicio": "app3",
+        "url": "http://127.0.0.1:32781",
+        "replica": "7a21071fcfae",
+        "redis": "PONG",
+        "latenciaMs": 1.2683,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": 2.768
+      }
+    ],
+    "casos": [
+      {
+        "caso": "Dos MISS simultáneos: primer publicador gana, segundo lee HIT sin renovar TTL",
+        "listoA": {
+          "evento": "listo",
+          "replica": "3a9f0b15600f",
+          "generacion": "393b3e715f8e46bcb59d7cd9ccdf33b2",
+          "entrada": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Replica": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:33:56.449861+00:00"
+          }
+        },
+        "listoB": {
+          "evento": "listo",
+          "replica": "3f6a4c0c16b2",
+          "generacion": "393b3e715f8e46bcb59d7cd9ccdf33b2",
+          "entrada": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Replica": "3f6a4c0c16b2",
+            "GeneradoEn": "2026-10-23T03:33:57.3771695+00:00"
+          }
+        },
+        "finalA": {
+          "evento": "final",
+          "replica": "3a9f0b15600f",
+          "resultado": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Estado": 1,
+            "ReplicaOrigen": "3a9f0b15600f",
+            "ReplicaActual": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:33:56.449861+00:00",
+            "TiempoRestante": "00:00:59.9940000",
+            "Almacenado": true,
+            "Publicacion": 1
+          },
+          "publicaciones": [
+            "Publicada"
+          ],
+          "logs": [
+            "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+          ]
+        },
+        "finalB": {
+          "evento": "final",
+          "replica": "3f6a4c0c16b2",
+          "resultado": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Estado": 0,
+            "ReplicaOrigen": "3a9f0b15600f",
+            "ReplicaActual": "3f6a4c0c16b2",
+            "GeneradoEn": "2026-10-23T03:33:56.449861+00:00",
+            "TiempoRestante": "00:00:59.3800000",
+            "Almacenado": null,
+            "Publicacion": 0
+          },
+          "publicaciones": [
+            "EntradaExistente"
+          ],
+          "logs": [
+            "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado EntradaExistente | reintento 0",
+            "HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada"
+          ]
+        },
+        "hit": {
+          "antes": {
+            "Mecanicos": 37,
+            "Vehiculos": 37,
+            "Servicios": 37
+          },
+          "despues": {
+            "Mecanicos": 37,
+            "Vehiculos": 37,
+            "Servicios": 37
+          },
+          "ttlAntes": 56487,
+          "ttlDespues": 54719
+        }
+      },
+      {
+        "caso": "INSERT real desde B invalida la publicación antigua de A",
+        "listo": {
+          "evento": "listo",
+          "replica": "3a9f0b15600f",
+          "generacion": "740224088e2e4aa88386c7ce48136a34",
+          "entrada": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Replica": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:07.4724553+00:00"
+          }
+        },
+        "generacionNueva": "1c33a47a05fd4f079d9a6068c935d00e",
+        "final": {
+          "evento": "final",
+          "replica": "3a9f0b15600f",
+          "resultado": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 1
+            },
+            "Estado": 1,
+            "ReplicaOrigen": "3a9f0b15600f",
+            "ReplicaActual": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:09.2337199+00:00",
+            "TiempoRestante": "00:00:59.9970000",
+            "Almacenado": true,
+            "Publicacion": 1
+          },
+          "publicaciones": [
+            "RechazadaPorGeneracion",
+            "Publicada"
+          ],
+          "logs": [
+            "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado RechazadaPorGeneracion | reintento 0",
+            "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+          ]
+        },
+        "hit": {
+          "antes": {
+            "Mecanicos": 39,
+            "Vehiculos": 39,
+            "Servicios": 39
+          },
+          "despues": {
+            "Mecanicos": 39,
+            "Vehiculos": 39,
+            "Servicios": 39
+          },
+          "ttlAntes": 57133,
+          "ttlDespues": 55333
+        },
+        "servicioCreadoId": 4
+      },
+      {
+        "caso": "Administrador B invalida mientras A está en MISS",
+        "listo": {
+          "evento": "listo",
+          "replica": "3a9f0b15600f",
+          "generacion": "21166577d14b45dbbfb2ce6a330d2589",
+          "entrada": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Replica": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:17.8795432+00:00"
+          }
+        },
+        "nuevaManual": "e2f12adb2f594a94bf21e3c258d4d326",
+        "final": {
+          "evento": "final",
+          "replica": "3a9f0b15600f",
+          "resultado": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Estado": 1,
+            "ReplicaOrigen": "3a9f0b15600f",
+            "ReplicaActual": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:19.5773956+00:00",
+            "TiempoRestante": "00:00:59.9960000",
+            "Almacenado": true,
+            "Publicacion": 1
+          },
+          "publicaciones": [
+            "RechazadaPorGeneracion",
+            "Publicada"
+          ],
+          "logs": [
+            "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado RechazadaPorGeneracion | reintento 0",
+            "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+          ]
+        },
+        "hit": {
+          "antes": {
+            "Mecanicos": 41,
+            "Vehiculos": 41,
+            "Servicios": 41
+          },
+          "despues": {
+            "Mecanicos": 41,
+            "Vehiculos": 41,
+            "Servicios": 41
+          },
+          "ttlAntes": 57850,
+          "ttlDespues": 56078
+        }
+      },
+      {
+        "caso": "Generación desaparecida: rechaza escritor antiguo y descarta entrada huérfana",
+        "listo": {
+          "evento": "listo",
+          "replica": "3a9f0b15600f",
+          "generacion": "7be2572a73a8438c9c6fbcff7aa88a12",
+          "entrada": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Replica": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:26.8138618+00:00"
+          }
+        },
+        "nuevaGeneracion": "2ad788e661d644379c65982688bc8960",
+        "final": {
+          "evento": "final",
+          "replica": "3a9f0b15600f",
+          "resultado": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Estado": 1,
+            "ReplicaOrigen": "3a9f0b15600f",
+            "ReplicaActual": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:27.9726635+00:00",
+            "TiempoRestante": "00:00:59.9960000",
+            "Almacenado": true,
+            "Publicacion": 1
+          },
+          "publicaciones": [
+            "RechazadaPorGeneracion",
+            "Publicada"
+          ],
+          "logs": [
+            "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado RechazadaPorGeneracion | reintento 0",
+            "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+          ]
+        },
+        "hit": {
+          "antes": {
+            "Mecanicos": 43,
+            "Vehiculos": 43,
+            "Servicios": 43
+          },
+          "despues": {
+            "Mecanicos": 43,
+            "Vehiculos": 43,
+            "Servicios": 43
+          },
+          "ttlAntes": 56684,
+          "ttlDespues": 54875
+        }
+      },
+      {
+        "caso": "Metadato recreado por B no reutiliza la generación antigua de A (sin ABA)",
+        "listoAnterior": {
+          "evento": "listo",
+          "replica": "3a9f0b15600f",
+          "generacion": "8599fe7989094a08a75f5a524814c533",
+          "entrada": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Replica": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:36.4847164+00:00"
+          }
+        },
+        "listoPosterior": {
+          "evento": "listo",
+          "replica": "3f6a4c0c16b2",
+          "generacion": "93286c53f78046338ea6b9779fb9472a",
+          "entrada": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Replica": "3f6a4c0c16b2",
+            "GeneradoEn": "2026-10-23T03:34:37.9376238+00:00"
+          }
+        },
+        "finalAnterior": {
+          "evento": "final",
+          "replica": "3a9f0b15600f",
+          "resultado": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Estado": 1,
+            "ReplicaOrigen": "3a9f0b15600f",
+            "ReplicaActual": "3a9f0b15600f",
+            "GeneradoEn": "2026-10-23T03:34:38.0156012+00:00",
+            "TiempoRestante": "00:00:59.9950000",
+            "Almacenado": true,
+            "Publicacion": 1
+          },
+          "publicaciones": [
+            "RechazadaPorGeneracion",
+            "Publicada"
+          ],
+          "logs": [
+            "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado RechazadaPorGeneracion | reintento 0",
+            "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+          ]
+        },
+        "finalPosterior": {
+          "evento": "final",
+          "replica": "3f6a4c0c16b2",
+          "resultado": {
+            "Dashboard": {
+              "MecanicosDisponibles": 0,
+              "VehiculosRegistrados": 0,
+              "ServiciosRegistrados": 0
+            },
+            "Estado": 0,
+            "ReplicaOrigen": "3a9f0b15600f",
+            "ReplicaActual": "3f6a4c0c16b2",
+            "GeneradoEn": "2026-10-23T03:34:38.0156012+00:00",
+            "TiempoRestante": "00:00:59.3860000",
+            "Almacenado": null,
+            "Publicacion": 0
+          },
+          "publicaciones": [
+            "EntradaExistente"
+          ],
+          "logs": [
+            "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado EntradaExistente | reintento 0",
+            "HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada"
+          ]
+        },
+        "hit": {
+          "antes": {
+            "Mecanicos": 46,
+            "Vehiculos": 46,
+            "Servicios": 46
+          },
+          "despues": {
+            "Mecanicos": 46,
+            "Vehiculos": 46,
+            "Servicios": 46
+          },
+          "ttlAntes": 57785,
+          "ttlDespues": 55945
+        }
+      }
+    ],
+    "ping": "PONG",
+    "ttlGeneracion": -1,
+    "ttlResumenMs": 54279,
+    "logsInvalidacion": [
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica 3f6a4c0c16b2",
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica 3f6a4c0c16b2",
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Inexistente | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Inexistente | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Inexistente | réplica 3f6a4c0c16b2",
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Inexistente | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Inexistente | réplica 3f6a4c0c16b2",
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica 3f6a4c0c16b2",
+      "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica 3f6a4c0c16b2"
+    ]
+  },
+  "invalidacionYPermisosReales": {
+    "fechaUtc": "2026-10-23T03:39:30.521Z",
+    "clave": "autotaller:dashboard:resumen",
+    "replicas": [
+      {
+        "servicio": "app1",
+        "url": "http://127.0.0.1:32783",
+        "replica": "3a9f0b15600f",
+        "redis": "PONG",
+        "latenciaMs": 0.6322,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": null
+      },
+      {
+        "servicio": "app2",
+        "url": "http://127.0.0.1:32782",
+        "replica": "3f6a4c0c16b2",
+        "redis": "PONG",
+        "latenciaMs": 0.5137,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": null
+      },
+      {
+        "servicio": "app3",
+        "url": "http://127.0.0.1:32781",
+        "replica": "7a21071fcfae",
+        "redis": "PONG",
+        "latenciaMs": 1.3878,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": null
+      }
+    ],
+    "operaciones": [
+      {
+        "nombre": "Crear mecánico",
+        "previo": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 49061,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 47,
+            "Vehiculos": 47,
+            "Servicios": 47
+          },
+          "despues": {
+            "Mecanicos": 47,
+            "Vehiculos": 47,
+            "Servicios": 47
+          },
+          "mensajeCache": null
+        },
+        "resultadoDel": "clave ausente antes de redirección, dentro del TTL",
+        "miss": {
+          "estado": "Cache: MISS",
+          "replica": "3a9f0b15600f",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 58468,
+          "resumen": {
+            "MecanicosDisponibles": 1,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 47,
+            "Vehiculos": 47,
+            "Servicios": 47
+          },
+          "despues": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "mensajeCache": null
+        },
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 54217,
+          "resumen": {
+            "MecanicosDisponibles": 1,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "despues": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Eliminar mecánico",
+        "previo": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 26201,
+          "resumen": {
+            "MecanicosDisponibles": 1,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "despues": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "mensajeCache": null
+        },
+        "resultadoDel": "clave ausente antes de redirección, dentro del TTL",
+        "miss": {
+          "estado": "Cache: MISS",
+          "replica": "3a9f0b15600f",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 58457,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "despues": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "mensajeCache": null
+        },
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 54169,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "despues": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Crear vehículo",
+        "previo": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 41874,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "despues": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "mensajeCache": null
+        },
+        "resultadoDel": "clave ausente antes de redirección, dentro del TTL",
+        "miss": {
+          "estado": "Cache: MISS",
+          "replica": "3a9f0b15600f",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 58420,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 1,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "despues": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "mensajeCache": null
+        },
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 54164,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 1,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "despues": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Eliminar vehículo",
+        "previo": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 33236,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 1,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "despues": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "mensajeCache": null
+        },
+        "resultadoDel": "clave ausente antes de redirección, dentro del TTL",
+        "miss": {
+          "estado": "Cache: MISS",
+          "replica": "3a9f0b15600f",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 58432,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "despues": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "mensajeCache": null
+        },
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 54207,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "despues": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Crear servicio",
+        "previo": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 41936,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "despues": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "mensajeCache": null
+        },
+        "resultadoDel": "clave ausente antes de redirección, dentro del TTL",
+        "miss": {
+          "estado": "Cache: MISS",
+          "replica": "3a9f0b15600f",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 58444,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 1
+          },
+          "antes": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "despues": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "mensajeCache": null
+        },
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 54149,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 1
+          },
+          "antes": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "despues": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Eliminar servicio",
+        "previo": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 33528,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 1
+          },
+          "antes": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "despues": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "mensajeCache": null
+        },
+        "resultadoDel": "clave ausente antes de redirección, dentro del TTL",
+        "miss": {
+          "estado": "Cache: MISS",
+          "replica": "3a9f0b15600f",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 58420,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "despues": {
+            "Mecanicos": 53,
+            "Vehiculos": 53,
+            "Servicios": 53
+          },
+          "mensajeCache": null
+        },
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 54184,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 53,
+            "Vehiculos": 53,
+            "Servicios": 53
+          },
+          "despues": {
+            "Mecanicos": 53,
+            "Vehiculos": 53,
+            "Servicios": 53
+          },
+          "mensajeCache": null
+        }
+      }
+    ],
+    "sinInvalidacion": [
+      {
+        "nombre": "Mecánico con validación fallida",
+        "ttlAntes": 50027,
+        "ttlDespues": 48898,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 46374,
+          "resumen": {
+            "MecanicosDisponibles": 1,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "despues": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Mecánico con CI duplicado",
+        "ttlAntes": 42782,
+        "ttlDespues": 41646,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 39087,
+          "resumen": {
+            "MecanicosDisponibles": 1,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "despues": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Editar nombre del mecánico",
+        "ttlAntes": 35498,
+        "ttlDespues": 34375,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 31885,
+          "resumen": {
+            "MecanicosDisponibles": 1,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "despues": {
+            "Mecanicos": 48,
+            "Vehiculos": 48,
+            "Servicios": 48
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Eliminar mecánico inexistente",
+        "ttlAntes": 50533,
+        "ttlDespues": 49432,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 46961,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "despues": {
+            "Mecanicos": 49,
+            "Vehiculos": 49,
+            "Servicios": 49
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Vehículo con validación fallida",
+        "ttlAntes": 49914,
+        "ttlDespues": 48776,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 46267,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 1,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "despues": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Editar placa del vehículo",
+        "ttlAntes": 42557,
+        "ttlDespues": 41456,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 38934,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 1,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "despues": {
+            "Mecanicos": 50,
+            "Vehiculos": 50,
+            "Servicios": 50
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Eliminar vehículo inexistente",
+        "ttlAntes": 50596,
+        "ttlDespues": 49469,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 47018,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "despues": {
+            "Mecanicos": 51,
+            "Vehiculos": 51,
+            "Servicios": 51
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Servicio con validación fallida",
+        "ttlAntes": 50012,
+        "ttlDespues": 48894,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 46381,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 1
+          },
+          "antes": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "despues": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Editar nombre y precio del servicio",
+        "ttlAntes": 42761,
+        "ttlDespues": 41617,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 39121,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 1
+          },
+          "antes": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "despues": {
+            "Mecanicos": 52,
+            "Vehiculos": 52,
+            "Servicios": 52
+          },
+          "mensajeCache": null
+        }
+      },
+      {
+        "nombre": "Eliminar servicio inexistente",
+        "ttlAntes": 50620,
+        "ttlDespues": 49478,
+        "hit": {
+          "estado": "Cache: HIT",
+          "replica": "3f6a4c0c16b2",
+          "origen": "3a9f0b15600f",
+          "ttlMs": 46926,
+          "resumen": {
+            "MecanicosDisponibles": 0,
+            "VehiculosRegistrados": 0,
+            "ServiciosRegistrados": 0
+          },
+          "antes": {
+            "Mecanicos": 53,
+            "Vehiculos": 53,
+            "Servicios": 53
+          },
+          "despues": {
+            "Mecanicos": 53,
+            "Vehiculos": 53,
+            "Servicios": 53
+          },
+          "mensajeCache": null
+        }
+      }
+    ],
+    "clienteFixtureId": 3,
+    "manual": {
+      "sinAntiforgery": 400,
+      "recepcionista": 302,
+      "redireccionDenegada": true,
+      "administrador": 302,
+      "claveAusenteAntesDeSeguirRedireccion": true,
+      "missManual": {
+        "estado": "Cache: MISS",
+        "replica": "3a9f0b15600f",
+        "origen": "3a9f0b15600f",
+        "ttlMs": 58429,
+        "resumen": {
+          "MecanicosDisponibles": 0,
+          "VehiculosRegistrados": 0,
+          "ServiciosRegistrados": 0
+        },
+        "antes": {
+          "Mecanicos": 53,
+          "Vehiculos": 53,
+          "Servicios": 53
+        },
+        "despues": {
+          "Mecanicos": 54,
+          "Vehiculos": 54,
+          "Servicios": 54
+        },
+        "mensajeCache": "Redis confirmó la invalidación del resumen. Al seguir la redirección, el dashboard puede regenerar la caché desde MySQL."
+      },
+      "hitManual": {
+        "estado": "Cache: HIT",
+        "replica": "3f6a4c0c16b2",
+        "origen": "3a9f0b15600f",
+        "ttlMs": 55893,
+        "resumen": {
+          "MecanicosDisponibles": 0,
+          "VehiculosRegistrados": 0,
+          "ServiciosRegistrados": 0
+        },
+        "antes": {
+          "Mecanicos": 54,
+          "Vehiculos": 54,
+          "Servicios": 54
+        },
+        "despues": {
+          "Mecanicos": 54,
+          "Vehiculos": 54,
+          "Servicios": 54
+        },
+        "mensajeCache": null
+      },
+      "missInexistente": {
+        "estado": "Cache: MISS",
+        "replica": "3a9f0b15600f",
+        "origen": "3a9f0b15600f",
+        "ttlMs": 58433,
+        "resumen": {
+          "MecanicosDisponibles": 0,
+          "VehiculosRegistrados": 0,
+          "ServiciosRegistrados": 0
+        },
+        "antes": {
+          "Mecanicos": 54,
+          "Vehiculos": 54,
+          "Servicios": 54
+        },
+        "despues": {
+          "Mecanicos": 55,
+          "Vehiculos": 55,
+          "Servicios": 55
+        },
+        "mensajeCache": "Redis confirmó que el resumen ya no estaba en caché. Al seguir la redirección, el dashboard puede regenerarlo desde MySQL."
+      },
+      "otrasClavesPreservadas": true,
+      "sesionesPreservadas": 4
+    },
+    "logsInvalidacion": [
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica 3a9f0b15600f",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Eliminada | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica 3a9f0b15600f",
+      "      INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | resultado Inexistente | Redis confirmó el resultado de DEL.",
+      "      INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Inexistente | réplica 3a9f0b15600f"
+    ],
+    "resultado": "PASS: seis escrituras HTTP invalidan; siguientes MISS/HIT y conteos MySQL correctos; ediciones, errores y no-op conservan caché; permisos y antiforgery manual intactos."
+  },
+  "cacheCompartidaYExpiracionReal": {
+    "fechaUtc": "2026-10-23T03:44:07.698Z",
+    "clave": "autotaller:dashboard:resumen",
+    "replicas": [
+      {
+        "servicio": "app1",
+        "url": "http://127.0.0.1:32783",
+        "replica": "3a9f0b15600f",
+        "redis": "PONG",
+        "latenciaMs": 0.5678,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": null
+      },
+      {
+        "servicio": "app2",
+        "url": "http://127.0.0.1:32782",
+        "replica": "3f6a4c0c16b2",
+        "redis": "PONG",
+        "latenciaMs": 0.528,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": null
+      },
+      {
+        "servicio": "app3",
+        "url": "http://127.0.0.1:32781",
+        "replica": "7a21071fcfae",
+        "redis": "PONG",
+        "latenciaMs": 0.7161,
+        "clave": "autotaller:dashboard:resumen",
+        "ttlSegundos": null
+      }
+    ],
+    "ping": "PONG",
+    "clientesDeLasTresReplicasEnElMismoRedis": true,
+    "nginxUrl": "http://127.0.0.1:32771",
+    "replicasObservadasPorNginx": [
+      "3a9f0b15600f",
+      "7a21071fcfae",
+      "3f6a4c0c16b2"
+    ],
+    "loginReal": "302 a /; no se siguió la redirección antes de medir",
+    "ttlInicial": -2,
+    "antes": {
+      "Mecanicos": 55,
+      "Vehiculos": 55,
+      "Servicios": 55
+    },
+    "despuesMiss": {
+      "Mecanicos": 56,
+      "Vehiculos": 56,
+      "Servicios": 56
+    },
+    "entrada": {
+      "Dashboard": {
+        "MecanicosDisponibles": 0,
+        "VehiculosRegistrados": 0,
+        "ServiciosRegistrados": 0
+      },
+      "Replica": "3a9f0b15600f",
+      "GeneradoEn": "2026-10-23T03:44:15.9046264+00:00"
+    },
+    "pttlDespuesMiss": 58363,
+    "despuesHit": {
+      "Mecanicos": 56,
+      "Vehiculos": 56,
+      "Servicios": 56
+    },
+    "pttlDespuesHit": 55760,
+    "consultasUsuariosDuranteHit": 1,
+    "entradasInvalidas": [
+      {
+        "caso": "JSON mal formado",
+        "antes": {
+          "Mecanicos": 56,
+          "Vehiculos": 56,
+          "Servicios": 56
+        },
+        "despues": {
+          "Mecanicos": 57,
+          "Vehiculos": 57,
+          "Servicios": 57
+        },
+        "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+      },
+      {
+        "caso": "Resumen nulo",
+        "antes": {
+          "Mecanicos": 57,
+          "Vehiculos": 57,
+          "Servicios": 57
+        },
+        "despues": {
+          "Mecanicos": 58,
+          "Vehiculos": 58,
+          "Servicios": 58
+        },
+        "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+      },
+      {
+        "caso": "Conteo obligatorio ausente",
+        "antes": {
+          "Mecanicos": 58,
+          "Vehiculos": 58,
+          "Servicios": 58
+        },
+        "despues": {
+          "Mecanicos": 59,
+          "Vehiculos": 59,
+          "Servicios": 59
+        },
+        "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+      }
+    ],
+    "logsCache": [
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+      "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa | publicación Publicada",
+      "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 3a9f0b15600f | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa | publicación Publicada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada",
+      "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 3f6a4c0c16b2 | generado por 3a9f0b15600f | lectura Hit | escritura NoIntentada"
+    ],
+    "ttlTrasExpiracionNatural": -2,
+    "resultado": "PASS: Redis real, 3 replicas, Nginx, login real, MISS A y HIT B; +3 COUNT en MISS, +0 en HIT."
+  },
+  "generacionTrasExpirarResumen": {
+    "ttlResumen": -2,
+    "generacionAntes": "75944657caec492d8dd58e9ccf06cfc4",
+    "generacionDespues": "75944657caec492d8dd58e9ccf06cfc4",
+    "ttlGeneracion": -1,
+    "mismaGeneracion": true
+  },
+  "infraestructura": {
+    "mysql": "15f81200ea6b (conservado)",
+    "redis": "ff45a4372547 (conservado)",
+    "nginx": "489b6a3b23db (conservado)",
+    "app1": "3a9f0b15600f",
+    "app2": "3f6a4c0c16b2",
+    "app3": "7a21071fcfae",
+    "ajena": "heuristic_stonebraker f8ad5861f1bf: continúa Exited(0); no se modificó."
+  }
+}

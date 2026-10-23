@@ -6,7 +6,7 @@ namespace TallerMecanico.Infraestructura.Sesion;
 
 public sealed class BorradorOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario) : IBorradorOrdenPort
 {
-    private ISession Session => contexto.HttpContext?.Session ?? throw new InvalidOperationException("No hay sesión disponible.");
+    private ISession Session => SesionDisponible.Obtener(contexto.HttpContext);
     private static string Clave(Guid id) => $"Ordenes:Borrador:{id:N}";
 
     public Guid Guardar(OrdenFormViewModel formulario)

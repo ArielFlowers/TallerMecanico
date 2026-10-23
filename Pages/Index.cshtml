@@ -85,11 +85,30 @@
             {
                 TallerMecanico.Aplicacion.Dto.EstadoCache.Hit => ("HIT", "cache-estado-hit"),
                 TallerMecanico.Aplicacion.Dto.EstadoCache.Miss => ("MISS", "cache-estado-miss"),
+                TallerMecanico.Aplicacion.Dto.EstadoCache.Deshabilitado => ("DESHABILITADO", "cache-estado-no-disponible"),
+                TallerMecanico.Aplicacion.Dto.EstadoCache.EntradaInvalida => ("DATOS INVÁLIDOS", "cache-estado-no-disponible"),
                 _ => ("NO DISPONIBLE", "cache-estado-no-disponible")
             };
 
             <div class="cache-panel" title="Origen de los datos del dashboard (Redis compartido entre réplicas)">
                 <span class="cache-estado @claseCache">Cache: @estadoCache</span>
+                @if (Model.Cache.Publicacion is TallerMecanico.Aplicacion.Dto.EstadoPublicacionResumen.RechazadaPorGeneracion
+                    or TallerMecanico.Aplicacion.Dto.EstadoPublicacionResumen.EntradaExistente)
+                {
+                    <span>El resumen no se publicó porque hubo un cambio concurrente; se muestran los datos consultados en MySQL.</span>
+                }
+                else if (Model.Cache.Almacenado == false)
+                {
+                    <span>No se pudo guardar el resumen en caché; se muestran datos de MySQL.</span>
+                }
+                @if (Model.Cache.Estado == TallerMecanico.Aplicacion.Dto.EstadoCache.NoDisponible)
+                {
+                    <span>Falló la lectura de caché; se muestran datos de MySQL.</span>
+                }
+                @if (Model.Cache.Almacenado == true && Model.Cache.Estado != TallerMecanico.Aplicacion.Dto.EstadoCache.Miss)
+                {
+                    <span>Resumen guardado en caché para próximas consultas.</span>
+                }
                 <span>Generado por: <strong>@Model.Cache.ReplicaOrigen</strong></span>
                 <span>Atendido por: <strong>@Model.Cache.ReplicaActual</strong></span>
                 <span>Generado: <strong>@Model.Cache.GeneradoEn.ToString(configuracion.FormatoFecha + " HH:mm:ss")</strong></span>

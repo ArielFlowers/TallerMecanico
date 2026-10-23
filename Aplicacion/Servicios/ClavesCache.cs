@@ -5,4 +5,5 @@ namespace TallerMecanico.Aplicacion.Servicios;
 public static class ClavesCache
 {
     public const string DashboardResumen = "autotaller:dashboard:resumen";
+    public const string DashboardGeneracion = "autotaller:dashboard:generacion";
 }

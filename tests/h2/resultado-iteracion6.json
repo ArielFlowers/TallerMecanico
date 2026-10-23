@@ -1,0 +1,2411 @@
+{
+  "fechaUtc": "2026-10-23",
+  "git": {
+    "rama": "refactor-h2-entregable2",
+    "head": "199f71a22f16bccf14102ad72b8e1efd702ef6d5",
+    "main": "95a6a6f771aaa50b3222e37402450c2c22ab116d",
+    "mainVerificadoConRemoto": true,
+    "soloMain": 2,
+    "soloRama": 5,
+    "conflictosTextuales": false,
+    "arbolTemporalIntegrado": "309d5e7087fb86c0cc5b7def5998096eac9f6ecf",
+    "sinMergeCommitPushNiCambioDeRama": true
+  },
+  "comparacionCierre": {
+    "fecha": "2026-10-23",
+    "main": "95a6a6f771aaa50b3222e37402450c2c22ab116d",
+    "h2": "199f71a22f16bccf14102ad72b8e1efd702ef6d5 más pendientes I5",
+    "imagenSdk": "sha256:747cbade5bfd918a175ac32f8f1d931edec2c7d0d5397a3de72eaef1ac1f66d2",
+    "condiciones": "Mismo ejecutar_regresion_mysql.sh, mismo filtro de nueve pruebas, sin paralelismo, mismo MySQL H2, fixtures autotaller_test_* con datos equivalentes generados por las mismas pruebas, sin SMTP/Playwright/Python; fuente y paquetes de solo lectura. No se emplearon credenciales personales.",
+    "snapshotMain": {
+      "archivosVerificados": 407,
+      "diferenciasDeContenido": 0,
+      "soloConversionEol": 356,
+      "normalizacionSoloEnMemoria": true
+    },
+    "trxMain": "tests/h2/TestResults/cierre-main/integracion-mysql.trx",
+    "trxIntegrada": "tests/h2/TestResults/cierre-integrada/integracion-mysql.trx",
+    "resultadoMain": {
+      "aprobadas": 0,
+      "fallidas": 9,
+      "omitidas": 0
+    },
+    "resultadoIntegrada": {
+      "aprobadas": 0,
+      "fallidas": 9,
+      "omitidas": 0
+    },
+    "buildCierre": {
+      "errores": 0,
+      "advertencias": 0
+    },
+    "especificasCierre": {
+      "aprobadas": 113,
+      "fallidas": 0,
+      "omitidas": 0,
+      "trx": "tests/h2/TestResults/h2-cierre-especificas.trx"
+    },
+    "filas": [
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesHttpTests.ListadoHttps_AutorizaLosRolesYConservaFiltrosAlRefrescar",
+        "main": "Failed",
+        "ramaH2": "Failed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Assert.Contains() Failure: Sub-string not found\nString:    \"\\r\\n<!DOCTYPE html>\\r\\n<html lang=\"es\">\\r\\n<hea\"···\nNot found: \"Refrescar\"",
+        "mensajeIntegrada": "Assert.Contains() Failure: Sub-string not found\nString:    \"\\r\\n<!DOCTYPE html>\\r\\n<html lang=\"es\">\\r\\n<hea\"···\nNot found: \"Refrescar\"",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.PreciosManipuladosEnJson_NoCambianPreciosNiTotalDeLaBase",
+        "main": "Failed",
+        "ramaH2": "Failed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Assert.True() Failure\nExpected: True\nActual:   False",
+        "mensajeIntegrada": "Assert.True() Failure\nExpected: True\nActual:   False",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.ProductosRepetidos_SeAgrupanAntesDelStockYDeLosDetalles",
+        "main": "Failed",
+        "ramaH2": "Failed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60",
+        "mensajeIntegrada": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenComprobanteHttpTests.Navegador_PostTradicionalFechaAutomaticaComprobanteErroresBloqueoYRecarga",
+        "main": "Failed",
+        "ramaH2": "Failed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Esta prueba requiere PLAYWRIGHT_MODULE y Microsoft Edge.",
+        "mensajeIntegrada": "Esta prueba requiere PLAYWRIGHT_MODULE y Microsoft Edge.",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente: infraestructura/precondición; funcionalidad no evaluada"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesTests.Validacion_RechazaSinServicio",
+        "main": "Failed",
+        "ramaH2": "Passed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Assert.Contains() Failure: Key not found in dictionary\nKeys:      [\"ServicioIds\"]\nNot found: \"ServicioId\"",
+        "mensajeIntegrada": "Assert.Contains() Failure: Key not found in dictionary\nKeys:      [\"ServicioIds\"]\nNot found: \"ServicioId\"",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Borradores_RestauranIdsTextosYDetalleAlSalirHaciaLosTresCrud",
+        "main": "Failed",
+        "ramaH2": "Passed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Assert.Equal() Failure: Strings differ\nExpected: \"Cambio de Aceite\"\nActual:   null",
+        "mensajeIntegrada": "Assert.Equal() Failure: Strings differ\nExpected: \"Cambio de Aceite\"\nActual:   null",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.CrearOrden_FacadeGuardaDosProductosTotalYUsuario",
+        "main": "Failed",
+        "ramaH2": "Failed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60",
+        "mensajeIntegrada": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Guardar_ValidaIdsStockPreciosDelServidorYConservaIdempotencia",
+        "main": "Failed",
+        "ramaH2": "Passed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "Assert.Contains() Failure: Item not found in collection\nCollection: [\"Formulario.ServicioIds\"]\nNot found:  \"Formulario.VehiculoId\"",
+        "mensajeIntegrada": "Assert.Contains() Failure: Item not found in collection\nCollection: [\"Formulario.ServicioIds\"]\nNot found:  \"Formulario.VehiculoId\"",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.MigracionOrdenes_SePuedeRepetirSinEliminarDatos",
+        "main": "Failed",
+        "ramaH2": "Passed",
+        "mainMasH2": "Failed",
+        "mensajeMain": "MySqlConnector.MySqlException : Cannot drop table 'Ordenes' referenced by a foreign key constraint 'FK_DetalleServiciosOrdenes_Ordenes' on table 'DetalleServiciosOrdenes'.",
+        "mensajeIntegrada": "MySqlConnector.MySqlException : Cannot drop table 'Ordenes' referenced by a foreign key constraint 'FK_DetalleServiciosOrdenes_Ordenes' on table 'DetalleServiciosOrdenes'.",
+        "mismaCausa": true,
+        "clasificacion": "Preexistente en main"
+      }
+    ],
+    "fallosNuevosAtribuiblesAH2": 0,
+    "alcance": "Clasificación de los nueve fallos observados, no afirmación de regresión global verde ni de cobertura funcional del navegador ausente.",
+    "auditoriaSecretos": "Sin coincidencias de contraseñas MySQL conocidas ni credenciales locales H2, cookies ASP.NET o JWT en cambios/evidencias revisados. Valores, cookies y tokens de autenticación no incluidos. Metadatos de generación Redis no son tokens de autenticación.",
+    "riesgoAppsettingsAceptadoPorEquipo": true,
+    "decision": "Caso A: recomendar commit final, push y Pull Request sin modificar órdenes. No se ejecutaron operaciones Git de escritura."
+  },
+  "seguridad": {
+    "archivo": "appsettings.json",
+    "linea": 3,
+    "clave": "ConnectionStrings:MySqlConnection",
+    "servicio": "MySQL",
+    "consumidores": [
+      "Infraestructura/Persistencia/DatabaseConnectionFactory.cs",
+      "Infraestructura/Persistencia/MySqlConnectionFactory.cs"
+    ],
+    "estado": "Riesgo aceptado expresamente por el equipo, según autorización del usuario. Mantener appsettings.json sin cambios; no bloquea el merge de H2.",
+    "tambienEnMain": true,
+    "valorOmitido": true,
+    "noUtilizadaParaAutenticar": true,
+    "sinCambiosEnConfiguracionNiHistorial": true,
+    "pendienteAntesDelMerge": false,
+    "riesgoAceptadoPorEquipo": true,
+    "noBloqueaMerge": true
+  },
+  "build": {
+    "rama": {
+      "errores": 0,
+      "advertencias": 0
+    },
+    "copiaIntegrada": {
+      "errores": 0,
+      "advertencias": 0
+    }
+  },
+  "ejecuciones": [
+    {
+      "archivo": "h2-iteracion6-segura.trx",
+      "aprobadas": 363,
+      "fallidas": 0,
+      "omitidas": 107,
+      "fallos": [],
+      "clasesAprobadas": [
+        {
+          "clase": "AutocompletadoTests",
+          "casos": 1
+        },
+        {
+          "clase": "ClientesAutocompletadoTests",
+          "casos": 8
+        },
+        {
+          "clase": "ComprobanteOrdenTests",
+          "casos": 10
+        },
+        {
+          "clase": "ComprobantePdfTests",
+          "casos": 2
+        },
+        {
+          "clase": "ConfiguracionRedisTests",
+          "casos": 33
+        },
+        {
+          "clase": "ConsultaOrdenesTests",
+          "casos": 12
+        },
+        {
+          "clase": "DashboardCacheServiceTests",
+          "casos": 40
+        },
+        {
+          "clase": "GmailEmailServiceTests",
+          "casos": 17
+        },
+        {
+          "clase": "ImporteEnPalabrasTests",
+          "casos": 17
+        },
+        {
+          "clase": "InvalidacionDashboardTests",
+          "casos": 10
+        },
+        {
+          "clase": "MecanicosAutocompletadoTests",
+          "casos": 4
+        },
+        {
+          "clase": "MecanicosTests",
+          "casos": 25
+        },
+        {
+          "clase": "NuevaOrdenFechaTests",
+          "casos": 3
+        },
+        {
+          "clase": "OrdenesAutocompletadoTests",
+          "casos": 9
+        },
+        {
+          "clase": "OrdenesTests",
+          "casos": 15
+        },
+        {
+          "clase": "ProductosAutocompletadoTests",
+          "casos": 7
+        },
+        {
+          "clase": "RedisCacheAdapterTests",
+          "casos": 22
+        },
+        {
+          "clase": "ReenvioVerificacionServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "RegistroFacadeTests",
+          "casos": 15
+        },
+        {
+          "clase": "RegistroUsuarioServiceTests",
+          "casos": 6
+        },
+        {
+          "clase": "RevisionSolicitudesServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "ServiciosAutocompletadoTests",
+          "casos": 6
+        },
+        {
+          "clase": "SesionDisponibleTests",
+          "casos": 8
+        },
+        {
+          "clase": "UnitTest1",
+          "casos": 1
+        },
+        {
+          "clase": "UsuarioAdministracionServiceTests",
+          "casos": 26
+        },
+        {
+          "clase": "ValidadorSolicitudRegistroTests",
+          "casos": 22
+        },
+        {
+          "clase": "VehiculosAutocompletadoTests",
+          "casos": 8
+        },
+        {
+          "clase": "VehiculosTests",
+          "casos": 21
+        },
+        {
+          "clase": "VerificacionEmailServiceTests",
+          "casos": 7
+        }
+      ]
+    },
+    {
+      "archivo": "h2-iteracion6-pdf-browser.trx",
+      "aprobadas": 5,
+      "fallidas": 0,
+      "omitidas": 0,
+      "fallos": [],
+      "clasesAprobadas": [
+        {
+          "clase": "AutocompletadoTests",
+          "casos": 1
+        },
+        {
+          "clase": "ComprobantePdfTests",
+          "casos": 4
+        }
+      ]
+    },
+    {
+      "archivo": "h2-especificas.trx",
+      "aprobadas": 113,
+      "fallidas": 0,
+      "omitidas": 0,
+      "fallos": [],
+      "clasesAprobadas": [
+        {
+          "clase": "ConfiguracionRedisTests",
+          "casos": 33
+        },
+        {
+          "clase": "DashboardCacheServiceTests",
+          "casos": 40
+        },
+        {
+          "clase": "InvalidacionDashboardTests",
+          "casos": 10
+        },
+        {
+          "clase": "RedisCacheAdapterTests",
+          "casos": 22
+        },
+        {
+          "clase": "SesionDisponibleTests",
+          "casos": 8
+        }
+      ]
+    },
+    {
+      "archivo": "mysql-rama/integracion-mysql.trx",
+      "aprobadas": 456,
+      "fallidas": 10,
+      "omitidas": 4,
+      "fallos": [
+        {
+          "prueba": "TallerMecanico.IntegrationTests.ProductosHttpTests.ProductosHttps_AutocompletadoCrudPermisosYRetornoSinCambiarInventario",
+          "mensaje": "System.Threading.Tasks.TaskCanceledException : The request was canceled due to the configured HttpClient.Timeout of 3 seconds elapsing.\n---- System.TimeoutException : The operation was canceled.\n-------- System.Threading.Tasks.TaskCanceledException : The operation was canceled.\n------------ System.IO.IOException : Unable to read data from the transport connection: Operation canceled.\n---------------- System.Net.Sockets.SocketException : Operation canceled"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.ServiciosAutocompletadoHttpTests.ServiciosHttps_SugerenciasBusquedaSqlCrudYPermisosAdministrativos",
+          "mensaje": "System.Threading.Tasks.TaskCanceledException : The request was canceled due to the configured HttpClient.Timeout of 3 seconds elapsing.\n---- System.TimeoutException : The operation was canceled.\n-------- System.Threading.Tasks.TaskCanceledException : The operation was canceled.\n------------ System.IO.IOException : Unable to read data from the transport connection: Operation canceled.\n---------------- System.Net.Sockets.SocketException : Operation canceled"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.PreciosManipuladosEnJson_NoCambianPreciosNiTotalDeLaBase",
+          "mensaje": "Assert.True() Failure\nExpected: True\nActual:   False"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesHttpTests.ListadoHttps_AutorizaLosRolesYConservaFiltrosAlRefrescar",
+          "mensaje": "Assert.Contains() Failure: Sub-string not found\nString:    \"\\r\\n<!DOCTYPE html>\\r\\n<html lang=\"es\">\\r\\n<hea\"···\nNot found: \"Refrescar\""
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.MecanicosHttpTests.FormularioHttps_CrudYAutocompletadoConservanFiltrosYPermisos",
+          "mensaje": "Assert.Equal() Failure: Values differ\nExpected: Found\nActual:   TooManyRequests"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.CrearOrden_FacadeGuardaDosProductosTotalYUsuario",
+          "mensaje": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.VehiculosAutocompletadoHttpTests.VehiculosHttps_BuscadorPermisosCrudClienteYContextos",
+          "mensaje": "System.Threading.Tasks.TaskCanceledException : The request was canceled due to the configured HttpClient.Timeout of 3 seconds elapsing.\n---- System.TimeoutException : The operation was canceled.\n-------- System.Threading.Tasks.TaskCanceledException : The operation was canceled.\n------------ System.IO.IOException : Unable to read data from the transport connection: Operation canceled.\n---------------- System.Net.Sockets.SocketException : Operation canceled"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenComprobanteHttpTests.Navegador_PostTradicionalFechaAutomaticaComprobanteErroresBloqueoYRecarga",
+          "mensaje": "Esta prueba requiere PLAYWRIGHT_MODULE y Microsoft Edge."
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.ProductosRepetidos_SeAgrupanAntesDelStockYDeLosDetalles",
+          "mensaje": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.ClientesHttpTests.ClientesHttps_SugerenciasPermisosCrudFiltrosYContextos",
+          "mensaje": "System.Threading.Tasks.TaskCanceledException : The request was canceled due to the configured HttpClient.Timeout of 3 seconds elapsing.\n---- System.TimeoutException : The operation was canceled.\n-------- System.Threading.Tasks.TaskCanceledException : The operation was canceled.\n------------ System.IO.IOException : Unable to read data from the transport connection: Operation canceled.\n---------------- System.Net.Sockets.SocketException : Operation canceled"
+        }
+      ],
+      "clasesAprobadas": [
+        {
+          "clase": "AutocompletadoTests",
+          "casos": 1
+        },
+        {
+          "clase": "ClientesAutocompletadoTests",
+          "casos": 11
+        },
+        {
+          "clase": "ComprobanteMySqlTests",
+          "casos": 1
+        },
+        {
+          "clase": "ComprobanteOrdenTests",
+          "casos": 10
+        },
+        {
+          "clase": "ComprobantePdfTests",
+          "casos": 2
+        },
+        {
+          "clase": "ConfiguracionRedisTests",
+          "casos": 33
+        },
+        {
+          "clase": "ConsultaOrdenesMySqlTests",
+          "casos": 14
+        },
+        {
+          "clase": "ConsultaOrdenesTests",
+          "casos": 12
+        },
+        {
+          "clase": "DashboardCacheServiceTests",
+          "casos": 40
+        },
+        {
+          "clase": "GmailEmailServiceTests",
+          "casos": 17
+        },
+        {
+          "clase": "ImporteEnPalabrasTests",
+          "casos": 17
+        },
+        {
+          "clase": "InvalidacionDashboardTests",
+          "casos": 10
+        },
+        {
+          "clase": "MecanicosAutocompletadoTests",
+          "casos": 7
+        },
+        {
+          "clase": "MecanicosMySqlTests",
+          "casos": 7
+        },
+        {
+          "clase": "MecanicosTests",
+          "casos": 25
+        },
+        {
+          "clase": "NuevaOrdenAutocompletadoHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "NuevaOrdenAutocompletadoTests",
+          "casos": 4
+        },
+        {
+          "clase": "NuevaOrdenFechaTests",
+          "casos": 5
+        },
+        {
+          "clase": "OrdenesAutocompletadoHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "OrdenesAutocompletadoTests",
+          "casos": 12
+        },
+        {
+          "clase": "OrdenesMySqlTests",
+          "casos": 13
+        },
+        {
+          "clase": "OrdenesTests",
+          "casos": 15
+        },
+        {
+          "clase": "ProductosAutocompletadoTests",
+          "casos": 10
+        },
+        {
+          "clase": "RedisCacheAdapterTests",
+          "casos": 22
+        },
+        {
+          "clase": "ReenvioVerificacionServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "RegistroFacadeTests",
+          "casos": 15
+        },
+        {
+          "clase": "RegistroUsuarioServiceTests",
+          "casos": 6
+        },
+        {
+          "clase": "RevisionSolicitudesServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "ServiciosAutocompletadoTests",
+          "casos": 9
+        },
+        {
+          "clase": "SesionDisponibleTests",
+          "casos": 8
+        },
+        {
+          "clase": "UnitTest1",
+          "casos": 1
+        },
+        {
+          "clase": "UsuarioAdministracionMySqlTests",
+          "casos": 30
+        },
+        {
+          "clase": "UsuarioAdministracionServiceTests",
+          "casos": 26
+        },
+        {
+          "clase": "UsuarioSesionRevocadaHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "ValidadorSolicitudRegistroTests",
+          "casos": 22
+        },
+        {
+          "clase": "VehiculosAutocompletadoTests",
+          "casos": 10
+        },
+        {
+          "clase": "VehiculosMySqlTests",
+          "casos": 2
+        },
+        {
+          "clase": "VehiculosTests",
+          "casos": 21
+        },
+        {
+          "clase": "VerificacionEmailServiceTests",
+          "casos": 7
+        }
+      ]
+    },
+    {
+      "archivo": "mysql-integrada/integracion-mysql.trx",
+      "aprobadas": 457,
+      "fallidas": 9,
+      "omitidas": 4,
+      "fallos": [
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.ProductosRepetidos_SeAgrupanAntesDelStockYDeLosDetalles",
+          "mensaje": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenComprobanteHttpTests.Navegador_PostTradicionalFechaAutomaticaComprobanteErroresBloqueoYRecarga",
+          "mensaje": "Esta prueba requiere PLAYWRIGHT_MODULE y Microsoft Edge."
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Borradores_RestauranIdsTextosYDetalleAlSalirHaciaLosTresCrud",
+          "mensaje": "Assert.Equal() Failure: Strings differ\nExpected: \"Cambio de Aceite\"\nActual:   null"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesHttpTests.ListadoHttps_AutorizaLosRolesYConservaFiltrosAlRefrescar",
+          "mensaje": "Assert.Contains() Failure: Sub-string not found\nString:    \"\\r\\n<!DOCTYPE html>\\r\\n<html lang=\"es\">\\r\\n<hea\"···\nNot found: \"Refrescar\""
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.PreciosManipuladosEnJson_NoCambianPreciosNiTotalDeLaBase",
+          "mensaje": "Assert.True() Failure\nExpected: True\nActual:   False"
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesTests.Validacion_RechazaSinServicio",
+          "mensaje": "Assert.Contains() Failure: Key not found in dictionary\nKeys:      [\"ServicioIds\"]\nNot found: \"ServicioId\""
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Guardar_ValidaIdsStockPreciosDelServidorYConservaIdempotencia",
+          "mensaje": "Assert.Contains() Failure: Item not found in collection\nCollection: [\"Formulario.ServicioIds\"]\nNot found:  \"Formulario.VehiculoId\""
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.MigracionOrdenes_SePuedeRepetirSinEliminarDatos",
+          "mensaje": "MySqlConnector.MySqlException : Cannot drop table 'Ordenes' referenced by a foreign key constraint 'FK_DetalleServiciosOrdenes_Ordenes' on table 'DetalleServiciosOrdenes'."
+        },
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.CrearOrden_FacadeGuardaDosProductosTotalYUsuario",
+          "mensaje": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+        }
+      ],
+      "clasesAprobadas": [
+        {
+          "clase": "AutocompletadoTests",
+          "casos": 1
+        },
+        {
+          "clase": "ClientesAutocompletadoTests",
+          "casos": 11
+        },
+        {
+          "clase": "ClientesHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "ComprobanteMySqlTests",
+          "casos": 1
+        },
+        {
+          "clase": "ComprobanteOrdenTests",
+          "casos": 10
+        },
+        {
+          "clase": "ComprobantePdfTests",
+          "casos": 2
+        },
+        {
+          "clase": "ConfiguracionRedisTests",
+          "casos": 33
+        },
+        {
+          "clase": "ConsultaOrdenesMySqlTests",
+          "casos": 14
+        },
+        {
+          "clase": "ConsultaOrdenesTests",
+          "casos": 12
+        },
+        {
+          "clase": "DashboardCacheServiceTests",
+          "casos": 40
+        },
+        {
+          "clase": "GmailEmailServiceTests",
+          "casos": 17
+        },
+        {
+          "clase": "ImporteEnPalabrasTests",
+          "casos": 17
+        },
+        {
+          "clase": "InvalidacionDashboardTests",
+          "casos": 10
+        },
+        {
+          "clase": "MecanicosAutocompletadoTests",
+          "casos": 7
+        },
+        {
+          "clase": "MecanicosHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "MecanicosMySqlTests",
+          "casos": 7
+        },
+        {
+          "clase": "MecanicosTests",
+          "casos": 25
+        },
+        {
+          "clase": "NuevaOrdenAutocompletadoHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "NuevaOrdenAutocompletadoTests",
+          "casos": 2
+        },
+        {
+          "clase": "NuevaOrdenFechaTests",
+          "casos": 5
+        },
+        {
+          "clase": "OrdenesAutocompletadoHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "OrdenesAutocompletadoTests",
+          "casos": 12
+        },
+        {
+          "clase": "OrdenesMySqlTests",
+          "casos": 12
+        },
+        {
+          "clase": "OrdenesTests",
+          "casos": 14
+        },
+        {
+          "clase": "ProductosAutocompletadoTests",
+          "casos": 10
+        },
+        {
+          "clase": "ProductosHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "RedisCacheAdapterTests",
+          "casos": 22
+        },
+        {
+          "clase": "ReenvioVerificacionServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "RegistroFacadeTests",
+          "casos": 15
+        },
+        {
+          "clase": "RegistroUsuarioServiceTests",
+          "casos": 6
+        },
+        {
+          "clase": "RevisionSolicitudesServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "ServiciosAutocompletadoHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "ServiciosAutocompletadoTests",
+          "casos": 9
+        },
+        {
+          "clase": "SesionDisponibleTests",
+          "casos": 8
+        },
+        {
+          "clase": "UnitTest1",
+          "casos": 1
+        },
+        {
+          "clase": "UsuarioAdministracionMySqlTests",
+          "casos": 30
+        },
+        {
+          "clase": "UsuarioAdministracionServiceTests",
+          "casos": 26
+        },
+        {
+          "clase": "UsuarioSesionRevocadaHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "ValidadorSolicitudRegistroTests",
+          "casos": 22
+        },
+        {
+          "clase": "VehiculosAutocompletadoHttpTests",
+          "casos": 1
+        },
+        {
+          "clase": "VehiculosAutocompletadoTests",
+          "casos": 10
+        },
+        {
+          "clase": "VehiculosMySqlTests",
+          "casos": 2
+        },
+        {
+          "clase": "VehiculosTests",
+          "casos": 21
+        },
+        {
+          "clase": "VerificacionEmailServiceTests",
+          "casos": 7
+        }
+      ]
+    },
+    {
+      "archivo": "integracion-main/main-h2-segura.trx",
+      "aprobadas": 362,
+      "fallidas": 1,
+      "omitidas": 107,
+      "fallos": [
+        {
+          "prueba": "TallerMecanico.IntegrationTests.OrdenesTests.Validacion_RechazaSinServicio",
+          "mensaje": "Assert.Contains() Failure: Key not found in dictionary\r\nKeys:      [\"ServicioIds\"]\r\nNot found: \"ServicioId\""
+        }
+      ],
+      "clasesAprobadas": [
+        {
+          "clase": "AutocompletadoTests",
+          "casos": 1
+        },
+        {
+          "clase": "ClientesAutocompletadoTests",
+          "casos": 8
+        },
+        {
+          "clase": "ComprobanteOrdenTests",
+          "casos": 10
+        },
+        {
+          "clase": "ComprobantePdfTests",
+          "casos": 2
+        },
+        {
+          "clase": "ConfiguracionRedisTests",
+          "casos": 33
+        },
+        {
+          "clase": "ConsultaOrdenesTests",
+          "casos": 12
+        },
+        {
+          "clase": "DashboardCacheServiceTests",
+          "casos": 40
+        },
+        {
+          "clase": "GmailEmailServiceTests",
+          "casos": 17
+        },
+        {
+          "clase": "ImporteEnPalabrasTests",
+          "casos": 17
+        },
+        {
+          "clase": "InvalidacionDashboardTests",
+          "casos": 10
+        },
+        {
+          "clase": "MecanicosAutocompletadoTests",
+          "casos": 4
+        },
+        {
+          "clase": "MecanicosTests",
+          "casos": 25
+        },
+        {
+          "clase": "NuevaOrdenFechaTests",
+          "casos": 3
+        },
+        {
+          "clase": "OrdenesAutocompletadoTests",
+          "casos": 9
+        },
+        {
+          "clase": "OrdenesTests",
+          "casos": 14
+        },
+        {
+          "clase": "ProductosAutocompletadoTests",
+          "casos": 7
+        },
+        {
+          "clase": "RedisCacheAdapterTests",
+          "casos": 22
+        },
+        {
+          "clase": "ReenvioVerificacionServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "RegistroFacadeTests",
+          "casos": 15
+        },
+        {
+          "clase": "RegistroUsuarioServiceTests",
+          "casos": 6
+        },
+        {
+          "clase": "RevisionSolicitudesServiceTests",
+          "casos": 4
+        },
+        {
+          "clase": "ServiciosAutocompletadoTests",
+          "casos": 6
+        },
+        {
+          "clase": "SesionDisponibleTests",
+          "casos": 8
+        },
+        {
+          "clase": "UnitTest1",
+          "casos": 1
+        },
+        {
+          "clase": "UsuarioAdministracionServiceTests",
+          "casos": 26
+        },
+        {
+          "clase": "ValidadorSolicitudRegistroTests",
+          "casos": 22
+        },
+        {
+          "clase": "VehiculosAutocompletadoTests",
+          "casos": 8
+        },
+        {
+          "clase": "VehiculosTests",
+          "casos": 21
+        },
+        {
+          "clase": "VerificacionEmailServiceTests",
+          "casos": 7
+        }
+      ]
+    }
+  ],
+  "ramaSinParalelismo": {
+    "archivo": "mysql-rama-serie/integracion-mysql.trx",
+    "aprobadas": 461,
+    "fallidas": 5,
+    "omitidas": 4,
+    "fallos": [
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesHttpTests.ListadoHttps_AutorizaLosRolesYConservaFiltrosAlRefrescar",
+        "mensaje": "Assert.Contains() Failure: Sub-string not found\nString:    \"\\r\\n<!DOCTYPE html>\\r\\n<html lang=\"es\">\\r\\n<hea\"···\nNot found: \"Refrescar\""
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.CrearOrden_FacadeGuardaDosProductosTotalYUsuario",
+        "mensaje": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.PreciosManipuladosEnJson_NoCambianPreciosNiTotalDeLaBase",
+        "mensaje": "Assert.True() Failure\nExpected: True\nActual:   False"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenComprobanteHttpTests.Navegador_PostTradicionalFechaAutomaticaComprobanteErroresBloqueoYRecarga",
+        "mensaje": "Esta prueba requiere PLAYWRIGHT_MODULE y Microsoft Edge."
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.ProductosRepetidos_SeAgrupanAntesDelStockYDeLosDetalles",
+        "mensaje": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+      }
+    ],
+    "auditoria107": [
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.Anular_RestituyeUnaVezYConservaAuditoriaOriginal",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.PreciosManipuladosEnJson_NoCambianPreciosNiTotalDeLaBase",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Failed",
+        "mensajeActual": "Assert.True() Failure\nExpected: True\nActual:   False"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.CrearOrden_FacadeGuardaDosProductosTotalYUsuario",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Failed",
+        "mensajeActual": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActivarUsuarioDesdeInvitacion_RechazaSolicitudYaProcesada",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ComprobanteMySqlTests.GeneracionRepetida_UsaLaOrdenGuardadaYNoAlteraStockEstadoAuditoriaNiTotal",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.TokenSimultaneoConProductosDistintos_LaClaveUnicaImpideDuplicados",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.VehiculosMySqlTests.Vehiculo_PersistenciaToggleClienteYOrdenAlfabetico",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesAutocompletadoTests.MySql_LecturasConservanStockAuditoriaDetallesYTotalHistorico",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Ordenamiento_FechaDescendenteYIdDescendenteConResultadoEstable",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Detalle_OrdenActivaConservaAuditoriaUtcSinAnulacion",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_GeneraSolicitudConRolAdministrador",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActivarUsuarioDesdeInvitacion_CreaUsuarioConRolAdministrador",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosMySqlTests.Persistencia_ConservaNotNullYDatosExistentesSinNecesitarMigracion",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActivarUsuarioDesdeInvitacion_RechazaTokenExpirado",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ComprobantePdfTests.AnuladaYDocumentoExtenso_NoPierdenProductosYRepitenCabecera",
+        "motivoOriginal": "Configura TALLER_PDF_PYTHON con Python y pypdf para verificar el contenido del PDF.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_RechazaUsernameDuplicado_EnSolicitudesPendientes",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenFechaTests.BorradorAntiguoYError_MuestranFechaActualSinRestaurarUnaFechaDeEntrada",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.VehiculosNavegadorTests.Vehiculos_RecorridoRealEnEdge",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL y PLAYWRIGHT_MODULE para probar el navegador.",
+        "resultadoActual": "NotExecuted",
+        "mensajeActual": "Configura TALLER_TEST_MYSQL y PLAYWRIGHT_MODULE para probar el navegador."
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActualizarUsuario_RechazaCambiarPropioRol",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ClientesAutocompletadoTests.MySql_PrefijoPalabrasCompuestasTildesYComplementos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ComprobantePdfTests.Contenido_ConservaDatosImportesLiteralesYFechasEnBolivia",
+        "motivoOriginal": "Configura TALLER_PDF_PYTHON con Python y pypdf para verificar el contenido del PDF.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosAutocompletadoTests.MySql_LimitaDiezEscapaComodinesYNoModificaDatos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ListarFiltrados_VerificaBusquedaRolEstadoPaginacionYContadores",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosHttpTests.FormularioHttps_CrudYAutocompletadoConservanFiltrosYPermisos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.OrdenesConcurrentes_ElStockNuncaSeVuelveNegativo",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Borradores_RestauranIdsTextosYDetalleAlSalirHaciaLosTresCrud",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ProductosHttpTests.ProductosHttps_AutocompletadoCrudPermisosYRetornoSinCambiarInventario",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.ProductoInexistenteYTokenDeOtroUsuario_NoModificanStock",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.HistorialServicios_TriggerPermaneceYRegistraElCambioDeCosto",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ReactivarUsuario_ReactivarCorrectamente_Y_PermiteLogin",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosMySqlTests.ListadoYBusqueda_ToleranVacioYNullEnEsquemaPreexistente",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.FalloDespuesDeModificarStock_RevierteTodaLaCreacion",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Detalle_ConsultasRepetidasNoCambianStockEstadoAuditoriaNiImportes",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosMySqlTests.Crear_SinSegundoApellidoPersisteVacioYConservaLaEntrada",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Productos_AgregarRepetirActualizarQuitarYErroresNoDescuentanStock",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.DesactivarUsuario_DesactivaCorrectamente_Y_BloqueaLogin",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenComprobanteHttpTests.Navegador_PostTradicionalFechaAutomaticaComprobanteErroresBloqueoYRecarga",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Failed",
+        "mensajeActual": "Esta prueba requiere PLAYWRIGHT_MODULE y Microsoft Edge."
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ClientesAutocompletadoTests.MySql_BusquedaManualYApellidoVacioMantienenComportamientoAnterior",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Consultas_ReutilizanPrefijosPalabrasTildesLimitesSqlYSoloLectura",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ServiciosAutocompletadoHttpTests.ServiciosHttps_SugerenciasBusquedaSqlCrudYPermisosAdministrativos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActivarUsuarioDesdeInvitacion_RechazaTokenInvalido",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActualizarUsuario_RechazaEmailDuplicado",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Detalle_OrdenAnuladaConservaProductosTotalYAmbasAuditorias",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ServiciosAutocompletadoTests.MySql_NombreDescripcionPalabrasCompuestasTildesYBusquedaParcial",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.FiltroFecha_IncluyeTodoElDiaDelTrabajoYNoUsaFechaCreacion",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.FechaMaxima_NoDesbordaAlCalcularElDiaSiguiente",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActivarUsuarioDesdeInvitacion_RegistraAuditoria",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Listado_UnaFilaPorOrdenAunqueTengaVariosProductos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.DesactivarUsuario_RechazaDesactivarUltimoAdministrador",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesAutocompletadoHttpTests.OrdenesHttps_BuscadorFiltrosPermisosDetallePdfYSinEscrituras",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioSesionRevocadaHttpTests.UsuarioDesactivado_PierdeSesionAutenticada",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.DosEnviosSimultaneosDelToken_DevuelvenUnaOrdenInclusoSinStockRestante",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosMySqlTests.Repositorio_NormalizaNullAVacioEnInsertYUpdate",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.ClienteDesasignado_ConservaLaOrdenEnElListado",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActualizarUsuario_CambiaRol_Y_Auditoria",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenFechaTests.Crear_IgnoraFechaRecibidaYReenvioNoCambiaFechaHistoricaNiStock",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActivarUsuarioDesdeInvitacion_RechazaPasswordCorto",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.FiltrosCombinados_AplicanEstadoYFecha",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.ListadoVacio_YFiltrosSinCoincidenciasDevuelvenColeccionVacia",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.VehiculosMySqlTests.MigracionVehiculos_ConservaRegistrosAntiguosSinCliente",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Guardar_ValidaIdsStockPreciosDelServidorYConservaIdempotencia",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_RegistraAuditoria",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosMySqlTests.CrearYActualizar_RechazanSegundoApellidoInvalidoSinCambiarRegistros",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_GeneraSolicitudPendienteVerificacion",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.StockInsuficiente_NoInsertaOrdenDetallesNiDescuenta",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.DosAnulacionesConcurrentes_RestituyenUnaSolaVez",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesAutocompletadoTests.MySql_LimiteSqlOrdenEstableYEscapeSinLimitarListadoManual",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActivarUsuarioDesdeInvitacion_CreaUsuarioConRolRecepcionista",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.DesactivarUsuario_RechazaDesactivarPropiaCuenta",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ReactivarUsuario_RegistraAuditoria",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.ProductosRepetidos_SeAgrupanAntesDelStockYDeLosDetalles",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Failed",
+        "mensajeActual": "Assert.Equal() Failure: Values differ\nExpected: 46.60\nActual:   71.60"
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Detalle_InexistenteDevuelveNullYSinClienteNoOcultaLaOrden",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.VehiculosAutocompletadoTests.MySql_LimiteDiezEscapeYConsultasSinEscribirRelaciones",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ServiciosAutocompletadoTests.MySql_LimiteSoloEnSugerenciasOrdenEstableDescripcionBreveYLiteralesEscapados",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.DesactivarUsuario_RequiereAdministrador",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActualizarUsuario_RequiereAdministrador",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.VehiculoSinClienteYReferenciasInexistentes_NoCreanOrden",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosMySqlTests.Actualizar_PermiteQuitarSegundoApellidoSinCambiarAuditoriaDeCreacion",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_RechazaEmailDuplicado_EnUsuarios",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ActualizarUsuario_RechazaDegradarUltimoAdministrador",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ProductosAutocompletadoTests.MySql_CrudValidacionesYAuditoriaContinuanFuncionando",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosAutocompletadoTests.MySql_PrefijoPalabrasCompuestasTildesYApellidoOpcional",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.AutocompletadoTests.PartialReal_ComportamientoAccesibleConRespuestasSimuladasEnEdge",
+        "motivoOriginal": "Configura PLAYWRIGHT_MODULE para ejecutar el componente en Edge sin MySQL.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ProductosAutocompletadoTests.MySql_LimitaDiezYEscapaComodinesSinEscribirInventario",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Detalle_RecuperaRelacionesProductosEImportesHistoricosSinRecalcular",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosAutocompletadoTests.MySql_IdExactoYBusquedaManualConservanSemanticasSeparadas",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.Total_UsaElValorGuardadoYLaConsultaNoModificaOrdenesDetallesNiStock",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.FalloDespuesDeRestituirStock_RevierteEstadoAuditoriaYStock",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.VehiculosAutocompletadoTests.MySql_PrefijoPlacasNacionalesYExtranjerasMarcaModeloYTildes",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ClientesAutocompletadoTests.MySql_LimitaDiezEscapaEntradasYNoEscribe",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.ContarTotal_Y_ContarAdministradoresActivos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.MecanicosMySqlTests.Crear_ConSegundoApellidoNormalizaEspaciosCapitalizacionYLongitud",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.VehiculosAutocompletadoHttpTests.VehiculosHttps_BuscadorPermisosCrudClienteYContextos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_RechazaEmailDuplicado_EnSolicitudesPendientes",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_RequiereAdministrador",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ClientesHttpTests.ClientesHttps_SugerenciasPermisosCrudFiltrosYContextos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesHttpTests.ListadoHttps_AutorizaLosRolesYConservaFiltrosAlRefrescar",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Failed",
+        "mensajeActual": "Assert.Contains() Failure: Sub-string not found\nString:    \"\\r\\n<!DOCTYPE html>\\r\\n<html lang=\"es\">\\r\\n<hea\"···\nNot found: \"Refrescar\""
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.DesactivarUsuario_RegistraAuditoria",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.CrearInvitacion_RechazaUsernameDuplicado_EnUsuarios",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ProductosAutocompletadoTests.MySql_PrefijoCodigoNombresCompuestosCajaYTildes",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.EntidadesReferenciadas_NoSeEliminanYNadiePierdeSuHistorial",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ConsultaOrdenesMySqlTests.FiltroEstado_DevuelveActivasOAnuladasSinOcultarElListadoCompleto",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.UsuarioAdministracionMySqlTests.Listar_Usuarios_Paginado_Y_Filtrado",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.ServiciosAutocompletadoTests.MySql_FactoryCrudAuditoriaYLecturasSinEscrituras",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoHttpTests.NuevaOrdenHttps_CuatroConsultasPermisosBorradoresYCreacionReal",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.MigracionOrdenes_SePuedeRepetirSinEliminarDatos",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      },
+      {
+        "prueba": "TallerMecanico.IntegrationTests.OrdenesAutocompletadoTests.MySql_IdPrefijoPlacaCompartidaSeleccionExactaYFiltrosCombinados",
+        "motivoOriginal": "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.",
+        "resultadoActual": "Passed",
+        "mensajeActual": null
+      }
+    ],
+    "clasesAprobadas": [
+      {
+        "clase": "AutocompletadoTests",
+        "casos": 1
+      },
+      {
+        "clase": "ClientesAutocompletadoTests",
+        "casos": 11
+      },
+      {
+        "clase": "ClientesHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "ComprobanteMySqlTests",
+        "casos": 1
+      },
+      {
+        "clase": "ComprobanteOrdenTests",
+        "casos": 10
+      },
+      {
+        "clase": "ComprobantePdfTests",
+        "casos": 2
+      },
+      {
+        "clase": "ConfiguracionRedisTests",
+        "casos": 33
+      },
+      {
+        "clase": "ConsultaOrdenesMySqlTests",
+        "casos": 14
+      },
+      {
+        "clase": "ConsultaOrdenesTests",
+        "casos": 12
+      },
+      {
+        "clase": "DashboardCacheServiceTests",
+        "casos": 40
+      },
+      {
+        "clase": "GmailEmailServiceTests",
+        "casos": 17
+      },
+      {
+        "clase": "ImporteEnPalabrasTests",
+        "casos": 17
+      },
+      {
+        "clase": "InvalidacionDashboardTests",
+        "casos": 10
+      },
+      {
+        "clase": "MecanicosAutocompletadoTests",
+        "casos": 7
+      },
+      {
+        "clase": "MecanicosHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "MecanicosMySqlTests",
+        "casos": 7
+      },
+      {
+        "clase": "MecanicosTests",
+        "casos": 25
+      },
+      {
+        "clase": "NuevaOrdenAutocompletadoHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "NuevaOrdenAutocompletadoTests",
+        "casos": 4
+      },
+      {
+        "clase": "NuevaOrdenFechaTests",
+        "casos": 5
+      },
+      {
+        "clase": "OrdenesAutocompletadoHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "OrdenesAutocompletadoTests",
+        "casos": 12
+      },
+      {
+        "clase": "OrdenesMySqlTests",
+        "casos": 13
+      },
+      {
+        "clase": "OrdenesTests",
+        "casos": 15
+      },
+      {
+        "clase": "ProductosAutocompletadoTests",
+        "casos": 10
+      },
+      {
+        "clase": "ProductosHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "RedisCacheAdapterTests",
+        "casos": 22
+      },
+      {
+        "clase": "ReenvioVerificacionServiceTests",
+        "casos": 4
+      },
+      {
+        "clase": "RegistroFacadeTests",
+        "casos": 15
+      },
+      {
+        "clase": "RegistroUsuarioServiceTests",
+        "casos": 6
+      },
+      {
+        "clase": "RevisionSolicitudesServiceTests",
+        "casos": 4
+      },
+      {
+        "clase": "ServiciosAutocompletadoHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "ServiciosAutocompletadoTests",
+        "casos": 9
+      },
+      {
+        "clase": "SesionDisponibleTests",
+        "casos": 8
+      },
+      {
+        "clase": "UnitTest1",
+        "casos": 1
+      },
+      {
+        "clase": "UsuarioAdministracionMySqlTests",
+        "casos": 30
+      },
+      {
+        "clase": "UsuarioAdministracionServiceTests",
+        "casos": 26
+      },
+      {
+        "clase": "UsuarioSesionRevocadaHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "ValidadorSolicitudRegistroTests",
+        "casos": 22
+      },
+      {
+        "clase": "VehiculosAutocompletadoHttpTests",
+        "casos": 1
+      },
+      {
+        "clase": "VehiculosAutocompletadoTests",
+        "casos": 10
+      },
+      {
+        "clase": "VehiculosMySqlTests",
+        "casos": 2
+      },
+      {
+        "clase": "VehiculosTests",
+        "casos": 21
+      },
+      {
+        "clase": "VerificacionEmailServiceTests",
+        "casos": 7
+      }
+    ]
+  },
+  "cuatroFallosAdicionalesReproducidosEnMainSinH2": [
+    {
+      "prueba": "TallerMecanico.IntegrationTests.OrdenesTests.Validacion_RechazaSinServicio",
+      "resultado": "Failed",
+      "mensaje": "Assert.Contains() Failure: Key not found in dictionary\nKeys:      [\"ServicioIds\"]\nNot found: \"ServicioId\""
+    },
+    {
+      "prueba": "TallerMecanico.IntegrationTests.OrdenesMySqlTests.MigracionOrdenes_SePuedeRepetirSinEliminarDatos",
+      "resultado": "Failed",
+      "mensaje": "MySqlConnector.MySqlException : Cannot drop table 'Ordenes' referenced by a foreign key constraint 'FK_DetalleServiciosOrdenes_Ordenes' on table 'DetalleServiciosOrdenes'."
+    },
+    {
+      "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Borradores_RestauranIdsTextosYDetalleAlSalirHaciaLosTresCrud",
+      "resultado": "Failed",
+      "mensaje": "Assert.Equal() Failure: Strings differ\nExpected: \"Cambio de Aceite\"\nActual:   null"
+    },
+    {
+      "prueba": "TallerMecanico.IntegrationTests.NuevaOrdenAutocompletadoTests.Guardar_ValidaIdsStockPreciosDelServidorYConservaIdempotencia",
+      "resultado": "Failed",
+      "mensaje": "Assert.Contains() Failure: Item not found in collection\nCollection: [\"Formulario.ServicioIds\"]\nNot found:  \"Formulario.VehiculoId\""
+    }
+  ],
+  "pruebasReales": {
+    "concurrencia": {
+      "fechaUtc": "2026-10-23T13:38:37.417Z",
+      "clave": "autotaller:dashboard:resumen",
+      "claveGeneracion": "autotaller:dashboard:generacion",
+      "replicas": [
+        {
+          "servicio": "app1",
+          "url": "http://127.0.0.1:32770",
+          "replica": "9cd1f0723b94",
+          "redis": "PONG",
+          "latenciaMs": 1.0106,
+          "clave": "autotaller:dashboard:resumen",
+          "ttlSegundos": 14.025
+        },
+        {
+          "servicio": "app2",
+          "url": "http://127.0.0.1:32768",
+          "replica": "e3e02fa3182a",
+          "redis": "PONG",
+          "latenciaMs": 0.8624,
+          "clave": "autotaller:dashboard:resumen",
+          "ttlSegundos": 12.658
+        },
+        {
+          "servicio": "app3",
+          "url": "http://127.0.0.1:32769",
+          "replica": "90edb4f0d7ed",
+          "redis": "PONG",
+          "latenciaMs": 0.7391,
+          "clave": "autotaller:dashboard:resumen",
+          "ttlSegundos": 11.228
+        }
+      ],
+      "casos": [
+        {
+          "caso": "Dos MISS simultáneos: primer publicador gana, segundo lee HIT sin renovar TTL",
+          "listoA": {
+            "evento": "listo",
+            "replica": "9cd1f0723b94",
+            "generacion": "a2020392b7534fa6a642dcee2359d2d4",
+            "entrada": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Replica": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:38:48.2659849+00:00"
+            }
+          },
+          "listoB": {
+            "evento": "listo",
+            "replica": "e3e02fa3182a",
+            "generacion": "a2020392b7534fa6a642dcee2359d2d4",
+            "entrada": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Replica": "e3e02fa3182a",
+              "GeneradoEn": "2026-10-23T13:38:49.6582247+00:00"
+            }
+          },
+          "finalA": {
+            "evento": "final",
+            "replica": "9cd1f0723b94",
+            "resultado": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Estado": 1,
+              "ReplicaOrigen": "9cd1f0723b94",
+              "ReplicaActual": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:38:48.2659849+00:00",
+              "TiempoRestante": "00:00:59.9900000",
+              "Almacenado": true,
+              "Publicacion": 1
+            },
+            "publicaciones": [
+              "Publicada"
+            ],
+            "logs": [
+              "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+            ]
+          },
+          "finalB": {
+            "evento": "final",
+            "replica": "e3e02fa3182a",
+            "resultado": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Estado": 0,
+              "ReplicaOrigen": "9cd1f0723b94",
+              "ReplicaActual": "e3e02fa3182a",
+              "GeneradoEn": "2026-10-23T13:38:48.2659849+00:00",
+              "TiempoRestante": "00:00:59.0660000",
+              "Almacenado": null,
+              "Publicacion": 0
+            },
+            "publicaciones": [
+              "EntradaExistente"
+            ],
+            "logs": [
+              "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado EntradaExistente | reintento 0",
+              "HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | generado por 9cd1f0723b94 | lectura Hit | escritura NoIntentada"
+            ]
+          },
+          "hit": {
+            "antes": {
+              "Mecanicos": 5,
+              "Vehiculos": 5,
+              "Servicios": 5
+            },
+            "despues": {
+              "Mecanicos": 5,
+              "Vehiculos": 5,
+              "Servicios": 5
+            },
+            "ttlAntes": 55424,
+            "ttlDespues": 53105
+          }
+        },
+        {
+          "caso": "INSERT real desde B invalida la publicación antigua de A",
+          "listo": {
+            "evento": "listo",
+            "replica": "9cd1f0723b94",
+            "generacion": "6b966340ffe340a68c2bc2f615737f6b",
+            "entrada": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Replica": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:02.706708+00:00"
+            }
+          },
+          "generacionNueva": "883b1b46e7fd499a9f27f99c9c434eba",
+          "final": {
+            "evento": "final",
+            "replica": "9cd1f0723b94",
+            "resultado": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 1
+              },
+              "Estado": 1,
+              "ReplicaOrigen": "9cd1f0723b94",
+              "ReplicaActual": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:04.963215+00:00",
+              "TiempoRestante": "00:00:59.9920000",
+              "Almacenado": true,
+              "Publicacion": 1
+            },
+            "publicaciones": [
+              "RechazadaPorGeneracion",
+              "Publicada"
+            ],
+            "logs": [
+              "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | resultado RechazadaPorGeneracion | reintento 0",
+              "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+            ]
+          },
+          "hit": {
+            "antes": {
+              "Mecanicos": 7,
+              "Vehiculos": 7,
+              "Servicios": 7
+            },
+            "despues": {
+              "Mecanicos": 7,
+              "Vehiculos": 7,
+              "Servicios": 7
+            },
+            "ttlAntes": 56170,
+            "ttlDespues": 53778
+          },
+          "servicioCreadoId": 1
+        },
+        {
+          "caso": "Administrador B invalida mientras A está en MISS",
+          "listo": {
+            "evento": "listo",
+            "replica": "9cd1f0723b94",
+            "generacion": "01313611d0f84e4fa3af602e8fca7ead",
+            "entrada": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Replica": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:16.3212415+00:00"
+            }
+          },
+          "nuevaManual": "1fa09d9b9f9a49c283e916c9dbcaddec",
+          "final": {
+            "evento": "final",
+            "replica": "9cd1f0723b94",
+            "resultado": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Estado": 1,
+              "ReplicaOrigen": "9cd1f0723b94",
+              "ReplicaActual": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:18.5342167+00:00",
+              "TiempoRestante": "00:00:59.9930000",
+              "Almacenado": true,
+              "Publicacion": 1
+            },
+            "publicaciones": [
+              "RechazadaPorGeneracion",
+              "Publicada"
+            ],
+            "logs": [
+              "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | resultado RechazadaPorGeneracion | reintento 0",
+              "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+            ]
+          },
+          "hit": {
+            "antes": {
+              "Mecanicos": 9,
+              "Vehiculos": 9,
+              "Servicios": 9
+            },
+            "despues": {
+              "Mecanicos": 9,
+              "Vehiculos": 9,
+              "Servicios": 9
+            },
+            "ttlAntes": 57170,
+            "ttlDespues": 54931
+          }
+        },
+        {
+          "caso": "Generación desaparecida: rechaza escritor antiguo y descarta entrada huérfana",
+          "listo": {
+            "evento": "listo",
+            "replica": "9cd1f0723b94",
+            "generacion": "a229539b41ce4a1195b196a6819c6020",
+            "entrada": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Replica": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:27.9229536+00:00"
+            }
+          },
+          "nuevaGeneracion": "cc607320ebc846eaa5baa2c910133237",
+          "final": {
+            "evento": "final",
+            "replica": "9cd1f0723b94",
+            "resultado": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Estado": 1,
+              "ReplicaOrigen": "9cd1f0723b94",
+              "ReplicaActual": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:29.3642886+00:00",
+              "TiempoRestante": "00:00:59.9930000",
+              "Almacenado": true,
+              "Publicacion": 1
+            },
+            "publicaciones": [
+              "RechazadaPorGeneracion",
+              "Publicada"
+            ],
+            "logs": [
+              "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | resultado RechazadaPorGeneracion | reintento 0",
+              "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+            ]
+          },
+          "hit": {
+            "antes": {
+              "Mecanicos": 11,
+              "Vehiculos": 11,
+              "Servicios": 11
+            },
+            "despues": {
+              "Mecanicos": 11,
+              "Vehiculos": 11,
+              "Servicios": 11
+            },
+            "ttlAntes": 55794,
+            "ttlDespues": 53515
+          }
+        },
+        {
+          "caso": "Metadato recreado por B no reutiliza la generación antigua de A (sin ABA)",
+          "listoAnterior": {
+            "evento": "listo",
+            "replica": "9cd1f0723b94",
+            "generacion": "e2860c3148484d08b632e698d936d4a6",
+            "entrada": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Replica": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:40.0667394+00:00"
+            }
+          },
+          "listoPosterior": {
+            "evento": "listo",
+            "replica": "e3e02fa3182a",
+            "generacion": "9eaa9535b28f489cac336b8870a0ee26",
+            "entrada": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Replica": "e3e02fa3182a",
+              "GeneradoEn": "2026-10-23T13:39:42.1323194+00:00"
+            }
+          },
+          "finalAnterior": {
+            "evento": "final",
+            "replica": "9cd1f0723b94",
+            "resultado": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Estado": 1,
+              "ReplicaOrigen": "9cd1f0723b94",
+              "ReplicaActual": "9cd1f0723b94",
+              "GeneradoEn": "2026-10-23T13:39:42.2437157+00:00",
+              "TiempoRestante": "00:00:59.9940000",
+              "Almacenado": true,
+              "Publicacion": 1
+            },
+            "publicaciones": [
+              "RechazadaPorGeneracion",
+              "Publicada"
+            ],
+            "logs": [
+              "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | resultado RechazadaPorGeneracion | reintento 0",
+              "MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada"
+            ]
+          },
+          "finalPosterior": {
+            "evento": "final",
+            "replica": "e3e02fa3182a",
+            "resultado": {
+              "Dashboard": {
+                "MecanicosDisponibles": 0,
+                "VehiculosRegistrados": 0,
+                "ServiciosRegistrados": 0
+              },
+              "Estado": 0,
+              "ReplicaOrigen": "9cd1f0723b94",
+              "ReplicaActual": "e3e02fa3182a",
+              "GeneradoEn": "2026-10-23T13:39:42.2437157+00:00",
+              "TiempoRestante": "00:00:59.2020000",
+              "Almacenado": null,
+              "Publicacion": 0
+            },
+            "publicaciones": [
+              "EntradaExistente"
+            ],
+            "logs": [
+              "PUBLICACION RECHAZADA | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado EntradaExistente | reintento 0",
+              "HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | generado por 9cd1f0723b94 | lectura Hit | escritura NoIntentada"
+            ]
+          },
+          "hit": {
+            "antes": {
+              "Mecanicos": 14,
+              "Vehiculos": 14,
+              "Servicios": 14
+            },
+            "despues": {
+              "Mecanicos": 14,
+              "Vehiculos": 14,
+              "Servicios": 14
+            },
+            "ttlAntes": 57134,
+            "ttlDespues": 54851
+          }
+        }
+      ],
+      "ping": "PONG",
+      "ttlGeneracion": -1,
+      "ttlResumenMs": 52864,
+      "logsInvalidacion": [
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Eliminada | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica e3e02fa3182a",
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Eliminada | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica e3e02fa3182a",
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Inexistente | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Eliminada | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Inexistente | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Inexistente | réplica e3e02fa3182a",
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Inexistente | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Inexistente | réplica e3e02fa3182a",
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Eliminada | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica e3e02fa3182a",
+        "app2-1  |       INVALIDACION -> Redis DEL | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | resultado Eliminada | Redis confirmó el resultado de DEL.",
+        "app2-1  |       INVALIDACION MANUAL | operación DEL | clave autotaller:dashboard:resumen | resultado Eliminada | réplica e3e02fa3182a"
+      ]
+    },
+    "redis": {
+      "fechaUtc": "2026-10-23T13:47:25.343Z",
+      "clave": "autotaller:dashboard:resumen",
+      "replicas": [
+        {
+          "servicio": "app1",
+          "url": "http://127.0.0.1:32770",
+          "replica": "9cd1f0723b94",
+          "redis": "PONG",
+          "latenciaMs": 0.8689,
+          "clave": "autotaller:dashboard:resumen",
+          "ttlSegundos": 13.4
+        },
+        {
+          "servicio": "app2",
+          "url": "http://127.0.0.1:32768",
+          "replica": "e3e02fa3182a",
+          "redis": "PONG",
+          "latenciaMs": 0.9986,
+          "clave": "autotaller:dashboard:resumen",
+          "ttlSegundos": 11.972
+        },
+        {
+          "servicio": "app3",
+          "url": "http://127.0.0.1:32769",
+          "replica": "90edb4f0d7ed",
+          "redis": "PONG",
+          "latenciaMs": 0.9473,
+          "clave": "autotaller:dashboard:resumen",
+          "ttlSegundos": 10.531
+        }
+      ],
+      "ping": "PONG",
+      "clientesDeLasTresReplicasEnElMismoRedis": true,
+      "nginxUrl": "http://127.0.0.1:32771",
+      "replicasObservadasPorNginx": [
+        "90edb4f0d7ed",
+        "9cd1f0723b94",
+        "e3e02fa3182a"
+      ],
+      "loginReal": "302 a /; no se siguió la redirección antes de medir",
+      "ttlInicial": -2,
+      "antes": {
+        "Mecanicos": 23,
+        "Vehiculos": 23,
+        "Servicios": 23
+      },
+      "despuesMiss": {
+        "Mecanicos": 24,
+        "Vehiculos": 24,
+        "Servicios": 24
+      },
+      "entrada": {
+        "Dashboard": {
+          "MecanicosDisponibles": 0,
+          "VehiculosRegistrados": 0,
+          "ServiciosRegistrados": 0
+        },
+        "Replica": "9cd1f0723b94",
+        "GeneradoEn": "2026-10-23T13:47:43.1450016+00:00"
+      },
+      "pttlDespuesMiss": 57791,
+      "despuesHit": {
+        "Mecanicos": 24,
+        "Vehiculos": 24,
+        "Servicios": 24
+      },
+      "pttlDespuesHit": 54423,
+      "consultasUsuariosDuranteHit": 1,
+      "entradasInvalidas": [
+        {
+          "caso": "JSON mal formado",
+          "antes": {
+            "Mecanicos": 24,
+            "Vehiculos": 24,
+            "Servicios": 24
+          },
+          "despues": {
+            "Mecanicos": 25,
+            "Vehiculos": 25,
+            "Servicios": 25
+          },
+          "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+        },
+        {
+          "caso": "Resumen nulo",
+          "antes": {
+            "Mecanicos": 25,
+            "Vehiculos": 25,
+            "Servicios": 25
+          },
+          "despues": {
+            "Mecanicos": 26,
+            "Vehiculos": 26,
+            "Servicios": 26
+          },
+          "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+        },
+        {
+          "caso": "Conteo obligatorio ausente",
+          "antes": {
+            "Mecanicos": 26,
+            "Vehiculos": 26,
+            "Servicios": 26
+          },
+          "despues": {
+            "Mecanicos": 27,
+            "Vehiculos": 27,
+            "Servicios": 27
+          },
+          "estado": "DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT"
+        }
+      ],
+      "logsCache": [
+        "      MISS -> MySQL -> Redis | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | lectura Miss | estado Miss | escritura Exitosa | publicación Publicada",
+        "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica e3e02fa3182a | generado por 9cd1f0723b94 | lectura Hit | escritura NoIntentada",
+        "      HIT -> Redis | operación GET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | generado por 9cd1f0723b94 | lectura Hit | escritura NoIntentada",
+        "      ENTRADA INVALIDA -> MySQL | operación GET/SET | clave autotaller:dashboard:resumen | réplica 9cd1f0723b94 | lectura ValorPresenteInvalido | estado EntradaInvalida | escritura Exitosa | publicación Publicada"
+      ],
+      "ttlTrasExpiracionNatural": -2,
+      "resultado": "PASS: Redis real, 3 replicas, Nginx, login real, MISS A y HIT B; +3 COUNT en MISS, +0 en HIT."
+    },
+    "invalidacion": {
+      "resultado": "PASS",
+      "operacionesInvalidantes": 6,
+      "casosSinInvalidacion": 10,
+      "clienteFixtureId": 2,
+      "sesionesPreservadas": 6,
+      "sinAntiforgery": 400,
+      "recepcionista": 302,
+      "redireccionDenegada": true,
+      "administrador": 302,
+      "nota": "Primer intento detenido por precondición TTL insuficiente; repetición con resumen H2 ausente pasó sin modificar código ni aserciones."
+    },
+    "sesiones": {
+      "resultado": "PASS",
+      "replicas": [
+        "9cd1f0723b94",
+        "e3e02fa3182a",
+        "90edb4f0d7ed"
+      ],
+      "ttlInicialMs": 1799479,
+      "ttlTrasActividadMs": 1799523,
+      "caida": {
+        "dashboard": 200,
+        "estado": "NO DISPONIBLE",
+        "lecturaBorrador": 503,
+        "escrituraBorrador": 503,
+        "cookieAutenticacionValida": true,
+        "errorTecnicoExpuesto": false,
+        "conteosAntes": {
+          "Mecanicos": 1,
+          "Vehiculos": 1,
+          "Servicios": 1
+        },
+        "conteosDespues": {
+          "Mecanicos": 2,
+          "Vehiculos": 2,
+          "Servicios": 2
+        }
+      },
+      "recuperacion": {
+        "pong": 3,
+        "conteosAntesMiss": 2,
+        "conteosDespuesMiss": 3,
+        "conteosDespuesHit": 3,
+        "generacionNueva": true,
+        "sesionesAnterioresPerdidas": true,
+        "nuevosBorradoresDisponibles": true
+      },
+      "borradorPorNginx": true,
+      "tokenAntiforgeryCruzado": true,
+      "ordenesStockYEntidadesSinCambios": true,
+      "nota": "Expiraciones de 30 minutos verificadas por TTL y vencimiento forzado de claves/sobres propios; no se esperaron 30 minutos naturales."
+    },
+    "autenticacion": {
+      "resultado": "PASS",
+      "loginA": 302,
+      "nuevaOrdenB": 200,
+      "logoutSinAntiforgeryB": 400,
+      "autenticadoCTrasRechazo": 200,
+      "logoutB": 302,
+      "accesoProtegidoCTrasLogout": 302
+    }
+  },
+  "excluidasSeparadamente": {
+    "cantidad": 10,
+    "clases": [
+      "RepositoriosMySqlTests",
+      "ConfirmacionEmailMySqlTests",
+      "LimiteReenvioMySqlTests",
+      "RenovacionTokenMySqlTests",
+      "RevisionSolicitudesMySqlTests",
+      "EnvioGmailRealTests"
+    ],
+    "motivo": "User Secrets/conexión local o correo real; no pertenecen a las 107 omitidas."
+  },
+  "coberturaCombinadaRama": {
+    "total": 470,
+    "aprobadas": 464,
+    "fallosDeAsercion": 4,
+    "bloqueadasPorNavegadorMySql": 2,
+    "nota": "No equivale a una única ejecución verde: la serie MySQL dio 461/5/4; 3 omisiones se aprobaron en el anfitrión. El fallo de precondición de NuevaOrdenComprobante cuenta en las 5 fallidas del TRX."
+  },
+  "cierre": {
+    "mysqlSoloH2YSistemas": true,
+    "basesAutotallerTestEliminadasPorFixtures": true,
+    "serviciosH2EnEjecucion": 6,
+    "contenedorAjenoSinCambios": true,
+    "sinFlushNiEliminarVolumenes": true,
+    "recomendacion": "LISTA PARA PUSH Y PULL REQUEST: los nueve fallos observados se reprodujeron con idéntica causa en main intacto y main+H2; riesgo de appsettings aceptado por el equipo. No se declara verde la regresión completa.",
+    "fallosNuevosAtribuiblesAH2EnComparacion": 0
+  }
+}
