@@ -10,9 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
             total += cantidad * precio;
             const subtotal = fila.querySelector('[data-subtotal]');
             if (subtotal) subtotal.textContent = `Bs. ${(cantidad * precio).toFixed(2)}`;
+            const resumen = document.querySelector(`[data-resumen-repuesto="${fila.dataset.productoId}"]`);
+            resumen?.querySelector('[data-resumen-repuesto-cantidad]')?.replaceChildren(String(cantidad));
+            const subtotalResumen = resumen?.querySelector('[data-resumen-repuesto-subtotal]');
+            if (subtotalResumen) subtotalResumen.textContent = `Bs. ${(cantidad * precio).toFixed(2)}`;
         }
         document.getElementById('resumen-lineas')?.replaceChildren(String(filas.length));
         document.getElementById('resumen-cantidad')?.replaceChildren(String(cantidadTotal));
+        document.getElementById('orden-resumen-repuestos-cantidad')?.replaceChildren(String(filas.length));
         const servicio = Number(document.getElementById('formulario-orden')?.dataset.costoServicio || 0);
         const totalEl = document.getElementById('resumen-total');
         if (totalEl) {
@@ -21,7 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         document.querySelectorAll('[data-total-estimado]').forEach(elemento => elemento.textContent = `Bs. ${(total + servicio).toFixed(2)}`);
     };
-    document.querySelectorAll('[data-cantidad]').forEach(input => input.addEventListener('input', actualizarResumen));
+    document.addEventListener('input', evento => {
+        if (evento.target.matches('[data-cantidad]')) actualizarResumen();
+    });
     document.getElementById('formulario-orden')?.addEventListener('orden:servicio-actualizado', actualizarResumen);
 });
 

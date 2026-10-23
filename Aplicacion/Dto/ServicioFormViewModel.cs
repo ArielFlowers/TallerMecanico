@@ -21,4 +21,7 @@ public class ServicioFormViewModel
     [Range(0.01, double.MaxValue,
         ErrorMessage = "El tiempo estimado debe ser mayor a cero.")]
     public decimal TiempoEstimadoHoras { get; set; }
+
+    [StringLength(20, ErrorMessage = "La unidad no puede superar 20 caracteres.")]
+    public string? UnidadCantidad { get; set; }
 }

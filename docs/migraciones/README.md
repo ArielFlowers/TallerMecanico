@@ -35,6 +35,11 @@ La migración `006_servicios_multiples_por_orden.sql` crea el detalle de servici
 por orden y copia los servicios de órdenes existentes conservando el costo
 registrado. `DatabaseInitializer` aplica este cambio automáticamente al iniciar.
 
+La migración `007_cantidad_servicios_orden.sql` agrega la unidad de cobro
+opcional al catálogo de servicios y conserva cantidad/unidad en el detalle
+histórico de cada orden. Los servicios existentes quedan como precio fijo por
+trabajo completo y los detalles históricos reciben cantidad 1.
+
 ## Base de datos existente
 
 El inicializador comprueba las columnas y el índice único antes de agregarlos. Conserva tablas, registros, contraseñas, correos, roles y marcas de verificación existentes.

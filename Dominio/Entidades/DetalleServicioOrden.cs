@@ -8,4 +8,6 @@ public sealed class DetalleServicioOrden
     public string Descripcion { get; set; } = string.Empty;
     public decimal Costo { get; set; }
     public decimal TiempoEstimadoHoras { get; set; }
+    public int Cantidad { get; set; } = 1;
+    public string? UnidadCantidad { get; set; }
 }

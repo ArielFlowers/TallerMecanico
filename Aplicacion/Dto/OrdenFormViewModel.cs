@@ -7,6 +7,7 @@ public sealed class OrdenFormViewModel
     // ServicioId mantiene compatibilidad con borradores previos.
     public int? ServicioId { get; set; }
     public List<int> ServicioIds { get; set; } = [];
+    public Dictionary<int, int> CantidadesServicios { get; set; } = [];
     public Guid Token { get; set; }
     public int? ClienteNuevoId { get; set; }
     public List<LineaOrdenFormViewModel> Lineas { get; set; } = [];
@@ -19,6 +20,9 @@ public sealed class ServicioSeleccionadoOrdenViewModel
     public string Descripcion { get; init; } = string.Empty;
     public decimal Costo { get; init; }
     public decimal TiempoEstimadoHoras { get; init; }
+    public string? UnidadCantidad { get; init; }
+    public int Cantidad { get; init; } = 1;
+    public decimal Subtotal => Costo * Cantidad;
 }
 
 public sealed class LineaOrdenFormViewModel

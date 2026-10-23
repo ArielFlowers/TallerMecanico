@@ -15,7 +15,7 @@
 
     function actualizarServiciosSeleccionados() {
         const seleccionados = obtenerServicios();
-        const costo = seleccionados.reduce((suma, fila) => suma + Number(fila.dataset.costo || 0), 0);
+        const costo = seleccionados.reduce((suma, fila) => suma + Number(fila.dataset.costo || 0) * Number(fila.querySelector("[data-cantidad-servicio]")?.value || 1), 0);
         formulario.dataset.costoServicio = String(costo);
         document.getElementById("orden-servicios-cantidad").textContent = String(seleccionados.length);
 
@@ -36,9 +36,11 @@
                 const item = document.createElement("li");
                 item.dataset.servicioResumen = fila.dataset.servicioId;
                 const nombre = document.createElement("span");
-                nombre.textContent = fila.querySelector("[data-servicio-nombre]").textContent;
+                const cantidad = Number(fila.querySelector("[data-cantidad-servicio]")?.value || 1);
+                const unidad = fila.dataset.unidadCantidad;
+                nombre.textContent = `${fila.querySelector("[data-servicio-nombre]").textContent}${unidad ? ` · ${cantidad} ${plural(unidad, cantidad)}` : ""}`;
                 const precio = document.createElement("strong");
-                precio.textContent = `Bs. ${Number(fila.dataset.costo).toFixed(2)}`;
+                precio.textContent = `Bs. ${(Number(fila.dataset.costo) * cantidad).toFixed(2)}`;
                 item.append(nombre, precio);
                 return item;
             }));
@@ -47,24 +49,49 @@
         formulario.dispatchEvent(new CustomEvent("orden:servicio-actualizado"));
     }
 
+    function plural(unidad, cantidad) {
+        if (cantidad === 1) return unidad;
+        return unidad === "llanta" ? "llantas" : unidad === "retrovisor" ? "retrovisores" : "unidades";
+    }
+
     function crearFilaServicio(servicio) {
         const fila = document.createElement("article");
         fila.className = "ordenes-servicio-seleccionado";
         fila.dataset.servicioSeleccionado = "";
         fila.dataset.servicioId = String(servicio.id);
         fila.dataset.costo = String(servicio.costo);
+        fila.dataset.unidadCantidad = servicio.unidadCantidad || "";
 
         const hidden = document.createElement("input");
         hidden.type = "hidden";
         hidden.name = "Formulario.ServicioIds";
         hidden.value = String(servicio.id);
 
+        const cantidad = document.createElement("input");
+        cantidad.type = servicio.unidadCantidad ? "number" : "hidden";
+        cantidad.name = `Formulario.CantidadesServicios[${servicio.id}]`;
+        cantidad.value = "1";
+        cantidad.min = "1";
+        cantidad.max = "1000";
+        cantidad.dataset.cantidadServicio = "";
+        if (servicio.unidadCantidad) {
+            const label = document.createElement("label");
+            label.className = "ordenes-cantidad-servicio";
+            label.append(document.createTextNode(`Cantidad de ${plural(servicio.unidadCantidad, 2)}`));
+            cantidad.dataset.cantidadVisible = "";
+            label.append(cantidad);
+            fila.append(label);
+        } else {
+            fila.append(cantidad);
+        }
+
         const datos = document.createElement("div");
         const nombre = document.createElement("strong");
         nombre.dataset.servicioNombre = "";
         nombre.textContent = servicio.nombre;
         const costoTiempo = document.createElement("span");
-        costoTiempo.textContent = `Bs. ${Number(servicio.costo).toFixed(2)} · ${servicio.tiempoEstimadoHoras} h`;
+        costoTiempo.dataset.servicioPrecio = "";
+        costoTiempo.textContent = `Bs. ${Number(servicio.costo).toFixed(2)} por ${servicio.unidadCantidad || "trabajo"} · ${servicio.tiempoEstimadoHoras} h`;
         datos.append(nombre, costoTiempo);
 
         const quitar = document.createElement("button");
@@ -115,11 +142,15 @@
             id: inicial,
             nombre: selectorServicio.dataset.servicioPendienteNombre,
             costo: Number(selectorServicio.dataset.servicioPendienteCosto),
-            tiempoEstimadoHoras: Number(selectorServicio.dataset.servicioPendienteTiempo)
+            tiempoEstimadoHoras: Number(selectorServicio.dataset.servicioPendienteTiempo),
+            unidadCantidad: selectorServicio.dataset.servicioPendienteUnidad || null
         };
     }
 
-    document.querySelectorAll(".nueva-orden-page form").forEach(destino => {
+    const formulariosConectados = new WeakSet();
+    function conectarFormulario(destino) {
+        if (formulariosConectados.has(destino)) return;
+        formulariosConectados.add(destino);
         destino.addEventListener("submit", () => {
             const producto = document.getElementById("orden-producto-id");
             if (producto) {
@@ -136,16 +167,71 @@
             }
             if (destino !== formulario) {
                 destino.querySelectorAll('[name="Formulario.ServicioIds"]').forEach(campo => campo.remove());
+                destino.querySelectorAll('[name^="Formulario.CantidadesServicios"]').forEach(campo => campo.remove());
                 for (const servicio of obtenerServicios()) {
                     const oculto = document.createElement("input");
                     oculto.type = "hidden";
                     oculto.name = "Formulario.ServicioIds";
                     oculto.value = servicio.dataset.servicioId;
                     destino.append(oculto);
+                    const cantidad = document.createElement("input");
+                    cantidad.type = "hidden";
+                    cantidad.name = `Formulario.CantidadesServicios[${servicio.dataset.servicioId}]`;
+                    cantidad.value = servicio.querySelector("[data-cantidad-servicio]")?.value || "1";
+                    destino.append(cantidad);
                 }
             }
+            if (destino.matches("[data-preservar-scroll]")) {
+                const scroll = Math.max(window.scrollY, document.documentElement.scrollTop);
+                destino.querySelectorAll("[data-scroll-y]").forEach(campo => campo.value = String(scroll));
+                const token = destino.elements.namedItem("Formulario.Token")?.value || "nuevo";
+                try { sessionStorage.setItem(`orden-scroll:${token}`, String(scroll)); } catch { /* almacenamiento opcional */ }
+            }
+        });
+    }
+    document.querySelectorAll(".nueva-orden-page form").forEach(conectarFormulario);
+
+    document.querySelectorAll("[data-cambiar-eleccion]").forEach(boton => {
+        boton.addEventListener("click", () => {
+            const raiz = document.getElementById(boton.dataset.cambiarEleccion);
+            const campo = raiz?.querySelector("[data-autocompletado-texto]");
+            if (!campo) return;
+            campo.value = "";
+            campo.dispatchEvent(new Event("input", { bubbles: true }));
+            campo.focus();
         });
     });
+
+    document.querySelectorAll("#orden-vehiculo, #orden-servicio, #orden-mecanico").forEach(raiz => {
+        const tarjeta = document.getElementById(`${raiz.id}-elegido`);
+        raiz.addEventListener("autocompletado:seleccion", evento => {
+            const registro = evento.detail.sugerencia;
+            tarjeta.hidden = false;
+            tarjeta.querySelector("[data-elegido-principal]").textContent = registro.textoPrincipal;
+            const secundario = tarjeta.querySelector("[data-elegido-secundario]");
+            secundario.textContent = registro.textoSecundario || "";
+        });
+        raiz.addEventListener("autocompletado:invalidacion", () => { tarjeta.hidden = true; });
+    });
+
+    contenedorServicios.addEventListener("input", evento => {
+        if (evento.target.matches("[data-cantidad-visible]")) actualizarServiciosSeleccionados();
+    });
+
+    const scrollQuery = Number(formulario.dataset.restaurarScroll || 0);
+    const tokenFormulario = formulario.elements.namedItem("Formulario.Token")?.value || "nuevo";
+    let scrollGuardado = 0;
+    try {
+        scrollGuardado = Number(sessionStorage.getItem(`orden-scroll:${tokenFormulario}`) || 0);
+        sessionStorage.removeItem(`orden-scroll:${tokenFormulario}`);
+    } catch { /* almacenamiento opcional */ }
+    const scrollRestaurar = Math.max(scrollQuery, scrollGuardado);
+    if (scrollRestaurar > 0) {
+        history.scrollRestoration = "manual";
+        const restaurar = () => window.scrollTo({ top: scrollRestaurar, left: 0, behavior: "instant" });
+        requestAnimationFrame(() => requestAnimationFrame(restaurar));
+        window.addEventListener("load", () => setTimeout(restaurar, 80), { once: true });
+    }
 
     const avisoVehiculo = document.getElementById("orden-vehiculo-aviso");
     const peticiones = new Map();
@@ -171,11 +257,16 @@
                     id: registro.id,
                     nombre: registro.nombre,
                     costo: registro.costo,
-                    tiempoEstimadoHoras: registro.tiempoEstimadoHoras
+                    tiempoEstimadoHoras: registro.tiempoEstimadoHoras,
+                    unidadCantidad: registro.unidadCantidad
                 };
-                estadoServicio.textContent = `Bs. ${Number(registro.costo).toFixed(2)} · ${registro.tiempoEstimadoHoras} h`;
+                estadoServicio.textContent = `Bs. ${Number(registro.costo).toFixed(2)} por ${registro.unidadCantidad || "trabajo"} · ${registro.tiempoEstimadoHoras} h`;
+                const tarjeta = document.getElementById("orden-servicio-elegido");
+                tarjeta.hidden = false;
+                tarjeta.querySelector("[data-elegido-principal]").textContent = registro.nombre;
+                tarjeta.querySelector("[data-elegido-secundario]").textContent = `Bs. ${Number(registro.costo).toFixed(2)} · ${registro.tiempoEstimadoHoras} h`;
                 botonAgregarServicio.disabled = false;
-                mensajeServicio.textContent = "Servicio seleccionado. Pulsa Agregar servicio para incluirlo.";
+                mensajeServicio.textContent = "";
             },
             error() {
                 servicioPendiente = null;
@@ -184,10 +275,56 @@
             }
         }
     };
+    dependencias["orden-producto"] = {
+        limpiar() {
+            const campo = document.querySelector("#orden-agregar-producto [name='Cantidad']");
+            if (campo) { campo.removeAttribute("max"); campo.disabled = true; }
+            document.getElementById("orden-boton-agregar-repuesto").disabled = true;
+            const estado = document.getElementById("orden-producto-stock");
+            estado.dataset.estadoStock = "inicial";
+            estado.textContent = "El stock se mostrará aquí al seleccionar un producto.";
+        },
+        mostrar(registro) {
+            const campo = document.querySelector("#orden-agregar-producto [name='Cantidad']");
+            const stock = Number(registro.stock);
+            campo.max = String(stock);
+            campo.disabled = stock <= 0;
+            campo.value = stock > 0 ? String(Math.min(Number(campo.value || 1), stock)) : "1";
+            document.getElementById("orden-boton-agregar-repuesto").disabled = stock <= 0;
+            const estado = document.getElementById("orden-producto-stock");
+            estado.dataset.estadoStock = stock > 0 ? "disponible" : "agotado";
+            estado.textContent = stock > 0
+                ? `Disponibles: ${registro.stock} unidades.`
+                : `No hay stock disponible de ${registro.nombre}.`;
+        },
+        error() {
+            const estado = document.getElementById("orden-producto-stock");
+            estado.dataset.estadoStock = "error";
+            estado.textContent = "No se pudo cargar el stock. Vuelve a elegir el producto.";
+        }
+    };
+
+    document.addEventListener("input", evento => {
+        if (evento.target.matches("#orden-agregar-producto [name='Cantidad']")) {
+            const cantidad = Number(evento.target.value);
+            const maximo = Number(evento.target.max);
+            document.getElementById("orden-boton-agregar-repuesto").disabled =
+                !Number.isInteger(cantidad) || cantidad < 1 || !Number.isFinite(maximo) || cantidad > maximo;
+        }
+    });
 
     async function cargarDependencia(raiz, sugerencia) {
         const dependencia = dependencias[raiz.id];
         if (!dependencia) return;
+        if (raiz.id === "orden-producto") {
+            dependencia.limpiar();
+            if (Number.isSafeInteger(sugerencia.stock)) {
+                dependencia.mostrar({ ...sugerencia, nombre: sugerencia.textoPrincipal });
+            } else {
+                dependencia.error();
+            }
+            return;
+        }
         peticiones.get(raiz.id)?.abort();
         const peticion = new AbortController();
         peticiones.set(raiz.id, peticion);
@@ -209,11 +346,39 @@
         }
     }
 
-    document.querySelectorAll(".nueva-orden-page [data-autocompletado]").forEach(raiz => {
-        raiz.addEventListener("autocompletado:seleccion", evento => cargarDependencia(raiz, evento.detail.sugerencia));
-        raiz.addEventListener("autocompletado:invalidacion", () => {
-            peticiones.get(raiz.id)?.abort();
-            dependencias[raiz.id]?.limpiar();
+    const selectoresConectados = new WeakSet();
+    function conectarSelectores(contenedor = document) {
+        const raices = [...contenedor.querySelectorAll(".nueva-orden-page [data-autocompletado]")];
+        if (contenedor.matches?.(".nueva-orden-page [data-autocompletado]")) raices.unshift(contenedor);
+        raices.forEach(raiz => {
+            if (selectoresConectados.has(raiz)) return;
+            selectoresConectados.add(raiz);
+            raiz.addEventListener("autocompletado:seleccion", evento => cargarDependencia(raiz, evento.detail.sugerencia));
+            raiz.addEventListener("autocompletado:invalidacion", () => {
+                peticiones.get(raiz.id)?.abort();
+                dependencias[raiz.id]?.limpiar();
+            });
         });
+    }
+    conectarSelectores();
+
+    document.addEventListener("change", evento => {
+        const campo = evento.target.closest("[data-cantidad-original]");
+        if (campo) actualizarBotonCantidad(campo);
     });
+
+    document.addEventListener("input", evento => {
+        const campo = evento.target.closest("[data-cantidad-original]");
+        if (campo) actualizarBotonCantidad(campo);
+    });
+
+    function actualizarBotonCantidad(campo) {
+        const boton = campo.form?.querySelector(".ordenes-guardar-cantidad");
+        if (!boton) return;
+        const cantidad = Number(campo.value);
+        const maximo = Number(campo.max);
+        const valida = Number.isInteger(cantidad) && cantidad >= 1 && (!Number.isFinite(maximo) || cantidad <= maximo);
+        boton.disabled = !valida || String(cantidad) === campo.dataset.cantidadOriginal;
+    }
+
 })();

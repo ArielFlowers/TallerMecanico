@@ -43,7 +43,7 @@
 
                 <div class="service-delete-item">
                     <span>Costo</span>
-                    <strong>Bs. @Model.Servicio.Costo.ToString("0.00")</strong>
+                    <strong>Bs. @Model.Servicio.Costo.ToString("0.00") @(Model.Servicio.UnidadCantidad is null ? "por trabajo" : $"por {Model.Servicio.UnidadCantidad}")</strong>
                 </div>
 
                 <div class="service-delete-item">

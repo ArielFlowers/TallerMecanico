@@ -46,11 +46,12 @@ public sealed class OrdenRepository(DbConnection conexion, DbTransaction transac
     {
         using DbCommand comando = CrearComando("""
             INSERT INTO DetalleServiciosOrdenes
-                (OrdenId, ServicioId, NombreServicio, DescripcionServicio, Costo, TiempoEstimadoHoras)
-            VALUES (@Orden, @Servicio, @Nombre, @Descripcion, @Costo, @Tiempo);
+                (OrdenId, ServicioId, NombreServicio, DescripcionServicio, Costo, TiempoEstimadoHoras, Cantidad, UnidadCantidad)
+            VALUES (@Orden, @Servicio, @Nombre, @Descripcion, @Costo, @Tiempo, @Cantidad, @Unidad);
             """, ("@Orden", servicio.OrdenId), ("@Servicio", servicio.ServicioId),
             ("@Nombre", servicio.Nombre), ("@Descripcion", servicio.Descripcion),
-            ("@Costo", servicio.Costo), ("@Tiempo", servicio.TiempoEstimadoHoras));
+            ("@Costo", servicio.Costo), ("@Tiempo", servicio.TiempoEstimadoHoras),
+            ("@Cantidad", servicio.Cantidad), ("@Unidad", servicio.UnidadCantidad));
         return comando.ExecuteNonQuery();
     });
 

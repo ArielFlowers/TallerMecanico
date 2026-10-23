@@ -15,6 +15,9 @@ public sealed class BuscadorAutocompletadoModel
     public string Placeholder { get; init; } = "Escribe para buscar";
     public string NombreCampoTexto { get; init; } = "TerminoBusqueda";
     public string? NombreCampoId { get; init; }
+    public int UmbralMinimoCaracteres { get; init; } = MinimoCaracteres;
+    public int LimiteSugerencias { get; init; } = MaximoSugerencias;
+    public bool MostrarAlEnfocar { get; init; }
     public string Texto { get; init; } = string.Empty;
     public int? IdSeleccionado { get; init; }
     public string MensajeInicial { get; init; } = "Escribe al menos 2 caracteres.";

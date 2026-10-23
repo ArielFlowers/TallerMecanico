@@ -432,3 +432,6 @@ FodyWeavers.xsd
 *.db-shm
 *.db-wal
 /nginx/certs/
+
+.env
+nginx/certs/*.pem

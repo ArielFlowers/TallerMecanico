@@ -41,7 +41,7 @@ else
                         </td>
 
                         <td>
-                            Bs. @servicio.Costo.ToString("0.00")
+                            Bs. @servicio.Costo.ToString("0.00") @(servicio.UnidadCantidad is null ? "por trabajo" : $"por {servicio.UnidadCantidad}")
                         </td>
 
                         <td>

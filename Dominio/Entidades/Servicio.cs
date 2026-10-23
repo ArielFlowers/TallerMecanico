@@ -12,6 +12,10 @@ public class Servicio
 
     public decimal TiempoEstimadoHoras { get; set; }
 
+    // Null means a fixed price for the complete job; a value such as "llanta"
+    // means the service is priced per counted item.
+    public string? UnidadCantidad { get; set; }
+
     public string CreadoPor { get; set; } = string.Empty;
 
     public DateTime FechaCreacion { get; set; }

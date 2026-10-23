@@ -39,7 +39,8 @@ public sealed class OrdenServicioService(
 
             var (erroresCabecera, servicios) = ValidarCabecera(transaccion.Cabecera, solicitud);
             if (erroresCabecera.Count > 0) return ResultadoOrden.Fallo(erroresCabecera);
-            decimal costoServicios = servicios.Sum(servicio => servicio.Costo);
+            var cantidadesServicios = solicitud.CantidadesServicios?.ToDictionary(linea => linea.ServicioId, linea => linea.Cantidad) ?? [];
+            decimal costoServicios = servicios.Sum(servicio => servicio.Costo * (servicio.UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicio.Id, 1)));
 
             var productos = transaccion.Productos.BloquearPorId(lineas.Select(linea => linea.ProductoId))
                 .ToDictionary(producto => producto.Id);
@@ -57,14 +58,17 @@ public sealed class OrdenServicioService(
             var orden = new Orden
             {
                 VehiculoId = solicitud.VehiculoId, MecanicoId = solicitud.MecanicoId, Fecha = solicitud.Fecha,
-                ServicioId = servicios[0].Id, CostoServicio = servicios[0].Costo,
+                ServicioId = servicios[0].Id,
+                CostoServicio = servicios[0].Costo * (servicios[0].UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicios[0].Id, 1)),
                 Servicios = servicios.Select(servicio => new DetalleServicioOrden
                 {
                     ServicioId = servicio.Id,
                     Nombre = servicio.Nombre,
                     Descripcion = servicio.Descripcion,
-                    Costo = servicio.Costo,
-                    TiempoEstimadoHoras = servicio.TiempoEstimadoHoras
+                    Costo = servicio.Costo * (servicio.UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicio.Id, 1)),
+                    TiempoEstimadoHoras = servicio.TiempoEstimadoHoras * (servicio.UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicio.Id, 1)),
+                    Cantidad = servicio.UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicio.Id, 1),
+                    UnidadCantidad = servicio.UnidadCantidad
                 }).ToList(),
                 Token = solicitud.Token, CreadoPor = currentUser.Username!, FechaCreacion = reloj.GetUtcNow().UtcDateTime
             };
@@ -175,6 +179,15 @@ public sealed class OrdenServicioService(
             else
                 servicios.Add(servicio);
         }
+        var cantidades = solicitud.CantidadesServicios?.ToDictionary(linea => linea.ServicioId, linea => linea.Cantidad) ?? [];
+        foreach (Servicio servicio in servicios)
+        {
+            int cantidad = cantidades.GetValueOrDefault(servicio.Id, 1);
+            if (cantidad < 1 || cantidad > 1000 || (servicio.UnidadCantidad is null && cantidad != 1))
+                errores[$"Servicios[{servicio.Id}]"] = "La cantidad del servicio no es válida.";
+        }
+        if (cantidades.Keys.Except(servicios.Select(servicio => servicio.Id)).Any())
+            errores["ServicioIds"] = "La orden contiene cantidades para servicios no seleccionados.";
         if (servicios.Count == 0)
             errores["ServicioIds"] = "Agrega al menos un servicio a la orden.";
         return (errores, servicios);

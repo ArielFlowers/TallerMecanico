@@ -3,9 +3,11 @@
 <input type="hidden" name="Formulario.VehiculoId" value="@Model.Formulario.VehiculoId" />
 <input type="hidden" name="Formulario.MecanicoId" value="@Model.Formulario.MecanicoId" />
 <input type="hidden" name="Formulario.ServicioId" value="@Model.Formulario.ServicioId" />
+<input type="hidden" name="ScrollY" value="@Model.ScrollY" data-scroll-y />
 @foreach (var servicioId in Model.Formulario.ServicioIds)
 {
     <input type="hidden" name="Formulario.ServicioIds" value="@servicioId" />
+    <input type="hidden" name="Formulario.CantidadesServicios[@servicioId]" value="@Model.Formulario.CantidadesServicios.GetValueOrDefault(servicioId, 1)" />
 }
 <input type="hidden" name="Formulario.Token" value="@Model.Formulario.Token" />
 <input type="hidden" name="Formulario.ClienteNuevoId" value="@Model.Formulario.ClienteNuevoId" />
