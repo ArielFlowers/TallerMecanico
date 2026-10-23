@@ -45,6 +45,7 @@ public class DatabaseInitializer
         ExecuteCommand(connection, OrdenSchema.CrearTablas);
         EnsureOrdenesServicioSchema(connection);
         EnsureServicioUnidadCantidadSchema(connection);
+        EnsureServicioCodigoCatalogoSchema(connection);
         CreateUsuariosTable(connection);
         EnsureUsuariosEmailSchema(connection);
         CreateSolicitudesRegistroTable(connection);
@@ -710,6 +711,25 @@ public class DatabaseInitializer
             ExecuteCommand(connection, "ALTER TABLE DetalleServiciosOrdenes ADD COLUMN Cantidad INT NOT NULL DEFAULT 1;");
         if (!ColumnExists(connection, "DetalleServiciosOrdenes", "UnidadCantidad"))
             ExecuteCommand(connection, "ALTER TABLE DetalleServiciosOrdenes ADD COLUMN UnidadCantidad VARCHAR(20) NULL;");
+    }
+
+    private static void EnsureServicioCodigoCatalogoSchema(DbConnection connection)
+    {
+        if (!ColumnExists(connection, "Servicios", "CodigoCatalogo"))
+            ExecuteCommand(connection, "ALTER TABLE Servicios ADD COLUMN CodigoCatalogo VARCHAR(40) CHARACTER SET ascii COLLATE ascii_bin NULL;");
+
+        const string consulta = """
+            SELECT COUNT(*) FROM (
+                SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Servicios' AND NON_UNIQUE = 0
+                GROUP BY INDEX_NAME
+                HAVING COUNT(*) = 1 AND MAX(COLUMN_NAME) = 'CodigoCatalogo' AND MAX(SUB_PART) IS NULL
+            ) AS IndicesCatalogo;
+            """;
+        using DbCommand comando = connection.CreateCommand();
+        comando.CommandText = consulta;
+        if (Convert.ToInt32(comando.ExecuteScalar()) == 0)
+            ExecuteCommand(connection, "ALTER TABLE Servicios ADD CONSTRAINT UQ_Servicios_CodigoCatalogo UNIQUE (CodigoCatalogo);");
     }
 
     // =====================================================

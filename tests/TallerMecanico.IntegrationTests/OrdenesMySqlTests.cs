@@ -40,10 +40,12 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
             """, ("@Ci", ci.ToString())));
         int a = Producto("Producto A", 12.50m, stockA);
         int b = Producto("Producto B", 7.20m, stockB);
-        int servicio = checked((int)basePrueba.Ejecutar("""
-            INSERT INTO Servicios (Nombre, Descripcion, Costo, TiempoEstimadoHoras)
-            VALUES ('Servicio prueba', 'Servicio de prueba', 25.00, 1.5);
-            """));
+        basePrueba.Ejecutar("""
+            INSERT INTO Servicios (CodigoCatalogo, Nombre, Descripcion, Costo, TiempoEstimadoHoras)
+            VALUES ('CAMBIO_ACEITE', 'Servicio prueba', 'Servicio de prueba', 25.00, 1.5)
+            ON DUPLICATE KEY UPDATE Id = Id;
+            """);
+        int servicio = Convert.ToInt32(basePrueba.Escalar("SELECT Id FROM Servicios WHERE CodigoCatalogo = 'CAMBIO_ACEITE';"));
         return new(vehiculo, mecanico, a, b, servicio);
     }
 

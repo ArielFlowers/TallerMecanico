@@ -141,6 +141,10 @@ public sealed class InvalidacionDashboardTests
 
     private sealed class ServiciosPrueba : IRepository<Servicio>, IConsultaServiciosPort
     {
+        public List<Servicio> ObtenerCatalogo() => [];
+        public Servicio? ObtenerDelCatalogo(int id) => null;
+        public Task<IReadOnlyList<SugerenciaServicio>> SugerirCatalogoAsync(string termino, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SugerenciaServicio>>([]);
         public List<Servicio> Registros { get; } = [];
         public bool FallarEscritura { get; set; }
         public List<Servicio> GetAll() => Registros;

@@ -19,12 +19,14 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('resumen-cantidad')?.replaceChildren(String(cantidadTotal));
         document.getElementById('orden-resumen-repuestos-cantidad')?.replaceChildren(String(filas.length));
         const servicio = Number(document.getElementById('formulario-orden')?.dataset.costoServicio || 0);
+        const cantidadesValidas = document.getElementById('formulario-orden')?.dataset.cantidadesServiciosValidas !== 'false';
+        const importeEstimado = cantidadesValidas ? `Bs. ${(total + servicio).toFixed(2)}` : 'Revisa las cantidades de servicios';
         const totalEl = document.getElementById('resumen-total');
         if (totalEl) {
             totalEl.dataset.costoServicio = String(servicio);
-            totalEl.textContent = `Bs. ${(total + servicio).toFixed(2)}`;
+            totalEl.textContent = importeEstimado;
         }
-        document.querySelectorAll('[data-total-estimado]').forEach(elemento => elemento.textContent = `Bs. ${(total + servicio).toFixed(2)}`);
+        document.querySelectorAll('[data-total-estimado]').forEach(elemento => elemento.textContent = importeEstimado);
     };
     document.addEventListener('input', evento => {
         if (evento.target.matches('[data-cantidad]')) actualizarResumen();

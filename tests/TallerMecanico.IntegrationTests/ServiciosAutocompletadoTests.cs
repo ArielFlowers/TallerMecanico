@@ -158,6 +158,10 @@ public sealed class ServiciosAutocompletadoTests
 
     private sealed class RepositorioPrueba : IRepository<Servicio>, IConsultaServiciosPort
     {
+        public List<Servicio> ObtenerCatalogo() => [];
+        public Servicio? ObtenerDelCatalogo(int id) => null;
+        public Task<IReadOnlyList<SugerenciaServicio>> SugerirCatalogoAsync(string termino, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SugerenciaServicio>>([]);
         public string? TerminoSugerencias { get; private set; }
         public string? TerminoBusqueda { get; private set; }
         public CancellationToken Cancelacion { get; private set; }

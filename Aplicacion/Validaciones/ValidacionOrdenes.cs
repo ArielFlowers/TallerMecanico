@@ -20,6 +20,8 @@ public sealed class ValidacionOrdenes
                 errores["ServicioIds"] = "No agregues el mismo servicio más de una vez.";
         }
 
+        ValidarCantidadesServicios(solicitud.CantidadesServicios, errores);
+
         if (solicitud.Fecha.Year < 1000) errores[nameof(solicitud.Fecha)] = "Selecciona una fecha válida.";
         if (solicitud.Token == Guid.Empty) errores[nameof(solicitud.Token)] = "El formulario no tiene un token válido.";
         if (solicitud.Lineas is null)
@@ -36,6 +38,28 @@ public sealed class ValidacionOrdenes
             }
         }
         return errores;
+    }
+
+    private static void ValidarCantidadesServicios(
+        IReadOnlyList<LineaServicioOrdenSolicitud>? cantidadesServicios,
+        Dictionary<string, string> errores)
+    {
+        if (cantidadesServicios is null) return;
+
+        var servicios = new HashSet<int>();
+        foreach (LineaServicioOrdenSolicitud? linea in cantidadesServicios)
+        {
+            if (linea is null)
+            {
+                errores[nameof(CrearOrdenSolicitud.CantidadesServicios)] = "Las cantidades de servicios contienen una entrada inválida.";
+                return;
+            }
+            if (!servicios.Add(linea.ServicioId))
+            {
+                errores[nameof(CrearOrdenSolicitud.CantidadesServicios)] = "No agregues cantidades duplicadas para el mismo servicio.";
+                return;
+            }
+        }
     }
 
     public IReadOnlyList<LineaOrdenSolicitud> AgruparLineas(IReadOnlyList<LineaOrdenSolicitud> lineas)

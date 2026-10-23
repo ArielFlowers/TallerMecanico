@@ -176,6 +176,8 @@ public sealed class OrdenServicioService(
         {
             if (!cabecera.ExisteServicio(servicioId, out Servicio? servicio) || servicio is null)
                 errores[$"Servicios[{servicioId}]"] = "Uno de los servicios seleccionados ya no existe.";
+            else if (!CatalogoServicios.EsSeleccionable(servicio))
+                errores[$"Servicios[{servicioId}]"] = "El servicio seleccionado no pertenece al catálogo disponible de Nueva Orden.";
             else
                 servicios.Add(servicio);
         }
