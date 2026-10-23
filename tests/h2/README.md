@@ -264,3 +264,75 @@ formularios con tokens en mensajes de error.
 La evidencia nueva se guarda en `resultado-iteracion2.json`; `resultado-real.json`
 conserva la medición de la Iteración 1. Invalidación, concurrencia, sesiones,
 Data Protection, configuración Docker y esquema MySQL no se refactorizan aquí.
+
+## Iteración 3: invalidación automática y manual
+
+`ResultadoEliminacionCache` distingue Eliminada, Inexistente, NoDisponible, Error
+y Deshabilitado. El adaptador registra cada DEL, incluso cuando el CRUD no utiliza
+su retorno: una desconexión o excepción genera advertencia sobre datos anteriores
+hasta su expiración. No se revierte una escritura de negocio ya confirmada.
+
+Los puntos automáticos existentes se conservan, después de Add/Delete exitosos:
+MecanicoService, VehiculoService y ServicioService. No se modificaron esos servicios
+ni repositorios: las validaciones y comprobaciones de inexistencia preceden a DEL,
+y las actualizaciones de nombres, placas o precios no invalidan los conteos.
+La búsqueda de INSERT/DELETE y cascadas no encontró otra operación que cambie
+estos tres totales; la cascada de Ordenes solo afecta DetalleOrdenes.
+
+La acción manual sigue siendo el POST `/?handler=InvalidarCache`, con la comprobación
+de Administrador y antiforgery existentes. Su mensaje diferencia los resultados y
+explica que seguir la redirección puede regenerar el resumen. Que la clave reaparezca
+tras ese GET no implica un fallo de DEL. Otro consumidor también podría regenerarla
+antes de que llegue el GET: no se promete un MISS incondicional en el mensaje.
+
+Para las pruebas reales se agregó la cuenta aislada `h2_administrador`. Sus claves
+`H2_ADMIN_USERNAME` y `H2_ADMIN_PASSWORD` se guardan únicamente en `local.env`,
+ignorado por Git. El auxiliar ProvisionarUsuario permite solo esa cuenta y
+`h2_recepcionista`, comprueba la conexión H2 y no sobrescribe cuentas incompatibles.
+
+Con las cuentas ya provisionadas y PLAYWRIGHT_MODULE configurado:
+
+```powershell
+node tests/h2/invalidacion_real.cjs
+node tests/h2/redis_real.cjs --esperar-expiracion
+```
+
+La primera prueba utiliza formularios HTTP, validaciones y antiforgery reales para
+crear, editar y eliminar registros de los tres módulos. Solo inserta un cliente
+fixture en H2 para respetar la relación obligatoria del vehículo; lo conserva para
+auditoría. Solo elimina los registros de prueba que ella misma creó. También se
+conserva el historial de precio generado por el trigger existente.
+
+Antes de cada cambio exige HIT y margen de TTL, comprueba ausencia de la clave
+antes de seguir la redirección y compara el resumen con MySQL. Cada MISS debe
+incrementar una vez cada COUNT; el HIT posterior desde otra réplica no los repite.
+Las ediciones, validaciones fallidas, CI duplicado y eliminaciones inexistentes
+conservan entrada y TTL. Un canario con TTL y las sesiones existentes permiten
+comprobar que DEL no vacía Redis. No se registran valores ni nombres de sesiones.
+
+La invalidación manual se verifica tanto con clave presente como ya inexistente.
+Un POST sin antiforgery debe devolver 400. Recepcionista recibe la redirección de
+Forbid a AccessDenied y no ejecuta DEL. No se detiene Redis para simular errores:
+timeouts, desconexiones y fallos posteriores a escrituras confirmadas se verifican
+mediante dobles en las pruebas .NET.
+
+### Concurrencia pendiente (sin coordinación implementada)
+
+La prueba `Concurrencia_MissPuedePublicarConteoAnteriorTrasInvalidacion` reproduce
+determinísticamente, con dobles, este intercalado del coordinador real: A obtiene
+el conteo anterior durante MISS; B modifica el conteo e invalida; A guarda después
+su resultado anterior; el siguiente HIT queda desactualizado. No se presenta esta
+prueba como una reproducción con dos contenedores reales.
+
+Una prueba distribuida futura puede usar barreras en un adaptador exclusivo de
+pruebas para pausar A antes de SET, efectuar la escritura e invalidación desde B
+y reanudar A. La corrección mínima propuesta es una generación compartida en Redis:
+invalidar incrementa la generación y elimina el resumen atómicamente; publicar
+desde MISS compara la generación previa a los COUNT y hace SET solo si no cambió,
+también atómicamente (por ejemplo mediante Lua). Un lock local no coordina réplicas.
+No se implementaron versiones, locks ni reintentos en esta iteración.
+
+Existe además una ventana GetById/Delete: los contratos actuales Delete devuelven
+void, por lo que no informan filas afectadas si otro actor borró entre ambas llamadas.
+Los no-op secuenciales están cubiertos; esta carrera no se corrige ampliando los
+contratos CRUD en esta iteración de análisis de concurrencia.

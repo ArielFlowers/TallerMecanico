@@ -25,9 +25,15 @@ if (conexion.Server != "mysql" ||
 
 string usuario = Console.ReadLine() ?? string.Empty;
 string password = Console.ReadLine() ?? string.Empty;
-if (usuario != "h2_recepcionista")
+string rol = usuario switch
 {
-    throw new InvalidOperationException("Solo se permite la cuenta de prueba H2.");
+    "h2_recepcionista" => "Recepcionista",
+    "h2_administrador" => "Administrador",
+    _ => throw new InvalidOperationException("Solo se permiten las cuentas aisladas H2.")
+};
+if (password.Length < 12)
+{
+    throw new InvalidOperationException("Falta una contraseña exclusiva de pruebas.");
 }
 
 var opciones = new Argon2idOptions();
@@ -39,7 +45,7 @@ var inicializador = new InicializadorUsuarios(repositorio, hasher);
 if (repositorio.ExisteUsername(usuario))
 {
     var existente = repositorio.ObtenerPorUsername(usuario);
-    if (existente is null || !existente.Activo || existente.Rol != "Recepcionista" ||
+    if (existente is null || !existente.Activo || existente.Rol != rol ||
         !hasher.VerificarPassword(password, existente.PasswordHash))
     {
         throw new InvalidOperationException("La cuenta existente no coincide; no se modificó.");
@@ -48,6 +54,6 @@ if (repositorio.ExisteUsername(usuario))
 }
 else
 {
-    inicializador.CrearUsuarioInicial(usuario, password, "Recepcionista");
-    Console.WriteLine("Cuenta Recepcionista H2 creada con el inicializador y Argon2id reales.");
+    inicializador.CrearUsuarioInicial(usuario, password, rol);
+    Console.WriteLine($"Cuenta {rol} H2 creada con el inicializador y Argon2id reales.");
 }

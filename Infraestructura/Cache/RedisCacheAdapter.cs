@@ -24,6 +24,7 @@ public sealed class RedisCacheAdapter : ICacheDistribuidaPort
 
     public ResultadoLecturaCache Obtener(string clave)
     {
+        var error = new ResultadoLecturaCache(EstadoLecturaCache.Error);
         return Ejecutar(
             "GET",
             clave,
@@ -34,7 +35,8 @@ public sealed class RedisCacheAdapter : ICacheDistribuidaPort
                     ? new ResultadoLecturaCache(EstadoLecturaCache.Miss)
                     : new ResultadoLecturaCache(EstadoLecturaCache.Hit, (string?)valor);
             },
-            valorPorDefecto: new ResultadoLecturaCache(EstadoLecturaCache.Error));
+            valorPorDefecto: error,
+            valorSinConexion: error);
     }
 
     public bool Guardar(string clave, string valor, TimeSpan expiracion)
@@ -43,16 +45,28 @@ public sealed class RedisCacheAdapter : ICacheDistribuidaPort
             "SET",
             clave,
             baseDatos => baseDatos.StringSet(clave, valor, expiracion),
-            valorPorDefecto: false);
+            valorPorDefecto: false,
+            valorSinConexion: false);
     }
 
-    public bool Eliminar(string clave)
+    public ResultadoEliminacionCache Eliminar(string clave)
     {
-        return Ejecutar(
+        ResultadoEliminacionCache resultado = Ejecutar(
             "DEL",
             clave,
-            baseDatos => baseDatos.KeyDelete(clave),
-            valorPorDefecto: false);
+            baseDatos => baseDatos.KeyDelete(clave)
+                ? ResultadoEliminacionCache.Eliminada
+                : ResultadoEliminacionCache.Inexistente,
+            valorPorDefecto: ResultadoEliminacionCache.Error,
+            valorSinConexion: ResultadoEliminacionCache.NoDisponible);
+
+        bool fallo = resultado is ResultadoEliminacionCache.Error or ResultadoEliminacionCache.NoDisponible;
+        _logger.Log(fallo ? LogLevel.Warning : LogLevel.Information,
+            "INVALIDACION -> Redis DEL | clave {Clave} | réplica {Replica} | resultado {Resultado} | {Detalle}",
+            clave, Environment.MachineName, resultado,
+            fallo ? "No se confirmó la invalidación; pueden persistir datos anteriores hasta su expiración."
+                : "Redis confirmó el resultado de DEL.");
+        return resultado;
     }
 
     public TimeSpan? TiempoRestante(string clave)
@@ -61,23 +75,25 @@ public sealed class RedisCacheAdapter : ICacheDistribuidaPort
             "TTL",
             clave,
             baseDatos => baseDatos.KeyTimeToLive(clave),
-            valorPorDefecto: null);
+            valorPorDefecto: null,
+            valorSinConexion: null);
     }
 
     private T Ejecutar<T>(
         string comando,
         string clave,
         Func<IDatabase, T> operacion,
-        T valorPorDefecto)
+        T valorPorDefecto,
+        T valorSinConexion)
     {
         try
         {
             if (!_redis.IsConnected)
             {
                 _logger.LogWarning(
-                    "Redis no disponible | operación {Comando} | clave {Clave} | réplica {Replica} | resultado Error.",
+                    "Redis sin conexión | operación {Comando} | clave {Clave} | réplica {Replica}.",
                     comando, clave, Environment.MachineName);
-                return valorPorDefecto;
+                return valorSinConexion;
             }
 
             return operacion(_redis.GetDatabase());

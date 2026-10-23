@@ -14,7 +14,7 @@ public sealed class CacheDistribuidaDeshabilitada : ICacheDistribuidaPort
 
     public bool Guardar(string clave, string valor, TimeSpan expiracion) => false;
 
-    public bool Eliminar(string clave) => false;
+    public ResultadoEliminacionCache Eliminar(string clave) => ResultadoEliminacionCache.Deshabilitado;
 
     public TimeSpan? TiempoRestante(string clave) => null;
 }

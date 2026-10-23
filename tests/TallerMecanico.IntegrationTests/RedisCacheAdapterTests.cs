@@ -75,6 +75,40 @@ public sealed class RedisCacheAdapterTests
             new CacheDistribuidaDeshabilitada().Obtener("clave-prueba").Estado);
     }
 
+    [Theory]
+    [InlineData(true, ResultadoEliminacionCache.Eliminada)]
+    [InlineData(false, ResultadoEliminacionCache.Inexistente)]
+    public void Del_DistingueClaveEliminadaDeInexistente(bool eliminada, ResultadoEliminacionCache esperado)
+    {
+        _redis.ClaveEliminada = eliminada;
+        Assert.Equal(esperado, CrearAdapter().Eliminar("clave-prueba"));
+        Assert.Equal(1, _redis.Eliminaciones);
+        Assert.Contains(_logger.Mensajes, mensaje => mensaje.Contains("DEL") && mensaje.Contains(esperado.ToString()));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DelFallido_NoEsClaveInexistenteYAdvierteExpiracion(bool timeout)
+    {
+        _redis.FalloDel = timeout ? new TimeoutException("Password=no-publicar")
+            : new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Password=no-publicar");
+        Assert.Equal(ResultadoEliminacionCache.Error, CrearAdapter().Eliminar("clave-prueba"));
+        Assert.Contains(_logger.Niveles, nivel => nivel == LogLevel.Warning);
+        Assert.Contains(_logger.Mensajes, mensaje => mensaje.Contains("hasta su expiración"));
+        Assert.DoesNotContain(_logger.Mensajes, mensaje => mensaje.Contains("Password=no-publicar"));
+    }
+
+    [Fact]
+    public void DelSinConexion_NoEjecutaComandoNiInformaExito()
+    {
+        _redis.Conectado = false;
+        Assert.Equal(ResultadoEliminacionCache.NoDisponible, CrearAdapter().Eliminar("clave-prueba"));
+        Assert.Equal(0, _redis.Eliminaciones);
+        Assert.Equal(ResultadoEliminacionCache.Deshabilitado,
+            new CacheDistribuidaDeshabilitada().Eliminar("clave-prueba"));
+    }
+
     private RedisCacheAdapter CrearAdapter() => new(_redis.Conexion, _logger);
 }
 
@@ -84,6 +118,10 @@ internal sealed class ConexionRedisPrueba
     public RedisValue Valor { get; set; } = RedisValue.Null;
     public Exception? FalloGet { get; set; }
     public Exception? FalloSet { get; set; }
+    public Exception? FalloDel { get; set; }
+    public bool ClaveEliminada { get; set; } = true;
+    public int Eliminaciones { get; private set; }
+    public Action? AntesDeEliminar { get; set; }
     public int Lecturas { get; private set; }
     public int Escrituras { get; private set; }
     public IConnectionMultiplexer Conexion { get; }
@@ -96,6 +134,7 @@ internal sealed class ConexionRedisPrueba
             nameof(IDatabase.StringGet) => Leer(),
             nameof(IDatabase.StringSet) => Guardar(),
             nameof(IDatabase.KeyTimeToLive) => TimeSpan.FromSeconds(30),
+            nameof(IDatabase.KeyDelete) => Eliminar(),
             _ => throw new NotSupportedException(nombre)
         };
         Conexion = DispatchProxy.Create<IConnectionMultiplexer, ProxyRedisPrueba>();
@@ -120,6 +159,14 @@ internal sealed class ConexionRedisPrueba
         if (FalloSet is not null) throw FalloSet;
         return true;
     }
+
+    private bool Eliminar()
+    {
+        Eliminaciones++;
+        AntesDeEliminar?.Invoke();
+        if (FalloDel is not null) throw FalloDel;
+        return ClaveEliminada;
+    }
 }
 
 public class ProxyRedisPrueba : DispatchProxy
@@ -131,8 +178,13 @@ public class ProxyRedisPrueba : DispatchProxy
 internal sealed class RegistradorCachePrueba<T> : ILogger<T>
 {
     public List<string> Mensajes { get; } = [];
+    public List<LogLevel> Niveles { get; } = [];
     public bool IsEnabled(LogLevel logLevel) => true;
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
     public void Log<TState>(LogLevel nivel, EventId evento, TState estado, Exception? error,
-        Func<TState, Exception?, string> formato) => Mensajes.Add(formato(estado, error));
+        Func<TState, Exception?, string> formato)
+    {
+        Mensajes.Add(formato(estado, error));
+        Niveles.Add(nivel);
+    }
 }

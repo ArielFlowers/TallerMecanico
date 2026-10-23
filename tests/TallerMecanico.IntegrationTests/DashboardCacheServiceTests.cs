@@ -70,7 +70,7 @@ public sealed class DashboardCacheServiceTests
         servicio.Obtener();
         _vehiculos.Total = 6;
 
-        Assert.True(servicio.Invalidar());
+        Assert.Equal(ResultadoEliminacionCache.Eliminada, servicio.Invalidar());
         ResultadoDashboard resultado = servicio.Obtener();
 
         Assert.Equal(EstadoCache.Miss, resultado.Estado);
@@ -289,6 +289,25 @@ public sealed class DashboardCacheServiceTests
             _logger);
     }
 
+    [Fact]
+    public void Concurrencia_MissPuedePublicarConteoAnteriorTrasInvalidacion()
+    {
+        var servicio = CrearServicio();
+        _servicios.AlContar = () =>
+        {
+            _mecanicos.Total = 4;
+            _cache.Eliminar(ClavesCache.DashboardResumen);
+        };
+
+        ResultadoDashboard missAnterior = servicio.Obtener();
+        ResultadoDashboard hitDesactualizado = servicio.Obtener();
+
+        Assert.Equal(EstadoCache.Miss, missAnterior.Estado);
+        Assert.Equal(EstadoCache.Hit, hitDesactualizado.Estado);
+        Assert.Equal(3, hitDesactualizado.Dashboard.MecanicosDisponibles);
+        Assert.Equal(4, _mecanicos.Total);
+    }
+
     private sealed class CacheEnMemoria : ICacheDistribuidaPort
     {
         public Dictionary<string, string> Valores { get; } = [];
@@ -320,8 +339,9 @@ public sealed class DashboardCacheServiceTests
             return true;
         }
 
-        public bool Eliminar(string clave) =>
-            Disponible && Valores.Remove(clave);
+        public ResultadoEliminacionCache Eliminar(string clave) => !Disponible
+            ? ResultadoEliminacionCache.NoDisponible
+            : Valores.Remove(clave) ? ResultadoEliminacionCache.Eliminada : ResultadoEliminacionCache.Inexistente;
 
         public TimeSpan? TiempoRestante(string clave) =>
             Disponible && Expiraciones.TryGetValue(clave, out TimeSpan expiracion) ? expiracion : null;
@@ -335,6 +355,7 @@ public sealed class DashboardCacheServiceTests
 
     private sealed class RepositorioConteo<T>(int total) : IRepository<T>
     {
+        public Action? AlContar { get; set; }
         public int Total { get; set; } = total;
 
         public int Consultas { get; private set; }
@@ -342,6 +363,7 @@ public sealed class DashboardCacheServiceTests
         public int Count()
         {
             Consultas++;
+            AlContar?.Invoke();
             return Total;
         }
 

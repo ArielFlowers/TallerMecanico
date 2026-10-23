@@ -14,7 +14,7 @@ public interface ICacheDistribuidaPort
 
     bool Guardar(string clave, string valor, TimeSpan expiracion);
 
-    bool Eliminar(string clave);
+    ResultadoEliminacionCache Eliminar(string clave);
 
     TimeSpan? TiempoRestante(string clave);
 }

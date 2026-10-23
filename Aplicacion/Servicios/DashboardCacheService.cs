@@ -134,17 +134,18 @@ public class DashboardCacheService
             recorrido, ClavesCache.DashboardResumen, replicaActual, resultadoLectura, estado, escritura);
     }
 
-    public bool Invalidar()
+    public ResultadoEliminacionCache Invalidar()
     {
-        bool eliminado = _cache.Eliminar(ClavesCache.DashboardResumen);
+        ResultadoEliminacionCache resultado = _cache.Eliminar(ClavesCache.DashboardResumen);
 
-        _logger.LogInformation(
-            "INVALIDACION -> Redis DEL {Clave} | eliminado: {Eliminado} | réplica {Replica}",
+        _logger.Log(resultado is ResultadoEliminacionCache.Error or ResultadoEliminacionCache.NoDisponible
+                ? LogLevel.Warning : LogLevel.Information,
+            "INVALIDACION MANUAL | operación DEL | clave {Clave} | resultado {Resultado} | réplica {Replica}",
             ClavesCache.DashboardResumen,
-            eliminado,
+            resultado,
             Environment.MachineName);
 
-        return eliminado;
+        return resultado;
     }
 
     private EntradaCacheDashboard? Deserializar(string? valor)

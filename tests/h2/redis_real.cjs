@@ -47,7 +47,7 @@ function consultasUsuarios() {
           AND LOWER(CONVERT(argument USING utf8mb4)) REGEXP 'from[[:space:]]+usuarios[[:space:]]';`));
 }
 
-(async () => {
+async function comprobarRedis() {
     const variables = Object.fromEntries(fs.readFileSync(path.join(__dirname, 'local.env'), 'utf8')
         .split(/\r?\n/).filter(linea => /^[A-Z0-9_]+=/.test(linea))
         .map(linea => [linea.slice(0, linea.indexOf('=')), linea.slice(linea.indexOf('=') + 1)]));
@@ -184,4 +184,7 @@ function consultasUsuarios() {
     } finally {
         await http.dispose();
     }
-})().catch(error => { console.error(error.message); process.exitCode = 1; });
+}
+
+module.exports = { docker, compose, redis, mysql, conteos, estadoEnHtml, clave };
+if (require.main === module) comprobarRedis().catch(error => { console.error(error.message); process.exitCode = 1; });
