@@ -4,7 +4,9 @@ public enum EstadoCache
 {
     Hit,
     Miss,
-    NoDisponible
+    NoDisponible,
+    Deshabilitado,
+    EntradaInvalida
 }
 
 public sealed record ResultadoDashboard(
@@ -13,4 +15,5 @@ public sealed record ResultadoDashboard(
     string ReplicaOrigen,
     string ReplicaActual,
     DateTimeOffset GeneradoEn,
-    TimeSpan? TiempoRestante);
+    TimeSpan? TiempoRestante,
+    bool? Almacenado = null);

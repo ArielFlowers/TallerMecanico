@@ -38,13 +38,15 @@ public class DashboardCacheService
     {
         string replicaActual = Environment.MachineName;
 
-        EntradaCacheDashboard? entrada =
-            Deserializar(_cache.Obtener(ClavesCache.DashboardResumen));
+        ResultadoLecturaCache lectura = _cache.Obtener(ClavesCache.DashboardResumen);
+        EntradaCacheDashboard? entrada = lectura.Estado == EstadoLecturaCache.Hit
+            ? Deserializar(lectura.Valor)
+            : null;
 
         if (entrada is not null)
         {
             _logger.LogInformation(
-                "HIT -> Redis | clave {Clave} | réplica {Replica} | generado por {ReplicaOrigen}",
+                "HIT -> Redis | operación GET | clave {Clave} | réplica {Replica} | generado por {ReplicaOrigen} | lectura Hit | escritura NoIntentada",
                 ClavesCache.DashboardResumen,
                 replicaActual,
                 entrada.Replica);
@@ -58,6 +60,22 @@ public class DashboardCacheService
                 _cache.TiempoRestante(ClavesCache.DashboardResumen));
         }
 
+        EstadoCache estado = lectura.Estado switch
+        {
+            EstadoLecturaCache.Miss => EstadoCache.Miss,
+            EstadoLecturaCache.Deshabilitado => EstadoCache.Deshabilitado,
+            EstadoLecturaCache.Hit => EstadoCache.EntradaInvalida,
+            _ => EstadoCache.NoDisponible
+        };
+
+        return RecuperarDesdeMySql(estado, lectura.Estado, replicaActual);
+    }
+
+    private ResultadoDashboard RecuperarDesdeMySql(
+        EstadoCache estado,
+        EstadoLecturaCache lectura,
+        string replicaActual)
+    {
         DashboardViewModel dashboard = _dashboardService.GetDashboardData();
 
         var nuevaEntrada = new EntradaCacheDashboard(
@@ -65,33 +83,55 @@ public class DashboardCacheService
             replicaActual,
             _timeProvider.GetLocalNow());
 
-        bool guardado = _cache.Guardar(
-            ClavesCache.DashboardResumen,
-            JsonSerializer.Serialize(nuevaEntrada),
-            _opciones.Expiracion);
-
-        if (guardado)
-        {
-            _logger.LogInformation(
-                "MISS -> MySQL -> Redis | clave {Clave} | réplica {Replica} | expira en {Segundos} s",
+        bool? almacenado = estado == EstadoCache.Deshabilitado
+            ? null
+            : _cache.Guardar(
                 ClavesCache.DashboardResumen,
-                replicaActual,
-                _opciones.Expiracion.TotalSeconds);
-        }
-        else
-        {
-            _logger.LogWarning(
-                "MISS -> MySQL | Redis no disponible, el resultado no se almacenó | réplica {Replica}",
-                replicaActual);
-        }
+                JsonSerializer.Serialize(nuevaEntrada),
+                _opciones.Expiracion);
+
+        RegistrarRecuperacion(estado, lectura, almacenado, replicaActual);
 
         return new ResultadoDashboard(
             dashboard,
-            guardado ? EstadoCache.Miss : EstadoCache.NoDisponible,
+            estado,
             replicaActual,
             replicaActual,
             nuevaEntrada.GeneradoEn,
-            guardado ? _opciones.Expiracion : null);
+            almacenado == true ? _cache.TiempoRestante(ClavesCache.DashboardResumen) : null,
+            almacenado);
+    }
+
+    private void RegistrarRecuperacion(
+        EstadoCache estado,
+        EstadoLecturaCache lectura,
+        bool? almacenado,
+        string replicaActual)
+    {
+        string recorrido = estado switch
+        {
+            EstadoCache.Miss when almacenado == true => "MISS -> MySQL -> Redis",
+            EstadoCache.Miss => "MISS -> MySQL | SET fallido",
+            EstadoCache.Deshabilitado => "DESHABILITADO -> MySQL",
+            EstadoCache.EntradaInvalida => "ENTRADA INVALIDA -> MySQL",
+            _ => "ERROR GET -> MySQL"
+        };
+        string escritura = almacenado switch
+        {
+            true => "Exitosa",
+            false => "Fallida",
+            null => "NoIntentada"
+        };
+        string resultadoLectura = estado == EstadoCache.EntradaInvalida
+            ? "ValorPresenteInvalido"
+            : lectura.ToString();
+        LogLevel nivel = estado is EstadoCache.NoDisponible or EstadoCache.EntradaInvalida || almacenado == false
+            ? LogLevel.Warning
+            : LogLevel.Information;
+
+        _logger.Log(nivel,
+            "{Recorrido} | operación GET/SET | clave {Clave} | réplica {Replica} | lectura {Lectura} | estado {Estado} | escritura {Escritura}",
+            recorrido, ClavesCache.DashboardResumen, replicaActual, resultadoLectura, estado, escritura);
     }
 
     public bool Invalidar()
@@ -116,16 +156,41 @@ public class DashboardCacheService
 
         try
         {
-            return JsonSerializer.Deserialize<EntradaCacheDashboard>(valor);
+            using JsonDocument documento = JsonDocument.Parse(valor);
+            return EsEntradaValida(documento.RootElement)
+                ? documento.RootElement.Deserialize<EntradaCacheDashboard>()
+                : null;
         }
-        catch (JsonException error)
+        catch (JsonException)
         {
-            _logger.LogWarning(
-                error,
-                "Valor inválido en {Clave}; se tratará como MISS.",
-                ClavesCache.DashboardResumen);
+            // El coordinador registra EntradaInvalida sin incluir el contenido recibido.
             return null;
         }
+    }
+
+    private static bool EsEntradaValida(JsonElement entrada)
+    {
+        return entrada.ValueKind == JsonValueKind.Object
+            && entrada.TryGetProperty(nameof(EntradaCacheDashboard.Dashboard), out JsonElement resumen)
+            && resumen.ValueKind == JsonValueKind.Object
+            && TieneConteoValido(resumen, nameof(DashboardViewModel.MecanicosDisponibles))
+            && TieneConteoValido(resumen, nameof(DashboardViewModel.VehiculosRegistrados))
+            && TieneConteoValido(resumen, nameof(DashboardViewModel.ServiciosRegistrados))
+            && entrada.TryGetProperty(nameof(EntradaCacheDashboard.Replica), out JsonElement replica)
+            && replica.ValueKind == JsonValueKind.String
+            && !string.IsNullOrWhiteSpace(replica.GetString())
+            && entrada.TryGetProperty(nameof(EntradaCacheDashboard.GeneradoEn), out JsonElement generadoEn)
+            && generadoEn.ValueKind == JsonValueKind.String
+            && generadoEn.TryGetDateTimeOffset(out DateTimeOffset fecha)
+            && fecha != default;
+    }
+
+    private static bool TieneConteoValido(JsonElement resumen, string propiedad)
+    {
+        return resumen.TryGetProperty(propiedad, out JsonElement conteo)
+            && conteo.ValueKind == JsonValueKind.Number
+            && conteo.TryGetInt32(out int cantidad)
+            && cantidad >= 0;
     }
 
     private sealed record EntradaCacheDashboard(

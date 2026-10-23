@@ -1,3 +1,5 @@
+using TallerMecanico.Aplicacion.Dto;
+
 namespace TallerMecanico.Aplicacion.Puertos;
 
 // H2: puerto de caché distribuida compartida por todas las réplicas.
@@ -8,7 +10,7 @@ public interface ICacheDistribuidaPort
 {
     bool EstaDisponible { get; }
 
-    string? Obtener(string clave);
+    ResultadoLecturaCache Obtener(string clave);
 
     bool Guardar(string clave, string valor, TimeSpan expiracion);
 

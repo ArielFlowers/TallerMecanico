@@ -12,6 +12,12 @@ function docker(args, input) {
 }
 const compose = (...args) => docker([...composeArgs, ...args]);
 const redis = (...args) => compose('exec', '-T', 'redis', 'redis-cli', '--raw', ...args);
+function estadoEnHtml(html) {
+    const etiqueta = html.match(/<span class="cache-estado [^"]*">([^<]+)<\/span>/);
+    assert.ok(etiqueta, 'Debe existir el indicador real de caché.');
+    return etiqueta[1].replace(/&#(?:x([0-9a-f]+)|(\d+));/gi,
+        (_, hexadecimal, decimal) => String.fromCodePoint(parseInt(hexadecimal ?? decimal, hexadecimal ? 16 : 10))).trim();
+}
 function mysql(sql) {
     return docker([...composeArgs, 'exec', '-T', 'mysql', 'sh', '-c',
         'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot --batch --raw --skip-column-names'], sql);
@@ -109,7 +115,7 @@ function consultasUsuarios() {
         const respuestaA = await http.get(`${bases.app1}/`, { maxRedirects: 0 });
         assert.equal(respuestaA.status(), 200);
         const htmlA = await respuestaA.text();
-        assert.match(htmlA, /Cache: MISS/);
+        assert.equal(estadoEnHtml(htmlA), 'Cache: MISS');
         assert.ok(htmlA.includes(`Generado por: <strong>${evidencia.replicas[0].replica}</strong>`));
         evidencia.despuesMiss = conteos();
         for (const tabla of Object.keys(evidencia.antes))
@@ -124,7 +130,7 @@ function consultasUsuarios() {
         const respuestaB = await http.get(`${bases.app2}/`, { maxRedirects: 0 });
         assert.equal(respuestaB.status(), 200, 'La cookie emitida por A debe autenticar también en B.');
         const htmlB = await respuestaB.text();
-        assert.match(htmlB, /Cache: HIT/);
+        assert.equal(estadoEnHtml(htmlB), 'Cache: HIT');
         assert.ok(htmlB.includes(`Generado por: <strong>${evidencia.replicas[0].replica}</strong>`));
         assert.ok(htmlB.includes(`Atendido por: <strong>${evidencia.replicas[1].replica}</strong>`));
         evidencia.despuesHit = conteos();
@@ -133,10 +139,46 @@ function consultasUsuarios() {
         evidencia.pttlDespuesHit = Number(redis('PTTL', clave));
         assert.ok(evidencia.pttlDespuesHit > 0 && evidencia.pttlDespuesHit <= evidencia.pttlDespuesMiss);
         evidencia.consultasUsuariosDuranteHit = consultasUsuarios() - usuariosAntes;
+        if (process.argv.includes('--validar-datos')) {
+            evidencia.entradasInvalidas = [];
+            for (const [caso, contenido] of [
+                ['JSON mal formado', '{no es json'],
+                ['Resumen nulo', JSON.stringify({ Dashboard: null, Replica: 'prueba-h2', GeneradoEn: new Date().toISOString() })],
+                ['Conteo obligatorio ausente', JSON.stringify({
+                    Dashboard: { MecanicosDisponibles: 0, VehiculosRegistrados: 0 },
+                    Replica: 'prueba-h2', GeneradoEn: new Date().toISOString()
+                })]
+            ]) {
+                const antes = conteos();
+                assert.equal(redis('SET', clave, contenido, 'EX', '60'), 'OK');
+                const respuesta = await http.get(`${bases.app1}/`, { maxRedirects: 0 });
+                assert.equal(respuesta.status(), 200);
+                const html = await respuesta.text();
+                assert.equal(estadoEnHtml(html), 'Cache: DATOS INVÁLIDOS');
+                const despues = conteos();
+                for (const tabla of Object.keys(antes)) assert.equal(despues[tabla] - antes[tabla], 1);
+                const recuperada = JSON.parse(redis('GET', clave));
+                assert.ok(recuperada.Dashboard);
+                assert.equal(recuperada.Replica, evidencia.replicas[0].replica);
+                const hitPosterior = await http.get(`${bases.app2}/`, { maxRedirects: 0 });
+                assert.equal(hitPosterior.status(), 200);
+                assert.equal(estadoEnHtml(await hitPosterior.text()), 'Cache: HIT');
+                assert.deepEqual(conteos(), despues);
+                evidencia.entradasInvalidas.push({ caso, antes, despues, estado: 'DATOS INVÁLIDOS -> MySQL; siguiente B HIT sin COUNT' });
+            }
+        }
         evidencia.logsCache = compose('logs', '--no-color', '--no-log-prefix', 'app1', 'app2')
-            .split(/\r?\n/).filter(linea => linea.includes('MISS -> MySQL -> Redis') || linea.includes('HIT -> Redis'));
+            .split(/\r?\n/).filter(linea => linea.includes('MISS -> MySQL -> Redis')
+                || linea.includes('HIT -> Redis') || linea.includes('ENTRADA INVALIDA -> MySQL'));
         assert.ok(evidencia.logsCache.some(linea => linea.includes('MISS -> MySQL -> Redis')));
         assert.ok(evidencia.logsCache.some(linea => linea.includes('HIT -> Redis')));
+        if (process.argv.includes('--esperar-expiracion')) {
+            const restante = Number(redis('PTTL', clave));
+            assert.ok(restante > 0 && restante <= 60000);
+            await new Promise(resolve => setTimeout(resolve, restante + 250));
+            evidencia.ttlTrasExpiracionNatural = Number(redis('TTL', clave));
+            assert.equal(evidencia.ttlTrasExpiracionNatural, -2);
+        }
         evidencia.resultado = 'PASS: Redis real, 3 replicas, Nginx, login real, MISS A y HIT B; +3 COUNT en MISS, +0 en HIT.';
         console.log(JSON.stringify(evidencia, null, 2));
     } finally {

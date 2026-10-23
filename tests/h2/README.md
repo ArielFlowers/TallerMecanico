@@ -237,3 +237,30 @@ El resultado observado de esta iteración está en `resultado-real.json`.
 Las tablas de Mecánicos, Vehículos y Servicios están vacías en este entorno:
 el resumen devuelve ceros reales y el general_log demuestra las consultas físicas.
 No se insertaron datos de otros CRUD para esta comprobación.
+
+## Iteración 2: estados y contenido recuperado
+
+La lectura distingue `Hit`, `Miss`, `Error` y `Deshabilitado`. El coordinador acepta
+HIT únicamente tras validar estructura, los tres conteos enteros no negativos,
+réplica y fecha de generación. Un valor presente pero inválido se identifica como
+`EntradaInvalida`, no como MISS. El formato JSON se conserva.
+
+El resultado del dashboard conserva el estado de lectura independientemente de
+`Almacenado`: true indica SET exitoso, false fallo y null escritura no intentada.
+Los errores de GET y SET se reproducen con dobles en las pruebas .NET, sin detener
+Redis ni afectar sesiones. La regresión real ampliada se ejecuta así:
+
+```powershell
+node tests/h2/redis_real.cjs --validar-datos --esperar-expiracion
+```
+
+Esta opción escribe datos inválidos exclusivamente en la clave del Redis H2,
+verifica el indicador Razor y los tres COUNT de recuperación, y comprueba un HIT
+posterior desde B sin repetir conteos. Finalmente espera la expiración natural,
+sin DEL, FLUSHALL ni FLUSHDB. Las aserciones del indicador decodifican entidades
+HTML para no confundir la codificación de Razor con el texto visible ni volcar
+formularios con tokens en mensajes de error.
+
+La evidencia nueva se guarda en `resultado-iteracion2.json`; `resultado-real.json`
+conserva la medición de la Iteración 1. Invalidación, concurrencia, sesiones,
+Data Protection, configuración Docker y esquema MySQL no se refactorizan aquí.

@@ -1,4 +1,5 @@
 using StackExchange.Redis;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Infraestructura.Cache;
@@ -21,13 +22,19 @@ public sealed class RedisCacheAdapter : ICacheDistribuidaPort
 
     public bool EstaDisponible => _redis.IsConnected;
 
-    public string? Obtener(string clave)
+    public ResultadoLecturaCache Obtener(string clave)
     {
         return Ejecutar(
             "GET",
             clave,
-            baseDatos => (string?)baseDatos.StringGet(clave),
-            valorPorDefecto: null);
+            baseDatos =>
+            {
+                RedisValue valor = baseDatos.StringGet(clave);
+                return valor.IsNull
+                    ? new ResultadoLecturaCache(EstadoLecturaCache.Miss)
+                    : new ResultadoLecturaCache(EstadoLecturaCache.Hit, (string?)valor);
+            },
+            valorPorDefecto: new ResultadoLecturaCache(EstadoLecturaCache.Error));
     }
 
     public bool Guardar(string clave, string valor, TimeSpan expiracion)
@@ -63,26 +70,23 @@ public sealed class RedisCacheAdapter : ICacheDistribuidaPort
         Func<IDatabase, T> operacion,
         T valorPorDefecto)
     {
-        if (!_redis.IsConnected)
-        {
-            _logger.LogWarning(
-                "Redis no disponible; se omite {Comando} {Clave}.",
-                comando,
-                clave);
-            return valorPorDefecto;
-        }
-
         try
         {
+            if (!_redis.IsConnected)
+            {
+                _logger.LogWarning(
+                    "Redis no disponible | operación {Comando} | clave {Clave} | réplica {Replica} | resultado Error.",
+                    comando, clave, Environment.MachineName);
+                return valorPorDefecto;
+            }
+
             return operacion(_redis.GetDatabase());
         }
-        catch (Exception error) when (error is RedisException or TimeoutException)
+        catch (Exception error) when (error is RedisException or TimeoutException or ObjectDisposedException)
         {
             _logger.LogWarning(
-                error,
-                "Falló {Comando} {Clave} en Redis; se continúa con MySQL.",
-                comando,
-                clave);
+                "Falló Redis | operación {Comando} | clave {Clave} | réplica {Replica} | resultado Error | tipo {TipoError}.",
+                comando, clave, Environment.MachineName, error.GetType().Name);
             return valorPorDefecto;
         }
     }
