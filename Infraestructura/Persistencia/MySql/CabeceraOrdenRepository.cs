@@ -31,7 +31,7 @@ public sealed class CabeceraOrdenRepository(DbConnection conexion, DbTransaction
         Servicio? encontrado = Ejecutar(() =>
         {
             using DbCommand comando = CrearComando(
-                "SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras FROM Servicios WHERE Id = @Id FOR SHARE;",
+                "SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, UnidadCantidad FROM Servicios WHERE Id = @Id FOR SHARE;",
                 ("@Id", servicioId));
             using DbDataReader lector = comando.ExecuteReader();
             if (!lector.Read()) return (Servicio?)null;
@@ -41,7 +41,8 @@ public sealed class CabeceraOrdenRepository(DbConnection conexion, DbTransaction
                 Nombre = lector.GetString(1),
                 Descripcion = lector.GetString(2),
                 Costo = lector.GetDecimal(3),
-                TiempoEstimadoHoras = lector.GetDecimal(4)
+                TiempoEstimadoHoras = lector.GetDecimal(4),
+                UnidadCantidad = lector.IsDBNull(5) ? null : lector.GetString(5)
             };
         });
         servicio = encontrado;
