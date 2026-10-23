@@ -49,9 +49,9 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
 
     public async Task<JsonResult> OnGetSugerenciasServiciosAsync(string? termino) =>
         string.IsNullOrWhiteSpace(termino)
-            ? new JsonResult(servicios.ObtenerTodos().Select(servicio => new SugerenciaServicio(
+            ? new JsonResult(servicios.ObtenerCatalogo().Select(servicio => new SugerenciaServicio(
                 servicio.Id, servicio.Nombre, servicio.Descripcion)))
-            : new JsonResult(await servicios.SugerirAsync(termino, HttpContext.RequestAborted));
+            : new JsonResult(await servicios.SugerirCatalogoAsync(termino, HttpContext.RequestAborted));
 
     public async Task<JsonResult> OnGetSugerenciasMecanicosAsync(string? termino) =>
         string.IsNullOrWhiteSpace(termino)
@@ -64,7 +64,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
 
     public IActionResult OnGetServicioSeleccionado(int id)
     {
-        var servicio = id > 0 ? servicios.ObtenerPorId(id) : null;
+        var servicio = id > 0 ? servicios.ObtenerDelCatalogo(id) : null;
         return servicio is null ? NotFound() : new JsonResult(new
         {
             servicio.Id, servicio.Nombre, servicio.Descripcion, servicio.Costo, servicio.TiempoEstimadoHoras, servicio.UnidadCantidad
@@ -264,12 +264,12 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         if (MecanicoSeleccionado is not null)
             TextoMecanico = string.Join(" ", new[] { MecanicoSeleccionado.Nombres, MecanicoSeleccionado.PrimerApellido, MecanicoSeleccionado.SegundoApellido }
                 .Where(nombre => !string.IsNullOrWhiteSpace(nombre)));
-        ServicioSeleccionado = Formulario.ServicioId.HasValue ? servicios.ObtenerPorId(Formulario.ServicioId.Value) : null;
+        ServicioSeleccionado = Formulario.ServicioId.HasValue ? servicios.ObtenerDelCatalogo(Formulario.ServicioId.Value) : null;
         if (ServicioSeleccionado is not null && string.IsNullOrWhiteSpace(TextoServicio))
             TextoServicio = ServicioSeleccionado.Nombre;
         ServiciosSeleccionados = Formulario.ServicioIds
             .Distinct()
-            .Select(servicios.ObtenerPorId)
+            .Select(servicios.ObtenerDelCatalogo)
             .Where(servicio => servicio is not null)
             .Select(servicio => new ServicioSeleccionadoOrdenViewModel
             {

@@ -42,6 +42,11 @@ trabajo completo y los detalles históricos reciben cantidad 1.
 
 ## Base de datos existente
 
+La migración `008_catalogo_servicios.sql` agrega `CodigoCatalogo` opcional y único.
+`DatabaseInitializer` aplica ese esquema sin cargar datos. La incorporación explícita,
+los metadatos pendientes y la conservación histórica se describen en
+[catálogo de servicios](../catalogo-servicios.md).
+
 El inicializador comprueba las columnas y el índice único antes de agregarlos. Conserva tablas, registros, contraseñas, correos, roles y marcas de verificación existentes.
 
 | Estado anterior | Comportamiento de la versión actual |

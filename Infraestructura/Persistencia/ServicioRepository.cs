@@ -17,7 +17,11 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         _connectionFactory = connectionFactory;
     }
 
-    public List<Servicio> GetAll()
+    public List<Servicio> GetAll() => ObtenerServicios(false);
+
+    public List<Servicio> ObtenerCatalogo() => ObtenerServicios(true);
+
+    private List<Servicio> ObtenerServicios(bool soloCatalogo)
     {
         List<Servicio> servicios = [];
 
@@ -26,14 +30,13 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
 
         connection.Open();
 
-        const string query = """
-            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = $"""
+            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad, CodigoCatalogo
             FROM Servicios
+            WHERE {(soloCatalogo ? FiltroCatalogo(command) : "1 = 1")}
             ORDER BY Nombre, Id;
             """;
-
-        using DbCommand command = connection.CreateCommand();
-        command.CommandText = query;
 
         using DbDataReader reader = command.ExecuteReader();
 
@@ -45,21 +48,23 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         return servicios;
     }
 
-    public Servicio? GetById(int id)
+    public Servicio? GetById(int id) => ObtenerServicio(id, false);
+
+    public Servicio? ObtenerDelCatalogo(int id) => ObtenerServicio(id, true);
+
+    private Servicio? ObtenerServicio(int id, bool soloCatalogo)
     {
         using DbConnection connection =
             _connectionFactory.CreateConnection();
 
         connection.Open();
 
-        const string query = """
-            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad
-            FROM Servicios
-            WHERE Id = @Id;
-            """;
-
         using DbCommand command = connection.CreateCommand();
-        command.CommandText = query;
+        command.CommandText = $"""
+            SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras, CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad, CodigoCatalogo
+            FROM Servicios
+            WHERE Id = @Id AND {(soloCatalogo ? FiltroCatalogo(command) : "1 = 1")};
+            """;
 
         AddParameter(command, "@Id", id);
 
@@ -81,7 +86,7 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         await using DbCommand command = connection.CreateCommand();
         command.CommandText = """
             SELECT Id, Nombre, Descripcion, Costo, TiempoEstimadoHoras,
-                   CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad
+                   CreadoPor, FechaCreacion, ModificadoPor, FechaModificacion, UnidadCantidad, CodigoCatalogo
             FROM Servicios
             WHERE Nombre COLLATE utf8mb4_0900_ai_ci LIKE @Filtro ESCAPE '!'
                OR Descripcion COLLATE utf8mb4_0900_ai_ci LIKE @Filtro ESCAPE '!'
@@ -99,8 +104,16 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
         return servicios;
     }
 
-    public async Task<IReadOnlyList<SugerenciaServicio>> SugerirAsync(
-        string termino, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<SugerenciaServicio>> SugerirAsync(
+        string termino, CancellationToken cancellationToken = default) =>
+        SugerirAsync(termino, false, cancellationToken);
+
+    public Task<IReadOnlyList<SugerenciaServicio>> SugerirCatalogoAsync(
+        string termino, CancellationToken cancellationToken = default) =>
+        SugerirAsync(termino, true, cancellationToken);
+
+    private async Task<IReadOnlyList<SugerenciaServicio>> SugerirAsync(
+        string termino, bool soloCatalogo, CancellationToken cancellationToken)
     {
         var palabras = termino.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
         if (palabras.Length == 0)
@@ -131,7 +144,8 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
                         THEN CONCAT(LEFT(Descripcion, @LongitudDescripcion), '…')
                         ELSE Descripcion END
             FROM Servicios
-            WHERE {string.Join(" AND ", condicionesPalabras)}
+            WHERE ({(soloCatalogo ? FiltroCatalogo(command) : "1 = 1")})
+              AND {string.Join(" AND ", condicionesPalabras)}
             ORDER BY Nombre, Id
             LIMIT @Limite;
             """;
@@ -151,6 +165,19 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
     private static string EscaparPatron(string termino)
     {
         return termino.Replace("!", "!!").Replace("%", "!%").Replace("_", "!_");
+    }
+
+    private static string FiltroCatalogo(DbCommand comando)
+    {
+        var condiciones = new List<string>();
+        for (int indice = 0; indice < CatalogoServicios.Servicios.Count; indice++)
+        {
+            ServicioCatalogo servicio = CatalogoServicios.Servicios[indice];
+            condiciones.Add($"(CodigoCatalogo = @Codigo{indice} AND UnidadCantidad <=> @Unidad{indice})");
+            AddParameter(comando, $"@Codigo{indice}", servicio.Codigo);
+            AddParameter(comando, $"@Unidad{indice}", servicio.UnidadCantidad);
+        }
+        return $"({string.Join(" OR ", condiciones)})";
     }
 
     public void Add(Servicio servicio)
@@ -285,7 +312,8 @@ public class ServicioRepository : IRepository<Servicio>, IConsultaServiciosPort
             FechaCreacion = reader.GetDateTime(6),
             ModificadoPor = reader.IsDBNull(7) ? null : reader.GetString(7),
             FechaModificacion = reader.IsDBNull(8) ? null : reader.GetDateTime(8),
-            UnidadCantidad = reader.IsDBNull(9) ? null : reader.GetString(9)
+            UnidadCantidad = reader.IsDBNull(9) ? null : reader.GetString(9),
+            CodigoCatalogo = reader.IsDBNull(10) ? null : reader.GetString(10)
         };
     }
 }

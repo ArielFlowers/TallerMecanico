@@ -170,7 +170,7 @@ public sealed class NuevaOrdenAutocompletadoTests
         aislada.Ejecutar("INSERT INTO Clientes (Ci,Nombres,PrimerApellido,SegundoApellido,Celular) VALUES ('1234567','Ana','Arce','Pérez','71234567');");
         aislada.Ejecutar("INSERT INTO Vehiculos (Placa,Marca,Modelo,ClienteId,Kilometraje) VALUES ('123ABC','Toyota','Land Cruiser',1,100),('456DEF','Toyota','Corolla',NULL,100);");
         aislada.Ejecutar("INSERT INTO Mecanicos (Ci,Nombres,PrimerApellido,SegundoApellido,Genero,Especialidad,Celular) VALUES ('1234567','José','Muñoz','','Masculino','Sin Especialidad','71234567');");
-        aislada.Ejecutar("INSERT INTO Servicios (Nombre,Descripcion,Costo,TiempoEstimadoHoras) VALUES ('Cambio de Aceite','Lubricación del motor',25,1);");
+        aislada.Ejecutar("INSERT INTO Servicios (CodigoCatalogo,Nombre,Descripcion,Costo,TiempoEstimadoHoras) VALUES ('CAMBIO_ACEITE','Cambio de Aceite','Lubricación del motor',25,1);");
         aislada.Ejecutar("INSERT INTO Productos (Codigo,Nombre,Precio,Stock,StockMinimo) VALUES ('FIL-001','Filtro de Aceite',12.50,10,0),('BUJ-001','Bujía de Iridio',7.20,10,0);");
         if (!masivos) return;
         for (int indice = 0; indice < 13; indice++)

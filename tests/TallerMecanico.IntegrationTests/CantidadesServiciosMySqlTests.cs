@@ -17,7 +17,7 @@ public sealed class CantidadesServiciosMySqlTests
     {
         using var aislada = new MySqlAisladoFixture();
         NuevaOrdenAutocompletadoTests.Preparar(aislada);
-        aislada.Ejecutar("UPDATE Servicios SET UnidadCantidad = 'unidad' WHERE Id = 1;");
+        aislada.Ejecutar("UPDATE Servicios SET CodigoCatalogo = 'CAMBIO_FILTROS', Nombre = 'Cambio de filtros', UnidadCantidad = 'unidad' WHERE Id = 1;");
 
         var resultado = CrearServicio(aislada).CrearOrden(Solicitud(3));
 
@@ -99,7 +99,7 @@ public sealed class CantidadesServiciosMySqlTests
             Assert.False(resultado.Exito);
             Assert.Contains("Servicios[1]", resultado.Errores);
         }
-        aislada.Ejecutar("UPDATE Servicios SET UnidadCantidad = NULL WHERE Id = 1;");
+        aislada.Ejecutar("UPDATE Servicios SET CodigoCatalogo = 'CAMBIO_ACEITE', UnidadCantidad = NULL WHERE Id = 1;");
         Assert.Contains("Servicios[1]", CrearServicio(aislada).CrearOrden(Solicitud(2)).Errores);
         Assert.Equal(antes, NuevaOrdenAutocompletadoTests.Instantanea(aislada));
         Assert.Equal(0, Convert.ToInt32(aislada.Escalar("SELECT COUNT(*) FROM DetalleServiciosOrdenes;")));
@@ -188,8 +188,8 @@ public sealed class CantidadesServiciosMySqlTests
         PrepararRepetible(aislada);
         aislada.Ejecutar("UPDATE Servicios SET Costo = 30 WHERE Id = 1;");
         int unicoId = checked((int)aislada.Ejecutar("""
-            INSERT INTO Servicios (Nombre, Descripcion, Costo, TiempoEstimadoHoras)
-            VALUES ('Diagnóstico de prueba', 'Servicio único de prueba', 120, 1);
+            INSERT INTO Servicios (CodigoCatalogo, Nombre, Descripcion, Costo, TiempoEstimadoHoras)
+            VALUES ('DIAGNOSTICO_ESCANER', 'Diagnóstico de prueba', 'Servicio único de prueba', 120, 1);
             """));
         string json = JsonSerializer.Serialize(new
         {
@@ -267,7 +267,7 @@ public sealed class CantidadesServiciosMySqlTests
     private static void PrepararRepetible(MySqlAisladoFixture aislada)
     {
         NuevaOrdenAutocompletadoTests.Preparar(aislada);
-        aislada.Ejecutar("UPDATE Servicios SET UnidadCantidad = 'unidad' WHERE Id = 1;");
+        aislada.Ejecutar("UPDATE Servicios SET CodigoCatalogo = 'CAMBIO_FILTROS', Nombre = 'Cambio de filtros', UnidadCantidad = 'unidad' WHERE Id = 1;");
     }
 
     private static CrearOrdenSolicitud Solicitud(int cantidad) => new(

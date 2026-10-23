@@ -32,6 +32,14 @@ public class ServicioService : IServicioService
         return _servicioRepository.GetAll();
     }
 
+    public List<Servicio> ObtenerCatalogo() => _consultaServicios.ObtenerCatalogo();
+
+    public Servicio? ObtenerDelCatalogo(int id) => _consultaServicios.ObtenerDelCatalogo(id);
+
+    public Task<IReadOnlyList<SugerenciaServicio>> SugerirCatalogoAsync(
+        string? termino, CancellationToken cancellationToken = default) =>
+        SugerirAsync(termino, true, cancellationToken);
+
     public Servicio? ObtenerPorId(int id)
     {
         return _servicioRepository.GetById(id);
@@ -44,7 +52,11 @@ public class ServicioService : IServicioService
     }
 
     public Task<IReadOnlyList<SugerenciaServicio>> SugerirAsync(
-        string? termino, CancellationToken cancellationToken = default)
+        string? termino, CancellationToken cancellationToken = default) =>
+        SugerirAsync(termino, false, cancellationToken);
+
+    private Task<IReadOnlyList<SugerenciaServicio>> SugerirAsync(
+        string? termino, bool soloCatalogo, CancellationToken cancellationToken)
     {
         var terminoNormalizado = Regex.Replace(termino?.Trim() ?? string.Empty, @"\s+", " ");
         if (terminoNormalizado.Length < MinimoCaracteresSugerencias ||
@@ -53,7 +65,9 @@ public class ServicioService : IServicioService
             return Task.FromResult<IReadOnlyList<SugerenciaServicio>>([]);
         }
 
-        return _consultaServicios.SugerirAsync(terminoNormalizado, cancellationToken);
+        return soloCatalogo
+            ? _consultaServicios.SugerirCatalogoAsync(terminoNormalizado, cancellationToken)
+            : _consultaServicios.SugerirAsync(terminoNormalizado, cancellationToken);
     }
 
     public void Crear(Servicio servicio)
@@ -79,6 +93,11 @@ public class ServicioService : IServicioService
                 "El servicio solicitado no existe.");
         }
 
+        servicio.CodigoCatalogo = existente.CodigoCatalogo;
+        if (CatalogoServicios.Obtener(existente.CodigoCatalogo) is { } definicion &&
+            servicio.UnidadCantidad != definicion.UnidadCantidad)
+            throw new InvalidOperationException("La unidad de cobro de un servicio del catálogo no se puede cambiar.");
+
         servicio.CreadoPor = existente.CreadoPor;
         servicio.FechaCreacion = existente.FechaCreacion;
         servicio.ModificadoPor = UsuarioActual();
@@ -90,6 +109,9 @@ public class ServicioService : IServicioService
     public void Eliminar(int id)
     {
         ValidarExistencia(id);
+
+        if (_servicioRepository.GetById(id)!.CodigoCatalogo is not null)
+            throw new InvalidOperationException("No se puede eliminar un servicio del catálogo de Nueva Orden.");
 
         _servicioRepository.Delete(id);
         _cache?.InvalidarResumen();
