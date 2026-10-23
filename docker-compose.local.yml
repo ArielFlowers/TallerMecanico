@@ -1,0 +1,150 @@
+# ============================================
+# ENTORNO LOCAL / OFFLINE
+# ============================================
+# Stack completo sin depender de la PC anfitriona.
+# Usa MySQL y Mailpit locales, y compila la imagen
+# desde el codigo actual.
+#
+# Uso:
+#   docker compose -f docker-compose.local.yml up --build
+# ============================================
+
+x-app-common: &app-common
+
+  build:
+    context: .
+    dockerfile: Dockerfile
+
+  image: taller-mecanico:local
+
+  environment:
+    ASPNETCORE_ENVIRONMENT: Development
+    ASPNETCORE_URLS: http://+:8080
+
+    ConnectionStrings__MySqlConnection: "Server=mysql;Port=3306;Database=taller_mecanico;User ID=taller;Password=${MYSQL_PASSWORD:-taller_local};"
+
+    DataProtection__KeysPath: /app/shared-keys
+
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    Redis__ExpiracionDashboardSegundos: 60
+
+    Email__Smtp__Host: mailpit
+    Email__Smtp__Port: "1025"
+    Email__Smtp__Security: None
+    Email__Smtp__Username: ""
+    Email__Smtp__Password: ""
+    Email__Smtp__From: "AutoTaller <no-reply@autotaller.local>"
+
+    App__PublicBaseUrl: http://127.0.0.1:8088
+    App__PermitirHttpNoSeguro: "false"
+
+  volumes:
+    - taller-dpkeys:/app/shared-keys
+
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+  restart: unless-stopped
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: taller-mecanico-mysql-local
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_local}
+      MYSQL_DATABASE: taller_mecanico
+      MYSQL_USER: taller
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-taller_local}
+
+    ports:
+      - "127.0.0.1:3307:3306"
+
+    command: --log-bin-trust-function-creators=1
+
+    volumes:
+      - taller-mysql-data-local:/var/lib/mysql
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: taller-mecanico-redis-local
+
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+
+    ports:
+      - "127.0.0.1:6379:6379"
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+    restart: unless-stopped
+
+  app1:
+    <<: *app-common
+    ports:
+      - "127.0.0.1:5000:8080"
+
+  app2:
+    <<: *app-common
+    ports:
+      - "127.0.0.1:5001:8080"
+
+  app3:
+    <<: *app-common
+    ports:
+      - "127.0.0.1:5002:8080"
+
+  nginx:
+    image: nginx:1.27-alpine
+
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:8088:80"
+      - "127.0.0.1:443:443"
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+
+    depends_on:
+      - app1
+      - app2
+      - app3
+
+    restart: unless-stopped
+
+volumes:
+  taller-mysql-data-local:
+  taller-dpkeys:

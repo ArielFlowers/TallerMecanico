@@ -1,0 +1,26 @@
+# ============================================
+# BUILD LOCAL DE LA IMAGEN CANONICA
+# ============================================
+# Solo para el mantenedor que publica la imagen.
+# Requiere APP_IMAGE y el resto de variables en .env.
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml build
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml push
+# ============================================
+
+x-build: &build
+  build:
+    context: .
+    dockerfile: Dockerfile
+  pull_policy: build
+
+services:
+  app1:
+    <<: *build
+
+  app2:
+    <<: *build
+
+  app3:
+    <<: *build

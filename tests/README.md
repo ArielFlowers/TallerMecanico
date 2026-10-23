@@ -2,6 +2,8 @@
 
 Las pruebas nuevas de vehículos usan xUnit y MySQL 8. Las pruebas de persistencia crean una base temporal `autotaller_test_<guid>` y la eliminan al finalizar; no usan ni modifican la base del taller. El usuario configurado debe poder crear y eliminar bases en el servidor de pruebas.
 
+Para levantar un MySQL local de pruebas sin tocar la base compartida: `docker compose -f docker-compose.local.yml up -d mysql` y usar `TALLER_TEST_MYSQL=Server=127.0.0.1;Port=3307;Database=mysql;User ID=root;Password=root_local;`. No apuntar `TALLER_TEST_MYSQL` a la base remota del equipo.
+
 ## Vehículos
 
 ```powershell

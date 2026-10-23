@@ -7,10 +7,16 @@ public static class EnlaceVerificacion
     public static Uri ObtenerBase(IConfiguration configuration)
     {
         const string clave = "App:PublicBaseUrl";
+        const string claveHttpNoSeguro = "App:PermitirHttpNoSeguro";
+
+        bool permiteHttpNoSeguro =
+            bool.TryParse(configuration[claveHttpNoSeguro], out bool permitido) &&
+            permitido;
 
         if (!Uri.TryCreate(configuration[clave], UriKind.Absolute, out Uri? uri) ||
             (uri.Scheme != Uri.UriSchemeHttps &&
-             !(uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback)) ||
+             !(uri.Scheme == Uri.UriSchemeHttp &&
+               (uri.IsLoopback || permiteHttpNoSeguro))) ||
             !string.IsNullOrEmpty(uri.UserInfo) ||
             !string.IsNullOrEmpty(uri.Query) ||
             !string.IsNullOrEmpty(uri.Fragment))
