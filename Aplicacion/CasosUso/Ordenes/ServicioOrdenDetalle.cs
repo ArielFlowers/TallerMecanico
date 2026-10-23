@@ -8,4 +8,5 @@ public sealed record ServicioOrdenDetalle
     public decimal TiempoEstimadoHoras { get; init; }
     public int Cantidad { get; init; } = 1;
     public string? UnidadCantidad { get; init; }
+    public decimal PrecioUnitario => Costo / Math.Max(1, Cantidad);
 }

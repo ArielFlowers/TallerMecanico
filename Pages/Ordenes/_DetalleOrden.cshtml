@@ -56,11 +56,9 @@
             <dl class="ordenes-datos">
                 <div><dt>Servicio</dt><dd>@servicio.Nombre</dd></div>
                 <div><dt>Descripción</dt><dd>@servicio.Descripcion</dd></div>
-                @if (servicio.UnidadCantidad is not null)
-                {
-                    <div><dt>Cantidad</dt><dd>@servicio.Cantidad @servicio.UnidadCantidad@(servicio.Cantidad == 1 ? "" : servicio.UnidadCantidad == "llanta" ? "s" : servicio.UnidadCantidad == "retrovisor" ? "es" : "es")</dd></div>
-                }
-                <div><dt>Costo</dt><dd>@configuracion.Moneda @servicio.Costo.ToString("N2", culturaBoliviana)</dd></div>
+                <div><dt>Cantidad</dt><dd>@servicio.Cantidad</dd></div>
+                <div><dt>Precio unitario</dt><dd>@configuracion.Moneda @servicio.PrecioUnitario.ToString("N2", culturaBoliviana)</dd></div>
+                <div><dt>Subtotal</dt><dd>@configuracion.Moneda @servicio.Costo.ToString("N2", culturaBoliviana)</dd></div>
                 <div><dt>Tiempo estimado</dt><dd>@servicio.TiempoEstimadoHoras.ToString("0.##", culturaBoliviana) h</dd></div>
             </dl>
         }

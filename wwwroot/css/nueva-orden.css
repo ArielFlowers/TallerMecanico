@@ -94,6 +94,7 @@
 .nueva-orden-page .ordenes-servicio-seleccionado > div { display: grid; flex: 1; min-width: 0; gap: 3px; }
 .nueva-orden-page .ordenes-servicio-seleccionado strong { color: var(--text-primary); font-size: 12px; }
 .nueva-orden-page .ordenes-servicio-seleccionado span { color: var(--text-muted); font-size: 10px; }
+.nueva-orden-page .ordenes-servicio-seleccionado .ordenes-servicio-subtotal { color: var(--primary); font-variant-numeric: tabular-nums; }
 .nueva-orden-page .ordenes-servicio-seleccionado > .services-btn { min-height: 30px; padding: 5px 9px; font-size: 10px; }
 .nueva-orden-page .ordenes-cantidad-servicio { display: grid; gap: 4px; min-width: 90px; color: var(--text-muted); font-size: 10px; font-weight: 600; }
 .nueva-orden-page .ordenes-cantidad-servicio input { width: 78px; min-height: 34px; padding: 7px; color: var(--text-primary); background: var(--surface); border: 1px solid var(--border-light); border-radius: 7px; }

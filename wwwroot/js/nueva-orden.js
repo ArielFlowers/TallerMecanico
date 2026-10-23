@@ -13,10 +13,28 @@
 
     const obtenerServicios = () => [...contenedorServicios.querySelectorAll("[data-servicio-seleccionado]")];
 
+    function cantidadServicio(fila) {
+        const campo = fila.querySelector("[data-cantidad-servicio]");
+        if (!fila.dataset.unidadCantidad) return 1;
+        const cantidad = Number(campo.value);
+        return campo.value !== "" && Number.isInteger(cantidad) && cantidad >= 1 && cantidad <= 1000 ? cantidad : null;
+    }
+
     function actualizarServiciosSeleccionados() {
         const seleccionados = obtenerServicios();
-        const costo = seleccionados.reduce((suma, fila) => suma + Number(fila.dataset.costo || 0) * Number(fila.querySelector("[data-cantidad-servicio]")?.value || 1), 0);
+        const validas = seleccionados.every(fila => cantidadServicio(fila) !== null);
+        const costo = seleccionados.reduce((suma, fila) => suma + Number(fila.dataset.costo) * (cantidadServicio(fila) ?? 0), 0);
+        formulario.dataset.cantidadesServiciosValidas = String(validas);
         formulario.dataset.costoServicio = String(costo);
+        for (const fila of seleccionados) {
+            const cantidad = cantidadServicio(fila);
+            const campo = fila.querySelector("[data-cantidad-servicio]");
+            if (!fila.dataset.unidadCantidad) campo.value = "1";
+            campo.setAttribute("aria-invalid", String(cantidad === null));
+            fila.querySelector("[data-servicio-subtotal]").textContent = cantidad === null
+                ? "Cantidad inválida"
+                : `Subtotal: Bs. ${(Number(fila.dataset.costo) * cantidad).toFixed(2)}`;
+        }
         document.getElementById("orden-servicios-cantidad").textContent = String(seleccionados.length);
 
         const resumen = document.getElementById("orden-servicios-resumen-lista");
@@ -36,11 +54,11 @@
                 const item = document.createElement("li");
                 item.dataset.servicioResumen = fila.dataset.servicioId;
                 const nombre = document.createElement("span");
-                const cantidad = Number(fila.querySelector("[data-cantidad-servicio]")?.value || 1);
+                const cantidad = cantidadServicio(fila);
                 const unidad = fila.dataset.unidadCantidad;
-                nombre.textContent = `${fila.querySelector("[data-servicio-nombre]").textContent}${unidad ? ` · ${cantidad} ${plural(unidad, cantidad)}` : ""}`;
+                nombre.textContent = `${fila.querySelector("[data-servicio-nombre]").textContent}${unidad && cantidad !== null ? ` · ${cantidad} ${plural(unidad, cantidad)}` : ""}`;
                 const precio = document.createElement("strong");
-                precio.textContent = `Bs. ${(Number(fila.dataset.costo) * cantidad).toFixed(2)}`;
+                precio.textContent = cantidad === null ? "Cantidad inválida" : `Bs. ${(Number(fila.dataset.costo) * cantidad).toFixed(2)}`;
                 item.append(nombre, precio);
                 return item;
             }));
@@ -73,8 +91,10 @@
         cantidad.value = "1";
         cantidad.min = "1";
         cantidad.max = "1000";
+        cantidad.step = "1";
         cantidad.dataset.cantidadServicio = "";
         if (servicio.unidadCantidad) {
+            cantidad.required = true;
             const label = document.createElement("label");
             label.className = "ordenes-cantidad-servicio";
             label.append(document.createTextNode(`Cantidad de ${plural(servicio.unidadCantidad, 2)}`));
@@ -91,8 +111,17 @@
         nombre.textContent = servicio.nombre;
         const costoTiempo = document.createElement("span");
         costoTiempo.dataset.servicioPrecio = "";
-        costoTiempo.textContent = `Bs. ${Number(servicio.costo).toFixed(2)} por ${servicio.unidadCantidad || "trabajo"} · ${servicio.tiempoEstimadoHoras} h`;
+        costoTiempo.textContent = `Precio unitario: Bs. ${Number(servicio.costo).toFixed(2)} · ${servicio.tiempoEstimadoHoras} h`;
         datos.append(nombre, costoTiempo);
+        if (!servicio.unidadCantidad) {
+            const fija = document.createElement("span");
+            fija.textContent = "Cantidad fija: 1";
+            datos.append(fija);
+        }
+        const subtotal = document.createElement("strong");
+        subtotal.className = "ordenes-servicio-subtotal";
+        subtotal.dataset.servicioSubtotal = "";
+        datos.append(subtotal);
 
         const quitar = document.createElement("button");
         quitar.type = "button";
@@ -381,4 +410,5 @@
         boton.disabled = !valida || String(cantidad) === campo.dataset.cantidadOriginal;
     }
 
+    document.addEventListener("DOMContentLoaded", actualizarServiciosSeleccionados, { once: true });
 })();
