@@ -1,18 +1,29 @@
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Infraestructura.Cache;
 
 // H2: se usa cuando no hay REDIS_HOST configurado (por ejemplo,
-// dotnet run sin Docker o pruebas). Toda lectura es MISS y nada se guarda.
-public sealed class CacheDistribuidaDeshabilitada : ICacheDistribuidaPort
+// dotnet run sin Docker o pruebas). No simula una lectura a Redis.
+public sealed class CacheDistribuidaDeshabilitada : ICacheDistribuidaPort, ICacheResumenDashboardPort
 {
+    public LecturaResumenDashboard ObtenerResumen() => new(new(EstadoLecturaCache.Deshabilitado));
+
+    public EstadoPublicacionResumen PublicarResumen(
+        LecturaResumenDashboard lectura, string valor, TimeSpan expiracion) => EstadoPublicacionResumen.Deshabilitado;
+
+    public ResultadoEliminacionCache InvalidarResumen() => ResultadoEliminacionCache.Deshabilitado;
+
+    public TimeSpan? TiempoRestanteResumen() => null;
+
     public bool EstaDisponible => false;
 
-    public string? Obtener(string clave) => null;
+    public ResultadoLecturaCache Obtener(string clave) =>
+        new(EstadoLecturaCache.Deshabilitado);
 
     public bool Guardar(string clave, string valor, TimeSpan expiracion) => false;
 
-    public bool Eliminar(string clave) => false;
+    public ResultadoEliminacionCache Eliminar(string clave) => ResultadoEliminacionCache.Deshabilitado;
 
     public TimeSpan? TiempoRestante(string clave) => null;
 }

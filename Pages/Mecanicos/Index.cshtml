@@ -225,9 +225,11 @@
             <div class="mecanicos-form-group">
                 <label asp-for="MecanicoInput.Celular">Celular</label>
                 <input asp-for="MecanicoInput.Celular"
+                       type="tel"
                        class="mecanicos-input"
                        placeholder="Ej. 70712345"
                        inputmode="numeric"
+                       maxlength="8"
                        autocomplete="tel" />
                 <span asp-validation-for="MecanicoInput.Celular"
                       class="mecanicos-validation"></span>

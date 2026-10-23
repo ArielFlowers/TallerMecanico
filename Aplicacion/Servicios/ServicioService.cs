@@ -14,12 +14,12 @@ public class ServicioService : IServicioService
     private readonly IRepository<Servicio> _servicioRepository;
     private readonly IConsultaServiciosPort _consultaServicios;
     private readonly ICurrentUser? _currentUser;
-    private readonly ICacheDistribuidaPort? _cache;
+    private readonly ICacheResumenDashboardPort? _cache;
 
     public ServicioService(
         CreadorServicio creadorServicio,
         ICurrentUser? currentUser = null,
-        ICacheDistribuidaPort? cache = null)
+        ICacheResumenDashboardPort? cache = null)
     {
         _servicioRepository = creadorServicio.CrearRepositorio();
         _consultaServicios = (IConsultaServiciosPort)_servicioRepository;
@@ -64,7 +64,7 @@ public class ServicioService : IServicioService
         servicio.FechaCreacion = DateTime.Now;
 
         _servicioRepository.Add(servicio);
-        _cache?.Eliminar(ClavesCache.DashboardResumen);
+        _cache?.InvalidarResumen();
     }
 
     public void Actualizar(Servicio servicio)
@@ -92,7 +92,7 @@ public class ServicioService : IServicioService
         ValidarExistencia(id);
 
         _servicioRepository.Delete(id);
-        _cache?.Eliminar(ClavesCache.DashboardResumen);
+        _cache?.InvalidarResumen();
     }
 
     private void ValidarExistencia(int id)

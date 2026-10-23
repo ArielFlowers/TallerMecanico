@@ -8,8 +8,7 @@ public sealed class BorradorVehiculoSesion(
     IHttpContextAccessor httpContextAccessor,
     ICurrentUser currentUser) : IBorradorVehiculoPort
 {
-    private ISession Session => httpContextAccessor.HttpContext?.Session
-        ?? throw new InvalidOperationException("No hay una sesión disponible.");
+    private ISession Session => SesionDisponible.Obtener(httpContextAccessor.HttpContext);
 
     private static string Clave(Guid id) => $"Vehiculos:Borrador:{id:N}";
 

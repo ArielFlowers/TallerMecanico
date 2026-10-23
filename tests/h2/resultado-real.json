@@ -1,0 +1,100 @@
+{
+  "fechaUtc": "2026-10-23T01:19:39.151Z",
+  "clave": "autotaller:dashboard:resumen",
+  "replicas": [
+    {
+      "servicio": "app1",
+      "url": "http://127.0.0.1:32768",
+      "replica": "2c67c2934c3f",
+      "redis": "PONG",
+      "latenciaMs": 0.6382,
+      "clave": "autotaller:dashboard:resumen",
+      "ttlSegundos": null
+    },
+    {
+      "servicio": "app2",
+      "url": "http://127.0.0.1:32770",
+      "replica": "27076a22eb36",
+      "redis": "PONG",
+      "latenciaMs": 0.6705,
+      "clave": "autotaller:dashboard:resumen",
+      "ttlSegundos": null
+    },
+    {
+      "servicio": "app3",
+      "url": "http://127.0.0.1:32769",
+      "replica": "365cf2fbde4a",
+      "redis": "PONG",
+      "latenciaMs": 0.9494,
+      "clave": "autotaller:dashboard:resumen",
+      "ttlSegundos": null
+    }
+  ],
+  "ping": "PONG",
+  "clientesDeLasTresReplicasEnElMismoRedis": true,
+  "nginxUrl": "http://127.0.0.1:32771",
+  "replicasObservadasPorNginx": [
+    "2c67c2934c3f",
+    "27076a22eb36",
+    "365cf2fbde4a"
+  ],
+  "loginReal": "302 a /; no se siguió la redirección antes de medir",
+  "ttlInicial": -2,
+  "antes": {
+    "Mecanicos": 1,
+    "Vehiculos": 1,
+    "Servicios": 1
+  },
+  "despuesMiss": {
+    "Mecanicos": 2,
+    "Vehiculos": 2,
+    "Servicios": 2
+  },
+  "entrada": {
+    "Dashboard": {
+      "MecanicosDisponibles": 0,
+      "VehiculosRegistrados": 0,
+      "ServiciosRegistrados": 0
+    },
+    "Replica": "2c67c2934c3f",
+    "GeneradoEn": "2026-10-23T01:19:48.4682568+00:00"
+  },
+  "pttlDespuesMiss": 58160,
+  "despuesHit": {
+    "Mecanicos": 2,
+    "Vehiculos": 2,
+    "Servicios": 2
+  },
+  "pttlDespuesHit": 54992,
+  "consultasUsuariosDuranteHit": 1,
+  "logsCache": [
+    "      MISS -> MySQL -> Redis | clave autotaller:dashboard:resumen | réplica 2c67c2934c3f | expira en 60 s",
+    "      MISS -> MySQL -> Redis | clave autotaller:dashboard:resumen | réplica 2c67c2934c3f | expira en 60 s",
+    "      HIT -> Redis | clave autotaller:dashboard:resumen | réplica 27076a22eb36 | generado por 2c67c2934c3f"
+  ],
+  "resultado": "PASS: Redis real, 3 replicas, Nginx, login real, MISS A y HIT B; +3 COUNT en MISS, +0 en HIT.",
+  "horaBolivia": "2026-10-22 21:19:48 UTC-4 (MISS)",
+  "expiracionNaturalConfirmadaTtl": -2,
+  "sqlObservadoMedicion": [
+    {
+      "fechaUtc": "2026-10-23 01:19:48.465035",
+      "clienteIp": "172.18.0.4",
+      "consulta": "SELECT COUNT(*) FROM Mecanicos"
+    },
+    {
+      "fechaUtc": "2026-10-23 01:19:48.466430",
+      "clienteIp": "172.18.0.4",
+      "consulta": "SELECT COUNT(*) FROM Vehiculos"
+    },
+    {
+      "fechaUtc": "2026-10-23 01:19:48.467678",
+      "clienteIp": "172.18.0.4",
+      "consulta": "SELECT COUNT(*) FROM Servicios"
+    }
+  ],
+  "incidencias": [
+    "La red interna por sí sola no publicó HTTP: se añadió acceso-http exclusiva H2 y se recreó solo app1 de pruebas, sin recrear MySQL ni Redis.",
+    "El primer ensayo falló en el filtro de general_log porque argument es binario. Se corrigió solo el auxiliar y se repitió tras expiración natural; producción sin cambios.",
+    "El auxiliar mostró NU1900 al consultar vulnerabilidades NuGet, incluso fuera del sandbox. Se compiló y ejecutó; el build principal terminó sin advertencias ni errores."
+  ]
+}

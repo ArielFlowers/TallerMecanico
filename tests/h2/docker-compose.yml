@@ -1,0 +1,107 @@
+name: autotaller-h2-integracion
+
+x-app-common: &app-common
+  build:
+    context: ../..
+    dockerfile: Dockerfile
+  image: autotaller-h2-integracion:local
+  environment:
+    ASPNETCORE_ENVIRONMENT: Development
+    ASPNETCORE_URLS: http://+:8080
+    ConnectionStrings__MySqlConnection: "Server=mysql;Port=3306;Database=autotaller_h2_integracion;User ID=h2_app;Password=${H2_MYSQL_PASSWORD:?Define H2_MYSQL_PASSWORD solo para pruebas};"
+    DataProtection__KeysPath: /app/shared-keys
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    Redis__ExpiracionDashboardSegundos: "60"
+  volumes:
+    - h2-dpkeys:/app/shared-keys
+  networks:
+    - default
+    - acceso-http
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  restart: "no"
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: autotaller_h2_integracion
+      MYSQL_USER: h2_app
+      MYSQL_PASSWORD: ${H2_MYSQL_PASSWORD:?Define H2_MYSQL_PASSWORD solo para pruebas}
+      MYSQL_ROOT_PASSWORD: ${H2_MYSQL_ROOT_PASSWORD:?Define H2_MYSQL_ROOT_PASSWORD solo para pruebas}
+    command:
+      - --log-bin-trust-function-creators=1
+      - --general-log=ON
+      - --log-output=TABLE
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    restart: "no"
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: "no"
+
+  app1:
+    <<: *app-common
+    ports:
+      - target: 8080
+        published: "0"
+        host_ip: 127.0.0.1
+
+  app2:
+    <<: *app-common
+    profiles: [replicas]
+    ports:
+      - target: 8080
+        published: "0"
+        host_ip: 127.0.0.1
+
+  app3:
+    <<: *app-common
+    profiles: [replicas]
+    ports:
+      - target: 8080
+        published: "0"
+        host_ip: 127.0.0.1
+
+  nginx:
+    image: nginx:1.27-alpine
+    profiles: [replicas]
+    ports:
+      - target: 80
+        published: "0"
+        host_ip: 127.0.0.1
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - acceso-http
+    depends_on:
+      - app1
+      - app2
+      - app3
+    restart: "no"
+
+networks:
+  default:
+    internal: true
+  acceso-http:
+    driver: bridge
+
+volumes:
+  h2-dpkeys:
