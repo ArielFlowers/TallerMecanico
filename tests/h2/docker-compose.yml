@@ -27,7 +27,7 @@ x-app-common: &app-common
 
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:8.4
     environment:
       MYSQL_DATABASE: autotaller_h2_integracion
       MYSQL_USER: h2_app

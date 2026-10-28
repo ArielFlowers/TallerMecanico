@@ -435,3 +435,6 @@ FodyWeavers.xsd
 
 .env
 nginx/certs/*.pem
+
+# Respaldos y dumps de la base de datos (pueden contener datos personales)
+respaldos/

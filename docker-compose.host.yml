@@ -3,6 +3,8 @@
 # ============================================
 # Este compose se ejecuta SOLO en la PC que
 # aloja la base de datos y el correo del equipo.
+# Plan B historico: no iniciarlo si se usa Aiven.
+# MySQL 8.4 usa un volumen nuevo; restaurar antes el dump de la base anterior.
 #
 # Requisitos:
 # - Tailscale activo y con IP 100.x.x.x estable.
@@ -19,8 +21,8 @@ services:
 
   mysql:
     # Fijar por digest en produccion, por ejemplo:
-    # mysql:8.0@sha256:<digest>
-    image: ${MYSQL_IMAGE:-mysql:8.0}
+    # mysql:8.4@sha256:<digest>
+    image: ${MYSQL_IMAGE:-mysql:8.4}
 
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
@@ -41,7 +43,7 @@ services:
       - "${TAILSCALE_IP:?Configura TAILSCALE_IP en .env}:${MYSQL_TAILSCALE_PORT:-3306}:3306"
 
     volumes:
-      - taller-mysql-data:/var/lib/mysql
+      - taller-mysql-data-84:/var/lib/mysql
 
     healthcheck:
       test:
@@ -80,5 +82,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  taller-mysql-data:
+  taller-mysql-data-84:
   taller-mailpit-data:

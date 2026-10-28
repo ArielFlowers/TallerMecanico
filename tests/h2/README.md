@@ -1,5 +1,8 @@
 # H2: entorno aislado de integración
 
+El entorno actual usa MySQL 8.4, igual que Aiven y el entorno local. Los informes
+de iteraciones anteriores conservan las versiones y los resultados observados entonces.
+
 Esta configuración prepara pruebas reales de la implementación existente.
 No constituye evidencia de ejecución: PING, MISS, HIT y los conteos deben
 comprobarse después de obtener autorización para iniciar el entorno.

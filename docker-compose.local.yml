@@ -2,12 +2,16 @@
 # ENTORNO LOCAL / OFFLINE
 # ============================================
 # Stack completo sin depender de la PC anfitriona.
-# Usa MySQL y Mailpit locales, y compila la imagen
+# Usa MySQL 8.4 y Mailpit locales, y compila la imagen
 # desde el codigo actual.
+# El volumen 8.4 es nuevo: conservar y exportar la base anterior antes de migrar.
 #
 # Uso:
 #   docker compose -f docker-compose.local.yml up --build
 # ============================================
+
+# Separar el stack local conserva los contenedores del entorno anterior al migrar.
+name: tallermecanico-local-84
 
 x-app-common: &app-common
 
@@ -53,7 +57,7 @@ x-app-common: &app-common
 services:
 
   mysql:
-    image: mysql:8.0
+    image: mysql:8.4
     container_name: taller-mecanico-mysql-local
 
     environment:
@@ -68,7 +72,7 @@ services:
     command: --log-bin-trust-function-creators=1
 
     volumes:
-      - taller-mysql-data-local:/var/lib/mysql
+      - taller-mysql-data-local-84:/var/lib/mysql
 
     healthcheck:
       test:
@@ -146,5 +150,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  taller-mysql-data-local:
+  taller-mysql-data-local-84:
   taller-dpkeys:

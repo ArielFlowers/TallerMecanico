@@ -1,16 +1,19 @@
 # TallerMecanico
   Sistema de gestión para taller mecánico
 
-## Base de datos (MySQL 8)
-- **Entorno compartido (recomendado):** una sola base MySQL en la PC de un integrante, accesible por Tailscale. La PC anfitriona levanta `docker compose -f docker-compose.host.yml up -d` (MySQL + Mailpit). El resto del equipo configura `MYSQL_CONNECTION` y `APP_IMAGE` en `.env` y ejecuta `docker compose up -d`.
-- **Anfitrión actual:** nodo `taller-db`, IP `100.99.175.117`, URL HTTPS `https://taller-db.tail590083.ts.net`. MySQL en `100.99.175.117:3307`; Mailpit SMTP `100.99.175.117:1026` y UI `http://100.99.175.117:8026`.
-- **Stack del anfitrión:** `docker compose -f docker-compose.host.yml up -d` y luego `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`. El HTTPS se publica con `tailscale serve --bg 8088`; Nginx escucha en `127.0.0.1:8088`.
-- **Entorno local/offline:** `docker compose -f docker-compose.local.yml up --build` levanta MySQL, Mailpit, Redis, 3 réplicas y Nginx sin depender de Tailscale. MySQL queda en `127.0.0.1:3307` y Mailpit en `127.0.0.1:8025`.
-- Las tablas + trigger se autocrean al arrancar (`DatabaseInitializer`), protegidas por un lock de MySQL para que las réplicas no compitan. Ver [instalación de autenticación](docs/migraciones/README.md). DDL de referencia en `Data/Scripts/MySql/`.
-- Si el arranque falla con "SUPER privilege and binary logging": los compose ya traen `--log-bin-trust-function-creators=1`. En MySQL local propio, ejecutar como root: `SET GLOBAL log_bin_trust_function_creators = 1;`
-- El correo de verificación acepta Mailpit (`SMTP_SECURITY=None`, sin credenciales) o Gmail (`SslOnConnect`, usuario y contraseña de aplicación). Ver [plan de entorno remoto](docs/PLAN_ENTORNO_REMOTO.md).
-- No commitear `.env` ni claves reales. Para desarrollo sin Docker usar UserSecrets.
-- Reset de la base local: `docker compose -f docker-compose.local.yml down -v` (borra el volumen).
+## Base de datos compartida en la nube (Aiven MySQL 8.4)
+
+- **Entorno compartido:** configurar Aiven for MySQL Free y `MYSQL_CONNECTION` en `.env`. Cada integrante ejecuta Redis, tres réplicas y Nginx en su PC; el acceso a la base no depende de Tailscale ni de la PC anfitriona.
+- **Inicio:** `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`. Abrir http://127.0.0.1:8088.
+- **Configuración, migración y scripts:** [docs/BD_NUBE.md](docs/BD_NUBE.md). Incluye dump, respaldo, seed y comprobación del trigger en Aiven real.
+- **Entorno local/offline:** `docker compose -f docker-compose.local.yml up -d --build` levanta MySQL 8.4, Mailpit, Redis, tres réplicas y Nginx. MySQL escucha en `127.0.0.1:3307` y Mailpit en `http://127.0.0.1:8025`.
+- **Datos anteriores:** los Compose persistentes usan volúmenes nuevos para 8.4. Exportar y restaurar los datos; conservar los volúmenes anteriores. No usar `down -v`.
+- **Esquema:** las 12 tablas y el trigger se crean al arrancar, con un lock entre réplicas. En Aiven se debe comprobar el trigger con `avnadmin`; los MySQL locales incluyen `--log-bin-trust-function-creators=1`.
+- **Correo:** usar Gmail (`SMTP_SECURITY=SslOnConnect`) para el entorno compartido. El entorno offline configura Mailpit automáticamente.
+- **Pruebas:** los entornos de integración también usan MySQL 8.4; `TALLER_TEST_MYSQL` debe apuntar exclusivamente a un servidor local aislado.
+- **Validación de la migración:** [resultados, conservación de datos y límites de la regresión](docs/VALIDACION_MYSQL84.md).
+- **Plan B:** `docker-compose.host.yml` conserva el antiguo esquema de anfitrión, actualizado a 8.4. No iniciarlo con Aiven. El [plan anterior](docs/PLAN_ENTORNO_REMOTO.md) y el [resumen de esa configuración](docs/RESUMEN_SESION_2026-10-23.md) se conservan como antecedentes.
+- No commitear `.env`, `bd-nube.env`, `respaldos/` ni `nginx/certs/`. Para desarrollo sin Docker usar User Secrets.
 
 ## Inicio (rama feature/home-inicio)
 - Hero con `wwwroot/images/hero-taller.jpg` (copia de `docs/Gemini_Generated_Image_qq3q1yqq3q1yqq3q.jfif`; `watermarked_img_11084677959285558999.jpg` no existe en el repo).
