@@ -5,6 +5,11 @@ Cada integrante ejecuta Redis, tres réplicas de la aplicación y Nginx en su PC
 La base compartida funciona sin Tailscale y sin depender de una PC anfitriona.
 El entorno offline y los entornos de pruebas también usan la serie MySQL 8.4.
 
+Para conectar otra PC al servicio que ya usa el equipo, seguir
+[COMPARTIR_EQUIPO.md](COMPARTIR_EQUIPO.md). No repetir la creación del servicio
+ni la importación de datos; las secciones de migración siguientes son para el
+responsable que prepara o administra la base.
+
 La configuración del repositorio no acredita que la migración ya se haya ejecutado.
 Antes de usar la nube hay que crear el servicio, comprobar el trigger e importar
 los datos siguiendo los pasos de esta guía.
@@ -93,8 +98,12 @@ diagnóstico; el trabajo diario puede hacerse con el lanzador.
    aplicación de forma privada. El Mailpit del antiguo anfitrión ya no es necesario.
 
 `MYSQL_PASSWORD` y `MYSQL_ROOT_PASSWORD` son claves del MySQL **local**, distintas
-de las de Aiven. `MYSQL_IMAGE=mysql:8.4` solo se utiliza en el Compose del antiguo
-anfitrión. No conservar un digest de una imagen 8.0 al cambiar esta variable.
+de las de Aiven. La plantilla actual contiene las variables de los modos local
+y nube; las del antiguo anfitrión y Tailscale quedan fuera de esa plantilla.
+El Compose local fija MySQL 8.4, base `taller_mecanico`, usuario `taller`, puerto
+MySQL `3307` y puertos Mailpit `1025`/`8025`. Cambiar sus antiguas variables de
+puerto en `.env` no modifica esos valores. Conservar las claves locales si el
+volumen ya se había inicializado.
 
 ## Comprobar Aiven antes de importar datos
 

@@ -45,6 +45,15 @@ No subir el archivo .env al repositorio.
 
 ## 5. Generar certificados HTTPS
 
+En Windows, instalar [mkcert](https://github.com/FiloSottile/mkcert#installation)
+y ejecutar desde PowerShell en la raíz del repositorio:
+
+```powershell
+New-Item -ItemType Directory -Force nginx/certs | Out-Null
+mkcert -install
+mkcert -cert-file nginx/certs/localhost.pem -key-file nginx/certs/localhost-key.pem 127.0.0.1 localhost ::1
+```
+
 En macOS, instalar mkcert:
 
     brew install mkcert

@@ -45,6 +45,7 @@ operaciones habituales.
 
 ## Base de datos compartida en la nube (Aiven MySQL 8.4)
 
+- **Compartir con el equipo:** [guía para otra PC](docs/COMPARTIR_EQUIPO.md), con requisitos, configuración de `.env`, certificados y prueba entre compañeros.
 - **Entorno compartido:** configurar Aiven for MySQL Free y `MYSQL_CONNECTION` en `.env`. Cada integrante ejecuta Redis, tres réplicas y Nginx en su PC; el acceso a la base no depende de Tailscale ni de la PC anfitriona.
 - **Inicio:** `dotnet msbuild -t:NubeUp`. Abrir http://127.0.0.1:8088.
 - **Configuración, migración y scripts:** [docs/BD_NUBE.md](docs/BD_NUBE.md). Incluye dump, respaldo, seed y comprobación del trigger en Aiven real.
