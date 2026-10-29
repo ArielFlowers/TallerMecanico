@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 $raiz = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $respaldos = Join-Path $raiz 'respaldos'
 New-Item -ItemType Directory -Force $respaldos | Out-Null
-$nombre = "dump_local_$(Get-Date -Format 'yyyyMMdd_HHmm').sql"
+$nombre = "dump_local_$(Get-Date -Format 'yyyyMMdd_HHmmss_fff').sql"
 
 # --skip-triggers: el trigger lo vuelve a crear la app al arrancar (evita errores de DEFINER)
 docker exec $Contenedor sh -c "MYSQL_PWD=`$MYSQL_ROOT_PASSWORD mysqldump -uroot --single-transaction --skip-triggers --no-tablespaces --set-gtid-purged=OFF --default-character-set=utf8mb4 --result-file=/tmp/$nombre $BaseDatos"

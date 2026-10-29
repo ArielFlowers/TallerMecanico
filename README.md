@@ -1,12 +1,54 @@
 # TallerMecanico
   Sistema de gestión para taller mecánico
 
+## Comandos diarios con .NET en Windows
+
+Desde PowerShell, en la raíz del repositorio:
+
+```powershell
+dotnet msbuild -t:LocalUp
+dotnet msbuild -t:LocalSeed
+```
+
+Abrir http://127.0.0.1:8088. Para trabajar con la base compartida, usar
+`dotnet msbuild -t:NubeUp`. El lanzador detiene el otro modo automáticamente y espera
+a que las tres réplicas y la web estén listas. Conserva los contenedores y los
+volúmenes al apagar; el MySQL original anterior a la migración queda fuera de
+los comandos de nube.
+
+| Acción | Base local | Base compartida de Aiven |
+|---|---|---|
+| Levantar y construir | `dotnet msbuild -t:LocalUp` | `dotnet msbuild -t:NubeUp` |
+| Apagar | `dotnet msbuild -t:LocalDown` | `dotnet msbuild -t:NubeDown` |
+| Ver estado | `dotnet msbuild -t:LocalStatus` | `dotnet msbuild -t:NubeStatus` |
+| Ver logs de app1 | `dotnet msbuild -t:LocalLogs` | `dotnet msbuild -t:NubeLogs` |
+| Cargar datos de ejemplo | `dotnet msbuild -t:LocalSeed` | El seed solo se permite en local. |
+
+`LocalUp` y `NubeUp` reconstruyen la imagen con la caché de Docker. `LocalBuild`
+y `NubeBuild` permiten reconstruirla sin cambiar el modo activo. Los logs se
+cierran con Ctrl+C. Ejecutar `dotnet msbuild -t:Ayuda` para ver los comandos.
+
+Estos atajos están definidos en `Directory.Build.targets` y usan MSBuild, incluido
+en el **SDK de .NET 10**, que debe estar instalado en la PC. Por debajo reutilizan
+el script PowerShell de Windows que maneja Docker. No requieren paquetes
+adicionales de NuGet ni npm, pnpm o Node.js. Requieren Docker Desktop en modo Linux y
+los certificados locales de [H1 HTTPS](docs/H1-HTTPS.md). El modo Aiven requiere
+`.env` con su conexión privada. El seed debe existir en
+`scripts/bd/seed/datos_demo.sql`: su revisión antes de publicarlo sigue pendiente.
+Las cuentas se crean interactivamente, con contraseñas introducidas por el humano;
+el seed no las incluye. La primera construcción descarga imágenes y dependencias.
+Para esa consola interactiva se conservan `.\taller local usuarios` y
+`.\taller nube usuarios`. El lanzador `.\taller` también sigue disponible como
+alternativa a los atajos de MSBuild. Los targets personalizados solo se ejecutan
+al solicitarlos; `dotnet build`, `dotnet publish` y `dotnet test` conservan sus
+operaciones habituales.
+
 ## Base de datos compartida en la nube (Aiven MySQL 8.4)
 
 - **Entorno compartido:** configurar Aiven for MySQL Free y `MYSQL_CONNECTION` en `.env`. Cada integrante ejecuta Redis, tres réplicas y Nginx en su PC; el acceso a la base no depende de Tailscale ni de la PC anfitriona.
-- **Inicio:** `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`. Abrir http://127.0.0.1:8088.
+- **Inicio:** `dotnet msbuild -t:NubeUp`. Abrir http://127.0.0.1:8088.
 - **Configuración, migración y scripts:** [docs/BD_NUBE.md](docs/BD_NUBE.md). Incluye dump, respaldo, seed y comprobación del trigger en Aiven real.
-- **Entorno local/offline:** `docker compose -f docker-compose.local.yml up -d --build` levanta MySQL 8.4, Mailpit, Redis, tres réplicas y Nginx. MySQL escucha en `127.0.0.1:3307` y Mailpit en `http://127.0.0.1:8025`.
+- **Entorno local/offline:** `dotnet msbuild -t:LocalUp` levanta MySQL 8.4, Mailpit, Redis, tres réplicas y Nginx. MySQL escucha en `127.0.0.1:3307` y Mailpit en `http://127.0.0.1:8025`.
 - **Datos anteriores:** los Compose persistentes usan volúmenes nuevos para 8.4. Exportar y restaurar los datos; conservar los volúmenes anteriores. No usar `down -v`.
 - **Esquema:** las 12 tablas y el trigger se crean al arrancar, con un lock entre réplicas. En Aiven se debe comprobar el trigger con `avnadmin`; los MySQL locales incluyen `--log-bin-trust-function-creators=1`.
 - **Correo:** usar Gmail (`SMTP_SECURITY=SslOnConnect`) para el entorno compartido. El entorno offline configura Mailpit automáticamente.

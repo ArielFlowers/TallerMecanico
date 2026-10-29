@@ -9,6 +9,60 @@ La configuración del repositorio no acredita que la migración ya se haya ejecu
 Antes de usar la nube hay que crear el servicio, comprobar el trigger e importar
 los datos siguiendo los pasos de esta guía.
 
+## Comandos cortos con .NET para el uso diario en Windows
+
+El repositorio incluye tareas en `Directory.Build.targets` que se ejecutan con
+MSBuild, incluido en el SDK de .NET 10. Ese SDK debe estar instalado en la PC.
+Las tareas reutilizan `scripts/entorno.ps1` y el PowerShell incluido en Windows
+para manejar Docker. La aplicación mantiene sus dependencias NuGet existentes.
+No se instala un gestor de paquetes de JavaScript ni se añaden paquetes NuGet.
+
+```powershell
+# Base local y datos de ejemplo:
+dotnet msbuild -t:LocalUp
+dotnet msbuild -t:LocalSeed
+
+# Cambiar a la base compartida:
+dotnet msbuild -t:NubeUp
+```
+
+Los comandos `LocalUp` y `NubeUp` construyen la imagen de la aplicación con la caché de Docker,
+detienen los servicios del otro modo y esperan a que las tres réplicas y Nginx
+respondan. Validan configuración y certificados antes del cambio; un fallo durante
+la construcción no apaga el modo activo. Docker Desktop debe estar iniciado en
+modo Linux. La primera construcción necesita Internet para las descargas.
+
+Para apagar, consultar estado o seguir logs de app1:
+
+```powershell
+dotnet msbuild -t:LocalDown
+dotnet msbuild -t:LocalStatus
+dotnet msbuild -t:LocalLogs
+```
+
+Reemplazar el prefijo `Local` por `Nube` para esas mismas operaciones sobre Aiven.
+Los comandos `Down` detienen los contenedores del modo elegido, conservándolos junto con sus
+volúmenes. El MySQL original 8.0 no es un servicio del modo nube y no se toca.
+Los datos locales permanecen en el equipo y los de Aiven en el servicio compartido.
+Los logs se cierran con Ctrl+C; `dotnet msbuild -t:Ayuda` muestra la ayuda.
+`LocalBuild` y `NubeBuild` reconstruyen sin cambiar el modo activo.
+
+`LocalSeed` se ejecuta después de `LocalUp` y usa el importador
+existente. El archivo `scripts/bd/seed/datos_demo.sql` debe haberse recibido y
+revisado; el lanzador no lo genera ni lo publica. No incluye cuentas ni sincroniza
+con Aiven. Para crear cuentas, una persona ejecuta `.\taller local usuarios`
+o `.\taller nube usuarios` y responde a la consola en su propia terminal. El
+comando crea un administrador y un recepcionista con nombres nuevos.
+
+El lanzador anterior `.\taller local up` / `.\taller nube up` se conserva como
+alternativa. Las tareas de MSBuild son atajos explícitos: no se ejecutan durante
+las operaciones habituales de compilación, publicación o pruebas. Las cuentas
+siguen creándose directamente en una terminal interactiva, mediante `.\taller`,
+para que el humano escriba sus contraseñas.
+
+Los comandos largos que siguen se conservan para migración, administración y
+diagnóstico; el trabajo diario puede hacerse con el lanzador.
+
 ## Crear el servicio y configurar la conexión
 
 1. Crear una cuenta en [Aiven](https://console.aiven.io/) y un servicio **MySQL Free**
@@ -100,6 +154,8 @@ total y el límite del servidor.
 
 Los scripts usan archivos y `docker cp` para conservar UTF-8. No exportar SQL con
 `>` ni `Out-File` en PowerShell 5.1.
+Los nombres de los dumps incluyen segundos y milisegundos para conservar cada
+copia aunque se ejecuten varios respaldos dentro del mismo minuto.
 
 ## Arrancar la aplicación y usarla cada día
 
