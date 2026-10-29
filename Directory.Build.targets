@@ -19,6 +19,8 @@
 
   <Target Name="LocalUp" DependsOnTargets="_TallerComprobarWindows">
     <Exec Command="$(_TallerComando) local up" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+    <Message Importance="high" Text="Entorno local listo. Abrir: http://127.0.0.1:8088" />
+    <Message Importance="high" Text="Correo local (Mailpit): http://127.0.0.1:8025" />
   </Target>
   <Target Name="LocalDown" DependsOnTargets="_TallerComprobarWindows">
     <Exec Command="$(_TallerComando) local down" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
@@ -38,6 +40,7 @@
 
   <Target Name="NubeUp" DependsOnTargets="_TallerComprobarWindows">
     <Exec Command="$(_TallerComando) nube up" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+    <Message Importance="high" Text="Entorno nube listo. Abrir: http://127.0.0.1:8088" />
   </Target>
   <Target Name="NubeDown" DependsOnTargets="_TallerComprobarWindows">
     <Exec Command="$(_TallerComando) nube down" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
