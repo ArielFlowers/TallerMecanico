@@ -6,7 +6,7 @@
 - Una base de datos previamente creada. El nombre de referencia del proyecto es `taller_mecanico`.
 - `ConnectionStrings:MySqlConnection`, suministrada mediante User Secrets o variables de entorno.
 - Permisos para consultar el esquema y crear tablas, agregar columnas e índices. El arranque completo también conserva la creación de estructuras y triggers de los otros módulos.
-- Para probar el registro y el correo: `App:PublicBaseUrl` y `Email:Smtp:Host`, `Port`, `Username`, `Password` y `From`. El adaptador actual exige Gmail en el puerto 465; usar HTTPS para la aplicación local por la configuración de sus cookies.
+- Para probar el registro y el correo: `App:PublicBaseUrl` y `Email:Smtp:Host`, `Port`, `Security`, `Username`, `Password` y `From`. El adaptador acepta Mailpit (por ejemplo `Security=None`, puerto 1025 y sin credenciales) o Gmail (`Security=SslOnConnect`, puerto 465, usuario y contraseña de aplicación). Usar HTTPS para la aplicación local por la configuración de sus cookies; `App:PermitirHttpNoSeguro=true` permite HTTP no loopback solo como excepción explícita en Development.
 
 El nombre efectivo de la base siempre es el indicado en la cadena de conexión. El inicializador consulta `DATABASE()` y no contiene instrucciones `CREATE DATABASE` ni `USE` con un nombre fijo. Una instalación existente llamada `tallermecanico` puede conservar ese nombre si su conexión lo indica; no debe renombrarse por esta actualización.
 
@@ -61,7 +61,7 @@ En cuentas antiguas, una columna `Email` nueva admite `NULL`; una columna `Email
 
 Si hay correos no nulos duplicados y falta el índice único, el inicializador se detiene con un mensaje explícito. No elimina, combina ni corrige cuentas. La decisión sobre esos datos requiere revisión manual.
 
-Las comprobaciones cubren el esquema básico y las versiones definidas por los scripts 001 y 002. No corrigen automáticamente tipos de columna, índices incompatibles ni tablas modificadas manualmente fuera de esas versiones. Ejecutar la actualización con una sola instancia: las comprobaciones y las instrucciones DDL no coordinan inicializadores concurrentes. Una interrupción puede dejar algunos cambios de esquema completados; el siguiente arranque vuelve a comprobar qué falta.
+Las comprobaciones cubren el esquema básico y las versiones definidas por los scripts 001 y 002. No corrigen automáticamente tipos de columna, índices incompatibles ni tablas modificadas manualmente fuera de esas versiones. El inicializador adquiere un lock de MySQL (`GET_LOCK`) para que varias réplicas no ejecuten DDL a la vez; aun así, se recomienda arrancar una sola instancia en la primera actualización de una base existente. Una interrupción puede dejar algunos cambios de esquema completados; el siguiente arranque vuelve a comprobar qué falta.
 
 ## Scripts históricos
 

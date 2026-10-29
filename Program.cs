@@ -507,13 +507,54 @@ if (args.Contains(
 // =====================================================
 // INICIALIZACION NORMAL DE BASE DE DATOS
 // =====================================================
-using (IServiceScope scope =
-       app.Services.CreateScope())
+int intentosInicio = 10;
+if (int.TryParse(
+        app.Configuration["Database:IntentosInicio"],
+        out int intentosConfigurados) &&
+    intentosConfigurados > 0)
 {
-    DatabaseInitializer databaseInitializer =
-        scope.ServiceProvider
-            .GetRequiredService<DatabaseInitializer>();
-    databaseInitializer.Initialize();
+    intentosInicio = intentosConfigurados;
+}
+
+int esperaEntreIntentosSegundos = 5;
+if (int.TryParse(
+        app.Configuration["Database:EsperaEntreIntentosSegundos"],
+        out int esperaConfigurada) &&
+    esperaConfigurada >= 0)
+{
+    esperaEntreIntentosSegundos = esperaConfigurada;
+}
+
+for (int intento = 1; ; intento++)
+{
+    try
+    {
+        using IServiceScope scope =
+            app.Services.CreateScope();
+        DatabaseInitializer databaseInitializer =
+            scope.ServiceProvider
+                .GetRequiredService<DatabaseInitializer>();
+        databaseInitializer.Initialize();
+        break;
+    }
+    catch (Exception ex) when (
+        intento < intentosInicio &&
+        ex is System.Data.Common.DbException or TimeoutException)
+    {
+        app.Logger.LogWarning(
+            "Base de datos no disponible (intento {Intento}/{Intentos}). " +
+            "Se reintentara en {EsperaSegundos} segundos.",
+            intento,
+            intentosInicio,
+            esperaEntreIntentosSegundos);
+
+        if (esperaEntreIntentosSegundos > 0)
+        {
+            Thread.Sleep(
+                TimeSpan.FromSeconds(
+                    esperaEntreIntentosSegundos));
+        }
+    }
 }
 
 // Debe ejecutarse antes de HSTS, redirecciones y autenticación,

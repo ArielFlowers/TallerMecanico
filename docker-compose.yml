@@ -7,17 +7,17 @@
 
 x-app-common: &app-common
 
-  build:
-    context: .
-    dockerfile: Dockerfile
+  # Imagen canonica publicada en el registry y fijada por digest.
+  image: ${APP_IMAGE:?Configura APP_IMAGE con la imagen canonica y su digest}
 
-  image: taller-mecanico:h1
+  pull_policy: always
 
   environment:
     ASPNETCORE_ENVIRONMENT: Development
     ASPNETCORE_URLS: http://+:8080
 
-    ConnectionStrings__MySqlConnection: "Server=mysql;Port=3306;Database=taller_mecanico;User ID=taller;Password=${MYSQL_PASSWORD:?Configura MYSQL_PASSWORD en .env};"
+    # Base MySQL unica compartida por todo el equipo.
+    ConnectionStrings__MySqlConnection: ${MYSQL_CONNECTION:?Configura MYSQL_CONNECTION en .env}
 
     DataProtection__KeysPath: /app/shared-keys
 
@@ -29,19 +29,19 @@ x-app-common: &app-common
     # Correo de verificacion para las 3 replicas
     Email__Smtp__Host: ${SMTP_HOST:-smtp.gmail.com}
     Email__Smtp__Port: "${SMTP_PORT:-465}"
+    Email__Smtp__Security: ${SMTP_SECURITY:-SslOnConnect}
     Email__Smtp__Username: ${SMTP_USERNAME:-}
     Email__Smtp__Password: ${SMTP_PASSWORD:-}
     Email__Smtp__From: ${SMTP_FROM:-}
 
-        # URL utilizada para generar enlaces de verificacion
+    # URL utilizada para generar enlaces de verificacion
     App__PublicBaseUrl: ${APP_PUBLIC_BASE_URL:?Configura APP_PUBLIC_BASE_URL en .env}
+    App__PermitirHttpNoSeguro: ${APP_PERMITIR_HTTP_NO_SEGURO:-false}
 
   volumes:
     - taller-dpkeys:/app/shared-keys
 
   depends_on:
-    mysql:
-      condition: service_healthy
     redis:
       condition: service_healthy
 
@@ -52,37 +52,6 @@ x-app-common: &app-common
 # ============================================
 
 services:
-
-  # ------------------------------------------
-  # MYSQL
-  # ------------------------------------------
-  mysql:
-    image: mysql:8.0
-    container_name: taller-mecanico-mysql
-
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD en .env}
-      MYSQL_DATABASE: taller_mecanico
-      MYSQL_USER: taller
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Configura MYSQL_PASSWORD en .env}
-
-    ports:
-      - "127.0.0.1:3307:3306"
-
-    command: --log-bin-trust-function-creators=1
-
-    volumes:
-      - taller-mysql-data:/var/lib/mysql
-
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
-      interval: 10s
-      timeout: 5s
-      retries: 15
-
-    restart: unless-stopped
 
   # ------------------------------------------
   # REDIS - CACHE DISTRIBUIDA (H2)
@@ -145,13 +114,13 @@ services:
 
     ports:
       # HTTP principal
-      - "127.0.0.1:80:80"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:80:80"
 
       # HTTP alternativo para pruebas
-      - "127.0.0.1:8088:80"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:8088:80"
 
       # HTTPS
-      - "127.0.0.1:443:443"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:443:443"
 
     volumes:
       # Configuracion de Nginx
@@ -172,5 +141,4 @@ services:
 # ============================================
 
 volumes:
-  taller-mysql-data:
   taller-dpkeys:

@@ -1,0 +1,57 @@
+<Project>
+  <!-- Atajos explicitos: no se ejecutan durante Build, Restore, Publish o Test. -->
+  <PropertyGroup>
+    <_TallerRaiz>$(MSBuildThisFileDirectory)</_TallerRaiz>
+    <_TallerComando>powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File &quot;$(_TallerRaiz)scripts\entorno.ps1&quot;</_TallerComando>
+  </PropertyGroup>
+
+  <Target Name="_TallerComprobarWindows">
+    <Error Condition="'$(OS)' != 'Windows_NT'" Text="Estos atajos usan PowerShell de Windows. Ejecutalos desde Windows con .NET SDK 10 y Docker Desktop." />
+  </Target>
+
+  <Target Name="Ayuda">
+    <Message Importance="high" Text="Uso desde la raiz: dotnet msbuild -t:COMANDO" />
+    <Message Importance="high" Text="LocalUp / LocalDown / LocalSeed / LocalStatus / LocalLogs / LocalBuild" />
+    <Message Importance="high" Text="NubeUp / NubeDown / NubeStatus / NubeLogs / NubeBuild" />
+    <Message Importance="high" Text="Up cambia de modo automaticamente. Seed solo se permite en local. Los datos se conservan al apagar." />
+    <Message Importance="high" Text="Aplicacion: http://127.0.0.1:8088 | Correo local: http://127.0.0.1:8025" />
+  </Target>
+
+  <Target Name="LocalUp" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) local up" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="LocalDown" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) local down" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="LocalSeed" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) local seed" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="LocalStatus" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) local status" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="LocalLogs" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) local logs" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="LocalBuild" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) local build" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+
+  <Target Name="NubeUp" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) nube up" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="NubeDown" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) nube down" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="NubeStatus" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) nube status" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="NubeLogs" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) nube logs" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="NubeBuild" DependsOnTargets="_TallerComprobarWindows">
+    <Exec Command="$(_TallerComando) nube build" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Target Name="NubeSeed">
+    <Error Text="El seed solo se carga en local. Usa dotnet msbuild -t:LocalSeed." />
+  </Target>
+</Project>

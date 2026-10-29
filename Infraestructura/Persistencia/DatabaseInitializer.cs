@@ -1,3 +1,4 @@
+using System.Data;
 using System.Data.Common;
 using TallerMecanico.Infraestructura.Persistencia;
 
@@ -23,36 +24,97 @@ public class DatabaseInitializer
 
         connection.Open();
 
-        CreateMecanicosTable(connection);
-        EnsureMecanicosSchema(connection);
-        EnsureAuditoriaModificacion(connection, "Mecanicos");
+        string nombreLock = ObtenerNombreLock(connection);
+        AdquirirLock(connection, nombreLock);
 
-        CreateServiciosTable(connection);
-        EnsureAuditoriaModificacion(connection, "Servicios");
-        CreateHistorialCostoServiciosTable(connection);
-        EnsureHistorialCostoServicioTrigger(connection);
+        try
+        {
+            CreateMecanicosTable(connection);
+            EnsureMecanicosSchema(connection);
+            EnsureAuditoriaModificacion(connection, "Mecanicos");
 
-        CreateClientesTable(connection);
-        EnsureAuditoriaModificacion(connection, "Clientes");
+            CreateServiciosTable(connection);
+            EnsureAuditoriaModificacion(connection, "Servicios");
+            CreateHistorialCostoServiciosTable(connection);
+            EnsureHistorialCostoServicioTrigger(connection);
 
-        CreateVehiculosTable(connection);
-        EnsureAuditoriaModificacion(connection, "Vehiculos");
-        EnsureVehiculosClienteSchema(connection);
-        EnsureVehiculosPlacaSchema(connection);
+            CreateClientesTable(connection);
+            EnsureAuditoriaModificacion(connection, "Clientes");
 
-        CreateProductosTable(connection);
-        EnsureAuditoriaModificacion(connection, "Productos");
-        ExecuteCommand(connection, OrdenSchema.CrearTablas);
-        EnsureOrdenesServicioSchema(connection);
-        EnsureServicioUnidadCantidadSchema(connection);
-        EnsureServicioCodigoCatalogoSchema(connection);
-        CreateUsuariosTable(connection);
-        EnsureUsuariosEmailSchema(connection);
-        CreateSolicitudesRegistroTable(connection);
-        EnsureSolicitudesRegistroReenvioSchema(connection);
-        EnsureSolicitudesRegistroRolSchema(connection);
-        CreateAuditoriaTable(connection);
-        EnsureAuditoriaDetalleSchema(connection);
+            CreateVehiculosTable(connection);
+            EnsureAuditoriaModificacion(connection, "Vehiculos");
+            EnsureVehiculosClienteSchema(connection);
+            EnsureVehiculosPlacaSchema(connection);
+
+            CreateProductosTable(connection);
+            EnsureAuditoriaModificacion(connection, "Productos");
+            ExecuteCommand(connection, OrdenSchema.CrearTablas);
+            EnsureOrdenesServicioSchema(connection);
+            EnsureServicioUnidadCantidadSchema(connection);
+            EnsureServicioCodigoCatalogoSchema(connection);
+            CreateUsuariosTable(connection);
+            EnsureUsuariosEmailSchema(connection);
+            CreateSolicitudesRegistroTable(connection);
+            EnsureSolicitudesRegistroReenvioSchema(connection);
+            EnsureSolicitudesRegistroRolSchema(connection);
+            CreateAuditoriaTable(connection);
+            EnsureAuditoriaDetalleSchema(connection);
+        }
+        finally
+        {
+            LiberarLock(connection, nombreLock);
+        }
+    }
+
+    private static string ObtenerNombreLock(DbConnection connection)
+    {
+        const string query = """
+            SELECT CONCAT(
+                'autotaller_schema:',
+                LEFT(SHA2(DATABASE(), 256), 32));
+            """;
+
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = query;
+
+        return Convert.ToString(command.ExecuteScalar())
+            ?? throw new InvalidOperationException(
+                "No se pudo determinar el nombre de la base de datos.");
+    }
+
+    private static void AdquirirLock(DbConnection connection, string nombreLock)
+    {
+        using DbCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT GET_LOCK(@Nombre, 30);";
+        AddParameter(command, "@Nombre", nombreLock);
+
+        long? resultado = Convert.ToInt64(command.ExecuteScalar());
+
+        if (resultado != 1)
+        {
+            throw new TimeoutException(
+                "No se pudo adquirir el lock de inicializacion del esquema.");
+        }
+    }
+
+    private static void LiberarLock(DbConnection connection, string nombreLock)
+    {
+        if (connection.State != ConnectionState.Open)
+        {
+            return;
+        }
+
+        try
+        {
+            using DbCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT RELEASE_LOCK(@Nombre);";
+            AddParameter(command, "@Nombre", nombreLock);
+            command.ExecuteScalar();
+        }
+        catch (DbException)
+        {
+            // Si la conexion ya no esta disponible, MySQL libera el lock.
+        }
     }
 
     // =====================================================

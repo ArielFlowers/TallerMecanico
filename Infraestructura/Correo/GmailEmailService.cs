@@ -85,14 +85,17 @@ public sealed class GmailEmailService : IEmailService
             await cliente.ConnectAsync(
                 configuracion.Host,
                 configuracion.Puerto,
-                SecureSocketOptions.SslOnConnect,
+                configuracion.Seguridad,
                 cancellationToken);
 
-            etapa = "Autenticacion";
-            await cliente.AuthenticateAsync(
-                configuracion.Usuario,
-                configuracion.Password,
-                cancellationToken);
+            if (configuracion.Autenticar)
+            {
+                etapa = "Autenticacion";
+                await cliente.AuthenticateAsync(
+                    configuracion.Usuario,
+                    configuracion.Password,
+                    cancellationToken);
+            }
 
             etapa = "Envio";
             await cliente.SendAsync(mensaje, cancellationToken);
@@ -129,22 +132,31 @@ public sealed class GmailEmailService : IEmailService
         int Puerto,
         string Usuario,
         string Password,
+        bool Autenticar,
+        SecureSocketOptions Seguridad,
         MailboxAddress Remitente) ObtenerConfiguracionValidada()
     {
-        string host = ObtenerConfiguracion("Email:Smtp:Host");
-        if (host != "smtp.gmail.com")
-        {
-            throw new ConfiguracionRegistroException("Email:Smtp:Host");
-        }
+        string host = ObtenerConfiguracion("Email:Smtp:Host").Trim();
 
         if (!int.TryParse(_configuration["Email:Smtp:Port"], out int puerto) ||
-            puerto != 465)
+            puerto is < 1 or > 65535)
         {
             throw new ConfiguracionRegistroException("Email:Smtp:Port");
         }
 
-        string usuario = ObtenerConfiguracion("Email:Smtp:Username");
-        string password = ObtenerConfiguracion("Email:Smtp:Password");
+        string usuario = (_configuration["Email:Smtp:Username"] ?? string.Empty).Trim();
+        string password = _configuration["Email:Smtp:Password"] ?? string.Empty;
+        bool tieneUsuario = !string.IsNullOrWhiteSpace(usuario);
+        bool tienePassword = !string.IsNullOrWhiteSpace(password);
+
+        if (tieneUsuario != tienePassword)
+        {
+            throw new ConfiguracionRegistroException(
+                tieneUsuario
+                    ? "Email:Smtp:Password"
+                    : "Email:Smtp:Username");
+        }
+
         string from = ObtenerConfiguracion("Email:Smtp:From");
         if (!MailboxAddress.TryParse(from, out MailboxAddress? remitente) ||
             !ValidadorSolicitudRegistro.EmailValido(remitente.Address))
@@ -152,7 +164,32 @@ public sealed class GmailEmailService : IEmailService
             throw new ConfiguracionRegistroException("Email:Smtp:From");
         }
 
-        return (host, puerto, usuario, password, remitente);
+        return (
+            host,
+            puerto,
+            usuario,
+            password,
+            tieneUsuario,
+            ObtenerSeguridad(),
+            remitente);
+    }
+
+    private SecureSocketOptions ObtenerSeguridad()
+    {
+        string? valor = _configuration["Email:Smtp:Security"];
+
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            return SecureSocketOptions.SslOnConnect;
+        }
+
+        if (!Enum.TryParse(valor.Trim(), ignoreCase: true, out SecureSocketOptions seguridad) ||
+            !Enum.IsDefined(seguridad))
+        {
+            throw new ConfiguracionRegistroException("Email:Smtp:Security");
+        }
+
+        return seguridad;
     }
 
     private static int? ObtenerCodigoSmtp(Exception error)

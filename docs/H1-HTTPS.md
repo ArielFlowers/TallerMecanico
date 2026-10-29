@@ -13,7 +13,7 @@ réplicas y mantener la autenticación mediante cookies compartidas.
 ## 2. Arquitectura
 
 - ASP.NET Core .NET 10
-- MySQL 8.0
+- MySQL 8.4
 - Tres réplicas: app1, app2 y app3
 - Nginx con balanceo Round Robin
 - Data Protection con claves compartidas
@@ -34,12 +34,25 @@ Crear un archivo .env en la raíz del proyecto, utilizando
 
 Variables necesarias:
 
-- MYSQL_ROOT_PASSWORD
-- MYSQL_PASSWORD
+- APP_IMAGE=taller-mecanico:local
+- MYSQL_CONNECTION con la conexion privada de Aiven MySQL 8.4
+- APP_PUBLIC_BASE_URL=http://127.0.0.1:8088
+
+Para el entorno offline, MYSQL_ROOT_PASSWORD y MYSQL_PASSWORD corresponden al
+MySQL 8.4 local. La configuracion y migracion actuales estan en [BD_NUBE.md](BD_NUBE.md).
 
 No subir el archivo .env al repositorio.
 
 ## 5. Generar certificados HTTPS
+
+En Windows, instalar [mkcert](https://github.com/FiloSottile/mkcert#installation)
+y ejecutar desde PowerShell en la raíz del repositorio:
+
+```powershell
+New-Item -ItemType Directory -Force nginx/certs | Out-Null
+mkcert -install
+mkcert -cert-file nginx/certs/localhost.pem -key-file nginx/certs/localhost-key.pem 127.0.0.1 localhost ::1
+```
 
 En macOS, instalar mkcert:
 
@@ -63,11 +76,11 @@ Cada integrante debe generar sus propios certificados.
 
 Validar la configuración:
 
-    docker compose config -q
+    docker compose -f docker-compose.yml -f docker-compose.build.yml config --quiet
 
 Construir y levantar los servicios:
 
-    docker compose up -d --build
+    docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 
 Consultar los contenedores:
 

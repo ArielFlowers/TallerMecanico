@@ -32,16 +32,30 @@ public sealed class GmailEmailServiceTests
         return new ConfigurationBuilder().AddInMemoryCollection(valores).Build();
     }
 
+    private static IConfiguration ConfiguracionMailpit()
+    {
+        var valores = new Dictionary<string, string?>
+        {
+            ["Email:Smtp:Host"] = "127.0.0.1",
+            ["Email:Smtp:Port"] = "1025",
+            ["Email:Smtp:Security"] = "None",
+            ["Email:Smtp:Username"] = "",
+            ["Email:Smtp:Password"] = "",
+            ["Email:Smtp:From"] = "AutoTaller <no-reply@autotaller.local>"
+        };
+        return new ConfigurationBuilder().AddInMemoryCollection(valores).Build();
+    }
+
     [Theory]
     [InlineData("Email:Smtp:Host", null)]
-    [InlineData("Email:Smtp:Host", "otro-servidor")]
     [InlineData("Email:Smtp:Port", null)]
-    [InlineData("Email:Smtp:Port", "587")]
+    [InlineData("Email:Smtp:Port", "0")]
     [InlineData("Email:Smtp:Port", "no-es-numero")]
     [InlineData("Email:Smtp:From", null)]
     [InlineData("Email:Smtp:From", "correo-invalido")]
     [InlineData("Email:Smtp:Username", " ")]
     [InlineData("Email:Smtp:Password", " ")]
+    [InlineData("Email:Smtp:Security", "Invalida")]
     public async Task ConfiguracionInvalida_NoCreaCliente(string clave, string? valor)
     {
         int clientes = 0;
@@ -77,6 +91,71 @@ public sealed class GmailEmailServiceTests
         var servicio = new GmailEmailService(Configuracion(), crearCliente: () =>
             throw new InvalidOperationException("No debe crearse un cliente."));
         servicio.ValidarConfiguracion();
+    }
+
+    [Theory]
+    [InlineData("otro-servidor", "587", "StartTls")]
+    [InlineData("127.0.0.1", "1025", "None")]
+    public async Task ConfiguracionAlternativa_SeConectaSinExigirGmail(
+        string host,
+        string puerto,
+        string seguridad)
+    {
+        var valores = new Dictionary<string, string?>
+        {
+            ["Email:Smtp:Host"] = host,
+            ["Email:Smtp:Port"] = puerto,
+            ["Email:Smtp:Security"] = seguridad,
+            ["Email:Smtp:Username"] = "remitente@example.com",
+            ["Email:Smtp:Password"] = Sensible,
+            ["Email:Smtp:From"] = "AutoTaller <remitente@example.com>"
+        };
+        var configuracion = new ConfigurationBuilder()
+            .AddInMemoryCollection(valores)
+            .Build();
+        var cliente = new ClienteSmtpSimulado();
+        var servicio = new GmailEmailService(configuracion, crearCliente: () => cliente);
+
+        await servicio.EnviarVerificacionAsync("empleado@example.com", Enlace);
+
+        Assert.Equal(Enum.Parse<SecureSocketOptions>(seguridad), cliente.Seguridad);
+        Assert.Equal(1, cliente.Autenticaciones);
+    }
+
+    [Fact]
+    public async Task MailpitSinCredenciales_NoAutentica()
+    {
+        var cliente = new ClienteSmtpSimulado();
+        var servicio = new GmailEmailService(
+            ConfiguracionMailpit(),
+            crearCliente: () => cliente);
+
+        await servicio.EnviarVerificacionAsync("empleado@example.com", Enlace);
+
+        Assert.Equal(1, cliente.Envios);
+        Assert.Equal(0, cliente.Autenticaciones);
+        Assert.Equal(SecureSocketOptions.None, cliente.Seguridad);
+    }
+
+    [Fact]
+    public async Task CredencialesParciales_NoCreanCliente()
+    {
+        int clientes = 0;
+        var servicio = new GmailEmailService(
+            Configuracion("Email:Smtp:Password", " "),
+            crearCliente: () =>
+            {
+                clientes++;
+                throw new InvalidOperationException("No debe crearse un cliente.");
+            });
+
+        var error = Assert.Throws<ConfiguracionRegistroException>(
+            servicio.ValidarConfiguracion);
+
+        Assert.Equal("Email:Smtp:Password", error.Clave);
+        await Assert.ThrowsAsync<ConfiguracionRegistroException>(() =>
+            servicio.EnviarVerificacionAsync("empleado@example.com", Enlace));
+        Assert.Equal(0, clientes);
     }
 
     [Theory]
@@ -159,6 +238,7 @@ public sealed class GmailEmailServiceTests
         public Exception? ErrorCierre { get; set; }
         public int Envios { get; private set; }
         public int Cierres { get; private set; }
+        public int Autenticaciones { get; private set; }
         public SecureSocketOptions Seguridad { get; private set; }
 
         private void FallarSiCorresponde(string etapa)
@@ -181,6 +261,7 @@ public sealed class GmailEmailServiceTests
         public override Task AuthenticateAsync(Encoding encoding, ICredentials credentials,
             CancellationToken cancellationToken = default)
         {
+            Autenticaciones++;
             FallarSiCorresponde("Autenticacion");
             return Task.CompletedTask;
         }
