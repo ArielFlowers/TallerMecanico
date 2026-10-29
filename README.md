@@ -15,6 +15,10 @@ Abrir http://127.0.0.1:8088. Para trabajar con la base compartida, usar
 a que las tres réplicas y la web estén listas. Conserva los contenedores y los
 volúmenes al apagar; el MySQL original anterior a la migración queda fuera de
 los comandos de nube.
+Al terminar correctamente, `LocalUp` y `NubeUp` muestran el enlace de la aplicación
+en la salida de MSBuild; el modo local también muestra el enlace de Mailpit.
+`Directory.Build.rsp` selecciona la salida clásica de MSBuild para mantener
+visibles esos mensajes al ejecutar los comandos desde el repositorio.
 
 | Acción | Base local | Base compartida de Aiven |
 |---|---|---|
