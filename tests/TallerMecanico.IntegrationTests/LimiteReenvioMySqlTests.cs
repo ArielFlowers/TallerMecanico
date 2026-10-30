@@ -1,6 +1,5 @@
 using System.Data.Common;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Configuration;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Aplicacion.Servicios;
@@ -10,16 +9,11 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class LimiteReenvioMySqlTests
 {
-    [Fact]
+    [MySqlAisladoFact]
     public void Reenvio_BloqueaSegundoIntentoYRespetaEstado()
     {
-        IConfiguration configuracion = new ConfigurationBuilder()
-            .AddUserSecrets(
-                typeof(UsuarioRepository).Assembly,
-                optional: false)
-            .Build();
-
-        var factory = new MySqlConnectionFactory(configuracion);
+        using var aislada = new MySqlAisladoFixture();
+        var factory = aislada.Factory;
         var repositorio = new SolicitudRegistroRepository(factory);
         var verificacion = new VerificacionEmailService(repositorio);
 

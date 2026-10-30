@@ -14,7 +14,7 @@ environment variables without ever exposing credentials to the host.
 .REQUIREMENTS
 - Windows PowerShell 5.1+
 - Docker with the test container running and healthy
-- .env.test file with MYSQL_TEST_ROOT_PASSWORD (not loaded automatically)
+- tests/.env.test file with MYSQL_TEST_ROOT_PASSWORD (not loaded automatically)
 
 .NOTES
 - Idempotent: safe to run multiple times.
@@ -104,7 +104,7 @@ try {
     # 1. Verify container exists
     Write-Host "Verifying container existence..."
     if (-not (Test-ContainerExists $containerName)) {
-        Write-ErrorAndExit "Container '$containerName' does not exist. Start it with: docker compose --env-file .env.test -f docker-compose.test.yml up -d"
+        Write-ErrorAndExit "Container '$containerName' does not exist. From the repository root run: docker compose --project-directory . --env-file tests/.env.test -f tests/docker-compose.test.yml up -d"
     }
     Write-Host "  Container exists." -ForegroundColor Green
 

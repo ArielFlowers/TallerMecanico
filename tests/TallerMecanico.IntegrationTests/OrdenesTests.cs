@@ -17,7 +17,7 @@ public sealed class OrdenesTests
     public void Validacion_RechazaSinServicio()
     {
         var errores = new ValidacionOrdenes().Validar(Solicitud() with { ServicioId = null });
-        Assert.Contains("ServicioId", errores);
+        Assert.Contains("ServicioIds", errores);
     }
 
     [Fact]

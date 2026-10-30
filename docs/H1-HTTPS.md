@@ -21,72 +21,14 @@ réplicas y mantener la autenticación mediante cookies compartidas.
 - HTTPS en puerto 443
 - Certificados locales generados mediante mkcert
 
-## 3. Requisitos
+## 3. Instalación y arranque
 
-- Docker Desktop
-- .NET 10 SDK para desarrollo local
-- mkcert para certificados HTTPS locales
+Los requisitos, `.env`, generación de certificados con mkcert y comandos de
+arranque se mantienen en [README.md](../README.md). Usar
+`dotnet msbuild -t:NubeUp`.
+El Compose construye la imagen desde el código de la PC y conecta a Aiven.
 
-## 4. Configuración de variables
-
-Crear un archivo .env en la raíz del proyecto, utilizando
-.env.example como referencia.
-
-Variables necesarias:
-
-- APP_IMAGE=taller-mecanico:local
-- MYSQL_CONNECTION con la conexion privada de Aiven MySQL 8.4
-- APP_PUBLIC_BASE_URL=http://127.0.0.1:8088
-
-Para el entorno offline, MYSQL_ROOT_PASSWORD y MYSQL_PASSWORD corresponden al
-MySQL 8.4 local. La configuracion y migracion actuales estan en [BD_NUBE.md](BD_NUBE.md).
-
-No subir el archivo .env al repositorio.
-
-## 5. Generar certificados HTTPS
-
-En Windows, instalar [mkcert](https://github.com/FiloSottile/mkcert#installation)
-y ejecutar desde PowerShell en la raíz del repositorio:
-
-```powershell
-New-Item -ItemType Directory -Force nginx/certs | Out-Null
-mkcert -install
-mkcert -cert-file nginx/certs/localhost.pem -key-file nginx/certs/localhost-key.pem 127.0.0.1 localhost ::1
-```
-
-En macOS, instalar mkcert:
-
-    brew install mkcert
-    mkcert -install
-
-Crear la carpeta para certificados:
-
-    mkdir -p nginx/certs
-
-Generar el certificado:
-
-    mkcert -cert-file nginx/certs/localhost.pem -key-file nginx/certs/localhost-key.pem 127.0.0.1 localhost ::1
-
-Los certificados son para desarrollo local.
-
-La clave privada localhost-key.pem no debe subirse a GitHub.
-Cada integrante debe generar sus propios certificados.
-
-## 6. Ejecutar AutoTaller Pro
-
-Validar la configuración:
-
-    docker compose -f docker-compose.yml -f docker-compose.build.yml config --quiet
-
-Construir y levantar los servicios:
-
-    docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
-
-Consultar los contenedores:
-
-    docker compose ps
-
-## 7. Direcciones disponibles
+## 4. Direcciones disponibles
 
 - HTTP: http://127.0.0.1
 - HTTPS: https://127.0.0.1
@@ -98,47 +40,45 @@ Acceso directo a las réplicas:
 - app2: http://127.0.0.1:5001
 - app3: http://127.0.0.1:5002
 
-Estas direcciones corresponden al entorno local.
+Estas direcciones son de la aplicación en esta PC; la base está en Aiven.
 
-## 8. Prueba de balanceo de carga
+## 5. Prueba de balanceo de carga
 
 Ejecutar:
 
-    for i in {1..9}; do curl -fsS https://127.0.0.1/h1/replica; echo; done
+    1..9 | ForEach-Object { (Invoke-RestMethod https://127.0.0.1/h1/replica).replica }
 
 Se esperan identificadores diferentes correspondientes a las
 tres réplicas.
 
 El dashboard también muestra la réplica activa.
 
-## 9. Prueba de tolerancia a fallos
+## 6. Prueba de tolerancia a fallos
 
 Detener la primera réplica:
 
-    docker compose stop app1
+    docker compose -f docker-compose.yml stop app1
 
 Comprobar que la aplicación sigue respondiendo por HTTPS
 a través de app2 y app3.
 
 Restaurar la réplica:
 
-    docker compose start app1
+    docker compose -f docker-compose.yml start app1
 
-No utilizar docker compose down -v, porque elimina los
-volúmenes persistentes, incluida la base de datos.
+Conservar el volumen de claves y los recursos históricos. No utilizar
+docker compose down -v. Los datos de trabajo están en Aiven.
 
-## 10. Autenticación compartida
+## 7. Autenticación compartida
 
 Las tres réplicas comparten claves de ASP.NET Core Data Protection.
 
 Esto permite que las cookies de autenticación sean validadas
 por diferentes réplicas.
 
-El almacenamiento de HttpContext.Session todavía es local
-a cada instancia. Las sesiones distribuidas mediante Redis
-corresponden a la historia H2.
+HttpContext.Session usa Redis compartido entre las tres réplicas; ver [H2](H2-REDIS.md).
 
-## 11. Consideraciones de seguridad
+## 8. Consideraciones de seguridad
 
 - Los certificados mkcert son exclusivamente para desarrollo local.
 - Producción requiere un certificado TLS apropiado.
@@ -147,6 +87,5 @@ corresponden a la historia H2.
 - Los puertos publicados están restringidos a 127.0.0.1.
 - Se actualizó System.Security.Cryptography.Pkcs a 10.0.13
   para corregir advertencias de seguridad detectadas.
-- La compilación .NET local pasó correctamente; la reconstrucción
-  Docker posterior a esa actualización quedó pendiente de validar
-  debido a las demoras de descarga de NuGet.
+- La compilación y el arranque Docker con Aiven se registran, con su fecha y
+  alcance, en [VALIDACION_NUBE_UNICA.md](VALIDACION_NUBE_UNICA.md).

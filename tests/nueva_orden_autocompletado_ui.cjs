@@ -17,6 +17,23 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         const lineas = () => page.locator('[data-orden-linea]');
         const total = async () => Number((await page.locator('[data-total-estimado]').innerText()).replace('Bs. ', '').replace(',', '.'));
         const enviar = async boton => Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), boton.click()]);
+        const guardar = async () => {
+            await page.locator('[type="submit"][form="formulario-orden"]').click();
+            await page.locator('#confirmar-orden-dialog[open]').waitFor();
+            await enviar(page.locator('[data-confirmar-orden]'));
+        };
+        // Los endpoints de retorno de borradores se conservan por compatibilidad.
+        // La pantalla actual ya no ofrece los antiguos botones de alta de otros modulos.
+        const abrirAlta = async destino => {
+            const campos = await page.locator('#orden-agregar-producto').evaluate(form => Array.from(new FormData(form).entries()));
+            const respuesta = await context.request.post(`${process.env.TALLER_NUEVA_ORDEN_URL}/Ordenes/Crear?handler=Nuevo${destino}`, {
+                data: new URLSearchParams(campos).toString(),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                maxRedirects: 0
+            });
+            assert.equal(respuesta.status(), 302);
+            await page.goto(new URL(respuesta.headers().location, process.env.TALLER_NUEVA_ORDEN_URL).href);
+        };
         const seleccionar = async (tipo, termino, teclado = false) => {
             await texto(tipo).fill(termino);
             await opciones(tipo).first().waitFor();
@@ -26,9 +43,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         };
         const comprobarContexto = async (placa = '123ABC', cantidadLineas = 2) => {
             assert.equal(await texto('vehiculo').inputValue(), placa);
-            assert.equal(await texto('servicio').inputValue(), 'Cambio de Aceite');
+            assert.equal(await page.locator('[data-servicio-seleccionado] [data-servicio-nombre]').innerText(), 'Cambio de Aceite');
             assert.equal(await texto('mecanico').inputValue(), 'José Muñoz');
-            assert.equal(await id('servicio').inputValue(), '1');
+            assert.equal(await page.locator('#formulario-orden input[name="Formulario.ServicioIds"]').inputValue(), '1');
             assert.equal(await id('mecanico').inputValue(), '1');
             assert.equal(await lineas().count(), cantidadLineas);
         };
@@ -60,37 +77,38 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await page.waitForTimeout(450);
         assert.equal(await page.locator('#formulario-orden').getAttribute('data-costo-servicio'), '0');
         await seleccionar('servicio', 'lubrica', true);
+        await page.locator('#orden-agregar-servicio:not([disabled])').click();
         await page.waitForFunction(() => document.getElementById('formulario-orden').dataset.costoServicio === '25');
         assert.equal(await total(), 25);
 
         await seleccionar('producto', 'fil');
         assert.equal(await lineas().count(), 0, 'Seleccionar no debe añadir el producto.');
         await page.locator('#Cantidad').fill('2');
-        await enviar(page.getByRole('button', { name: 'Añadir producto al detalle', exact: true }));
+        await enviar(page.getByRole('button', { name: 'Agregar repuesto', exact: true }));
         await comprobarContexto('123ABC', 1);
         assert.equal(await id('producto').inputValue(), '');
         await seleccionar('producto', 'buj', true);
         await page.locator('#Cantidad').fill('3');
-        await enviar(page.getByRole('button', { name: 'Añadir producto al detalle', exact: true }));
+        await enviar(page.getByRole('button', { name: 'Agregar repuesto', exact: true }));
         await comprobarContexto();
         assert.equal(await total(), 71.6);
 
         const primera = lineas().filter({ hasText: 'FIL-001' });
         await primera.locator('[data-cantidad]').fill('4');
-        await enviar(primera.getByRole('button', { name: 'Actualizar', exact: true }));
+        await enviar(primera.getByRole('button', { name: 'Guardar cantidad de Filtro de Aceite', exact: true }));
         assert.equal(await total(), 96.6);
         await enviar(lineas().filter({ hasText: 'BUJ-001' }).getByRole('button', { name: 'Quitar', exact: true }));
         assert.equal(await lineas().count(), 1);
         await seleccionar('producto', 'buj');
         await page.locator('#Cantidad').fill('3');
-        await enviar(page.getByRole('button', { name: 'Añadir producto al detalle', exact: true }));
+        await enviar(page.getByRole('button', { name: 'Agregar repuesto', exact: true }));
         await seleccionar('producto', 'fil');
         await page.locator('#Cantidad').fill('2');
-        await enviar(page.getByRole('button', { name: 'Añadir producto al detalle', exact: true }));
+        await enviar(page.getByRole('button', { name: 'Agregar repuesto', exact: true }));
         await comprobarContexto();
         assert.equal(await total(), 71.6);
 
-        await enviar(page.getByRole('button', { name: '+ Nuevo cliente', exact: true }));
+        await abrirAlta('Cliente');
         assert.ok(new URL(page.url()).searchParams.get('OrdenBorradorId'));
         await page.locator('#cliente-form-dialog').waitFor({ state: 'visible' });
         await page.locator('#cliente-ci').fill('7654321');
@@ -100,9 +118,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await page.locator('#cliente-celular').fill('71234567');
         await enviar(page.locator('#cliente-boton-crear'));
         await comprobarContexto();
-        assert.match(await page.locator('.nueva-orden-page').innerText(), /Cliente seleccionado para vincular/);
+        assert.notEqual(await page.locator('#orden-agregar-producto input[name="Formulario.ClienteNuevoId"]').inputValue(), '');
 
-        await enviar(page.getByRole('button', { name: '+ Nuevo vehículo', exact: true }));
+        await abrirAlta('Vehiculo');
         assert.ok(new URL(page.url()).searchParams.get('OrdenBorradorId'));
         assert.notEqual(await page.locator('#crear-cliente').inputValue(), '');
         await page.locator('#crear-placa').fill('321XYZ');
@@ -112,7 +130,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await enviar(page.locator('#modal-crear').getByRole('button', { name: 'Guardar', exact: true }));
         await comprobarContexto('321XYZ');
 
-        await enviar(page.getByRole('button', { name: '+ Nuevo producto', exact: true }));
+        await abrirAlta('Producto');
         assert.ok(new URL(page.url()).searchParams.get('OrdenBorradorId'));
         await page.locator('#abrir-crear-producto').click();
         await page.locator('#producto-codigo').fill('NVO-001');
@@ -127,12 +145,12 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await seleccionar('producto', 'buj');
         await texto('mecanico').fill('sin selección');
         assert.equal(await id('mecanico').inputValue(), '');
-        await enviar(page.getByRole('button', { name: '✓ Guardar orden', exact: true }));
+        await guardar();
         assert.match(await page.locator('[data-valmsg-for="Formulario.MecanicoId"]').innerText(), /Selecciona un mecánico/);
         assert.equal(await id('producto').inputValue(), '2');
         assert.equal(await texto('producto').inputValue(), 'Bujía de Iridio');
         assert.equal(await texto('vehiculo').inputValue(), '321XYZ');
-        assert.equal(await texto('servicio').inputValue(), 'Cambio de Aceite');
+        assert.equal(await page.locator('[data-servicio-seleccionado] [data-servicio-nombre]').innerText(), 'Cambio de Aceite');
         assert.equal(await lineas().count(), 3);
         await seleccionar('mecanico', 'jose');
 
@@ -141,6 +159,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         assert.ok(tablet.width > 200 && tablet.x + tablet.width <= 769);
         await page.setViewportSize({ width: 390, height: 844 });
         for (const [tipo, termino] of [['vehiculo', '321'], ['servicio', 'lubri'], ['mecanico', 'jose'], ['producto', 'buj']]) {
+            await texto(tipo).evaluate(campo => campo.scrollIntoView({ block: 'center', behavior: 'instant' }));
             await texto(tipo).fill(termino);
             await opciones(tipo).first().waitFor();
             await texto(tipo).press('ArrowDown');
@@ -161,7 +180,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await page.waitForFunction(() => document.getElementById('formulario-orden').dataset.costoServicio === '25');
         await page.setViewportSize({ width: 1280, height: 900 });
         await page.locator('#formulario-orden input[name$=".Precio"]').evaluateAll(elementos => elementos.forEach(elemento => elemento.value = '0.01'));
-        await enviar(page.getByRole('button', { name: '✓ Guardar orden', exact: true }));
+        await guardar();
         assert.equal(new URL(page.url()).pathname, '/Ordenes');
         assert.match(await page.locator('.ordenes-total').innerText(), /74,60/);
         assert.deepEqual(errores, []);

@@ -109,15 +109,18 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.Equal(3, ContarFilas(html));
                 Assert.Contains("ordenes-estado-activa", html);
                 Assert.Contains("ordenes-estado-anulada", html);
-                Assert.Contains("Refrescar", html);
+                Assert.Contains("Aplicar filtros", html);
+                Assert.Contains("Limpiar filtros", html);
                 Assert.Matches("<form[^>]+method=\"get\"", html);
                 Assert.Contains($"/Ordenes/Comprobante?id={activa}", html);
-                Assert.Contains("target=\"_blank\"", html);
+                Assert.Contains($"data-comprobante-url=\"/Ordenes/Comprobante?id={activa}\"", html);
+                Assert.Contains("aria-controls=\"comprobante-orden-dialog\"", html);
+                Assert.Contains("data-comprobante-frame", html);
 
                 string filtrado = WebUtility.HtmlDecode(await cliente.GetStringAsync("/Ordenes?Estado=Anulada&Fecha=2026-10-12"));
                 Assert.Equal(1, ContarFilas(filtrado));
-                Assert.Contains($"<td>#{anulada}</td>", filtrado);
-                Assert.DoesNotContain($"<td>#{activa}</td>", filtrado);
+                Assert.Contains($"<span class=\"ordenes-id\">#{anulada}</span>", filtrado);
+                Assert.DoesNotContain($"<span class=\"ordenes-id\">#{activa}</span>", filtrado);
                 Assert.Matches("<option[^>]+value=\"Anulada\"[^>]+selected", filtrado);
                 Assert.Contains("value=\"2026-10-12\"", filtrado);
 

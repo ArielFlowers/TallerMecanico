@@ -32,10 +32,19 @@ public sealed class NuevaOrdenAutocompletadoTests
         Assert.Empty(Sugerencias(await pagina.OnGetSugerenciasVehiculosAsync("oyota")));
         Assert.Empty(Sugerencias(await pagina.OnGetSugerenciasProductosAsync("iltro")));
         Assert.Equal("CI: 1234567", Assert.Single(Sugerencias(await pagina.OnGetSugerenciasMecanicosAsync("123"))).GetProperty("textoSecundario").GetString());
+        foreach (string? termino in new string?[] { null, "", " " })
+        {
+            Assert.Equal(15, Sugerencias(await pagina.OnGetSugerenciasVehiculosAsync(termino)).Length);
+            Assert.Equal(14, Sugerencias(await pagina.OnGetSugerenciasMecanicosAsync(termino)).Length);
+            Assert.Single(Sugerencias(await pagina.OnGetSugerenciasServiciosAsync(termino)));
+            Assert.Empty(Sugerencias(await pagina.OnGetSugerenciasProductosAsync(termino)));
+        }
+        // Los servicios libres de la fixture no se ofrecen como servicios de catalogo.
+        Assert.Empty(Sugerencias(await pagina.OnGetSugerenciasServiciosAsync("prue")));
         foreach (var consulta in Consultas(pagina))
         {
             Assert.Equal(10, Sugerencias(await consulta("prue")).Length);
-            foreach (string termino in new[] { "", " ", "a", "%%", "__", "' OR 1=1 --", new string('a', 101) })
+            foreach (string termino in new[] { "a", "%%", "__", "' OR 1=1 --", new string('a', 101) })
                 Assert.Empty(Sugerencias(await consulta(termino)));
         }
         Assert.IsType<JsonResult>(pagina.OnGetVehiculoSeleccionado(1));
@@ -63,11 +72,13 @@ public sealed class NuevaOrdenAutocompletadoTests
             restaurada.BorradorId = id;
             restaurada.OnGet();
             Assert.Equal("123ABC", restaurada.BuscarVehiculo);
-            Assert.Equal("Cambio de Aceite", restaurada.TextoServicio);
+            Assert.Equal("Cambio de Aceite", Assert.Single(restaurada.ServiciosSeleccionados).Nombre);
+            Assert.Null(restaurada.TextoServicio);
             Assert.Equal("José Muñoz", restaurada.TextoMecanico);
             Assert.Equal(1, restaurada.Formulario.VehiculoId);
             Assert.Equal(1, restaurada.Formulario.MecanicoId);
-            Assert.Equal(1, restaurada.Formulario.ServicioId);
+            Assert.Equal(new[] { 1 }, restaurada.Formulario.ServicioIds);
+            Assert.Null(restaurada.Formulario.ServicioId);
             Assert.Equal(2, Assert.Single(restaurada.Lineas).Cantidad);
             Assert.Equal(50m, restaurada.TotalEstimado);
             var retorno = Assert.IsType<RedirectToPageResult>(destino switch
@@ -93,7 +104,7 @@ public sealed class NuevaOrdenAutocompletadoTests
         Preparar(aislada);
         var pagina = CrearPagina(aislada);
         pagina.OnGet();
-        pagina.Formulario.VehiculoId = 1; pagina.Formulario.MecanicoId = 1; pagina.Formulario.ServicioId = 1;
+        pagina.Formulario.VehiculoId = 1; pagina.Formulario.MecanicoId = 1; pagina.Formulario.ServicioIds = [1];
         pagina.ProductoId = 1; pagina.Cantidad = 2; pagina.OnPostAgregarLinea();
         pagina.ProductoId = 2; pagina.Cantidad = 3; pagina.OnPostAgregarLinea();
         pagina.ProductoId = 1; pagina.Cantidad = 4; pagina.OnPostAgregarLinea();
@@ -105,7 +116,7 @@ public sealed class NuevaOrdenAutocompletadoTests
         Assert.IsType<PageResult>(pagina.OnPostAgregarLinea());
         Assert.NotNull(pagina.VehiculoSeleccionado);
         Assert.Equal("José Muñoz", pagina.TextoMecanico);
-        Assert.Equal("Cambio de Aceite", pagina.TextoServicio);
+        Assert.Equal("Cambio de Aceite", Assert.Single(pagina.ServiciosSeleccionados).Nombre);
         Assert.Equal(2, Assert.Single(pagina.Lineas).Cantidad);
         Assert.Equal(20L, Convert.ToInt64(aislada.Escalar("SELECT SUM(Stock) FROM Productos;")));
         Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
@@ -121,11 +132,15 @@ public sealed class NuevaOrdenAutocompletadoTests
         pagina.OnGet();
         pagina.Formulario.Lineas.Add(new() { ProductoId = 1, Cantidad = 1, Precio = 0.01m });
         Assert.IsType<PageResult>(pagina.OnPostGuardar());
+        Assert.Contains("Formulario.ServicioIds", pagina.ModelState.Keys);
+        Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
+        pagina.ModelState.Clear();
+        pagina.Formulario.ServicioIds = [1];
+        Assert.IsType<PageResult>(pagina.OnPostGuardar());
         Assert.Contains("Formulario.VehiculoId", pagina.ModelState.Keys);
         Assert.Contains("Formulario.MecanicoId", pagina.ModelState.Keys);
-        Assert.Contains("Formulario.ServicioId", pagina.ModelState.Keys);
         pagina.ModelState.Clear();
-        pagina.Formulario.VehiculoId = 2; pagina.Formulario.MecanicoId = 1; pagina.Formulario.ServicioId = 1;
+        pagina.Formulario.VehiculoId = 2; pagina.Formulario.MecanicoId = 1;
         Assert.IsType<PageResult>(pagina.OnPostGuardar());
         Assert.Contains("cliente", pagina.ModelState["Formulario.VehiculoId"]!.Errors.Single().ErrorMessage);
         pagina.ModelState.Clear();
@@ -193,7 +208,7 @@ public sealed class NuevaOrdenAutocompletadoTests
         new JsonSerializerOptions(JsonSerializerDefaults.Web)).EnumerateArray().ToArray();
 
     private static Func<string?, Task<JsonResult>>[] Consultas(PaginaOrden pagina) =>
-        [pagina.OnGetSugerenciasVehiculosAsync, pagina.OnGetSugerenciasServiciosAsync, pagina.OnGetSugerenciasMecanicosAsync, pagina.OnGetSugerenciasProductosAsync];
+        [pagina.OnGetSugerenciasVehiculosAsync, pagina.OnGetSugerenciasMecanicosAsync, pagina.OnGetSugerenciasProductosAsync];
 
     private sealed class Temporales : ITempDataProvider
     {

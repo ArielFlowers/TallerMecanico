@@ -71,11 +71,12 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         var solicitud = Solicitud(datos, facade.GenerarTokenFormulario());
         ResultadoOrden resultado = facade.CrearOrden(solicitud);
         Assert.True(resultado.Exito, string.Join("; ", resultado.Errores.Values));
-        Assert.Equal(46.60m, resultado.Total);
+        Assert.Equal(71.60m, resultado.Total);
         Assert.Equal(8, Stock(datos.A));
         Assert.Equal(7, Stock(datos.B));
         Assert.Equal(2, Convert.ToInt32(basePrueba.Escalar("SELECT COUNT(*) FROM DetalleOrdenes WHERE OrdenId = @Id;", ("@Id", resultado.OrdenId))));
-        Assert.Equal(resultado.Total, Convert.ToDecimal(basePrueba.Escalar("SELECT SUM(Subtotal) FROM DetalleOrdenes WHERE OrdenId = @Id;", ("@Id", resultado.OrdenId))));
+        Assert.Equal(46.60m, Convert.ToDecimal(basePrueba.Escalar("SELECT SUM(Subtotal) FROM DetalleOrdenes WHERE OrdenId = @Id;", ("@Id", resultado.OrdenId))));
+        Assert.Equal(25m, Convert.ToDecimal(basePrueba.Escalar("SELECT SUM(Costo * Cantidad) FROM DetalleServiciosOrdenes WHERE OrdenId = @Id;", ("@Id", resultado.OrdenId))));
         Assert.Equal(usuario.Username, basePrueba.Escalar("SELECT CreadoPor FROM Ordenes WHERE Id = @Id;", ("@Id", resultado.OrdenId)));
         Assert.Equal(EstadoOrden.Activa, resultado.Estado);
         Assert.Equal(resultado.OrdenId, facade.CrearOrden(solicitud).OrdenId);
@@ -104,7 +105,7 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         var solicitud = Solicitud(datos, null, new LineaOrdenSolicitud(datos.B, 1), new LineaOrdenSolicitud(datos.A, 1), new LineaOrdenSolicitud(datos.B, 2), new LineaOrdenSolicitud(datos.A, 1));
         var resultado = Servicio().CrearOrden(solicitud);
         Assert.True(resultado.Exito);
-        Assert.Equal(46.60m, resultado.Total);
+        Assert.Equal(71.60m, resultado.Total);
         Assert.Equal(2, Convert.ToInt32(basePrueba.Escalar("SELECT COUNT(*) FROM DetalleOrdenes WHERE OrdenId = @Id;", ("@Id", resultado.OrdenId))));
         Assert.Equal(2, Convert.ToInt32(basePrueba.Escalar("SELECT Cantidad FROM DetalleOrdenes WHERE OrdenId = @Id AND ProductoId = @Producto;", ("@Id", resultado.OrdenId), ("@Producto", datos.A))));
         Assert.Equal(8, Stock(datos.A));
@@ -262,14 +263,16 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         string json = JsonSerializer.Serialize(new
         {
             VehiculoId = datos.Vehiculo, MecanicoId = datos.Mecanico, Fecha = DateTime.Today,
+            ServicioId = datos.Servicio, CostoServicio = 0.01m,
             Token = Guid.NewGuid(), Total = 0.01m,
             Lineas = new[] { new { ProductoId = datos.A, Cantidad = 2, PrecioUnitario = 0.01m, Subtotal = 0.02m } }
         });
         var solicitud = JsonSerializer.Deserialize<CrearOrdenSolicitud>(json)!;
         var resultado = Servicio().CrearOrden(solicitud);
         Assert.True(resultado.Exito);
-        Assert.Equal(25m, resultado.Total);
+        Assert.Equal(50m, resultado.Total);
         Assert.Equal(12.50m, Convert.ToDecimal(basePrueba.Escalar("SELECT PrecioUnitario FROM DetalleOrdenes WHERE OrdenId = @Id;", ("@Id", resultado.OrdenId))));
+        Assert.Equal(25m, Convert.ToDecimal(basePrueba.Escalar("SELECT Costo FROM DetalleServiciosOrdenes WHERE OrdenId = @Id;", ("@Id", resultado.OrdenId))));
     }
 
     [MySqlAisladoFact]
@@ -335,7 +338,7 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
     public void MigracionOrdenes_SePuedeRepetirSinEliminarDatos()
     {
         using var aislada = new MySqlAisladoFixture();
-        aislada.Ejecutar("DROP TABLE DetalleOrdenes; DROP TABLE Ordenes;");
+        aislada.Ejecutar("DROP TABLE DetalleServiciosOrdenes; DROP TABLE DetalleOrdenes; DROP TABLE Ordenes;");
         string sql = File.ReadAllText(Path.Combine(MySqlAisladoFixture.RaizProyecto, "docs/migraciones/004_ordenes_transaccionales.sql"));
         aislada.Ejecutar(sql);
         aislada.Ejecutar(sql);

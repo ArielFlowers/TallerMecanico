@@ -1,29 +1,24 @@
 using System.Security.Cryptography;
-using Microsoft.Extensions.Configuration;
+using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
-public class RepositoriosMySqlTests
+public sealed class RepositoriosMySqlTests : IDisposable
 {
-    private static DatabaseConnectionFactory CrearFactory()
-    {
-        IConfiguration configuracion = new ConfigurationBuilder()
-            .AddUserSecrets(
-                typeof(UsuarioRepository).Assembly,
-                optional: false)
-            .Build();
+    private readonly MySqlAisladoFixture _aislada = new();
+    public void Dispose() => _aislada.Dispose();
+    private DatabaseConnectionFactory CrearFactory() => _aislada.Factory;
 
-        return new MySqlConnectionFactory(configuracion);
-    }
-
-    [Fact]
+    [MySqlAisladoFact]
     public void UsuarioRepository_DebeLeerUsuariosExistentes()
     {
         var repositorio = new UsuarioRepository(CrearFactory());
 
+        repositorio.Agregar(new Usuario { Username = "admin", PasswordHash = "HASH_SOLO_PRUEBA", Rol = "Administrador", CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow });
+        repositorio.Agregar(new Usuario { Username = "andy", PasswordHash = "HASH_SOLO_PRUEBA", Rol = "Recepcionista", CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow });
         var admin = repositorio.ObtenerPorUsername("admin");
         var andy = repositorio.ObtenerPorUsername("andy");
 
@@ -39,7 +34,7 @@ public class RepositoriosMySqlTests
         Assert.NotNull(repositorio.ObtenerPorId(admin.Id));
     }
 
-    [Fact]
+    [MySqlAisladoFact]
     public void SolicitudRegistroRepository_DebeConsultarSinModificarDatos()
     {
         var repositorio =

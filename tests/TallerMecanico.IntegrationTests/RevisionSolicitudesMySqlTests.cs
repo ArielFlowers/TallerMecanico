@@ -1,14 +1,16 @@
 using System.Data.Common;
-using Microsoft.Extensions.Configuration;
+using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
-public sealed class RevisionSolicitudesMySqlTests
+public sealed class RevisionSolicitudesMySqlTests : IDisposable
 {
-    [Theory]
+    private readonly MySqlAisladoFixture _aislada = new();
+    public void Dispose() => _aislada.Dispose();
+    [MySqlAisladoTheory]
     [InlineData(true)]
     [InlineData(false)]
     public void ResolverSolicitud_ApruebaORechazaCorrectamente(bool aprobar)
@@ -91,7 +93,7 @@ public sealed class RevisionSolicitudesMySqlTests
         }
     }
 
-    [Fact]
+    [MySqlAisladoFact]
     public void SolicitudSinVerificar_NoPuedeAprobarse()
     {
         var factory = CrearFactory();
@@ -130,7 +132,7 @@ public sealed class RevisionSolicitudesMySqlTests
         }
     }
 
-    [Fact]
+    [MySqlAisladoFact]
     public void ConflictoDeUsuario_RevierteLaAprobacion()
     {
         var factory = CrearFactory();
@@ -212,15 +214,15 @@ public sealed class RevisionSolicitudesMySqlTests
             Limpiar(conexion, solicitudId, usuario, email);
         }
     }
-    private static MySqlConnectionFactory CrearFactory()
+    private DatabaseConnectionFactory CrearFactory()
     {
-        IConfiguration configuracion = new ConfigurationBuilder()
-            .AddUserSecrets(
-                typeof(UsuarioRepository).Assembly,
-                optional: false)
-            .Build();
-
-        return new MySqlConnectionFactory(configuracion);
+        var factory = _aislada.Factory;
+        new UsuarioRepository(factory).Agregar(new Usuario
+        {
+            Username = "admin_pruebas", PasswordHash = "HASH_SOLO_PRUEBA", Rol = "Administrador",
+            CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+        });
+        return factory;
     }
 
     private static int ObtenerAdministrador(DbConnection conexion)

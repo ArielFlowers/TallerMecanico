@@ -1,6 +1,5 @@
 using System.Data.Common;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Configuration;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using Xunit;
@@ -9,16 +8,11 @@ namespace TallerMecanico.IntegrationTests;
 
 public class ConfirmacionEmailMySqlTests
 {
-    [Fact]
+    [MySqlAisladoFact]
     public void ConfirmarEmail_ValidaVencimientoYUnSoloUso()
     {
-        IConfiguration configuracion = new ConfigurationBuilder()
-            .AddUserSecrets(
-                typeof(UsuarioRepository).Assembly,
-                optional: false)
-            .Build();
-
-        var factory = new MySqlConnectionFactory(configuracion);
+        using var aislada = new MySqlAisladoFixture();
+        var factory = aislada.Factory;
         var repositorio = new SolicitudRegistroRepository(factory);
 
         string identificador = Guid.NewGuid().ToString("N");

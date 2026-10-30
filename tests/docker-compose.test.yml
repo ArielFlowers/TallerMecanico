@@ -5,9 +5,9 @@ services:
     image: mysql:8.4
     container_name: tallermecanico-mysql-test
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_TEST_ROOT_PASSWORD:?MYSQL_TEST_ROOT_PASSWORD must be set in .env.test}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_TEST_ROOT_PASSWORD:?MYSQL_TEST_ROOT_PASSWORD must be set in tests/.env.test}
       MYSQL_USER: test_user
-      MYSQL_PASSWORD: ${MYSQL_TEST_PASSWORD:?MYSQL_TEST_PASSWORD must be set in .env.test}
+      MYSQL_PASSWORD: ${MYSQL_TEST_PASSWORD:?MYSQL_TEST_PASSWORD must be set in tests/.env.test}
     ports:
       - "127.0.0.1:3308:3306"
     tmpfs:

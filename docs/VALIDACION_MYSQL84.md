@@ -1,4 +1,10 @@
+> **Registro fechado anterior a la retirada del modo local.** Los resultados y comandos históricos se conservan como evidencia. El flujo vigente usa solo Aiven; consultar [README.md](../README.md) y [VALIDACION_NUBE_UNICA.md](VALIDACION_NUBE_UNICA.md).
+
 # Validación de la migración a MySQL 8.4
+
+> Resultados históricos del 27-28/10/2026. La seed exportada y la capa de build
+> descritas aquí fueron sustituidas el 29/10/2026; se conservan las fechas y los
+> límites de estas comprobaciones. Ver [validación actual](VALIDACION_SIMPLIFICACION.md).
 
 La implementación parte de `c0bebbc` en `feature/entorno-remoto-compartido` y se
 realiza en `feature/bd-nube`. Las comprobaciones comenzaron el 27 de octubre de
@@ -257,3 +263,16 @@ HTTP 200 y Redis devolvió PONG. El modo local quedó activo.
 
 La evidencia de esta comprobación está ignorada por Git en
 `TestResults/lanzador/dotnet/resultado.json`, `antes.tsv` y `despues.tsv`.
+
+## Cierre posterior de las pruebas, 30/10/2026
+
+Las cifras anteriores conservan su fecha y alcance histórico. Después de
+corregir las expectativas y los recorridos de interfaz, aislar la persistencia
+de las clases antiguas de autenticación y configurar Edge/PDF, la suite completa
+terminó con **515 casos: 514 aprobados, 0 fallidos y 1 omitido**. La única omisión
+es el envío real manual de Gmail. Los 13 casos fallidos de la reproducción del
+29/10 quedaron aprobados, sin retirar ninguno de sus 505 casos.
+
+La explicación reproducible y los límites del resultado actual están en
+[VALIDACION_PRUEBAS.md](VALIDACION_PRUEBAS.md). Esta ejecución no utilizó Aiven
+ni las bases de trabajo como servidor de pruebas.

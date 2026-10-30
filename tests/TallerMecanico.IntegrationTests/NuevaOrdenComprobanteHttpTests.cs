@@ -13,11 +13,9 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class NuevaOrdenComprobanteHttpTests
 {
-    [MySqlAisladoFact]
+    [NavegadorFact]
     public async Task Navegador_PostTradicionalFechaAutomaticaComprobanteErroresBloqueoYRecarga()
     {
-        Assert.False(string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")),
-            "Esta prueba requiere PLAYWRIGHT_MODULE y Microsoft Edge.");
         using var aislada = new MySqlAisladoFixture();
         NuevaOrdenAutocompletadoTests.Preparar(aislada);
         string password = Guid.NewGuid().ToString("N") + "_Prueba";

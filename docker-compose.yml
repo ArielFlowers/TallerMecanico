@@ -7,10 +7,13 @@
 
 x-app-common: &app-common
 
-  # Imagen canonica publicada en el registry y fijada por digest.
-  image: ${APP_IMAGE:?Configura APP_IMAGE con la imagen canonica y su digest}
+  # Cada PC construye la imagen desde su codigo actual.
+  build:
+    context: .
+    dockerfile: Dockerfile
 
-  pull_policy: always
+  image: ${APP_IMAGE:-taller-mecanico:local}
+  pull_policy: build
 
   environment:
     ASPNETCORE_ENVIRONMENT: Development
@@ -35,7 +38,7 @@ x-app-common: &app-common
     Email__Smtp__From: ${SMTP_FROM:-}
 
     # URL utilizada para generar enlaces de verificacion
-    App__PublicBaseUrl: ${APP_PUBLIC_BASE_URL:?Configura APP_PUBLIC_BASE_URL en .env}
+    App__PublicBaseUrl: ${APP_PUBLIC_BASE_URL:-http://127.0.0.1:8088}
     App__PermitirHttpNoSeguro: ${APP_PERMITIR_HTTP_NO_SEGURO:-false}
 
   volumes:

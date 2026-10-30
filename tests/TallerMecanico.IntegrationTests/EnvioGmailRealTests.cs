@@ -4,18 +4,20 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+public sealed class GmailRealFactAttribute : FactAttribute
+{
+    public GmailRealFactAttribute()
+    {
+        if (Environment.GetEnvironmentVariable("AUTOTALLER_PRUEBA_SMTP") != "SI")
+            Skip = "El envio real de Gmail requiere AUTOTALLER_PRUEBA_SMTP=SI y autorizacion explicita.";
+    }
+}
+
 public sealed class EnvioGmailRealTests
 {
-    [Fact]
+    [GmailRealFact]
     public async Task EnviarCorreoReal_SoloConAutorizacionExplicita()
     {
-        // No enviar durante las pruebas habituales.
-        if (Environment.GetEnvironmentVariable(
-            "AUTOTALLER_PRUEBA_SMTP") != "SI")
-        {
-            return;
-        }
-
         string? destinatario = Environment.GetEnvironmentVariable(
             "AUTOTALLER_SMTP_DESTINATARIO");
 
