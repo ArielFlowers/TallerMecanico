@@ -1,40 +1,33 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('local', 'nube', 'ayuda')]
+    [ValidateSet('nube', 'ayuda')]
     [string]$Modo = 'ayuda',
     [Parameter(Position = 1)]
-    [ValidateSet('up', 'down', 'seed', 'status', 'logs', 'build', 'usuarios', 'ayuda')]
+    [ValidateSet('up', 'down', 'status', 'logs', 'build', 'usuarios', 'ayuda')]
     [string]$Accion = 'up'
 )
 
 $ErrorActionPreference = 'Stop'
 $raiz = Split-Path $PSScriptRoot -Parent
-$proyectos = @{ local = 'tallermecanico-local-84'; nube = 'tallermecanico' }
-$servicios = @{
-    local = @('mysql', 'mailpit', 'redis', 'app1', 'app2', 'app3', 'nginx')
-    nube = @('redis', 'app1', 'app2', 'app3', 'nginx')
-}
+$proyecto = 'tallermecanico'
+$servicios = @('redis', 'app1', 'app2', 'app3', 'nginx')
 
 function Mostrar-Ayuda {
     Write-Host @'
-Uso desde PowerShell: .\taller <local|nube> <comando>
+Uso principal desde PowerShell: dotnet msbuild -t:COMANDO
 
-  .\taller local up        Construir y levantar el entorno local.
-  .\taller local seed      Cargar datos_demo.sql en MySQL local.
-  .\taller local down      Apagar el entorno local, conservando los datos.
-  .\taller nube up         Construir y levantar la app conectada a Aiven.
-  .\taller nube down       Apagar ese entorno, conservando los datos.
+  NubeUp / NubeDown / NubeStatus / NubeLogs / NubeBuild
 
-En ambos modos: status, logs, build y usuarios.
-  status     Mostrar los contenedores del modo elegido.
+Atajos: .\taller nube <comando>
+
+  status     Mostrar los contenedores de la aplicacion.
   logs       Seguir los logs de app1; Ctrl+C para salir.
-  build      Reconstruir la imagen sin cambiar el modo activo.
+  build      Reconstruir la imagen sin detener la aplicacion.
   usuarios   Crear cuentas interactivamente desde tu propia terminal.
 
-up detiene el otro modo antes de arrancar. Ningun comando elimina volumenes.
-El seed se permite solo en local y no incluye cuentas de acceso.
+up construye primero y actualiza la aplicacion conectada a Aiven.
+Ningun comando elimina volumenes.
 Aplicacion: http://127.0.0.1:8088
-Correo local (Mailpit): http://127.0.0.1:8025
 '@
 }
 
@@ -45,18 +38,8 @@ function Invocar-Docker([string[]]$ArgumentosDocker) {
     }
 }
 
-function Obtener-ArgumentosCompose([string]$ModoCompose) {
-    $argumentos = @('compose', '--project-directory', $raiz)
-    if ($ModoCompose -eq 'local') {
-        $argumentos += @('-f', (Join-Path $raiz 'docker-compose.local.yml'))
-    } else {
-        $argumentos += @('-f', (Join-Path $raiz 'docker-compose.yml'), '-f', (Join-Path $raiz 'docker-compose.build.yml'))
-    }
-    return $argumentos
-}
-
-function Invocar-Compose([string]$ModoCompose, [string[]]$ArgumentosCompose) {
-    Invocar-Docker ((Obtener-ArgumentosCompose $ModoCompose) + $ArgumentosCompose)
+function Invocar-Compose([string[]]$ArgumentosCompose) {
+    Invocar-Docker (@('compose', '--project-directory', $raiz, '-f', (Join-Path $raiz 'docker-compose.yml')) + $ArgumentosCompose)
 }
 
 function Comprobar-Docker {
@@ -72,9 +55,9 @@ function Comprobar-Docker {
     }
 }
 
-function Comprobar-Configuracion([string]$ModoCompose, [switch]$Certificados) {
-    if ($ModoCompose -eq 'nube' -and -not (Test-Path -LiteralPath (Join-Path $raiz '.env'))) {
-        throw 'Copia .env.example como .env y completa la conexion de Aiven; consulta docs/BD_NUBE.md.'
+function Comprobar-Configuracion([switch]$Certificados) {
+    if (-not (Test-Path -LiteralPath (Join-Path $raiz '.env'))) {
+        throw 'Copia .env.example como .env y completa la conexion de Aiven; consulta README.md.'
     }
     if ($Certificados) {
         foreach ($certificado in @('localhost.pem', 'localhost-key.pem')) {
@@ -83,26 +66,26 @@ function Comprobar-Configuracion([string]$ModoCompose, [switch]$Certificados) {
             }
         }
     }
-    Invocar-Compose $ModoCompose @('config', '--quiet')
-    $configuracionSinValores = @(Invocar-Compose $ModoCompose @('config', '--no-interpolate', '--format', 'json'))
+    Invocar-Compose @('config', '--quiet')
+    $configuracionSinValores = @(Invocar-Compose @('config', '--no-interpolate', '--format', 'json'))
     try {
         $nombreProyecto = (($configuracionSinValores -join "`n") | ConvertFrom-Json).name
     } catch {
         throw 'No se pudo comprobar el nombre del proyecto Compose.'
     }
-    if ($nombreProyecto -ne $proyectos[$ModoCompose]) {
+    if ($nombreProyecto -ne $proyecto) {
         throw 'El nombre del proyecto Compose fue cambiado. Quita COMPOSE_PROJECT_NAME de .env y de esta terminal.'
     }
 }
 
-function Obtener-Contenedores([string]$ModoContenedores) {
-    $filtro = 'label=com.docker.compose.project=' + $proyectos[$ModoContenedores]
+function Obtener-Contenedores {
+    $filtro = 'label=com.docker.compose.project=' + $proyecto
     $filas = @(Invocar-Docker @('ps', '--all', '--filter', $filtro, '--format', '{{json .}}'))
     foreach ($fila in $filas) {
         if ([string]::IsNullOrWhiteSpace($fila)) { continue }
         $contenedor = $fila | ConvertFrom-Json
         $etiqueta = [regex]::Match($contenedor.Labels, '(?:^|,)com\.docker\.compose\.service=([^,]+)')
-        if ($etiqueta.Success -and $etiqueta.Groups[1].Value -in $servicios[$ModoContenedores]) {
+        if ($etiqueta.Success -and $etiqueta.Groups[1].Value -in $servicios) {
             [pscustomobject]@{
                 Id = $contenedor.ID
                 Servicio = $etiqueta.Groups[1].Value
@@ -114,10 +97,10 @@ function Obtener-Contenedores([string]$ModoContenedores) {
     }
 }
 
-function Detener-Entorno([string]$ModoDetener) {
-    $activos = @(Obtener-Contenedores $ModoDetener | Where-Object { $_.Estado -in @('running', 'restarting', 'paused') })
+function Detener-Entorno {
+    $activos = @(Obtener-Contenedores | Where-Object { $_.Estado -in @('running', 'restarting', 'paused') })
     if ($activos.Count -eq 0) { return }
-    Write-Host ('Apagando el entorno ' + $ModoDetener + '...')
+    Write-Host 'Apagando la aplicacion...'
     foreach ($pausado in @($activos | Where-Object { $_.Estado -eq 'paused' })) {
         Invocar-Docker @('unpause', $pausado.Id) | Out-Null
     }
@@ -135,69 +118,46 @@ function Esperar-Web([string]$Direccion) {
         }
         Start-Sleep -Seconds 2
     } while ([DateTime]::UtcNow -lt $limite)
-    throw ('La aplicacion no estuvo lista a tiempo. Consulta .\taller ' + $Modo + ' logs.')
+    throw 'La aplicacion no estuvo lista a tiempo. Consulta .\taller nube logs.'
 }
 
 if ($Modo -eq 'ayuda' -or $Accion -eq 'ayuda') {
     Mostrar-Ayuda
     return
 }
-if ($Accion -eq 'seed' -and $Modo -ne 'local') {
-    throw 'El seed solo se carga en local. Usa .\taller local seed.'
-}
-
 Push-Location $raiz
 try {
     Comprobar-Docker
     switch ($Accion) {
         'up' {
-            Comprobar-Configuracion $Modo -Certificados
-            Write-Host ('Construyendo la imagen para ' + $Modo + '...')
-            Invocar-Compose $Modo @('build', 'app1')
-            $otroModo = if ($Modo -eq 'local') { 'nube' } else { 'local' }
-            Detener-Entorno $otroModo
-            Invocar-Compose $Modo @('up', '-d', '--no-build', '--pull', 'missing')
+            Comprobar-Configuracion -Certificados
+            Write-Host 'Construyendo la imagen...'
+            Invocar-Compose @('build', 'app1')
+            Invocar-Compose @('up', '-d', '--no-build', '--pull', 'missing')
             Write-Host 'Esperando a que la aplicacion este lista...'
             foreach ($puerto in @(5000, 5001, 5002, 8088)) {
                 Esperar-Web ('http://127.0.0.1:' + $puerto + '/Auth/Login')
             }
-            Write-Host ('Entorno ' + $Modo + ' listo: http://127.0.0.1:8088') -ForegroundColor Green
-            if ($Modo -eq 'local') {
-                Write-Host 'Datos de ejemplo: .\taller local seed | Correo local: http://127.0.0.1:8025'
-            }
+            Write-Host 'Entorno nube listo: http://127.0.0.1:8088' -ForegroundColor Green
         }
         'down' {
-            Detener-Entorno $Modo
-            Write-Host ('Entorno ' + $Modo + ' apagado; contenedores y datos conservados.')
+            Detener-Entorno
+            Write-Host 'Entorno nube apagado; contenedores y datos conservados.'
         }
         'status' {
-            Obtener-Contenedores $Modo | Format-Table Servicio, Nombre, Estado, Imagen -AutoSize
+            Obtener-Contenedores | Format-Table Servicio, Nombre, Estado, Imagen -AutoSize
         }
         'logs' {
-            Comprobar-Configuracion $Modo
-            Invocar-Compose $Modo @('logs', '--follow', '--tail', '80', 'app1')
+            Comprobar-Configuracion
+            Invocar-Compose @('logs', '--follow', '--tail', '80', 'app1')
         }
         'build' {
-            Comprobar-Configuracion $Modo
-            Invocar-Compose $Modo @('build', 'app1')
-        }
-        'seed' {
-            $archivoSeed = Join-Path $raiz 'scripts\bd\seed\datos_demo.sql'
-            if (-not (Test-Path -LiteralPath $archivoSeed)) {
-                throw 'Falta scripts/bd/seed/datos_demo.sql. Solicita el seed revisado del equipo.'
-            }
-            $contenedoresLocales = @(Obtener-Contenedores 'local')
-            $mysqlLocal = @($contenedoresLocales | Where-Object { $_.Servicio -eq 'mysql' -and $_.Estado -eq 'running' -and $_.Nombre -eq 'taller-mecanico-mysql-local' -and $_.Imagen -eq 'mysql:8.4' })
-            $appLocal = @($contenedoresLocales | Where-Object { $_.Servicio -eq 'app1' -and $_.Estado -eq 'running' })
-            if ($mysqlLocal.Count -ne 1 -or $appLocal.Count -ne 1) {
-                throw 'Primero levanta el entorno local: .\taller local up'
-            }
-            Esperar-Web 'http://127.0.0.1:5000/Auth/Login'
-            & (Join-Path $PSScriptRoot 'bd\aplicar-seed-local.ps1') -Contenedor $mysqlLocal[0].Nombre -BaseDatos 'taller_mecanico'
+            Comprobar-Configuracion
+            Invocar-Compose @('build', 'app1')
         }
         'usuarios' {
-            Comprobar-Configuracion $Modo
-            Invocar-Compose $Modo @('exec', 'app1', 'dotnet', 'TallerMecanico.dll', '--inicializar-usuarios')
+            Comprobar-Configuracion
+            Invocar-Compose @('exec', 'app1', 'dotnet', 'TallerMecanico.dll', '--inicializar-usuarios')
         }
     }
 } finally {

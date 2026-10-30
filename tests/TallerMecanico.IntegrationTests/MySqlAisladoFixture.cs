@@ -13,6 +13,15 @@ public sealed class MySqlAisladoFactAttribute : FactAttribute
     }
 }
 
+public sealed class MySqlAisladoTheoryAttribute : TheoryAttribute
+{
+    public MySqlAisladoTheoryAttribute()
+    {
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TALLER_TEST_MYSQL")))
+            Skip = "Configura TALLER_TEST_MYSQL para crear una base aislada de pruebas.";
+    }
+}
+
 [CollectionDefinition("MySQL aislado")]
 public sealed class MySqlAisladoCollection : ICollectionFixture<MySqlAisladoFixture> { }
 
@@ -57,6 +66,9 @@ public sealed class MySqlAisladoFixture : IDisposable
         }
 
         var cadena = new MySqlConnectionStringBuilder(configurada) { Database = string.Empty, AllowUserVariables = true };
+        string[] servidoresLocales = ["localhost", "127.0.0.1", "::1", "mysql", "mysql-test", "host.docker.internal"];
+        if (!servidoresLocales.Contains(cadena.Server, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException("TALLER_TEST_MYSQL debe apuntar a un MySQL local aislado, nunca a Aiven ni a un servidor remoto.");
         _servidor = cadena.ConnectionString;
         using var conexion = new MySqlConnection(_servidor);
         conexion.Open();

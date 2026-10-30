@@ -86,7 +86,10 @@ public sealed class ProductosHttpTests
                 using var json = JsonDocument.Parse(await sugerencias.Content.ReadAsStringAsync());
                 Assert.Equal(10, json.RootElement.GetArrayLength());
                 foreach (var registro in json.RootElement.EnumerateArray())
-                    Assert.Equal(new[] { "id", "textoPrincipal", "textoSecundario" }, registro.EnumerateObject().Select(propiedad => propiedad.Name));
+                {
+                    Assert.Equal(new[] { "id", "textoPrincipal", "textoSecundario", "stock" }, registro.EnumerateObject().Select(propiedad => propiedad.Name));
+                    Assert.True(registro.GetProperty("stock").GetInt32() >= 0);
+                }
                 foreach (string termino in new[] { "", " ", "a", "' OR 1=1 --", "%%" })
                     Assert.Equal("[]", await admin.GetStringAsync("/Productos?handler=Sugerencias&termino=" + Uri.EscapeDataString(termino)));
                 string seleccion = $"/Productos?TerminoBusqueda=Filtro&ProductoSeleccionadoId={id}";

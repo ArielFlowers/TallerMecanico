@@ -1,3 +1,7 @@
+> **Documento histórico del 23/10/2026.** Describe el antiguo anfitrión/Tailscale
+> y propuestas anteriores. Sus comandos no son el flujo actual. Para instalación
+> y uso diario seguir [README.md](../README.md); para administración, [BD_NUBE.md](BD_NUBE.md).
+
 # Resumen de sesión: entorno remoto compartido
 
 > Fecha: 23/10/2026  

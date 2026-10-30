@@ -15,10 +15,8 @@ mkdir -p /tmp/h2-src
 cp -R /fuente/. /tmp/h2-src/
 cd /tmp/h2-src
 proyecto=tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj
-filtro='FullyQualifiedName!~RepositoriosMySqlTests&FullyQualifiedName!~ConfirmacionEmailMySqlTests&FullyQualifiedName!~LimiteReenvioMySqlTests&FullyQualifiedName!~RenovacionTokenMySqlTests&FullyQualifiedName!~RevisionSolicitudesMySqlTests&FullyQualifiedName!~EnvioGmailRealTests'
-if test -n "${H2_FILTRO:-}"; then
-    filtro="${filtro}&(${H2_FILTRO})"
-fi
+# Toda la persistencia usa ahora bases aisladas; Gmail real exige autorizacion.
+filtro="${H2_FILTRO:-FullyQualifiedName~TallerMecanico.IntegrationTests}"
 dotnet restore "$proyecto" --ignore-failed-sources -p:NuGetAudit=false --verbosity quiet
 dotnet test "$proyecto" --no-restore \
     --filter "$filtro" \

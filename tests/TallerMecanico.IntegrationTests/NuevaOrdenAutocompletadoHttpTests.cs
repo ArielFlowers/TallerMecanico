@@ -88,10 +88,14 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
                         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
                         Assert.True(respuesta.Headers.CacheControl?.NoStore);
                         using var json = JsonDocument.Parse(await respuesta.Content.ReadAsStringAsync());
-                        Assert.Equal(10, json.RootElement.GetArrayLength());
+                        Assert.Equal(tipo == "Servicios" ? 0 : 10, json.RootElement.GetArrayLength());
                         foreach (var registro in json.RootElement.EnumerateArray())
-                            Assert.Equal(new[] { "id", "textoPrincipal", "textoSecundario" }, registro.EnumerateObject().Select(propiedad => propiedad.Name));
-                        foreach (string termino in new[] { "", "a", "%%", "__", "' OR 1=1 --" })
+                            Assert.Equal(tipo == "Productos"
+                                ? new[] { "id", "textoPrincipal", "textoSecundario", "stock" }
+                                : new[] { "id", "textoPrincipal", "textoSecundario" }, registro.EnumerateObject().Select(propiedad => propiedad.Name));
+                        using var iniciales = JsonDocument.Parse(await cliente.GetStringAsync($"/Ordenes/Crear?handler=Sugerencias{tipo}"));
+                        Assert.Equal(tipo switch { "Vehiculos" => 15, "Mecanicos" => 14, "Servicios" => 1, _ => 0 }, iniciales.RootElement.GetArrayLength());
+                        foreach (string termino in new[] { "a", "%%", "__", "' OR 1=1 --" })
                             Assert.Equal("[]", await cliente.GetStringAsync($"/Ordenes/Crear?handler=Sugerencias{tipo}&termino=" + Uri.EscapeDataString(termino)));
                     }
                     using var costo = await cliente.GetAsync("/Ordenes/Crear?handler=ServicioSeleccionado&id=1");

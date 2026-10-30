@@ -14,10 +14,9 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class ServiciosInterfazMySqlTests
 {
-    [MySqlAisladoFact]
+    [NavegadorFact]
     public async Task Navegador_CantidadesBorradoresModalPdfEHistoricoConPreciosMySql()
     {
-        Assert.False(string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")));
         using var aislada = new MySqlAisladoFixture();
         NuevaOrdenAutocompletadoTests.Preparar(aislada);
         aislada.Ejecutar("UPDATE Servicios SET Costo=250 WHERE CodigoCatalogo='CAMBIO_ACEITE';");

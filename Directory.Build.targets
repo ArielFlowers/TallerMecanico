@@ -11,32 +11,11 @@
 
   <Target Name="Ayuda">
     <Message Importance="high" Text="Uso desde la raiz: dotnet msbuild -t:COMANDO" />
-    <Message Importance="high" Text="LocalUp / LocalDown / LocalSeed / LocalStatus / LocalLogs / LocalBuild" />
     <Message Importance="high" Text="NubeUp / NubeDown / NubeStatus / NubeLogs / NubeBuild" />
-    <Message Importance="high" Text="Up cambia de modo automaticamente. Seed solo se permite en local. Los datos se conservan al apagar." />
-    <Message Importance="high" Text="Aplicacion: http://127.0.0.1:8088 | Correo local: http://127.0.0.1:8025" />
+    <Message Importance="high" Text="NubeUp construye y actualiza la aplicacion conectada a Aiven. Los datos se conservan al apagar." />
+    <Message Importance="high" Text="Aplicacion: http://127.0.0.1:8088" />
   </Target>
 
-  <Target Name="LocalUp" DependsOnTargets="_TallerComprobarWindows">
-    <Exec Command="$(_TallerComando) local up" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
-    <Message Importance="high" Text="Entorno local listo. Abrir: http://127.0.0.1:8088" />
-    <Message Importance="high" Text="Correo local (Mailpit): http://127.0.0.1:8025" />
-  </Target>
-  <Target Name="LocalDown" DependsOnTargets="_TallerComprobarWindows">
-    <Exec Command="$(_TallerComando) local down" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
-  </Target>
-  <Target Name="LocalSeed" DependsOnTargets="_TallerComprobarWindows">
-    <Exec Command="$(_TallerComando) local seed" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
-  </Target>
-  <Target Name="LocalStatus" DependsOnTargets="_TallerComprobarWindows">
-    <Exec Command="$(_TallerComando) local status" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
-  </Target>
-  <Target Name="LocalLogs" DependsOnTargets="_TallerComprobarWindows">
-    <Exec Command="$(_TallerComando) local logs" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
-  </Target>
-  <Target Name="LocalBuild" DependsOnTargets="_TallerComprobarWindows">
-    <Exec Command="$(_TallerComando) local build" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
-  </Target>
 
   <Target Name="NubeUp" DependsOnTargets="_TallerComprobarWindows">
     <Exec Command="$(_TallerComando) nube up" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
@@ -53,8 +32,5 @@
   </Target>
   <Target Name="NubeBuild" DependsOnTargets="_TallerComprobarWindows">
     <Exec Command="$(_TallerComando) nube build" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
-  </Target>
-  <Target Name="NubeSeed">
-    <Error Text="El seed solo se carga en local. Usa dotnet msbuild -t:LocalSeed." />
   </Target>
 </Project>

@@ -1,6 +1,5 @@
 using System.Data.Common;
 using System.Security.Cryptography;
-using Microsoft.Extensions.Configuration;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Aplicacion.Servicios;
@@ -10,16 +9,11 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class RenovacionTokenMySqlTests
 {
-    [Fact]
+    [MySqlAisladoFact]
     public void RenovarToken_InvalidaAnteriorYRechazaSolicitudVerificada()
     {
-        IConfiguration configuracion = new ConfigurationBuilder()
-            .AddUserSecrets(
-                typeof(UsuarioRepository).Assembly,
-                optional: false)
-            .Build();
-
-        var factory = new MySqlConnectionFactory(configuracion);
+        using var aislada = new MySqlAisladoFixture();
+        var factory = aislada.Factory;
         var repositorio = new SolicitudRegistroRepository(factory);
         var verificacion = new VerificacionEmailService(repositorio);
 

@@ -48,15 +48,17 @@ El servicio `redis` usa `redis:7.4-alpine`, sin persistencia en disco,
 con `maxmemory 128mb` y `allkeys-lru`. Se publica solo en
 `127.0.0.1:6379` para pruebas locales.
 
-Para ejecutar con `dotnet run` contra el Redis de Docker:
-
-    docker compose up -d redis mysql
-    REDIS_HOST=localhost dotnet run
+La configuración SQL llega a las tres réplicas mediante `MYSQL_CONNECTION` de
+`.env`. El Compose diario no contiene un servidor MySQL: la base está en Aiven.
+El Redis de cada PC comparte caché y sesión entre sus propias tres réplicas.
 
 ## 4. Levantar el sistema
 
-    docker compose up -d --build
-    docker compose ps
+    dotnet msbuild -t:NubeUp
+    dotnet msbuild -t:NubeStatus
+
+Para preparar la PC seguir [README.md](../README.md). Las pruebas aisladas tienen
+su propia configuración y no usan la conexión Aiven del equipo.
 
 ## 5. Evidencias
 
@@ -76,7 +78,7 @@ Cada respuesta incluye la réplica, `"redis": "PONG"` y la latencia.
 
 1. Iniciar sesión y abrir `http://127.0.0.1:5000/`.
 2. La primera consulta muestra `Cache: MISS`.
-3. Log: `docker compose logs app1 | grep MISS`
+3. Log: `docker compose -f docker-compose.yml logs app1 | Select-String MISS`
 
         MISS -> MySQL -> Redis | clave autotaller:dashboard:resumen | réplica <id> | expira en 60 s
 
@@ -89,7 +91,7 @@ Cada respuesta incluye la réplica, `"redis": "PONG"` y la latencia.
 
 Recargar la página: muestra `Cache: HIT`.
 
-    docker compose logs app1 | grep HIT
+    docker compose -f docker-compose.yml logs app1 | Select-String HIT
 
 ### Caché compartida entre réplicas
 
@@ -117,10 +119,10 @@ Recargar la página: muestra `Cache: HIT`.
 
 ### Continuidad sin Redis
 
-    docker compose stop redis
+    docker compose -f docker-compose.yml stop redis
 
 El inicio muestra `Cache: NO DISPONIBLE` y los datos se leen de MySQL.
-Al ejecutar `docker compose start redis` la caché vuelve a `MISS` y luego `HIT`.
+Al ejecutar `docker compose -f docker-compose.yml start redis` la caché vuelve a `MISS` y luego `HIT`.
 
 ## 6. Pruebas automatizadas
 

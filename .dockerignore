@@ -10,6 +10,7 @@
 tests/
 
 docs/
+tmp/
 *.docx
 Sprint_EC2_Plan.*
 listado_archivos.txt
@@ -24,7 +25,6 @@ docker-compose*.yml
 .env.*
 bd-nube.env
 respaldos/
-scripts/bd/seed/
 **/secrets.json
 **/appsettings.Development.json
 
