@@ -60,7 +60,7 @@ public sealed class VehiculosNavegadorTests
             WorkingDirectory = raiz, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(Path.Combine(raiz, "bin/Debug/net10.0/TallerMecanico.dll"));
+        inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
