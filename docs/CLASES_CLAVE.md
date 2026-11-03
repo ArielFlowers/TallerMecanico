@@ -169,7 +169,7 @@ Tablas (MySQL 8, `DEFAULT CHARSET=utf8mb4`, DDL en `Data/Scripts/MySql/`):
 - Inyección: `Program.cs` registra `CreadorVehiculo` e `IRepository<Vehiculo>` con duración `Scoped`. `VehiculoService` recibe el creador y convierte su resultado a `VehiculoRepository`; el dashboard recibe la interfaz genérica.
 - Persistencia actual: MySQL, con `Marca` incluida en la creación de la tabla. La migración de columna SQLite correspondía al sprint anterior; no es una migración de datos entre motores.
 - SRP: presentación, reglas, coordinación y persistencia separadas. El servicio aún depende del repositorio concreto para sus operaciones específicas.
-- Verificación: `dotnet build`. Los scripts de vehículos de `tests/` corresponden a la etapa SQLite y deben adaptarse antes de ejecutarse sobre esta rama MySQL; ver `tests/README.md`.
+- Verificación: `dotnet build`. La suite actual de vehículos usa MySQL aislado; ver [Pruebas y CI](../README.md#pruebas-y-ci).
 
 ### US04 – Catálogo de Servicios – Aldair
 - CRUD de Servicios: `Nombre, Descripción, Costo, Tiempo estimado`. Stack Razor Pages + C# + ADO.NET (SQLite en su sprint; **MySQL desde sprint 2**), verificado en código: `ValidacionServicios`, partials `_CamposServicio/_TablaServicios`, `ServicioTablaViewModel`, páginas `Control/Registros`.

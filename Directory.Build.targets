@@ -2,35 +2,39 @@
   <!-- Atajos explicitos: no se ejecutan durante Build, Restore, Publish o Test. -->
   <PropertyGroup>
     <_TallerRaiz>$(MSBuildThisFileDirectory)</_TallerRaiz>
-    <_TallerComando>powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File &quot;$(_TallerRaiz)scripts\entorno.ps1&quot;</_TallerComando>
+    <_TallerScript Condition="'$(OS)' == 'Windows_NT'">$(_TallerRaiz)scripts/entorno.ps1</_TallerScript>
+    <_TallerScript Condition="'$(OS)' != 'Windows_NT'">$(_TallerRaiz)scripts/entorno.sh</_TallerScript>
+    <_TallerComando Condition="'$(OS)' == 'Windows_NT'">powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File &quot;$(_TallerScript)&quot;</_TallerComando>
+    <_TallerComando Condition="'$(OS)' != 'Windows_NT'">bash &quot;$(_TallerScript)&quot;</_TallerComando>
   </PropertyGroup>
 
-  <Target Name="_TallerComprobarWindows">
-    <Error Condition="'$(OS)' != 'Windows_NT'" Text="Estos atajos usan PowerShell de Windows. Ejecutalos desde Windows con .NET SDK 10 y Docker Desktop." />
+  <Target Name="_TallerComprobarEntorno">
+    <Error Condition="!Exists('$(_TallerScript)')" Text="No se encontro $(_TallerScript). Comprueba que el repositorio este completo." />
   </Target>
 
   <Target Name="Ayuda">
     <Message Importance="high" Text="Uso desde la raiz: dotnet msbuild -t:COMANDO" />
     <Message Importance="high" Text="NubeUp / NubeDown / NubeStatus / NubeLogs / NubeBuild" />
+    <Message Importance="high" Text="Windows: PowerShell integrado. macOS y Linux: Bash, sin instalar PowerShell." />
     <Message Importance="high" Text="NubeUp construye y actualiza la aplicacion conectada a Aiven. Los datos se conservan al apagar." />
     <Message Importance="high" Text="Aplicacion: http://127.0.0.1:8088" />
   </Target>
 
 
-  <Target Name="NubeUp" DependsOnTargets="_TallerComprobarWindows">
+  <Target Name="NubeUp" DependsOnTargets="_TallerComprobarEntorno">
     <Exec Command="$(_TallerComando) nube up" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
     <Message Importance="high" Text="Entorno nube listo. Abrir: http://127.0.0.1:8088" />
   </Target>
-  <Target Name="NubeDown" DependsOnTargets="_TallerComprobarWindows">
+  <Target Name="NubeDown" DependsOnTargets="_TallerComprobarEntorno">
     <Exec Command="$(_TallerComando) nube down" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
   </Target>
-  <Target Name="NubeStatus" DependsOnTargets="_TallerComprobarWindows">
+  <Target Name="NubeStatus" DependsOnTargets="_TallerComprobarEntorno">
     <Exec Command="$(_TallerComando) nube status" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
   </Target>
-  <Target Name="NubeLogs" DependsOnTargets="_TallerComprobarWindows">
+  <Target Name="NubeLogs" DependsOnTargets="_TallerComprobarEntorno">
     <Exec Command="$(_TallerComando) nube logs" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
   </Target>
-  <Target Name="NubeBuild" DependsOnTargets="_TallerComprobarWindows">
+  <Target Name="NubeBuild" DependsOnTargets="_TallerComprobarEntorno">
     <Exec Command="$(_TallerComando) nube build" WorkingDirectory="$(_TallerRaiz)" EchoOff="true" IgnoreStandardErrorWarningFormat="true" />
   </Target>
 </Project>

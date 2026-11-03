@@ -1,0 +1,41 @@
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3308:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -pci_test_password --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      TALLER_TEST_MYSQL: 'Server=127.0.0.1;Port=3308;User ID=root;Password=ci_test_password;SslMode=Disabled;'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restaurar dependencias
+        run: dotnet restore tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj
+      - name: Compilar
+        run: dotnet build tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --configuration Release --no-restore
+      - name: Ejecutar pruebas
+        run: dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --configuration Release --no-build -- xUnit.ParallelizeTestCollections=false
