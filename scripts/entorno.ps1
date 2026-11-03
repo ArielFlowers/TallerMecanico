@@ -14,11 +14,12 @@ $servicios = @('redis', 'app1', 'app2', 'app3', 'nginx')
 
 function Mostrar-Ayuda {
     Write-Host @'
-Uso principal desde PowerShell: dotnet msbuild -t:COMANDO
+Uso principal en Windows y macOS: dotnet msbuild -t:COMANDO
 
   NubeUp / NubeDown / NubeStatus / NubeLogs / NubeBuild
 
-Atajos: .\taller nube <comando>
+Atajos: Windows: .\taller nube <comando>
+        macOS:   bash ./taller.sh nube <comando>
 
   status     Mostrar los contenedores de la aplicacion.
   logs       Seguir los logs de app1; Ctrl+C para salir.
@@ -61,7 +62,7 @@ function Comprobar-Configuracion([switch]$Certificados) {
     }
     if ($Certificados) {
         foreach ($certificado in @('localhost.pem', 'localhost-key.pem')) {
-            if (-not (Test-Path -LiteralPath (Join-Path $raiz ('nginx\certs\' + $certificado)))) {
+            if (-not (Test-Path -LiteralPath (Join-Path $raiz ('nginx/certs/' + $certificado)))) {
                 throw 'Faltan certificados locales. Generalos con mkcert siguiendo docs/H1-HTTPS.md.'
             }
         }
@@ -118,7 +119,7 @@ function Esperar-Web([string]$Direccion) {
         }
         Start-Sleep -Seconds 2
     } while ([DateTime]::UtcNow -lt $limite)
-    throw 'La aplicacion no estuvo lista a tiempo. Consulta .\taller nube logs.'
+    throw 'La aplicacion no estuvo lista a tiempo. Consulta dotnet msbuild -t:NubeLogs.'
 }
 
 if ($Modo -eq 'ayuda' -or $Accion -eq 'ayuda') {

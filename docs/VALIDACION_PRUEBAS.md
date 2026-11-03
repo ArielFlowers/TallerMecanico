@@ -49,7 +49,7 @@ conexión. Las cuentas y solicitudes del taller no se usan como datos de prueba.
 
 La ejecución completa configura `TALLER_TEST_MYSQL`, `PLAYWRIGHT_MODULE` y
 `TALLER_PDF_PYTHON`, y mantiene deshabilitado `AUTOTALLER_PRUEBA_SMTP`.
-La preparación reproducible está en [tests/README.md](../tests/README.md).
+La preparación reproducible actual está en [README.md](../README.md#pruebas-y-ci).
 
 ```powershell
 dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --logger "trx;LogFileName=integracion.trx" --results-directory TestResults -- xUnit.ParallelizeTestCollections=false

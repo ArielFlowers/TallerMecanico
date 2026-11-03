@@ -11,11 +11,12 @@ mismo servicio Aiven, `Database=taller_mecanico`, `SslMode=Required` y
 `Maximum Pool Size=3`. El resto de las siete variables visibles configura SMTP.
 Las cuentas web se conservan y son distintas de las credenciales SQL o SMTP.
 
-El responsable completa `bd-nube.env` a partir de `bd-nube.env.example`. Ese
-archivo contiene `NUBE_HOST`, `NUBE_PUERTO`, `NUBE_USUARIO`, `NUBE_BD` y
-`MYSQL_PWD`, sin comillas ni espacios alrededor de `=`. Los scripts lo entregan
-al cliente MySQL de Docker; no extraen credenciales de `.env`. No sobrescribir
-archivos privados existentes ni publicar su contenido.
+Los scripts de `scripts/bd/` usan la misma `MYSQL_CONNECTION` de `.env` que la
+aplicación. Docker Compose interpreta el archivo y un cliente común extrae la
+conexión en memoria. La clave llega al contenedor por una variable de entorno,
+sin incluirse en los argumentos del comando. No hace falta `bd-nube.env` ni
+duplicar las credenciales. Una copia privada antigua puede conservarse como
+respaldo; los scripts ya no la leen.
 
 La cadena local de ejemplo de appsettings se retiró. Los entornos de prueba
 inyectan sus conexiones aisladas; el Compose diario inyecta la de Aiven.
@@ -133,7 +134,7 @@ a Aiven sigue requiriendo la revisión y confirmación de la sección anterior.
 ## Pruebas y problemas frecuentes
 
 Las pruebas automáticas mantienen MySQL 8.4 temporal: ver
-[tests/README.md](../tests/README.md). Nunca apuntar `TALLER_TEST_MYSQL` a Aiven.
+[README.md](../README.md#pruebas-y-ci). Nunca apuntar `TALLER_TEST_MYSQL` a Aiven.
 Los scripts administrativos pueden usar la imagen cliente `mysql:8.4` sin
 levantar otro servidor de trabajo.
 
@@ -146,6 +147,6 @@ levantar otro servidor de trabajo.
 | Puerto ocupado | Identificar el proceso o contenedor y detener solo el recurso acordado. |
 | Certificados no encontrados | Revisar los dos PEM en nginx/certs y seguir la guía mkcert de README. |
 
-Mantener `.env`, `bd-nube.env`, `respaldos/` y claves de certificados fuera de Git
+Mantener `.env`, copias privadas antiguas, `respaldos/` y claves de certificados fuera de Git
 y del contexto de build. Las validaciones anteriores conservan sus fechas;
 [VALIDACION_NUBE_UNICA.md](VALIDACION_NUBE_UNICA.md) registra esta transición.
