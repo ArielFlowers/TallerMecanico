@@ -30,6 +30,7 @@ public class UsuarioAdministracionServiceTests
     private readonly CurrentUserFalso _currentUser;
     private readonly HasherFalso _hasher;
     private readonly ConnectionFactoryFalsa _connectionFactory;
+    private readonly GeneradorNombreUsuarioFalso _generador;
     private readonly UsuarioAdministracionService _service;
 
     public UsuarioAdministracionServiceTests()
@@ -42,6 +43,7 @@ public class UsuarioAdministracionServiceTests
         _currentUser = new CurrentUserFalso { UsuarioId = 1, Username = "admin", Rol = "Administrador", EstaAutenticado = true };
         _hasher = new HasherFalso();
         _connectionFactory = new ConnectionFactoryFalsa(_usuarios);
+        _generador = new GeneradorNombreUsuarioFalso();
 
         _service = new UsuarioAdministracionService(
             _usuarios,
@@ -51,13 +53,14 @@ public class UsuarioAdministracionServiceTests
             _auditoria,
             _currentUser,
             _hasher,
-            _connectionFactory);
+            _connectionFactory,
+            _generador);
     }
 
     [Fact]
     public void CrearInvitacion_GeneraSolicitudYEnviaCorreo()
     {
-        string token = _service.CrearInvitacion("nuevo_usuario", "nuevo@test.com", "Recepcionista");
+        string token = _service.CrearInvitacion("nuevo_usuario", "nuevo@test.com", "Recepcionista", "ClaveSegura123!");
 
         Assert.NotNull(token);
         Assert.Equal(64, token.Length);
@@ -67,7 +70,7 @@ public class UsuarioAdministracionServiceTests
         Assert.Equal("nuevo_usuario", solicitud!.Username);
         Assert.Equal("nuevo@test.com", solicitud.Email);
         Assert.Equal("PendienteVerificacion", solicitud.Estado);
-        Assert.Equal(string.Empty, solicitud.PasswordHash);
+        Assert.Equal("HASH_ClaveSegura123!", solicitud.PasswordHash);
         Assert.Equal("Recepcionista", solicitud.Rol);
 
         Assert.True(_email.Enviado);
@@ -84,7 +87,7 @@ public class UsuarioAdministracionServiceTests
     [Fact]
     public void CrearInvitacion_GeneraSolicitudConRolAdministrador()
     {
-        string token = _service.CrearInvitacion("admin_user", "admin@test.com", "Administrador");
+        string token = _service.CrearInvitacion("admin_user", "admin@test.com", "Administrador", "ClaveSegura123!");
 
         Assert.NotNull(token);
 
@@ -107,7 +110,7 @@ public class UsuarioAdministracionServiceTests
         string username, string email, string rol)
     {
         Assert.Throws<ArgumentException>(() =>
-            _service.CrearInvitacion(username, email, rol));
+            _service.CrearInvitacion(username, email, rol, "ClaveSegura123!"));
 
         Assert.Null(_solicitudes.Guardada);
     }
@@ -118,7 +121,7 @@ public class UsuarioAdministracionServiceTests
         _usuarios.UsernameExiste = true;
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            _service.CrearInvitacion("existente", "nuevo@test.com", "Recepcionista"));
+            _service.CrearInvitacion("existente", "nuevo@test.com", "Recepcionista", "ClaveSegura123!"));
 
         Assert.Null(_solicitudes.Guardada);
     }
@@ -129,7 +132,7 @@ public class UsuarioAdministracionServiceTests
         _solicitudes.EmailExiste = true;
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            _service.CrearInvitacion("nuevo_usuario", "existente@test.com", "Recepcionista"));
+            _service.CrearInvitacion("nuevo_usuario", "existente@test.com", "Recepcionista", "ClaveSegura123!"));
 
         Assert.Null(_solicitudes.Guardada);
     }
@@ -140,7 +143,7 @@ public class UsuarioAdministracionServiceTests
         _currentUser.EstaAutenticado = false;
 
         Assert.Throws<UnauthorizedAccessException>(() =>
-            _service.CrearInvitacion("nuevo_usuario", "nuevo@test.com", "Recepcionista"));
+            _service.CrearInvitacion("nuevo_usuario", "nuevo@test.com", "Recepcionista", "ClaveSegura123!"));
     }
 
     [Fact]
@@ -165,10 +168,7 @@ public class UsuarioAdministracionServiceTests
         _solicitudes.SolicitudPorToken = solicitud;
         _solicitudes.TokenHashParaConfirmar = tokenHash;
 
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
-            rawToken,
-            "Password123456",
-            out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion(rawToken, out string? error);
 
         Assert.True(resultado);
         Assert.Null(error);
@@ -207,10 +207,7 @@ public class UsuarioAdministracionServiceTests
         _solicitudes.SolicitudPorToken = solicitud;
         _solicitudes.TokenHashParaConfirmar = tokenHash;
 
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
-            rawToken,
-            "Password123456",
-            out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion(rawToken, out string? error);
 
         Assert.True(resultado);
         Assert.Null(error);
@@ -228,25 +225,23 @@ public class UsuarioAdministracionServiceTests
     [Fact]
     public void ActivarUsuarioDesdeInvitacion_RechazaTokenInvalido()
     {
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
-            "token_invalido",
-            "Password123456",
-            out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion("token_invalido", out string? error);
 
         Assert.False(resultado);
         Assert.Equal("Token inválido.", error);
     }
 
     [Fact]
-    public void ActivarUsuarioDesdeInvitacion_RechazaPasswordCorto()
+    public void CrearInvitacion_RechazaPasswordCorto()
     {
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
-            "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-            "corto",
-            out string? error);
+        Assert.Throws<ArgumentException>(() =>
+            _service.CrearInvitacion(
+                "nuevo_usuario",
+                "nuevo@test.com",
+                "Recepcionista",
+                "corto"));
 
-        Assert.False(resultado);
-        Assert.Contains("contraseña no cumple", error!);
+        Assert.Null(_solicitudes.Guardada);
     }
 
     [Fact]
@@ -271,10 +266,7 @@ public class UsuarioAdministracionServiceTests
         _solicitudes.SolicitudPorToken = solicitud;
         _solicitudes.TokenHashParaConfirmar = tokenHash;
 
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
-            rawToken,
-            "Password123456",
-            out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion(rawToken, out string? error);
 
         Assert.False(resultado);
         Assert.Equal("El enlace de invitación no es válido o ha expirado.", error);
@@ -658,6 +650,46 @@ public class UsuarioAdministracionServiceTests
 
         Assert.True(resultado);
         Assert.True(_usuarios.UltimaDesactivacionAtomicaExitosa);
+    }
+
+    [Fact]
+    public void CrearInvitacion_GeneraNombreUsuarioDesdeCorreoCuandoEstaVacio()
+    {
+        string token = _service.CrearInvitacion(
+            "", "Juan.Pérez@empresa.com", "Recepcionista", "ClaveSegura123!");
+
+        Assert.NotNull(token);
+        var solicitud = _solicitudes.Guardada;
+        Assert.NotNull(solicitud);
+        Assert.Equal("juan.perez", solicitud!.Username);
+        Assert.Equal("juan.perez@empresa.com", solicitud.Email);
+        var auditoria = _auditoria.UltimoRegistro;
+        Assert.NotNull(auditoria);
+        Assert.Equal("USUARIO_INVITADO", auditoria!.Accion);
+    }
+
+    [Fact]
+    public void CrearInvitacion_GeneraSufijoIncrementalCuandoColisiona()
+    {
+        _usuarios.Usuarios[9] = new Usuario
+        {
+            Id = 9,
+            Username = "ana.lopez",
+            Email = "otro@empresa.com",
+            PasswordHash = "hash",
+            Rol = "Recepcionista",
+            Activo = true,
+            CreadoPor = "sistema",
+            FechaCreacion = DateTime.UtcNow
+        };
+
+        string token = _service.CrearInvitacion(
+            "", "Ana.Lopez@empresa.com", "Recepcionista", "ClaveSegura123!");
+
+        Assert.NotNull(token);
+        var solicitud = _solicitudes.Guardada;
+        Assert.NotNull(solicitud);
+        Assert.Equal("ana.lopez-2", solicitud!.Username);
     }
 
     private sealed class UsuariosFalsos : IUsuarioAdministracionPort
@@ -1075,5 +1107,16 @@ public class UsuarioAdministracionServiceTests
         public override long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferOffset, int length) => 0;
         public override byte GetByte(int i) => 0;
         public override char GetChar(int i) => '\0';
+    }
+
+    private sealed class GeneradorNombreUsuarioFalso : IGeneradorNombreUsuarioPort
+    {
+        public string GenerarUsuarioUnico(
+            string correoElectronico,
+            CancellationToken cancellationToken = default)
+        {
+            string baseUsuario = correoElectronico.Split('@', 2)[0].ToLowerInvariant();
+            return baseUsuario.Length > 0 ? baseUsuario : "usuario";
+        }
     }
 }

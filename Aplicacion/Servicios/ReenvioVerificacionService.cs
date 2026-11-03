@@ -66,7 +66,9 @@ public sealed class ReenvioVerificacionService
 
         await _email.EnviarVerificacionAsync(
             correoNormalizado,
-            EnlaceVerificacion.CrearVerificacion(uriBase, token),
+            solicitud.EsInvitacionAdministrativa
+                    ? EnlaceVerificacion.CrearActivacionInvitacion(uriBase, token)
+                    : EnlaceVerificacion.CrearVerificacion(uriBase, token),
             cancellationToken);
     }
 }

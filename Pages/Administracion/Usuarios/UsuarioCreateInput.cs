@@ -5,7 +5,6 @@ namespace TallerMecanico.Pages.Administracion.Usuarios;
 
 public sealed class UsuarioCreateInput : IValidatableObject
 {
-    [Required(ErrorMessage = "Ingrese un nombre de usuario.")]
     [StringLength(50, MinimumLength = 3, ErrorMessage = "El usuario debe tener entre 3 y 50 caracteres.")]
     public string Username { get; set; } = string.Empty;
 
@@ -17,9 +16,25 @@ public sealed class UsuarioCreateInput : IValidatableObject
     [Required(ErrorMessage = "Seleccione un rol.")]
     public string Rol { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Ingrese una contraseña.")]
+    [DataType(DataType.Password)]
+    public string Password { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Confirme la contraseña.")]
+    [DataType(DataType.Password)]
+    [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden.")]
+    public string ConfirmarPassword { get; set; } = string.Empty;
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!ValidadorSolicitudRegistro.UsuarioValido(Username))
+        if (!ValidadorSolicitudRegistro.PasswordValido(Password))
+        {
+            yield return new ValidationResult(
+                "La contraseña debe tener entre 12 y 128 caracteres y no comenzar ni terminar con espacios.",
+                new[] { nameof(Password) });
+        }
+
+        if (!string.IsNullOrWhiteSpace(Username) &&
+            !ValidadorSolicitudRegistro.UsuarioValido(Username))
         {
             yield return new ValidationResult(
                 "Use entre 3 y 50 caracteres: letras, números, punto, guion o guion bajo.",

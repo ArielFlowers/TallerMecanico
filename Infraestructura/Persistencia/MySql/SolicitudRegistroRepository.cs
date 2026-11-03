@@ -185,6 +185,32 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
 
         connection.Open();
 
+        // Obtener el ID exacto correspondiente al token.
+        long solicitudId;
+
+        using (DbCommand buscar = connection.CreateCommand())
+        {
+            buscar.CommandText = """
+                SELECT Id
+                FROM SolicitudesRegistro
+                WHERE TokenVerificacionHash = @TokenHash
+                  AND Estado = 'PendienteVerificacion'
+                  AND TokenExpiraEn > UTC_TIMESTAMP(6)
+                  AND EmailVerificadoEn IS NULL
+                LIMIT 1;
+                """;
+
+            AgregarParametro(buscar, "@TokenHash", tokenHash);
+
+            object? id = buscar.ExecuteScalar();
+
+            if (id is null || id is DBNull)
+            {
+                return null;
+            }
+
+            solicitudId = Convert.ToInt64(id);
+        }
         const string sql = """
             UPDATE SolicitudesRegistro
             SET Estado = 'PendienteAprobacion',
@@ -210,15 +236,16 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
         const string selectSql = """
             SELECT *
             FROM SolicitudesRegistro
-            WHERE Estado = 'PendienteAprobacion'
+            WHERE Id = @SolicitudId
+              AND Estado = 'PendienteAprobacion'
               AND EmailVerificadoEn IS NOT NULL
               AND TokenVerificacionHash IS NULL
-            ORDER BY EmailVerificadoEn DESC
             LIMIT 1;
             """;
 
         using DbCommand selectCommand = connection.CreateCommand();
         selectCommand.CommandText = selectSql;
+        AgregarParametro(selectCommand, "@SolicitudId", solicitudId);
 
         using DbDataReader reader = selectCommand.ExecuteReader();
         return reader.Read() ? Mapear(reader) : null;

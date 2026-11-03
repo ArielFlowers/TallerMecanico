@@ -34,7 +34,12 @@ public sealed class AuthenticationService : IAuthenticationService
             username.Trim());
 
         bool usuarioDisponible =
-            usuario is not null && usuario.Activo;
+            usuario is not null &&
+            usuario.Activo &&
+            (
+                usuario.EmailVerificado ||
+                usuario.CreadoPor == "Inicializacion"
+            );
 
         string hashAVerificar = usuarioDisponible
             ? usuario!.PasswordHash

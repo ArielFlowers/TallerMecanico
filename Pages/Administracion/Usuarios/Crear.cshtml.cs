@@ -40,10 +40,11 @@ public sealed class CrearModel : PageModel
                     Input.Username,
                     Input.Email,
                     Input.Rol,
+                    Input.Password,
                     cancellationToken),
                 cancellationToken);
 
-            TempData["MensajeExito"] = $"Se ha enviado una invitación a {Input.Email} para crear su cuenta.";
+            TempData["MensajeExito"] = $"Se ha enviado una invitación a {Input.Email} para verificar su correo y activar su cuenta.";
             return RedirectToPage("./Index");
         }
         catch (SolicitudRegistroDuplicadaException ex)

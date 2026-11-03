@@ -8,7 +8,10 @@ using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
+using TallerMecanico.Infraestructura.Documentos;
+using TallerMecanico.Infraestructura.Exportacion;
 using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Servicios.Reportes;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Seguridad;
 using Microsoft.AspNetCore.RateLimiting;
@@ -18,7 +21,6 @@ using TallerMecanico.Infraestructura.Sesion;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Dominio.Servicios;
 using TallerMecanico.Infraestructura.Configuracion;
-using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Infraestructura.Cache;
 using StackExchange.Redis;
 
@@ -102,6 +104,9 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder(
     "/Mecanicos",
     "SoloAdministrador");
+    options.Conventions.AuthorizeFolder(
+        "/Reportes",
+        "SoloAdministrador");
 }).AddMvcOptions(options => options.Filters.Add<ConfirmarSesionFilter>());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
@@ -146,6 +151,7 @@ builder.Services.AddScoped<RegistroUsuarioService>();
 builder.Services.AddScoped<VerificacionEmailService>();
 builder.Services.AddScoped<IEmailService, GmailEmailService>();
 builder.Services.AddScoped<RegistroFacade>();
+builder.Services.AddScoped<IGeneradorNombreUsuarioPort, GeneradorNombreUsuarioService>();
 builder.Services.AddScoped<ReenvioVerificacionService>();
 builder.Services.AddScoped<
     IRevisionSolicitudesPort,
@@ -155,6 +161,7 @@ builder.Services.AddScoped<
     IUsuarioAdministracionPort,
     UsuarioRepository>();
 builder.Services.AddScoped<UsuarioAdministracionService>();
+builder.Services.AddScoped<CambioContrasenaService>();
 builder.Services.AddScoped<
     IAuthenticationService,
     AuthenticationService>();
@@ -444,6 +451,16 @@ builder.Services.AddScoped<
 // =====================================================
 builder.Services.AddScoped<
     DashboardService>();
+// =====================================================
+// REPORTES (HU3 - Servicio 3)
+// =====================================================
+builder.Services.AddScoped<IConsultaReportesPort, ConsultaReportesMySqlAdapter>();
+builder.Services.AddScoped<IGeneradorReporteOrdenesPdfPort, QuestPdfReporteOrdenesAdapter>();
+builder.Services.AddScoped<IGeneradorReporteOrdenesExcelPort, ClosedXmlReporteOrdenesAdapter>();
+builder.Services.AddScoped<IGeneradorReporteMecanicosPdfPort, QuestPdfReporteMecanicosAdapter>();
+builder.Services.AddScoped<IGeneradorReporteMecanicosExcelPort, ClosedXmlReporteMecanicosAdapter>();
+builder.Services.AddScoped<ReporteOrdenesService>();
+builder.Services.AddScoped<ReporteMecanicosService>();
 var app =
     builder.Build();
 configuracionRedis.RegistrarDiagnostico(app.Logger,

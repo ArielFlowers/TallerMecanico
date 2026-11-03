@@ -1,0 +1,342 @@
+@page
+@model TallerMecanico.Pages.Reportes.Ordenes.IndexModel
+@{
+    ViewData["Title"] = "Reporte de Órdenes de Trabajo";
+}
+
+<style>
+    .hu3-reporte-ordenes {
+        max-width: 1400px;
+        color: var(--text-primary);
+    }
+
+    .hu3-reporte-ordenes h1 {
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .hu3-reporte-ordenes .filtros {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    .hu3-reporte-ordenes .form-label {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    .hu3-reporte-ordenes .form-control,
+    .hu3-reporte-ordenes .form-select {
+        background-color: var(--surface-light);
+        color: var(--text-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-sm);
+        min-height: 40px;
+        width: 100%;
+    }
+
+    .hu3-reporte-ordenes .acciones {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .hu3-reporte-ordenes .btn {
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .hu3-reporte-ordenes .btn-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+
+    .hu3-reporte-ordenes .btn-primary:hover {
+        background: var(--primary-hover);
+    }
+
+    .hu3-reporte-ordenes .btn-outline-secondary {
+        color: var(--primary-hover);
+        border-color: var(--primary);
+    }
+
+    .hu3-reporte-ordenes .btn-outline-secondary:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .hu3-reporte-ordenes .estadisticas {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .hu3-reporte-ordenes .estadistica {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .hu3-reporte-ordenes .estadistica .etiqueta {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .hu3-reporte-ordenes .estadistica .valor {
+        color: var(--text-primary);
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .hu3-reporte-ordenes .estadistica:first-child {
+        border-top: 3px solid var(--primary);
+    }
+
+    .hu3-reporte-ordenes .table-responsive {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: auto;
+        margin-bottom: 20px;
+    }
+
+    .hu3-reporte-ordenes table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .hu3-reporte-ordenes th {
+        background: var(--surface-light);
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: left;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+    }
+
+    .hu3-reporte-ordenes td {
+        color: var(--text-primary);
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    .hu3-reporte-ordenes td.text-end {
+        text-align: right;
+    }
+
+    .hu3-reporte-ordenes .badge {
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .hu3-reporte-ordenes .badge.bg-primary {
+        background: var(--primary-soft);
+        color: var(--primary-hover);
+    }
+
+    .hu3-reporte-ordenes .badge.bg-danger {
+        background: rgba(248, 113, 113, 0.14);
+        color: var(--danger);
+    }
+
+    .hu3-reporte-ordenes .vacío {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+    }
+
+    .hu3-reporte-ordenes .alerta {
+        background: var(--surface-light);
+        color: var(--text-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+    }
+
+    .hu3-reporte-ordenes .pie {
+        margin-top: 24px;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        border-top: 1px solid var(--border);
+        padding-top: 12px;
+    }
+
+    @@media (max-width: 768px) {
+        .hu3-reporte-ordenes .estadisticas {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .hu3-reporte-ordenes .acciones {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="container py-4 hu3-reporte-ordenes">
+    <nav aria-label="Navegación de reportes"
+         style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+        <a asp-page="/Reportes/Index" class="btn btn-outline-secondary">
+            Centro de reportes
+        </a>
+        <a asp-page="/Reportes/Ordenes/Index" class="btn btn-outline-secondary">
+            Órdenes
+        </a>
+        <a asp-page="/Reportes/Mecanicos/Index" class="btn btn-outline-secondary">
+            Mecánicos
+        </a>
+    </nav>
+    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h1>Reporte detallado de órdenes de trabajo</h1>
+            <p class="text-muted">AutoTaller Pro - Consulta real de órdenes registradas.</p>
+        </div>
+        <div class="acciones">
+            <form method="post" asp-page-handler="ExportarPdf" style="margin:0;">
+                <input type="hidden" asp-for="Filtro.FechaDesde" />
+                <input type="hidden" asp-for="Filtro.FechaHasta" />
+                <input type="hidden" asp-for="Filtro.Estado" />
+                <button type="submit" class="btn btn-primary" title="Exportar a PDF">
+                    <span>PDF</span>
+                </button>
+            </form>
+            <form method="post" asp-page-handler="ExportarExcel" style="margin:0;">
+                <input type="hidden" asp-for="Filtro.FechaDesde" />
+                <input type="hidden" asp-for="Filtro.FechaHasta" />
+                <input type="hidden" asp-for="Filtro.Estado" />
+                <button type="submit" class="btn btn-outline-secondary" title="Exportar a Excel">
+                    <span>Excel</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.MensajeError))
+    {
+        <div class="alerta" role="alert">@Model.MensajeError</div>
+    }
+
+    <form method="get" class="filtros" novalidate>
+        <div>
+            <label class="form-label">Fecha desde</label>
+            <input asp-for="Filtro.FechaDesde" type="date" class="form-control" />
+        </div>
+        <div>
+            <label class="form-label">Fecha hasta</label>
+            <input asp-for="Filtro.FechaHasta" type="date" class="form-control" />
+        </div>
+        <div>
+            <label class="form-label">Estado de la orden</label>
+            <select asp-for="Filtro.Estado" class="form-select">
+                <option value="">Todos</option>
+                <option value="Activa">Activa</option>
+                <option value="Anulada">Anulada</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+        </div>
+    </form>
+
+    @if (Model.Documento is null || Model.Documento.Filas.Count == 0)
+    {
+        <div class="table-responsive">
+            <div class="vacío">
+                <p>No se encontraron órdenes de trabajo con los criterios seleccionados.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        var documento = Model.Documento!;
+
+        <section class="estadisticas" aria-label="Resumen del reporte de órdenes">
+            <div class="estadistica">
+                <span class="etiqueta">Órdenes totales</span>
+                <strong class="valor">@documento.Resumen.TotalOrdenes</strong>
+            </div>
+            <div class="estadistica">
+                <span class="etiqueta">Total facturado</span>
+                <strong class="valor">@documento.Resumen.TotalGeneral.ToString("N2")</strong>
+            </div>
+            <div class="estadistica">
+                <span class="etiqueta">Activas</span>
+                <strong class="valor">@documento.Resumen.OrdenesActivas</strong>
+            </div>
+            <div class="estadistica">
+                <span class="etiqueta">Anuladas</span>
+                <strong class="valor">@documento.Resumen.OrdenesAnuladas</strong>
+            </div>
+        </section>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th># Orden</th>
+                        <th>Fecha</th>
+                        <th>Placa</th>
+                        <th>Cliente</th>
+                        <th>Mecánico</th>
+                        <th>Servicio</th>
+                        <th class="text-end">Total</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var fila in documento.Filas)
+                    {
+                        <tr>
+                            <td>@fila.OrdenId</td>
+                            <td>@fila.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@fila.Placa</td>
+                            <td>@(fila.NombreCliente ?? "Sin cliente")</td>
+                            <td>@fila.NombreMecanico</td>
+                            <td>@(fila.NombreServicio ?? "Sin servicio")</td>
+                            <td class="text-end">@fila.Total.ToString("N2")</td>
+                            <td>
+                                <span class="badge @(fila.Estado == "Activa" ? "bg-primary" : "bg-danger")">
+                                    @fila.Estado
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pie">
+            <span>Reporte generado por @documento.GeneradoPor el @documento.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</span>
+            <span class="float-end">AutoTaller Pro</span>
+        </div>
+    }
+</div>

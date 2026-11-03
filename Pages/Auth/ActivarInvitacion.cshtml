@@ -192,31 +192,18 @@
         else
         {
             <p>
-                Establezca su contraseña para activar su cuenta en AutoTaller Pro.
-            </p>
+    Confirme su correo electronico para activar su cuenta
+    en AutoTaller Pro. Su contrasena ya fue configurada
+    durante la creacion administrativa.
+</p>
 
-            <form method="post">
-                <input type="hidden" asp-for="Input.Token" />
+<form method="post">
+    <input type="hidden" asp-for="Input.Token" />
 
-                <div class="form-group">
-                    <label asp-for="Input.Password">Contraseña</label>
-                    <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
-                    <span asp-validation-for="Input.Password" class="validation-error"></span>
-                    <div style="margin-top: 6px; font-size: 13px; color: #9384a4;">
-                        Mínimo 12 caracteres.
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label asp-for="Input.ConfirmPassword">Confirmar contraseña</label>
-                    <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" />
-                    <span asp-validation-for="Input.ConfirmPassword" class="validation-error"></span>
-                </div>
-
-                <button type="submit" class="activate-button">
-                    Activar Cuenta
-                </button>
-            </form>
+    <button type="submit" class="activate-button">
+        Confirmar correo y activar cuenta
+    </button>
+</form>
         }
     </main>
 

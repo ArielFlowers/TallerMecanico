@@ -64,7 +64,6 @@ public sealed class ActivarInvitacionModel : PageModel
 
         bool resultado = _usuarioAdministracion.ActivarUsuarioDesdeInvitacion(
             Input.Token,
-            Input.Password,
             out string? errorMessage);
 
         if (!resultado)
@@ -96,16 +95,4 @@ public sealed class ActivarInvitacionModel : PageModel
 public sealed class ActivarInvitacionInput
 {
     public string Token { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Ingrese una contraseña.")]
-    [StringLength(128, MinimumLength = 12, ErrorMessage = "La contraseña debe tener entre 12 y 128 caracteres.")]
-    [DataType(DataType.Password)]
-    [Display(Name = "Contraseña")]
-    public string Password { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Confirme la contraseña.")]
-    [DataType(DataType.Password)]
-    [Display(Name = "Confirmar contraseña")]
-    [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden.")]
-    public string ConfirmPassword { get; set; } = string.Empty;
 }

@@ -1,0 +1,64 @@
+@page
+@model TallerMecanico.Pages.Auth.CambiarContrasenaModel
+@{
+    ViewData["Title"] = "Cambiar contraseña";
+}
+
+@section Styles {
+    <style>
+        section {
+            max-width: 680px;
+            margin: 40px auto;
+            padding: 24px;
+            color: var(--text-primary);
+        }
+    </style>
+}
+
+<section>
+    <h1>Cambiar contraseña</h1>
+    <p>Por seguridad, deberá iniciar sesión nuevamente después del cambio.</p>
+
+    <form method="post" autocomplete="off">
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger" role="alert"></div>
+
+        <div style="margin-bottom:18px;">
+            <label asp-for="Input.Actual">Contraseña actual</label>
+            <input asp-for="Input.Actual" type="password"
+                   autocomplete="current-password"
+                   class="form-control" required />
+            <span asp-validation-for="Input.Actual" class="text-danger"></span>
+        </div>
+
+        <div style="margin-bottom:18px;">
+            <label asp-for="Input.Nueva">Nueva contraseña</label>
+            <input asp-for="Input.Nueva" type="password"
+                   autocomplete="new-password"
+                   class="form-control" required />
+            <span asp-validation-for="Input.Nueva" class="text-danger"></span>
+        </div>
+
+        <div style="margin-bottom:18px;">
+            <label asp-for="Input.Confirmacion">Confirmar nueva contraseña</label>
+            <input asp-for="Input.Confirmacion" type="password"
+                   autocomplete="new-password"
+                   class="form-control" required />
+            <span asp-validation-for="Input.Confirmacion" class="text-danger"></span>
+        </div>
+
+        <p>
+            Mínimo 12 caracteres, incluyendo mayúscula,
+            minúscula, número y carácter especial.
+        </p>
+
+        <button type="submit"
+                style="background:var(--primary);color:white;padding:12px 20px;border:0;border-radius:var(--radius-sm);">
+            Cambiar contraseña
+        </button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

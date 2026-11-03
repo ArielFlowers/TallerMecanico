@@ -325,33 +325,8 @@
         <section class="form-panel"
                  aria-label="Acceso al sistema">
 
-            <div class="auth-tabs"
-                 role="tablist"
-                 aria-label="Opciones de acceso">
-
-                <button type="button"
-                        id="tabLogin"
-                        class="auth-tab active"
-                        role="tab"
-                        aria-selected="true"
-                        aria-controls="panelLogin">
-                    Iniciar sesión
-                </button>
-
-                <button type="button"
-                        id="tabRegistro"
-                        class="auth-tab"
-                        role="tab"
-                        aria-selected="false"
-                        aria-controls="panelRegistro">
-                    Registrarse
-                </button>
-            </div>
-
             <!-- FORMULARIO DE LOGIN EXISTENTE -->
-            <div id="panelLogin"
-                 role="tabpanel"
-                 aria-labelledby="tabLogin">
+            <div id="panelLogin">
 
                 <h2 class="form-title">
                     Bienvenido de nuevo
@@ -365,6 +340,13 @@
                 {
                     <div class="validation-summary" style="color: #fca5a5; background: #3a1a1a; padding: 12px; border-radius: 8px; border: 1px solid #7a2a2a;">
                         @Model.MensajeExpirado
+                    </div>
+                }
+
+                @if (TempData["MensajeExito"] != null)
+                {
+                    <div style="color:#a7f3d0; background:#1b3a2c; padding:12px; border-radius:8px; border:1px solid #4ade80; margin-bottom:16px;">
+                        @TempData["MensajeExito"]
                     </div>
                 }
 
@@ -450,34 +432,6 @@
                 </form>
             </div>
 
-            <!-- REGISTRO: PENDIENTE DE IMPLEMENTACIÓN SEGURA -->
-            <div id="panelRegistro"
-                 role="tabpanel"
-                 aria-labelledby="tabRegistro"
-                 hidden>
-
-                <h2 class="form-title">
-                    Solicitar registro
-                </h2>
-
-                <p class="form-description">
-                    Solicita una cuenta para utilizar
-                    AutoTaller Pro.
-                </p>
-
-                <div class="register-notice" role="status">
-                    El registro de empleados estará disponible
-                    cuando se habilite la verificación
-                    por correo electrónico y la aprobación
-                    del Administrador.
-
-                    <p>
-                        Ninguna cuenta podrá acceder al sistema
-                        sin completar ambos pasos.
-                    </p>
-                </div>
-            </div>
-
             <div class="footer-text">
                 © @DateTime.Now.Year AutoTaller Pro
             </div>
@@ -486,86 +440,45 @@
     </main>
 
     <script>
-            (() => {
-                "use strict";
+    (() => {
+        "use strict";
 
-                const tabLogin =
-                    document.getElementById("tabLogin");
+        const passwordInput = document.getElementById("Input_Password");
+        const togglePassword = document.getElementById("togglePassword");
+        const iconEyeOpen = document.getElementById("iconEyeOpen");
+        const iconEyeClosed = document.getElementById("iconEyeClosed");
 
-                const tabRegistro =
-                    document.getElementById("tabRegistro");
+        if (!passwordInput || !togglePassword ||
+            !iconEyeOpen || !iconEyeClosed) {
+            return;
+        }
 
-                const panelLogin =
-                    document.getElementById("panelLogin");
+        togglePassword.addEventListener("click", () => {
+            const mostrar = passwordInput.type === "password";
 
-                const panelRegistro =
-                    document.getElementById("panelRegistro");
+            passwordInput.type = mostrar ? "text" : "password";
 
-                function seleccionarPestana(registro) {
-                    tabLogin.classList.toggle("active", !registro);
-                    tabRegistro.classList.toggle("active", registro);
+            togglePassword.setAttribute(
+                "aria-label",
+                mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
+            );
 
-                    tabLogin.setAttribute(
-                        "aria-selected",
-                        String(!registro)
-                    );
+            togglePassword.setAttribute(
+                "aria-pressed",
+                String(mostrar)
+            );
 
-                    tabRegistro.setAttribute(
-                        "aria-selected",
-                        String(registro)
-                    );
+            iconEyeOpen.classList.toggle(
+                "password-icon-hidden",
+                mostrar
+            );
 
-                    panelLogin.hidden = registro;
-                    panelRegistro.hidden = !registro;
-                }
-
-                tabLogin.addEventListener("click", () => {
-                    seleccionarPestana(false);
-                });
-
-                tabRegistro.addEventListener("click", () => {
-                    window.location.assign("/Auth/Registro");
-                });
-
-                const passwordInput =
-                document.getElementById("Input_Password");
-
-            const togglePassword =
-                document.getElementById("togglePassword");
-
-            const iconEyeOpen =
-                document.getElementById("iconEyeOpen");
-
-            const iconEyeClosed =
-                document.getElementById("iconEyeClosed");
-
-            togglePassword.addEventListener("click", () => {
-                const mostrar = passwordInput.type === "password";
-
-                passwordInput.type = mostrar ? "text" : "password";
-
-                togglePassword.setAttribute(
-                    "aria-label",
-                    mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
-                );
-
-                togglePassword.setAttribute(
-                    "aria-pressed",
-                    String(mostrar)
-                );
-
-                iconEyeOpen.classList.toggle(
-                    "password-icon-hidden",
-                    mostrar
-                );
-
-                iconEyeClosed.classList.toggle(
-                    "password-icon-hidden",
-                    !mostrar
-                );
-            });
-
-            })();
-    </script>
+            iconEyeClosed.classList.toggle(
+                "password-icon-hidden",
+                !mostrar
+            );
+        });
+    })();
+</script>
 </body>
 </html>

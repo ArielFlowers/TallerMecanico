@@ -357,8 +357,8 @@
 
                             </a>
 
-                            <a class="submenu-item"
-                               href="#">
+                            <a class="submenu-item @(Context.Request.Path.StartsWithSegments("/Reportes") ? "active" : "")"
+                               asp-page="/Reportes/Index">
 
                                 <span>
                                     Reportes
@@ -394,6 +394,8 @@
 
                     </a>
                 }
+
+                <a class="menu-item" asp-page="/Auth/CambiarContrasena"><span class="menu-icon">🔑</span><span>Cambiar contraseña</span></a>
 
                 <!-- LOGOUT: AMBOS ROLES -->
 
