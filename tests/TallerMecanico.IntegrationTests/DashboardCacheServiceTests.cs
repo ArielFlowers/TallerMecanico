@@ -8,6 +8,7 @@ using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class DashboardCacheServiceTests
 {
     private readonly RepositorioConteo<Mecanico> _mecanicos = new(3);

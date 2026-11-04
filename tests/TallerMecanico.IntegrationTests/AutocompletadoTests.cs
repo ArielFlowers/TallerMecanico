@@ -28,6 +28,7 @@ public sealed class AutocompletadoNavegadorFactAttribute : FactAttribute
 
 public sealed class AutocompletadoTests
 {
+    [Trait("Area", "Backend")]
     [Fact]
     public void Configuracion_ConservaLimitesYModoPredeterminado()
     {
@@ -41,6 +42,7 @@ public sealed class AutocompletadoTests
         Assert.Equal(10, BuscadorAutocompletadoModel.MaximoSugerencias);
     }
 
+    [Trait("Area", "Frontend")]
     [AutocompletadoNavegadorFact]
     public async Task PartialReal_ComportamientoAccesibleConRespuestasSimuladasEnEdge()
     {

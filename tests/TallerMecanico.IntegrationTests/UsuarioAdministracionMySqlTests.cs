@@ -15,6 +15,7 @@ using Xunit;
 namespace TallerMecanico.IntegrationTests;
 
 [Collection("MySQL aislado")]
+[Trait("Area", "Datos")]
 public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrueba)
 {
     private readonly MySqlAisladoFixture _fixture = basePrueba;

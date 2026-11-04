@@ -14,6 +14,8 @@ using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "API")]
+[Trait("Tipo", "Navegador")]
 public sealed class ProductosHttpTests
 {
     [MySqlAisladoFact]

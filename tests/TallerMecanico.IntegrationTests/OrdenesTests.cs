@@ -9,6 +9,7 @@ using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class OrdenesTests
 {
     private static CrearOrdenSolicitud Solicitud() => new(1, 1, DateTime.Today, Guid.NewGuid(), [new(1, 1)], 1);

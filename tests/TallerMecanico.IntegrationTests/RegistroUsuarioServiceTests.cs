@@ -7,6 +7,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public class RegistroUsuarioServiceTests
 {
     [Fact]

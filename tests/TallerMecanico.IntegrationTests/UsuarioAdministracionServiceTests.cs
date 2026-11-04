@@ -20,6 +20,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public class UsuarioAdministracionServiceTests
 {
     private readonly UsuariosFalsos _usuarios;

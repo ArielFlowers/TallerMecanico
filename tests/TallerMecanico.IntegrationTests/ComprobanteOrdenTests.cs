@@ -11,6 +11,7 @@ using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class ComprobanteOrdenTests
 {
     [Theory]

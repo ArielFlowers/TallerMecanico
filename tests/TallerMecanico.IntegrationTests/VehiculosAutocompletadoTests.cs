@@ -17,6 +17,7 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class VehiculosAutocompletadoTests
 {
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -31,6 +32,7 @@ public sealed class VehiculosAutocompletadoTests
         Assert.Null(puerto.UltimoTerminoSugerencias);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public async Task Servicio_NormalizaEspaciosSinCambiarLaConsultaManual()
     {
@@ -40,6 +42,7 @@ public sealed class VehiculosAutocompletadoTests
         Assert.Equal("tOYota cor", puerto.UltimoTerminoSugerencias);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void RegistrarClienteYRetomar_ConservanSeleccionExactaFormularioYOrden()
     {
@@ -72,6 +75,7 @@ public sealed class VehiculosAutocompletadoTests
         Assert.Equal("crear", pagina.ModalAbierto);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void GuardarDesdeOrden_ConservaRetornoYAsociacionConCliente()
     {
@@ -88,6 +92,7 @@ public sealed class VehiculosAutocompletadoTests
         Assert.Equal(12, ordenes.Obtener(orden)!.MecanicoId);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void BorradoresAnteriores_SinSeleccionSeSiguenLeyendo()
     {
@@ -98,6 +103,7 @@ public sealed class VehiculosAutocompletadoTests
         Assert.Equal("Toyota", anterior.Buscar);
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_PrefijoPlacasNacionalesYExtranjerasMarcaModeloYTildes()
     {
@@ -123,6 +129,7 @@ public sealed class VehiculosAutocompletadoTests
         Assert.Single(servicio.Search("Cruiser"));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_LimiteDiezEscapeYConsultasSinEscribirRelaciones()
     {

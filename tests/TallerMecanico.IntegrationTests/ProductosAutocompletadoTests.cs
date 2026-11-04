@@ -18,6 +18,7 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class ProductosAutocompletadoTests
 {
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -33,6 +34,7 @@ public sealed class ProductosAutocompletadoTests
         Assert.Equal(0, puerto.Escrituras);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public async Task Sugerencias_NormalizanEspaciosYNoInvocanOtrasOperaciones()
     {
@@ -44,6 +46,7 @@ public sealed class ProductosAutocompletadoTests
         Assert.Equal(0, puerto.Escrituras);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void CrearDesdeOrden_ConservaBorradorYPermisosDeRecepcionista()
     {
@@ -64,6 +67,7 @@ public sealed class ProductosAutocompletadoTests
         Assert.Single(puerto.Datos);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void Administrador_CrudConservaFiltrosYContextoSinCambiarElRetornoEspecial()
     {
@@ -85,6 +89,7 @@ public sealed class ProductosAutocompletadoTests
         }
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_PrefijoCodigoNombresCompuestosCajaYTildes()
     {
@@ -111,6 +116,7 @@ public sealed class ProductosAutocompletadoTests
         Assert.Null(servicio.ObtenerPorId(int.MaxValue));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_LimitaDiezYEscapaComodinesSinEscribirInventario()
     {
@@ -132,6 +138,7 @@ public sealed class ProductosAutocompletadoTests
         Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public void MySql_CrudValidacionesYAuditoriaContinuanFuncionando()
     {

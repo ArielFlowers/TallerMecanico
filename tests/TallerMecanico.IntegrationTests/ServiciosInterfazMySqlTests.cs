@@ -12,6 +12,7 @@ using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Frontend")]
 public sealed class ServiciosInterfazMySqlTests
 {
     [NavegadorFact]

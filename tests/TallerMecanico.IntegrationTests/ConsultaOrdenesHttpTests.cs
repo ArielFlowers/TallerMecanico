@@ -12,6 +12,8 @@ using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "API")]
+[Trait("Tipo", "Navegador")]
 public sealed class ConsultaOrdenesHttpTests
 {
     [MySqlAisladoFact]
@@ -57,7 +59,7 @@ public sealed class ConsultaOrdenesHttpTests
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(Path.Combine(MySqlAisladoFixture.RaizProyecto, "bin/Debug/net10.0/TallerMecanico.dll"));
+        inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

@@ -13,6 +13,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class GmailEmailServiceTests
 {
     private const string Enlace = "https://localhost:7043/Auth/VerificarEmail?token=TOKEN_SINTETICO";

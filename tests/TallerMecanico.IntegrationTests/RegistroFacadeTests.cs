@@ -7,6 +7,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class RegistroFacadeTests
 {
     private const string PasswordPrueba = "ClaveSoloParaPruebas123";

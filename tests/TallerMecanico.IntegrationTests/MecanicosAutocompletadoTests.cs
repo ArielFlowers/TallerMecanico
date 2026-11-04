@@ -9,6 +9,7 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class MecanicosAutocompletadoTests
 {
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -26,6 +27,7 @@ public sealed class MecanicosAutocompletadoTests
         Assert.Empty(await servicio.SugerirAsync(new string('a', 101)));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_PrefijoPalabrasCompuestasTildesYApellidoOpcional()
     {
@@ -48,6 +50,7 @@ public sealed class MecanicosAutocompletadoTests
         Assert.Equal(sinSegundo, Assert.Single(await servicio.SugerirAsync("munoz")));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_LimitaDiezEscapaComodinesYNoModificaDatos()
     {
@@ -68,6 +71,7 @@ public sealed class MecanicosAutocompletadoTests
         Assert.Equal(antes, JsonSerializer.Serialize(servicio.Obtener()));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_IdExactoYBusquedaManualConservanSemanticasSeparadas()
     {

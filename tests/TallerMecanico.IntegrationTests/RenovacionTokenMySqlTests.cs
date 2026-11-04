@@ -7,6 +7,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Datos")]
 public sealed class RenovacionTokenMySqlTests
 {
     [MySqlAisladoFact]

@@ -1,7 +1,8 @@
 # Conectar otra PC del equipo
 
 Seguir la [guía principal de instalación y uso diario](../README.md). Allí están
-los requisitos, certificados, las siete variables visibles y los comandos .NET.
+los requisitos para Windows y macOS, certificados, las siete variables visibles
+y los comandos .NET, que son iguales en ambos sistemas.
 Cada PC construye su propia imagen; todos usan el código de la rama acordada y
 la misma base `taller_mecanico` de Aiven MySQL 8.4.
 
@@ -14,7 +15,8 @@ la misma base `taller_mecanico` de Aiven MySQL 8.4.
 
 El compañero configura `.env` y ejecuta `dotnet msbuild -t:NubeUp`. No necesita
 crear otro Aiven, importar dumps ni ejecutar la prueba del trigger.
-`bd-nube.env` solo lo necesita quien administra la base.
+Los scripts administrativos también leen `.env`; no se necesita otro archivo
+con las mismas credenciales.
 
 ## Comprobación entre compañeros
 

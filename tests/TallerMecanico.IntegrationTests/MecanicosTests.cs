@@ -5,6 +5,7 @@ using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class MecanicosTests
 {
     private readonly ValidacionMecanicos _validador = new();

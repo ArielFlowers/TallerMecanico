@@ -16,6 +16,7 @@ using OrdenesIndexModel = TallerMecanico.Pages.Ordenes.IndexModel;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class ConsultaOrdenesTests
 {
     [Theory]

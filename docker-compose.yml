@@ -5,6 +5,9 @@
 # H2 - REDIS COMO CACHE DISTRIBUIDA
 # ============================================
 
+# Mantener el mismo proyecto aunque cambie el nombre de la carpeta del clon.
+name: tallermecanico
+
 x-app-common: &app-common
 
   # Cada PC construye la imagen desde su codigo actual.

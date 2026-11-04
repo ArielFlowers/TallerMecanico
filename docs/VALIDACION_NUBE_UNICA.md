@@ -86,4 +86,4 @@ El README concentra instalación y uso diario; la documentación Markdown conser
 administración, pruebas y registros históricos con sus fechas.
 
 Instalación: [README.md](../README.md). Administración y recuperación:
-[BD_NUBE.md](BD_NUBE.md). Preparación de tests: [tests/README.md](../tests/README.md).
+[BD_NUBE.md](BD_NUBE.md). Preparación de tests: [README.md](../README.md#pruebas-y-ci).

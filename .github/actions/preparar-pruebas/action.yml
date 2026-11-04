@@ -1,0 +1,14 @@
+name: Preparar pruebas .NET
+description: Instalar el SDK, restaurar paquetes y compilar la aplicacion y las pruebas en Release.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+    - name: Restaurar dependencias
+      shell: bash
+      run: dotnet restore "$PROYECTO_PRUEBAS"
+    - name: Compilar en Release
+      shell: bash
+      run: dotnet build "$PROYECTO_PRUEBAS" --configuration Release --no-restore
