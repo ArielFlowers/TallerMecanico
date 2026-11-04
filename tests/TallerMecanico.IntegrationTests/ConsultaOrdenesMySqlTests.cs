@@ -1,3 +1,4 @@
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -12,7 +13,7 @@ public sealed class ConsultaOrdenesMySqlTests
     private static int _ci = 6000000;
 
     private static ConsultaOrdenesFacade Fachada(MySqlAisladoFixture aislada) =>
-        SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(
+        SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(
             new CreadorConsultaOrdenes(aislada.Factory).CrearRepositorio(), new UsuarioPrueba()));
 
     [MySqlAisladoFact]

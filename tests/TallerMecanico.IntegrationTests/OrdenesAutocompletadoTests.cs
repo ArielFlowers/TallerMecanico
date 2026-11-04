@@ -172,11 +172,11 @@ public sealed class OrdenesAutocompletadoTests
     });
 
     internal static ConsultaOrdenesFacade Fachada(MySqlAisladoFixture aislada) =>
-        SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(
+        SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(
             new CreadorConsultaOrdenes(aislada.Factory).CrearRepositorio(), new UsuarioPrueba()));
 
     private static ConsultaOrdenesFacade Fachada(ConsultaPrueba puerto, UsuarioPrueba? usuario = null) =>
-        SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, usuario ?? new UsuarioPrueba()));
+        SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, usuario ?? new UsuarioPrueba()));
 
     private static void CopiarOrden(MySqlAisladoFixture aislada, int id, EstadoOrden estado, DateTime fecha) =>
         aislada.Ejecutar("""

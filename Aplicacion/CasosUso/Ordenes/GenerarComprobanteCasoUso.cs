@@ -2,10 +2,10 @@ using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Servicios;
 
-namespace TallerMecanico.Aplicacion.Servicios;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
-public sealed class ComprobanteOrdenService(
-    ConsultaOrdenesService consultas,
+public sealed class GenerarComprobanteCasoUso(
+    ConsultarOrdenesCasoUso consultas,
     IComprobantePdf generador,
     ImporteEnPalabras importeEnPalabras,
     ICurrentUser usuario,

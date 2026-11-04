@@ -23,9 +23,9 @@ public sealed class PdfContenidoFactAttribute : FactAttribute
 
 internal static class SoporteComprobantePdf
 {
-    public static ConsultaOrdenesFacade CrearFachada(ConsultaOrdenesService consultas,
+    public static ConsultaOrdenesFacade CrearFachada(ConsultarOrdenesCasoUso consultas,
         ICurrentUser? usuario = null, IComprobantePdf? generador = null, TimeProvider? reloj = null) =>
-        new(consultas, new ComprobanteOrdenService(consultas, generador ?? CrearGenerador(),
+        new(consultas, new GenerarComprobanteCasoUso(consultas, generador ?? CrearGenerador(),
             new ImporteEnPalabras(), usuario ?? new UsuarioPrueba(), reloj ?? TimeProvider.System));
 
     public static ComprobanteOrdenPdf CrearGenerador()

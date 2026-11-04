@@ -121,11 +121,11 @@ builder.Services.AddScoped<OrdenServicioFacade>();
 builder.Services.AddScoped<CreadorConsultaOrdenes>();
 builder.Services.AddScoped<IOrdenQueryRepository>(serviceProvider =>
     serviceProvider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
-builder.Services.AddScoped<ConsultaOrdenesService>();
+builder.Services.AddScoped<ConsultarOrdenesCasoUso>();
 builder.Services.AddScoped<ConsultaOrdenesFacade>();
 builder.Services.AddSingleton<ImporteEnPalabras>();
 builder.Services.AddScoped<IComprobantePdf, ComprobanteOrdenPdf>();
-builder.Services.AddScoped<ComprobanteOrdenService>();
+builder.Services.AddScoped<GenerarComprobanteCasoUso>();
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(
