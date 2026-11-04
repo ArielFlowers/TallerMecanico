@@ -18,6 +18,7 @@ using TallerMecanico.Infraestructura.Arranque;
 using TallerMecanico.Infraestructura.Sesion;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Dominio.Servicios;
+using TallerMecanico.Aplicacion.Configuracion;
 using TallerMecanico.Infraestructura.Configuracion;
 using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Infraestructura.Cache;
