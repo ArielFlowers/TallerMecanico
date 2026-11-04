@@ -16,6 +16,7 @@ using PaginaOrden = TallerMecanico.Pages.Ordenes.CrearModel;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Datos")]
 public sealed class NuevaOrdenAutocompletadoTests
 {
     [MySqlAisladoFact]

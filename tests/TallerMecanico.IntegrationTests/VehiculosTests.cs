@@ -9,6 +9,7 @@ using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public class VehiculosTests
 {
     private readonly ValidacionVehiculos _validador = new();

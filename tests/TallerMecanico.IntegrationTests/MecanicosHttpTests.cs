@@ -15,6 +15,8 @@ using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "API")]
+[Trait("Tipo", "Navegador")]
 public sealed class MecanicosHttpTests
 {
     [MySqlAisladoFact]

@@ -13,6 +13,7 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class ServiciosAutocompletadoTests
 {
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -27,6 +28,7 @@ public sealed class ServiciosAutocompletadoTests
         Assert.Null(repositorio.TerminoSugerencias);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public async Task Servicio_NormalizaSugerenciasPeroConservaEspaciosInternosDeBusquedaManual()
     {
@@ -41,6 +43,7 @@ public sealed class ServiciosAutocompletadoTests
         Assert.Equal(cancelacion.Token, repositorio.Cancelacion);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public async Task Pagina_UsaConsultaSqlSeleccionExactaYListadoCompletoSinFiltrarEnMemoria()
     {
@@ -68,6 +71,7 @@ public sealed class ServiciosAutocompletadoTests
         Assert.Equal("no-store", pagina.Response.Headers.CacheControl);
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_NombreDescripcionPalabrasCompuestasTildesYBusquedaParcial()
     {
@@ -91,6 +95,7 @@ public sealed class ServiciosAutocompletadoTests
         Assert.Empty(await servicio.BuscarAsync("noexiste"));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_LimiteSoloEnSugerenciasOrdenEstableDescripcionBreveYLiteralesEscapados()
     {
@@ -117,6 +122,7 @@ public sealed class ServiciosAutocompletadoTests
         Assert.Empty(await repositorio.SugerirAsync(" "));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_FactoryCrudAuditoriaYLecturasSinEscrituras()
     {

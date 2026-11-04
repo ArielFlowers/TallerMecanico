@@ -5,6 +5,7 @@ using TallerMecanico.Infraestructura.Persistencia;
 namespace TallerMecanico.IntegrationTests;
 
 [Collection("MySQL aislado")]
+[Trait("Area", "Datos")]
 public sealed class VehiculosMySqlTests(MySqlAisladoFixture basePrueba)
 {
     [MySqlAisladoFact]

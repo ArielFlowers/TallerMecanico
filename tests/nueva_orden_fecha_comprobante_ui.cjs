@@ -121,7 +121,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
             assert.equal(pestanas.length, 0, 'El comprobante debe mostrarse dentro de la pagina.');
             await modal.locator('[data-cerrar-comprobante]').click();
             assert.equal(await modal.getAttribute('open'), null);
-            assert.equal(await modal.locator('[data-comprobante-frame]').getAttribute('src'), 'about:blank');
+            // El evento close limpia el visor en una tarea posterior al clic.
+            await modal.locator('[data-comprobante-frame][src="about:blank"]').waitFor({ state: 'attached' });
 
             if (escenario === 'sin-ventanas' || escenario === 'fallo-pdf') {
                 if (escenario === 'fallo-pdf') await context.unroute('**/Ordenes/Comprobante?*');

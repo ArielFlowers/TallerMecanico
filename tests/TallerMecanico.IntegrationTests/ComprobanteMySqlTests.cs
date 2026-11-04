@@ -5,6 +5,7 @@ using TallerMecanico.Aplicacion.Servicios;
 namespace TallerMecanico.IntegrationTests;
 
 [Collection("MySQL aislado")]
+[Trait("Area", "Datos")]
 public sealed class ComprobanteMySqlTests
 {
     [MySqlAisladoFact]

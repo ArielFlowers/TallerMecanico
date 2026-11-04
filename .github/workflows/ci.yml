@@ -1,18 +1,67 @@
 name: CI
 
-on: [push, pull_request, workflow_dispatch]
+# Las ramas se validan por PR; main vuelve a validarse al integrar cambios.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}-${{ github.event_name }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  PROYECTO_PRUEBAS: tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: 'true'
+
 jobs:
-  test:
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preparar .NET y compilar
+        uses: ./.github/actions/preparar-pruebas
+      - name: Preparar lectura de PDF
+        uses: ./.github/actions/preparar-pdf
+      - name: Probar logica, servicios, validaciones, cache y PDF
+        run: >-
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          --filter "Area=Backend" --logger "trx;LogFileName=backend.trx"
+          --results-directory TestResults/backend -- xUnit.ParallelizeTestCollections=false
+      - name: Guardar resultados de backend
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-backend
+          path: TestResults/backend/*.trx
+          if-no-files-found: warn
+          retention-days: 7
+
+  integracion:
+    name: ${{ matrix.nombre }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - area: API
+            nombre: API / HTTP
+            filtro: Area=API
+          - area: Datos
+            nombre: Base de datos / MySQL
+            filtro: Area=Datos
+          - area: Frontend
+            nombre: Frontend / navegador
+            # Algunos escenarios HTTP tambien tienen un recorrido de navegador.
+            filtro: Area=Frontend|Tipo=Navegador
     services:
       mysql:
         image: mysql:8.4
@@ -22,20 +71,92 @@ jobs:
         ports:
           - 3308:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -pci_test_password --silent"
-          --health-interval=10s
+          --tmpfs /var/lib/mysql
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --protocol=tcp -uroot -pci_test_password --silent"
+          --health-interval=5s
           --health-timeout=5s
-          --health-retries=12
+          --health-retries=24
     env:
       TALLER_TEST_MYSQL: 'Server=127.0.0.1;Port=3308;User ID=root;Password=ci_test_password;SslMode=Disabled;'
+      AREA_PRUEBAS: ${{ matrix.area }}
+      FILTRO_PRUEBAS: ${{ matrix.filtro }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-dotnet@v6
+      - name: Preparar .NET y compilar
+        uses: ./.github/actions/preparar-pruebas
+      - name: Preparar lectura de PDF
+        if: matrix.area == 'Frontend'
+        uses: ./.github/actions/preparar-pdf
+      - name: Preparar Node para las pruebas de interfaz
+        if: matrix.area == 'Frontend'
+        uses: actions/setup-node@v6
         with:
-          dotnet-version: '10.0.x'
-      - name: Restaurar dependencias
-        run: dotnet restore tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj
-      - name: Compilar
-        run: dotnet build tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --configuration Release --no-restore
-      - name: Ejecutar pruebas
-        run: dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --configuration Release --no-build -- xUnit.ParallelizeTestCollections=false
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - name: Instalar Playwright y Microsoft Edge
+        if: matrix.area == 'Frontend'
+        working-directory: tests/browser
+        run: |
+          npm ci --no-audit --no-fund
+          node node_modules/playwright/cli.js install --with-deps msedge
+          echo "PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/tests/browser/node_modules/playwright" >> "$GITHUB_ENV"
+      - name: Ejecutar las pruebas del area
+        run: >-
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          --filter "$FILTRO_PRUEBAS" --logger "trx;LogFileName=resultados.trx"
+          --results-directory "TestResults/$AREA_PRUEBAS" -- xUnit.ParallelizeTestCollections=false
+      - name: Guardar resultados del area
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-${{ matrix.area }}
+          path: TestResults/${{ matrix.area }}/*.trx
+          if-no-files-found: warn
+          retention-days: 7
+
+  compatibilidad:
+    name: Compatibilidad (${{ matrix.sistema }})
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sistema: Windows
+            runner: windows-latest
+          - sistema: macOS
+            runner: macos-latest
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preparar .NET y compilar
+        uses: ./.github/actions/preparar-pruebas
+      - name: Publicar para el sistema actual
+        run: dotnet publish TallerMecanico.csproj --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado"
+      - name: Validar lanzadores y rutas con espacios
+        run: |
+          bash -n scripts/entorno.sh
+          bash -n taller.sh
+          bash ./taller.sh ayuda
+          bash ./tests/entorno-portable.sh
+          dotnet msbuild -t:Ayuda
+      - name: Comprobar el lanzador nativo de Windows
+        if: matrix.sistema == 'Windows'
+        shell: cmd
+        run: taller.cmd ayuda
+      - name: Comprobar la generacion nativa de PDF
+        run: >-
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          --filter "Tipo=Portabilidad" --logger "trx;LogFileName=compatibilidad.trx"
+          --results-directory TestResults/compatibilidad
+      - name: Guardar resultados de compatibilidad
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-compatibilidad-${{ matrix.sistema }}
+          path: TestResults/compatibilidad/*.trx
+          if-no-files-found: warn
+          retention-days: 7

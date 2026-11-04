@@ -12,6 +12,8 @@ using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "API")]
+[Trait("Tipo", "Navegador")]
 public sealed class ConsultaOrdenesHttpTests
 {
     [MySqlAisladoFact]

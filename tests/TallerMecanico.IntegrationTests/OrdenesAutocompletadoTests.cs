@@ -15,6 +15,7 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class OrdenesAutocompletadoTests
 {
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -29,6 +30,7 @@ public sealed class OrdenesAutocompletadoTests
         Assert.Equal(0, puerto.ConsultasSugerencias);
     }
 
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData("Administrador")]
     [InlineData("Recepcionista")]
@@ -49,6 +51,7 @@ public sealed class OrdenesAutocompletadoTests
         Assert.Equal(EstadoOrden.Anulada, puerto.Estado);
     }
 
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(false, "Administrador")]
     [InlineData(true, "Invitado")]
@@ -62,6 +65,7 @@ public sealed class OrdenesAutocompletadoTests
         Assert.Equal(0, puerto.ConsultasListado);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public async Task Pagina_ConservaFiltrosAlRefrescarYRechazaFiltrosInvalidosEnSugerencias()
     {
@@ -84,6 +88,7 @@ public sealed class OrdenesAutocompletadoTests
         Assert.Equal(1, puerto.ConsultasSugerencias);
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_IdPrefijoPlacaCompartidaSeleccionExactaYFiltrosCombinados()
     {
@@ -112,6 +117,7 @@ public sealed class OrdenesAutocompletadoTests
         Assert.Equal(4, fachada.Obtener().Count);
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_LimiteSqlOrdenEstableYEscapeSinLimitarListadoManual()
     {
@@ -133,6 +139,7 @@ public sealed class OrdenesAutocompletadoTests
         Assert.All(await fachada.SugerirAsync("123"), orden => Assert.Equal("123ABC", orden.TextoSecundario));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_LecturasConservanStockAuditoriaDetallesYTotalHistorico()
     {

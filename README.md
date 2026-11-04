@@ -133,18 +133,38 @@ su clave separada de la base compartida. Para detenerlo:
 docker compose --project-directory . --env-file tests/.env.test -f tests/docker-compose.test.yml down
 ```
 
-El [CI](.github/workflows/ci.yml) compila y ejecuta las pruebas con .NET 10 y MySQL
-8.4 temporal en cada push y pull request. No necesita credenciales del equipo.
-El [CI de portabilidad](.github/workflows/portabilidad.yml) también compila y
-ejecuta las pruebas sin MySQL externo en Windows y macOS.
-Las pruebas de navegador y extracción de texto PDF son opcionales y se omiten
-si sus herramientas no están configuradas:
+Hay un solo [CI](.github/workflows/ci.yml), organizado por propósito:
 
-- Navegador: Node.js, Microsoft Edge y Playwright. Instalar con
-  `npm.cmd install --prefix "$env:TEMP/taller-playwright" playwright --no-audit --no-fund`
-  y definir `$env:PLAYWRIGHT_MODULE = "$env:TEMP/taller-playwright/node_modules/playwright"`.
-- Contenido PDF: Python con `pypdf`; definir `TALLER_PDF_PYTHON` con la ruta del
-  ejecutable. La generación básica del PDF se prueba también sin Python.
+| Check | Responsabilidad |
+|---|---|
+| Backend | Lógica de negocio, servicios, validaciones, caché y PDF. |
+| API / HTTP | Endpoints, formularios, autenticación, permisos y respuestas HTTPS. |
+| Base de datos / MySQL | Repositorios, migraciones, transacciones e integridad. |
+| Frontend / navegador | Interacciones reales en Microsoft Edge con Playwright. |
+| Compatibilidad (Windows / macOS) | Compilar, publicar y comprobar lanzadores y PDF en cada sistema. |
+
+Se ejecuta una vez por actualización del PR y en los pushes a `main`.
+Un nuevo commit cancela la ejecución anterior del mismo PR. Windows y macOS
+comparten la misma definición de job; cada uno usa su propia máquina.
+CI prepara MySQL temporal, Edge, Playwright y Python para PDF y no necesita
+credenciales del equipo. Los resultados TRX se guardan por área durante siete días.
+
+La [guía de CI](docs/CI.md) explica los filtros por área, los checks y cómo
+reproducirlos. Por ejemplo, para ejecutar solo la lógica de backend:
+
+```console
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --configuration Release --filter "Area=Backend" -- xUnit.ParallelizeTestCollections=false
+```
+
+Localmente, los recorridos de navegador y la extracción de texto PDF se omiten
+si no están configuradas sus herramientas. Para habilitarlos:
+
+- Navegador: `npm ci --prefix tests/browser` e instalar Edge con
+  `node tests/browser/node_modules/playwright/cli.js install msedge`.
+  Definir `PLAYWRIGHT_MODULE` con la ruta absoluta a
+  `tests/browser/node_modules/playwright`.
+- Contenido PDF: `python -m pip install -r tests/requirements-ci.txt` y definir
+  `TALLER_PDF_PYTHON` con la ruta del ejecutable Python.
 
 ## Referencias
 

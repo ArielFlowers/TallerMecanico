@@ -6,6 +6,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Datos")]
 public sealed class RevisionSolicitudesMySqlTests : IDisposable
 {
     private readonly MySqlAisladoFixture _aislada = new();

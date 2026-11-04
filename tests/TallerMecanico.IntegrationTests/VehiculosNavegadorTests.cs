@@ -21,6 +21,7 @@ public sealed class NavegadorFactAttribute : FactAttribute
     }
 }
 
+[Trait("Area", "Frontend")]
 public sealed class VehiculosNavegadorTests
 {
     [NavegadorFact]

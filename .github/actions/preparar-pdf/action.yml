@@ -1,0 +1,13 @@
+name: Preparar lectura de PDF
+description: Instalar Python y pypdf para comprobar el contenido de los comprobantes.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.13'
+    - name: Preparar lectura de comprobantes PDF
+      shell: bash
+      run: |
+        python -m pip install -r tests/requirements-ci.txt
+        echo "TALLER_PDF_PYTHON=$(command -v python)" >> "$GITHUB_ENV"

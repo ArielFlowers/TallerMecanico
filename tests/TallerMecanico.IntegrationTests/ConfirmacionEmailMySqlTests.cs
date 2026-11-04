@@ -6,6 +6,7 @@ using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Datos")]
 public class ConfirmacionEmailMySqlTests
 {
     [MySqlAisladoFact]

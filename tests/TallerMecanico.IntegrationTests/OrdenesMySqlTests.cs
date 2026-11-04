@@ -15,6 +15,7 @@ using TallerMecanico.Aplicacion.Validaciones;
 namespace TallerMecanico.IntegrationTests;
 
 [Collection("MySQL aislado")]
+[Trait("Area", "Datos")]
 public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
 {
     private static int _ci = 3000000;

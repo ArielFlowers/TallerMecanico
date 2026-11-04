@@ -12,6 +12,7 @@ using TallerMecanico.Infraestructura.Persistencia.MySql;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Datos")]
 public sealed class CatalogoServiciosMySqlTests
 {
     [MySqlAisladoFact]

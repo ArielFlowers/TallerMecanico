@@ -15,6 +15,7 @@ using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class CantidadesServiciosTests
 {
     [Theory]
