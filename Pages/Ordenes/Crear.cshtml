@@ -27,6 +27,7 @@
     <div class="ordenes-crear-layout">
         <main class="ordenes-crear-main">
     <form method="post" id="formulario-orden" asp-page-handler="Guardar"
+          data-comprobante-espera-url="@Url.Content("~/comprobante-espera.html")"
           data-restaurar-scroll="@Model.ScrollY"
           data-vehiculo-url="@Url.Page("./Crear", "VehiculoSeleccionado")"
           data-servicio-url="@Url.Page("./Crear", "ServicioSeleccionado")"
@@ -276,7 +277,7 @@
         </div>
     </div>
     <p class="orden-confirmacion-mensaje">
-        Al confirmar, se guardará la orden y podrás consultar el comprobante en esta misma página.
+        Al confirmar, se guardará la orden y el comprobante se abrirá en una pestaña nueva.
     </p>
     <div class="orden-confirmacion-acciones">
         <button type="button" class="services-btn services-btn-secondary" data-cancelar-confirmacion>

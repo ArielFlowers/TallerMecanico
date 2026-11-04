@@ -73,7 +73,10 @@
     @if (Model.OrdenCreadaId.HasValue)
     {
         <div class="orden-comprobante-aviso" role="status">
-            Orden #@Model.OrdenCreadaId.Value guardada. El comprobante se muestra en esta página.
+            Orden #@Model.OrdenCreadaId.Value guardada. El comprobante se abrirá en una pestaña nueva.
+            Si no se abre, utiliza este enlace:
+            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value"
+               target="_blank" rel="noopener" data-comprobante-creado>Abrir comprobante en otra pestaña</a>
         </div>
     }
 
@@ -172,8 +175,7 @@
 </div>
 
 <dialog id="comprobante-orden-dialog" class="ordenes-dialog ordenes-comprobante-dialog"
-        aria-labelledby="comprobante-orden-titulo"
-        data-comprobante-inicial="@(Model.OrdenCreadaId.HasValue ? Url.Page("./Comprobante", new { id = Model.OrdenCreadaId.Value }) : string.Empty)">
+        aria-labelledby="comprobante-orden-titulo">
     <div class="ordenes-dialog-header">
         <div>
             <h2 id="comprobante-orden-titulo">Comprobante de la orden</h2>

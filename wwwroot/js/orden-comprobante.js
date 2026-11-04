@@ -1,4 +1,54 @@
 (() => {
+    const claveReserva = "orden:comprobante-reservado";
+    const duracionReserva = 120000;
+
+    if (document.body.hasAttribute("data-comprobante-espera")) {
+        const reserva = location.hash.slice(1);
+        const limite = Date.now() + duracionReserva;
+        const espera = window.setInterval(() => {
+            try {
+                if (!reserva || !window.opener || window.opener.closed || Date.now() >= limite) {
+                    window.clearInterval(espera);
+                    window.close();
+                    return;
+                }
+                const origen = window.opener.document;
+                if (origen.readyState !== "complete" ||
+                    origen.getElementById("formulario-orden")?.dataset.comprobanteReserva === reserva) return;
+
+                const enlace = origen.querySelector("[data-comprobante-creado]");
+                window.clearInterval(espera);
+                if (enlace && new URL(enlace.href).origin === location.origin) {
+                    window.opener = null;
+                    window.location.replace(enlace.href);
+                } else window.close();
+            } catch {
+                window.clearInterval(espera);
+                window.close();
+            }
+        }, 100);
+        return;
+    }
+
+    let reservaAnterior = false;
+    try {
+        const reserva = JSON.parse(sessionStorage.getItem(claveReserva) || "null");
+        reservaAnterior = reserva && Date.now() - reserva.fecha < duracionReserva;
+        sessionStorage.removeItem(claveReserva);
+    } catch { /* El enlace manual sigue disponible sin almacenamiento. */ }
+
+    function reservarComprobante(formulario) {
+        try {
+            const id = crypto.randomUUID();
+            sessionStorage.setItem(claveReserva, JSON.stringify({ fecha: Date.now() }));
+            formulario.dataset.comprobanteReserva = id;
+            const pestaña = window.open(`${formulario.dataset.comprobanteEsperaUrl}#${id}`, "_blank");
+            if (pestaña) return;
+        } catch { /* El navegador puede bloquear ventanas o almacenamiento. */ }
+        try { sessionStorage.removeItem(claveReserva); } catch { /* Almacenamiento opcional. */ }
+        delete formulario.dataset.comprobanteReserva;
+    }
+
     const dialogoAnulacion = document.getElementById("anular-orden-dialog");
     const botonConfirmarAnulacion = dialogoAnulacion?.querySelector("[data-confirmar-anulacion]");
     const botonCancelarAnulacion = dialogoAnulacion?.querySelector("[data-cancelar-anulacion]");
@@ -54,6 +104,7 @@
 
             confirmada = false;
             enviando = true;
+            reservarComprobante(formulario);
             document.querySelectorAll('[type="submit"][form="formulario-orden"]').forEach(boton => {
                 boton.disabled = true;
             });
@@ -100,5 +151,9 @@
         if (frame) frame.src = "about:blank";
     });
 
-    mostrarComprobante(dialogoComprobante.dataset.comprobanteInicial);
+    const enlaceCreado = document.querySelector("[data-comprobante-creado]");
+    if (enlaceCreado && !reservaAnterior) {
+        try { window.open(enlaceCreado.href, "_blank", "noopener"); }
+        catch { /* El enlace de respaldo permanece visible. */ }
+    }
 })();
