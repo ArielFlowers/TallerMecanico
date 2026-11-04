@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -114,7 +115,8 @@ builder.Services.AddScoped<ITokenOrden, TokenOrdenSesion>();
 builder.Services.AddScoped<IBorradorOrden, BorradorOrdenSesion>();
 builder.Services.AddScoped<IUnidadTrabajoOrden, MySqlUnidadTrabajoOrden>();
 builder.Services.AddScoped<ValidacionOrdenes>();
-builder.Services.AddScoped<OrdenServicioService>();
+builder.Services.AddScoped<CrearOrdenCasoUso>();
+builder.Services.AddScoped<AnularOrdenCasoUso>();
 builder.Services.AddScoped<OrdenServicioFacade>();
 builder.Services.AddScoped<CreadorConsultaOrdenes>();
 builder.Services.AddScoped<IOrdenQueryRepository>(serviceProvider =>

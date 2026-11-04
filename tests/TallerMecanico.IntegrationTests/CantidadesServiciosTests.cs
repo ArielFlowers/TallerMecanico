@@ -28,8 +28,8 @@ public sealed class CantidadesServiciosTests
             : [new(1, 1), new(1, 3)];
         var solicitud = new CrearOrdenSolicitud(1, 1, DateTime.Today, Guid.NewGuid(), [],
             ServicioIds: [1], CantidadesServicios: cantidades);
-        var servicio = new OrdenServicioService(new UnidadNoUtilizable(), new UsuarioPrueba(),
-            new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
+        var servicio = new OrdenServicioPrueba(new UnidadNoUtilizable(), new UsuarioPrueba(),
+            new ValidacionOrdenes(), TimeProvider.System);
 
         var resultado = servicio.CrearOrden(solicitud);
 

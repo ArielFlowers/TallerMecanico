@@ -168,9 +168,9 @@ public sealed class NuevaOrdenAutocompletadoTests
         var contexto = new DefaultHttpContext { Session = sesion ?? new SesionPrueba() };
         var acceso = new HttpContextAccessor { HttpContext = contexto };
         var usuario = new UsuarioPrueba();
-        var ordenes = new OrdenServicioService(new MySqlUnidadTrabajoOrden(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance),
-            usuario, new ValidacionOrdenes(), reloj, NullLogger<OrdenServicioService>.Instance);
-        var pagina = new PaginaOrden(new OrdenServicioFacade(ordenes, new TokenOrdenSesion(acceso, usuario, reloj)),
+        var ordenes = new OrdenServicioPrueba(new MySqlUnidadTrabajoOrden(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance),
+            usuario, new ValidacionOrdenes(), reloj);
+        var pagina = new PaginaOrden(ordenes.CrearFacade(new TokenOrdenSesion(acceso, usuario, reloj)),
             new BorradorOrdenSesion(acceso, usuario), VehiculosAutocompletadoTests.CrearServicio(aislada),
             new MecanicoService(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos(), usuario),
             ProductosAutocompletadoTests.CrearServicio(aislada), ClientesAutocompletadoTests.CrearServicio(aislada),

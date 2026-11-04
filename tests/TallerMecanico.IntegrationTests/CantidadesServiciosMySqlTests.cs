@@ -278,8 +278,7 @@ public sealed class CantidadesServiciosMySqlTests
     private static MySqlUnidadTrabajoOrden Unidad(MySqlAisladoFixture aislada) =>
         new(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance);
 
-    private static OrdenServicioService CrearServicio(MySqlAisladoFixture aislada,
+    private static OrdenServicioPrueba CrearServicio(MySqlAisladoFixture aislada,
         UsuarioPrueba? usuario = null, IUnidadTrabajoOrden? unidad = null) => new(
-        unidad ?? Unidad(aislada), usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System,
-        NullLogger<OrdenServicioService>.Instance);
+        unidad ?? Unidad(aislada), usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System);
 }
