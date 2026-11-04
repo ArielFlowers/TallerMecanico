@@ -4,6 +4,7 @@ using TallerMecanico.Dominio.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class ImporteEnPalabrasTests
 {
     [Theory]

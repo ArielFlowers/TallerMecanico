@@ -6,11 +6,13 @@ using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class ComprobantePdfTests
 {
     private static readonly DateTimeOffset FechaGeneracion = new(2026, 10, 12, 20, 30, 0, TimeSpan.Zero);
 
     [Fact]
+    [Trait("Tipo", "Portabilidad")]
     public void Generacion_ProduceArchivoPdfReal()
     {
         byte[] pdf = Generar(SoporteComprobantePdf.Orden());

@@ -1,0 +1,2 @@
+# Extraccion de texto de los comprobantes en las pruebas de backend.
+pypdf==6.21.4

@@ -12,6 +12,7 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class NuevaOrdenFechaTests
 {
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData("2026-10-19T00:30:00Z", "2026-10-18")]
     [InlineData("2026-10-19T03:59:59Z", "2026-10-18")]
@@ -24,6 +25,7 @@ public sealed class NuevaOrdenFechaTests
         Assert.Equal(DateTime.Parse(fecha), servicio.FechaActual);
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public void Crear_IgnoraFechaRecibidaYReenvioNoCambiaFechaHistoricaNiStock()
     {
@@ -50,6 +52,7 @@ public sealed class NuevaOrdenFechaTests
         Assert.Equal(new DateTime(2026, 10, 19), aislada.Escalar("SELECT Fecha FROM Ordenes WHERE Id=@Id;", ("@Id", siguiente.OrdenId)));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public void BorradorAntiguoYError_MuestranFechaActualSinRestaurarUnaFechaDeEntrada()
     {

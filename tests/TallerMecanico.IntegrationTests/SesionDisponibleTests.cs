@@ -7,6 +7,7 @@ using TallerMecanico.Infraestructura.Sesion;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class SesionDisponibleTests
 {
     [Fact]

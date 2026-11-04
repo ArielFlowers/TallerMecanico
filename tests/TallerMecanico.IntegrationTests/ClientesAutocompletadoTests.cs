@@ -14,6 +14,7 @@ namespace TallerMecanico.IntegrationTests;
 
 public sealed class ClientesAutocompletadoTests
 {
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -28,6 +29,7 @@ public sealed class ClientesAutocompletadoTests
         Assert.Null(puerto.UltimoTerminoSugerencias);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public async Task Servicio_NormalizaSolamenteLosEspaciosDelTermino()
     {
@@ -37,6 +39,7 @@ public sealed class ClientesAutocompletadoTests
         Assert.Equal("mARía péREZ", puerto.UltimoTerminoSugerencias);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void CrearClienteDesdeOrden_ConservaElRetornoYElIdGenerado()
     {
@@ -51,6 +54,7 @@ public sealed class ClientesAutocompletadoTests
         Assert.Equal(12, borradoresOrden.Obtener(orden)!.MecanicoId);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void CrearClienteDesdeVehiculo_PriorizaRetornoExistenteInclusoConFiltros()
     {
@@ -70,6 +74,7 @@ public sealed class ClientesAutocompletadoTests
         Assert.Equal(orden, vehiculos.Obtener(vehiculo)!.OrdenBorradorId);
     }
 
+    [Trait("Area", "Backend")]
     [Fact]
     public void ActualizarYEliminar_ConservanFiltrosYContextos()
     {
@@ -93,6 +98,7 @@ public sealed class ClientesAutocompletadoTests
         }
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_PrefijoPalabrasCompuestasTildesYComplementos()
     {
@@ -118,6 +124,7 @@ public sealed class ClientesAutocompletadoTests
         Assert.Equal(porComplemento.Id, servicio.ObtenerPorId(porComplemento.Id)!.Id);
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_LimitaDiezEscapaEntradasYNoEscribe()
     {
@@ -135,6 +142,7 @@ public sealed class ClientesAutocompletadoTests
         Assert.Equal(antes, JsonSerializer.Serialize(servicio.Obtener()));
     }
 
+    [Trait("Area", "Datos")]
     [MySqlAisladoFact]
     public async Task MySql_BusquedaManualYApellidoVacioMantienenComportamientoAnterior()
     {

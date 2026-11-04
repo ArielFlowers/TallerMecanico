@@ -7,6 +7,7 @@ using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class RedisCacheAdapterTests
 {
     private readonly ConexionRedisPrueba _redis = new();

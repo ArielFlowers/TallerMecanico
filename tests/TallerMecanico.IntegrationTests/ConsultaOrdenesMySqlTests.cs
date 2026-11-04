@@ -6,6 +6,7 @@ using TallerMecanico.Aplicacion.Servicios;
 namespace TallerMecanico.IntegrationTests;
 
 [Collection("MySQL aislado")]
+[Trait("Area", "Datos")]
 public sealed class ConsultaOrdenesMySqlTests
 {
     private static int _ci = 6000000;

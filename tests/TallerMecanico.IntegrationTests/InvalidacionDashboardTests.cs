@@ -14,6 +14,7 @@ using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Backend")]
 public sealed class InvalidacionDashboardTests
 {
     [Theory]

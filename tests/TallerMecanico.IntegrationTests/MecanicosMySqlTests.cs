@@ -6,6 +6,7 @@ using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.IntegrationTests;
 
+[Trait("Area", "Datos")]
 public sealed class MecanicosMySqlTests
 {
     private static MecanicoService CrearServicio(MySqlAisladoFixture aislada) =>
