@@ -28,13 +28,8 @@ jobs:
       - uses: actions/checkout@v6
       - name: Preparar .NET y compilar
         uses: ./.github/actions/preparar-pruebas
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-      - name: Preparar lectura de comprobantes PDF
-        run: |
-          python -m pip install -r tests/requirements-ci.txt
-          echo "TALLER_PDF_PYTHON=$(command -v python)" >> "$GITHUB_ENV"
+      - name: Preparar lectura de PDF
+        uses: ./.github/actions/preparar-pdf
       - name: Probar logica, servicios, validaciones, cache y PDF
         run: >-
           dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
@@ -89,6 +84,9 @@ jobs:
       - uses: actions/checkout@v6
       - name: Preparar .NET y compilar
         uses: ./.github/actions/preparar-pruebas
+      - name: Preparar lectura de PDF
+        if: matrix.area == 'Frontend'
+        uses: ./.github/actions/preparar-pdf
       - name: Preparar Node para las pruebas de interfaz
         if: matrix.area == 'Frontend'
         uses: actions/setup-node@v6

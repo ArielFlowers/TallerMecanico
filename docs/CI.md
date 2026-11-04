@@ -8,7 +8,7 @@ cada check tiene un nombre que indica que esta comprobando:
 | Backend | Reglas de negocio, servicios, validaciones, sesiones, cache simulada y comprobantes PDF, incluido su texto. | .NET 10, Python y pypdf. |
 | API / HTTP | Autenticacion, permisos, endpoints de autocompletado, formularios y respuestas HTTP/HTTPS de Razor Pages. | .NET 10 y MySQL 8.4 temporal. |
 | Base de datos / MySQL | Repositorios, esquema, migraciones, transacciones, concurrencia e integridad de datos. | .NET 10 y MySQL 8.4 temporal. |
-| Frontend / navegador | Interacciones reales en Edge: autocompletado, formularios, navegacion, borradores, modales y comprobantes. | .NET 10, MySQL 8.4 temporal, Node y Playwright. |
+| Frontend / navegador | Interacciones reales en Edge: autocompletado, formularios, navegacion, borradores, modales y comprobantes. | .NET 10, MySQL 8.4 temporal, Node, Playwright, Python y pypdf. |
 | Compatibilidad (Windows) | Compilacion y publicacion nativas, ayuda de MSBuild, lanzadores, rutas con espacios y generacion nativa de PDF. | .NET 10 y Bash de Git para Windows. |
 | Compatibilidad (macOS) | Las mismas comprobaciones de compatibilidad en una maquina macOS. | .NET 10 y Bash. |
 
@@ -90,6 +90,8 @@ Abrir el check del area que fallo y su paso de pruebas. Cada area guarda un
 artefacto `resultados-...` con el informe TRX, incluso cuando falla la suite;
 se conserva siete dias. Los pasos de preparacion comunes estan en
 [preparar-pruebas](../.github/actions/preparar-pruebas/action.yml).
+Backend y Frontend comparten la preparacion de Python y pypdf mediante
+[preparar-pdf](../.github/actions/preparar-pdf/action.yml).
 
 Los jobs de compatibilidad validan el software nativo y simulan Docker en los
 lanzadores. El stack completo con tres replicas, Nginx y Aiven se comprueba
