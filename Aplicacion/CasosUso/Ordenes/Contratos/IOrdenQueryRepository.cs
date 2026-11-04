@@ -1,9 +1,9 @@
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Aplicacion.Puertos;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 
-public interface IConsultaOrdenesPort
+public interface IOrdenQueryRepository
 {
     IReadOnlyList<OrdenResumen> Obtener(
         EstadoOrden? estado = null,

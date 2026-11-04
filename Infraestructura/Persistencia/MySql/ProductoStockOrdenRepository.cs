@@ -1,11 +1,11 @@
 using System.Data.Common;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class ProductoStockOrdenRepository(
-    ProductoRepository repositorio, DbConnection conexion, DbTransaction transaccion) : IProductoStockOrdenPort
+    ProductoRepository repositorio, DbConnection conexion, DbTransaction transaccion) : IProductoStockRepository
 {
     public IReadOnlyList<Producto> BloquearPorId(IEnumerable<int> ids) => RepositorioOrdenSql.Ejecutar(() =>
     {

@@ -1,10 +1,10 @@
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.Aplicacion.Fachadas;
 
-public sealed class OrdenServicioFacade(OrdenServicioService servicio, ITokenOrdenPort tokens)
+public sealed class OrdenServicioFacade(OrdenServicioService servicio, ITokenOrden tokens)
 {
     public DateTime FechaActual => servicio.FechaActual;
 

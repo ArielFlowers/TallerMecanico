@@ -1,11 +1,11 @@
 using System.Data.Common;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class OrdenRepository(DbConnection conexion, DbTransaction transaccion)
-    : RepositorioOrdenSql(conexion, transaccion), IOrdenPort
+    : RepositorioOrdenSql(conexion, transaccion), IOrdenRepository
 {
     private const string Seleccionar = """
         SELECT Id, VehiculoId, MecanicoId, ServicioId, CostoServicio, Fecha, Estado, Total, Token,

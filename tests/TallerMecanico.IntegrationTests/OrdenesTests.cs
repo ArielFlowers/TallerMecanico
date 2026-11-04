@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Sesion;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
@@ -124,15 +124,15 @@ public sealed class OrdenesTests
         Assert.Contains("Lineas", servicio.CrearOrden(solicitud).Errores);
     }
 
-    private static OrdenServicioService Servicio(IUnidadTrabajoOrdenPort unidad, UsuarioPrueba usuario) =>
+    private static OrdenServicioService Servicio(IUnidadTrabajoOrden unidad, UsuarioPrueba usuario) =>
         new(unidad, usuario, new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
 
-    private sealed class UnidadProhibida : IUnidadTrabajoOrdenPort
+    private sealed class UnidadProhibida : IUnidadTrabajoOrden
     {
         public ITransaccionOrden Iniciar() => throw new InvalidOperationException("No se debe abrir una transacción.");
     }
 
-    private sealed class TokensInvalidos : ITokenOrdenPort
+    private sealed class TokensInvalidos : ITokenOrden
     {
         public Guid Generar() => Guid.NewGuid();
         public bool EsValido(Guid token) => false;

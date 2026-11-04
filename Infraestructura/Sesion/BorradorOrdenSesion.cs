@@ -1,10 +1,11 @@
 using System.Text.Json;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.Infraestructura.Sesion;
 
-public sealed class BorradorOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario) : IBorradorOrdenPort
+public sealed class BorradorOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario) : IBorradorOrden
 {
     private ISession Session => SesionDisponible.Obtener(contexto.HttpContext);
     private static string Clave(Guid id) => $"Ordenes:Borrador:{id:N}";

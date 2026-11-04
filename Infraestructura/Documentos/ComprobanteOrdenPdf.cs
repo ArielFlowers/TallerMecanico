@@ -3,13 +3,13 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Configuracion;
 
 namespace TallerMecanico.Infraestructura.Documentos;
 
-public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComprobanteOrdenPdf
+public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComprobantePdf
 {
     private const string ColorPrincipal = "#7c3aed";
     private const string ColorFondo = "#f5f0ff";

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Dto;
@@ -10,11 +10,11 @@ namespace TallerMecanico.Pages.Productos;
 public class IndexModel : PageModel
 {
     private readonly ProductoService _productoService;
-    private readonly IBorradorOrdenPort _borradoresOrden;
+    private readonly IBorradorOrden _borradoresOrden;
 
     public IndexModel(
         ProductoService productoService,
-        IBorradorOrdenPort borradoresOrden)
+        IBorradorOrden borradoresOrden)
     {
         _productoService =
             productoService;

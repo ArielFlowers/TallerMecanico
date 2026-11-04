@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Dominio.Entidades;
@@ -129,19 +129,19 @@ public sealed class ConsultaOrdenesTests
         var servicios = new ServiceCollection();
         servicios.AddScoped<DatabaseConnectionFactory, ConexionProhibida>();
         servicios.AddScoped<CreadorConsultaOrdenes>();
-        servicios.AddScoped<IConsultaOrdenesPort>(provider =>
+        servicios.AddScoped<IOrdenQueryRepository>(provider =>
             provider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
         using var provider = servicios.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = provider.CreateScope();
         using var otroScope = provider.CreateScope();
 
-        var puerto = scope.ServiceProvider.GetRequiredService<IConsultaOrdenesPort>();
+        var puerto = scope.ServiceProvider.GetRequiredService<IOrdenQueryRepository>();
         Assert.IsType<ConsultaOrdenesRepository>(puerto);
-        Assert.Same(puerto, scope.ServiceProvider.GetRequiredService<IConsultaOrdenesPort>());
-        Assert.NotSame(puerto, otroScope.ServiceProvider.GetRequiredService<IConsultaOrdenesPort>());
+        Assert.Same(puerto, scope.ServiceProvider.GetRequiredService<IOrdenQueryRepository>());
+        Assert.NotSame(puerto, otroScope.ServiceProvider.GetRequiredService<IOrdenQueryRepository>());
     }
 
-    private sealed class ConsultasPrueba : IConsultaOrdenesPort
+    private sealed class ConsultasPrueba : IOrdenQueryRepository
     {
         public IReadOnlyList<OrdenResumen> Ordenes { get; } =
             [new(1, new DateTime(2026, 10, 12), "1234ABC", "Ana Arce Pérez", "Juan López Núñez", "Cambio de aceite", 31m, EstadoOrden.Activa, "recepcion")];

@@ -1,4 +1,5 @@
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Validaciones;
@@ -6,7 +7,7 @@ using TallerMecanico.Aplicacion.Validaciones;
 namespace TallerMecanico.Aplicacion.Servicios;
 
 public sealed class OrdenServicioService(
-    IUnidadTrabajoOrdenPort unidadTrabajo,
+    IUnidadTrabajoOrden unidadTrabajo,
     ICurrentUser currentUser,
     ValidacionOrdenes validador,
     TimeProvider reloj,
@@ -162,7 +163,7 @@ public sealed class OrdenServicioService(
         }
     }
 
-    private static (Dictionary<string, string> Errores, IReadOnlyList<Servicio> Servicios) ValidarCabecera(ICabeceraOrdenPort cabecera, CrearOrdenSolicitud solicitud)
+    private static (Dictionary<string, string> Errores, IReadOnlyList<Servicio> Servicios) ValidarCabecera(ICabeceraOrdenRepository cabecera, CrearOrdenSolicitud solicitud)
     {
         var errores = new Dictionary<string, string>();
         var servicios = new List<Servicio>();

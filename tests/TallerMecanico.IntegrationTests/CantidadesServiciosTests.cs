@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 
@@ -88,7 +88,7 @@ public sealed class CantidadesServiciosTests
         return (Assert.IsType<OrdenFormViewModel>(contextoEnlace.Result.Model), contexto.ModelState);
     }
 
-    private sealed class UnidadNoUtilizable : IUnidadTrabajoOrdenPort
+    private sealed class UnidadNoUtilizable : IUnidadTrabajoOrden
     {
         public ITransaccionOrden Iniciar() => throw new InvalidOperationException("No debe abrirse una transacción.");
     }

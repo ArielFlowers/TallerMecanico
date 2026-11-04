@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
@@ -85,7 +85,7 @@ public sealed class NuevaOrdenFechaTests
         public override DateTimeOffset GetUtcNow() => Ahora;
     }
 
-    private sealed class UnidadNoUtilizada : IUnidadTrabajoOrdenPort
+    private sealed class UnidadNoUtilizada : IUnidadTrabajoOrden
     {
         public ITransaccionOrden Iniciar() => throw new InvalidOperationException("Solo se consulta el reloj.");
     }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Pages.Ordenes;
 using TallerMecanico.Aplicacion.Servicios;
@@ -101,7 +101,7 @@ public sealed class ComprobanteOrdenTests
         { PageContext = new PageContext { HttpContext = new DefaultHttpContext() } };
     }
 
-    private sealed class LecturaPrueba : IConsultaOrdenesPort
+    private sealed class LecturaPrueba : IOrdenQueryRepository
     {
         public OrdenDetalle Orden { get; } = SoporteComprobantePdf.Orden();
         public int Consultas { get; private set; }
@@ -119,7 +119,7 @@ public sealed class ComprobanteOrdenTests
         }
     }
 
-    private sealed class GeneradorPrueba : IComprobanteOrdenPdf
+    private sealed class GeneradorPrueba : IComprobantePdf
     {
         public byte[] Pdf { get; } = "%PDF-prueba"u8.ToArray();
         public OrdenDetalle? Orden { get; private set; }

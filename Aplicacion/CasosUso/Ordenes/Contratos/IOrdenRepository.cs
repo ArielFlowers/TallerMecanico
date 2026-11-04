@@ -1,8 +1,8 @@
 using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Aplicacion.Puertos;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 
-public interface IOrdenPort
+public interface IOrdenRepository
 {
     Orden? ObtenerPorToken(Guid token);
     Orden? ObtenerParaAnular(int id);

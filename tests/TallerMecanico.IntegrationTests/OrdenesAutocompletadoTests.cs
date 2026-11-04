@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Fachadas;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -188,7 +188,7 @@ public sealed class OrdenesAutocompletadoTests
             ("@AnuladoPor", estado == EstadoOrden.Anulada ? "admin_prueba" : null),
             ("@FechaAnulacion", estado == EstadoOrden.Anulada ? new DateTime(2026, 10, 14) : null));
 
-    private sealed class ConsultaPrueba : IConsultaOrdenesPort
+    private sealed class ConsultaPrueba : IOrdenQueryRepository
     {
         public string? Termino { get; private set; }
         public int? Id { get; private set; }
