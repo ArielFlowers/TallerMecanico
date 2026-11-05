@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Dto;
@@ -10,7 +10,7 @@ using TallerMecanico.Aplicacion.Dto;
 namespace TallerMecanico.Pages.Ordenes;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort borradores,
+public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borradores,
     VehiculoService vehiculos, MecanicoService mecanicos, ProductoService productos, ClienteService clientes,
     IServicioService servicios) : PageModel
 {

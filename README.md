@@ -170,7 +170,8 @@ si no están configuradas sus herramientas. Para habilitarlos:
 
 - [Conectar otra PC](docs/COMPARTIR_EQUIPO.md).
 - [Administrar, respaldar y restaurar Aiven](docs/BD_NUBE.md).
-- [Arquitectura hexagonal](docs/ARQUITECTURA_HEXAGONAL.md),
+- [Clean Architecture de Órdenes](docs/ARQUITECTURA_CLEAN.md),
+  [Arquitectura hexagonal de Usuarios y Reportes](docs/ARQUITECTURA_HEXAGONAL.md),
   [HTTPS y balanceo](docs/H1-HTTPS.md), [Redis](docs/H2-REDIS.md).
 
 No subir `.env`, `tests/.env.test`, respaldos ni claves de certificados a Git.

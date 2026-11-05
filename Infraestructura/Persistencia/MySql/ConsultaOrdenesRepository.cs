@@ -1,13 +1,13 @@
 using System.Data.Common;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class ConsultaOrdenesRepository(DatabaseConnectionFactory connectionFactory)
-    : IConsultaOrdenesPort
+    : IOrdenQueryRepository
 {
     private const int MaximoSugerencias = 10;
 

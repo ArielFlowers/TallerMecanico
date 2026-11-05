@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Infraestructura.Sesion;
@@ -20,9 +20,9 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
 {
     private static int _ci = 3000000;
     private sealed record Datos(int Vehiculo, int Mecanico, int A, int B, int Servicio);
-    private IUnidadTrabajoOrdenPort Unidad => new MySqlUnidadTrabajoOrden(basePrueba.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance);
-    private OrdenServicioService Servicio(UsuarioPrueba? usuario = null, IUnidadTrabajoOrdenPort? unidad = null) =>
-        new(unidad ?? Unidad, usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
+    private IUnidadTrabajoOrden Unidad => new MySqlUnidadTrabajoOrden(basePrueba.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance);
+    private OrdenServicioPrueba Servicio(UsuarioPrueba? usuario = null, IUnidadTrabajoOrden? unidad = null) =>
+        new(unidad ?? Unidad, usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System);
 
     private Datos Preparar(int stockA = 10, int stockB = 10)
     {
@@ -68,7 +68,7 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         Datos datos = Preparar();
         var usuario = new UsuarioPrueba();
         var contexto = new HttpContextAccessor { HttpContext = new DefaultHttpContext { Session = new SesionPrueba() } };
-        var facade = new OrdenServicioFacade(Servicio(usuario), new TokenOrdenSesion(contexto, usuario, TimeProvider.System));
+        var facade = Servicio(usuario).CrearFacade(new TokenOrdenSesion(contexto, usuario, TimeProvider.System));
         var solicitud = Solicitud(datos, facade.GenerarTokenFormulario());
         ResultadoOrden resultado = facade.CrearOrden(solicitud);
         Assert.True(resultado.Exito, string.Join("; ", resultado.Errores.Values));

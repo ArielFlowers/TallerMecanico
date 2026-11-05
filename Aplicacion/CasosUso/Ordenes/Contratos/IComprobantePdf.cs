@@ -1,8 +1,8 @@
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
-namespace TallerMecanico.Aplicacion.Puertos;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 
-public interface IComprobanteOrdenPdf
+public interface IComprobantePdf
 {
     byte[] Generar(OrdenDetalle orden, string totalLiteral, string generadoPor, DateTimeOffset fechaGeneracion);
 }

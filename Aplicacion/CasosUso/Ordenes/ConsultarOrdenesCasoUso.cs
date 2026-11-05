@@ -1,11 +1,11 @@
-using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Aplicacion.Servicios;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
-public sealed class ConsultaOrdenesService(
-    IConsultaOrdenesPort consultas,
+public sealed class ConsultarOrdenesCasoUso(
+    IOrdenQueryRepository consultas,
     ICurrentUser usuario)
 {
     private const int MinimoCaracteresSugerencias = 2;

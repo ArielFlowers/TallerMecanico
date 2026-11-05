@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Pages.Ordenes;
 using TallerMecanico.Aplicacion.Servicios;
@@ -23,7 +23,7 @@ public sealed class ComprobanteOrdenTests
         var consultas = new LecturaPrueba();
         var generador = new GeneradorPrueba();
         var reloj = new RelojPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(consultas, usuario), usuario, generador, reloj);
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(consultas, usuario), usuario, generador, reloj);
 
         Assert.Same(generador.Pdf, fachada.GenerarComprobante(15));
         Assert.Same(consultas.Orden, generador.Orden);
@@ -47,7 +47,7 @@ public sealed class ComprobanteOrdenTests
         var usuario = new UsuarioPrueba { EstaAutenticado = autenticado, Rol = rol };
         var consultas = new LecturaPrueba();
         var generador = new GeneradorPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(consultas, usuario), usuario, generador);
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(consultas, usuario), usuario, generador);
         Assert.Throws<UnauthorizedAccessException>(() => fachada.GenerarComprobante(15));
         Assert.Equal(0, consultas.Consultas);
         Assert.Null(generador.Orden);
@@ -96,12 +96,12 @@ public sealed class ComprobanteOrdenTests
     private static ComprobanteModel Pagina(LecturaPrueba puerto, GeneradorPrueba generador)
     {
         var usuario = new UsuarioPrueba();
-        return new ComprobanteModel(SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, usuario), usuario, generador),
+        return new ComprobanteModel(SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, usuario), usuario, generador),
             NullLogger<ComprobanteModel>.Instance)
         { PageContext = new PageContext { HttpContext = new DefaultHttpContext() } };
     }
 
-    private sealed class LecturaPrueba : IConsultaOrdenesPort
+    private sealed class LecturaPrueba : IOrdenQueryRepository
     {
         public OrdenDetalle Orden { get; } = SoporteComprobantePdf.Orden();
         public int Consultas { get; private set; }
@@ -119,7 +119,7 @@ public sealed class ComprobanteOrdenTests
         }
     }
 
-    private sealed class GeneradorPrueba : IComprobanteOrdenPdf
+    private sealed class GeneradorPrueba : IComprobantePdf
     {
         public byte[] Pdf { get; } = "%PDF-prueba"u8.ToArray();
         public OrdenDetalle? Orden { get; private set; }

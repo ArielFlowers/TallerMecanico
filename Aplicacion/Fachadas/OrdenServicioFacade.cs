@@ -1,26 +1,25 @@
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 
 namespace TallerMecanico.Aplicacion.Fachadas;
 
-public sealed class OrdenServicioFacade(OrdenServicioService servicio, ITokenOrdenPort tokens)
+public sealed class OrdenServicioFacade(CrearOrdenCasoUso crearOrden, AnularOrdenCasoUso anularOrden, ITokenOrden tokens)
 {
-    public DateTime FechaActual => servicio.FechaActual;
+    public DateTime FechaActual => crearOrden.FechaActual;
 
     public Guid GenerarTokenFormulario()
     {
-        if (!servicio.PuedeCrear) throw new UnauthorizedAccessException("No tienes permiso para crear órdenes.");
+        if (!crearOrden.PuedeCrear) throw new UnauthorizedAccessException("No tienes permiso para crear órdenes.");
         return tokens.Generar();
     }
 
     public ResultadoOrden CrearOrden(CrearOrdenSolicitud solicitud)
     {
-        if (!servicio.PuedeCrear) return ResultadoOrden.Fallo(string.Empty, "No tienes permiso para crear órdenes.");
+        if (!crearOrden.PuedeCrear) return ResultadoOrden.Fallo(string.Empty, "No tienes permiso para crear órdenes.");
         if (!tokens.EsValido(solicitud.Token))
             return ResultadoOrden.Fallo("Token", "El formulario venció o no pertenece a esta sesión. Revisa las órdenes antes de iniciar uno nuevo.");
-        return servicio.CrearOrden(solicitud);
+        return crearOrden.Ejecutar(solicitud);
     }
 
-    public ResultadoOrden AnularOrden(int ordenId) => servicio.AnularOrden(ordenId);
+    public ResultadoOrden AnularOrden(int ordenId) => anularOrden.Ejecutar(ordenId);
 }

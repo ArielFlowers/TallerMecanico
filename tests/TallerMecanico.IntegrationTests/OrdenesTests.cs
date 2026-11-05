@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Sesion;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
@@ -112,7 +112,7 @@ public sealed class OrdenesTests
     {
         var servicio = Servicio(new UnidadProhibida(), new UsuarioPrueba());
         Assert.False(servicio.AnularOrden(1).Exito);
-        var facade = new OrdenServicioFacade(servicio, new TokensInvalidos());
+        var facade = servicio.CrearFacade(new TokensInvalidos());
         Assert.Contains("Token", facade.CrearOrden(Solicitud()).Errores);
     }
 
@@ -124,15 +124,15 @@ public sealed class OrdenesTests
         Assert.Contains("Lineas", servicio.CrearOrden(solicitud).Errores);
     }
 
-    private static OrdenServicioService Servicio(IUnidadTrabajoOrdenPort unidad, UsuarioPrueba usuario) =>
-        new(unidad, usuario, new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
+    private static OrdenServicioPrueba Servicio(IUnidadTrabajoOrden unidad, UsuarioPrueba usuario) =>
+        new(unidad, usuario, new ValidacionOrdenes(), TimeProvider.System);
 
-    private sealed class UnidadProhibida : IUnidadTrabajoOrdenPort
+    private sealed class UnidadProhibida : IUnidadTrabajoOrden
     {
         public ITransaccionOrden Iniciar() => throw new InvalidOperationException("No se debe abrir una transacción.");
     }
 
-    private sealed class TokensInvalidos : ITokenOrdenPort
+    private sealed class TokensInvalidos : ITokenOrden
     {
         public Guid Generar() => Guid.NewGuid();
         public bool EsValido(Guid token) => false;

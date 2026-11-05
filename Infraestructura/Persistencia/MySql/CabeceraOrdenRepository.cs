@@ -1,11 +1,11 @@
 using System.Data.Common;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class CabeceraOrdenRepository(DbConnection conexion, DbTransaction transaccion)
-    : RepositorioOrdenSql(conexion, transaccion), ICabeceraOrdenPort
+    : RepositorioOrdenSql(conexion, transaccion), ICabeceraOrdenRepository
 {
     public bool ExisteVehiculo(int vehiculoId, out int? clienteId)
     {
