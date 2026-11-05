@@ -16,7 +16,8 @@ internal static class XlsxBuilder
         IReadOnlyList<XlsxFilaResumen>? resumen = null,
         IReadOnlyList<int>? columnasMoneda = null,
         IReadOnlyList<int>? columnasFecha = null,
-        int? columnaGraficoBarras = null)
+        int? columnaGraficoBarras = null,
+        byte[]? grafico = null)
     {
         using var libro = new XLWorkbook();
         var hoja = libro.Worksheets.Add(nombreHoja);
@@ -184,6 +185,14 @@ internal static class XlsxBuilder
         }
 
         hoja.SheetView.FreezeRows(3);
+
+        if (grafico is not null)
+        {
+            using var imagenGrafico = new MemoryStream(grafico, writable: false);
+            hoja.AddPicture(imagenGrafico, "Órdenes por estado")
+                .MoveTo(hoja.Cell(filaActual + 2, 1))
+                .WithSize(650, 250);
+        }
 
         // Generar XLSX genuino
         using var memoria = new MemoryStream();

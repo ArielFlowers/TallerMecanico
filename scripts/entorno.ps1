@@ -68,9 +68,11 @@ function Comprobar-Configuracion([switch]$Certificados) {
         }
     }
     Invocar-Compose @('config', '--quiet')
-    $configuracionSinValores = @(Invocar-Compose @('config', '--no-interpolate', '--format', 'json'))
+    # Interpolar la IP antes de analizar los puertos. Capturar los secretos en memoria,
+    # sin imprimir ni guardar la configuración completa.
+    $configuracion = @(Invocar-Compose @('config', '--format', 'json'))
     try {
-        $nombreProyecto = (($configuracionSinValores -join "`n") | ConvertFrom-Json).name
+        $nombreProyecto = (($configuracion -join "`n") | ConvertFrom-Json).name
     } catch {
         throw 'No se pudo comprobar el nombre del proyecto Compose.'
     }

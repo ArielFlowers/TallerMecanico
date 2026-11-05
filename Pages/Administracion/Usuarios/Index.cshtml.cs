@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.DTOs;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Pages.Administracion.Usuarios;
 
 namespace TallerMecanico.Pages.Administracion.Usuarios;
 
 [Authorize(Policy = "SoloAdministrador")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class IndexModel : PageModel
 {
     private const int TamanoPaginaPredeterminado = 10;
@@ -58,6 +58,21 @@ public sealed class IndexModel : PageModel
 
     public void OnGet()
     {
+        CargarResultados();
+
+        TotalUsuarios = _usuarioConsultaPort.ContarTotal();
+        UsuariosActivos = _usuarioConsultaPort.ContarUsuariosActivos();
+        AdministradoresActivos = _usuarioConsultaPort.ContarAdministradoresActivosListado();
+    }
+
+    public PartialViewResult OnGetResultados()
+    {
+        CargarResultados();
+        return Partial("_ResultadosUsuarios", this);
+    }
+
+    private void CargarResultados()
+    {
         ValidarPaginacion();
 
         Busqueda = string.IsNullOrWhiteSpace(Busqueda)
@@ -67,10 +82,6 @@ public sealed class IndexModel : PageModel
         RolFiltro = RolFiltro is "Administrador" or "Recepcionista"
             ? RolFiltro
             : null;
-
-        TotalUsuarios = _usuarioConsultaPort.ContarTotal();
-        UsuariosActivos = _usuarioConsultaPort.ContarUsuariosActivos();
-        AdministradoresActivos = _usuarioConsultaPort.ContarAdministradoresActivosListado();
 
         TotalRegistros = _usuarioConsultaPort.ContarFiltrados(
             Busqueda, RolFiltro, ActivoFiltro);
@@ -82,6 +93,9 @@ public sealed class IndexModel : PageModel
         {
             Pagina = TotalPaginas;
         }
+
+        if (TotalRegistros == 0) Pagina = 1;
+        Usuarios = [];
 
         if (TotalRegistros > 0)
         {

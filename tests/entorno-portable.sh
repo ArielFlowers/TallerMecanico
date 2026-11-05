@@ -47,8 +47,15 @@ case "$1" in
         case "$1" in
             config)
                 [[ "${TALLER_PRUEBA_CONFIG_ERROR:-0}" == 0 ]] || exit 28
-                if [[ "$2" == '--no-interpolate' ]]; then
+                # Compose rechaza la IP literal de los puertos cuando no se interpola.
+                if [[ " $* " == *" --no-interpolate "* ]]; then
+                    printf '%s\n' 'Invalid ip address ${APP_BIND_ADDRESS:-127.0.0.1}' >&2
+                    exit 32
+                fi
+                if [[ "${2:-}" != '--quiet' ]]; then
                     printf 'name: %s\n' "${TALLER_PRUEBA_PROYECTO:-tallermecanico}"
+                    [[ "${TALLER_PRUEBA_RENDER_ERROR:-0}" == 0 ]] || exit 33
+                    printf '%s\n' 'services:' '  app1:' '    environment:' '      PASSWORD: secreto-no-imprimir'
                 fi
                 ;;
             build) [[ "${TALLER_PRUEBA_BUILD_ERROR:-0}" == 0 ]] || exit 29 ;;
@@ -107,7 +114,10 @@ esperar_fallo ejecutar nube up
 : > "$TALLER_PRUEBA_RAIZ/nginx/certs/localhost.pem"
 : > "$TALLER_PRUEBA_RAIZ/nginx/certs/localhost-key.pem"
 
-ejecutar nube up >/dev/null
+ejecutar nube up > "$temporal/up.log" 2>&1
+if grep -F 'secreto-no-imprimir' "$temporal/up.log" >/dev/null; then
+    fallar 'La validacion imprimio secretos de la configuracion.'
+fi
 exigir_log 'build app1'
 exigir_log 'up -d --no-build --pull missing'
 for puerto in 5000 5001 5002 8088; do
@@ -123,6 +133,7 @@ TALLER_PRUEBA_DOCKER_ERROR=1 esperar_fallo ejecutar nube status
 TALLER_PRUEBA_OS=windows esperar_fallo ejecutar nube status
 TALLER_PRUEBA_PROYECTO=otro esperar_fallo ejecutar nube build
 TALLER_PRUEBA_CONFIG_ERROR=1 esperar_fallo ejecutar nube up
+TALLER_PRUEBA_RENDER_ERROR=1 esperar_fallo ejecutar nube build
 TALLER_PRUEBA_BUILD_ERROR=1 esperar_fallo ejecutar nube up
 COMPOSE_PROJECT_NAME=otro esperar_fallo ejecutar nube status
 esperar_fallo ejecutar desconocido

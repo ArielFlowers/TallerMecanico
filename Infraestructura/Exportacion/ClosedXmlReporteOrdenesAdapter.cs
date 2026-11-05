@@ -1,6 +1,7 @@
 using TallerMecanico.Aplicacion.DTOs.Reportes;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Configuracion;
+using TallerMecanico.Infraestructura.Documentos;
 
 namespace TallerMecanico.Infraestructura.Exportacion;
 
@@ -47,6 +48,7 @@ public sealed class ClosedXmlReporteOrdenesAdapter(ConfiguracionTaller taller)
             filas,
             resumen,
             columnasMoneda: new[] { 6 },
-            columnasFecha: new[] { 1 });
+            columnasFecha: new[] { 1 },
+            grafico: GraficoEstadosOrdenes.GenerarImagen(documento.Resumen));
     }
 }

@@ -151,21 +151,17 @@
         text-align: right;
     }
 
-    .hu3-reporte-ordenes .badge {
-        border-radius: 8px;
-        padding: 5px 10px;
+    .hu3-reporte-ordenes .estado-orden {
         font-weight: 600;
-        font-size: 0.8rem;
+        white-space: nowrap;
     }
 
-    .hu3-reporte-ordenes .badge.bg-primary {
-        background: var(--primary-soft);
-        color: var(--primary-hover);
+    .hu3-reporte-ordenes .estado-activa {
+        color: #86efac;
     }
 
-    .hu3-reporte-ordenes .badge.bg-danger {
-        background: rgba(248, 113, 113, 0.14);
-        color: var(--danger);
+    .hu3-reporte-ordenes .estado-anulada {
+        color: #fda4a4;
     }
 
     .hu3-reporte-ordenes .vacío {
@@ -324,7 +320,7 @@
                             <td>@(fila.NombreServicio ?? "Sin servicio")</td>
                             <td class="text-end">@fila.Total.ToString("N2")</td>
                             <td>
-                                <span class="badge @(fila.Estado == "Activa" ? "bg-primary" : "bg-danger")">
+                                <span class="estado-orden @(fila.Estado == "Activa" ? "estado-activa" : "estado-anulada")">
                                     @fila.Estado
                                 </span>
                             </td>

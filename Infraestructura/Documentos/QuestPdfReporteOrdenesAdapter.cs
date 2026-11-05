@@ -37,6 +37,7 @@ public sealed class QuestPdfReporteOrdenesAdapter(ConfiguracionTaller taller)
                 page.Content().PaddingVertical(16).Column(columna =>
                 {
                     columna.Spacing(12);
+                    columna.Item().ShowEntire().Element(c => GraficoEstadosOrdenes.Componer(c, documento.Resumen));
                     columna.Item().Element(c => ComponerTabla(c, documento));
                 });
                 page.Footer().Element(contenedor => ComponerPie(contenedor, documento));

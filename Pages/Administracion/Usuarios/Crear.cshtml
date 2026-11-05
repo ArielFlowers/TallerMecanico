@@ -1,6 +1,10 @@
 @page
 @model TallerMecanico.Pages.Administracion.Usuarios.CrearModel
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/password-toggle.css" asp-append-version="true" />
+}
+
 <style>
     /* HU3: estilos limitados a los formularios administrativos */
     .hu3-form {
@@ -187,30 +191,30 @@
 
 
 @{
-    ViewData["Title"] = "Crear Usuario";
+    ViewData["Title"] = "Crear usuario";
 }
 
 <div class="container py-4 hu3-form">
     <div class="mb-4">
-        <h1 class="fw-bold">Crear Usuario</h1>
+        <h1 class="fw-bold">Crear usuario</h1>
         <p class="text-muted">
-    Centraliza el registro de nuevos usuarios del sistema.
-    El usuario debera confirmar su correo electronico
-    antes de poder iniciar sesion.
-</p>
+            Centraliza el registro de nuevos usuarios del sistema.
+            El usuario deberá confirmar su correo electrónico
+            antes de poder iniciar sesión.
+        </p>
 
-<div class="mb-4 p-3 rounded"
-     style="background:var(--primary-soft);
-            border:1px solid var(--border-light);">
-    <div class="fw-semibold mb-1">
-        <i class="bi bi-envelope-check me-2"></i>
-        Verificacion de correo requerida
-    </div>
-    <div class="form-text">
-        Se enviara un enlace de verificacion al correo indicado.
-        La cuenta permanecera pendiente hasta completar la activacion.
-    </div>
-</div>
+        <div class="mb-4 p-3 rounded"
+             style="background:var(--primary-soft);
+                    border:1px solid var(--border-light);">
+            <div class="fw-semibold mb-1">
+                <i class="bi bi-envelope-check me-2"></i>
+                Verificación de correo requerida
+            </div>
+            <div class="form-text">
+                Se enviará un enlace de verificación al correo indicado.
+                La cuenta permanecerá pendiente hasta completar la activación.
+            </div>
+        </div>
     </div>
 
     @if (TempData["MensajeExito"] != null)
@@ -224,6 +228,8 @@
     <div class="card">
         <div class="card-body">
             <form method="post">
+                <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+
                 <div class="row mb-3">
                     <label asp-for="Input.Username" class="col-sm-2 col-form-label"></label>
                     <div class="col-sm-10">
@@ -232,7 +238,7 @@
                         <div class="form-text">
                             Opcional. Si lo deja vacío, se genera automáticamente a partir del
                             correo electrónico (minúsculas, sin acentos y caracteres válidos).
-                            En caso de coincidencia se agrega un sufijo numérico (-2, -3, …).
+                            En caso de coincidencia se agrega un sufijo numérico (-1, -2, …).
                         </div>
                     </div>
                 </div>
@@ -263,12 +269,25 @@
                         Contraseña
                     </label>
                     <div class="col-sm-10">
-                        <input asp-for="Input.Password"
-                               type="password"
-                               class="form-control"
-                               autocomplete="new-password"
-                               minlength="8"
-                               maxlength="128" />
+                        <div class="password-field">
+                            <input asp-for="Input.Password"
+                                   type="password"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   minlength="8"
+                                   maxlength="128" />
+                            <button type="button" class="password-toggle" data-password-toggle
+                                    data-password-label="contraseña" aria-controls="Input_Password"
+                                    aria-label="Mostrar contraseña" aria-pressed="false" hidden>
+                                <svg class="password-eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                                <svg class="password-eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="m3 3 18 18M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-4.1 4.8M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.5 10.5 0 0 0 4.2-.9" />
+                                </svg>
+                            </button>
+                        </div>
                         <span asp-validation-for="Input.Password"
                                class="text-danger"></span>
                         <div class="form-text">
@@ -285,12 +304,25 @@
                         Confirmar contraseña
                     </label>
                     <div class="col-sm-10">
-                        <input asp-for="Input.ConfirmarPassword"
-                               type="password"
-                               class="form-control"
-                               autocomplete="new-password"
-                               minlength="8"
-                               maxlength="128" />
+                        <div class="password-field">
+                            <input asp-for="Input.ConfirmarPassword"
+                                   type="password"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   minlength="8"
+                                   maxlength="128" />
+                            <button type="button" class="password-toggle" data-password-toggle
+                                    data-password-label="confirmación de contraseña" aria-controls="Input_ConfirmarPassword"
+                                    aria-label="Mostrar confirmación de contraseña" aria-pressed="false" hidden>
+                                <svg class="password-eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                                <svg class="password-eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="m3 3 18 18M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-4.1 4.8M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.5 10.5 0 0 0 4.2-.9" />
+                                </svg>
+                            </button>
+                        </div>
                         <span asp-validation-for="Input.ConfirmarPassword"
                               class="text-danger"></span>
                     </div>
@@ -310,4 +342,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/password-toggle.js" asp-append-version="true"></script>
 }
