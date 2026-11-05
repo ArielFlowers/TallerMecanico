@@ -2,7 +2,7 @@
 using System.IO.Compression;
 using ClosedXML.Excel;
 using TallerMecanico.Aplicacion.DTOs.Reportes;
-using TallerMecanico.Infraestructura.Configuracion;
+using TallerMecanico.Aplicacion.Configuracion;
 using TallerMecanico.Infraestructura.Exportacion;
 using Xunit;
 
