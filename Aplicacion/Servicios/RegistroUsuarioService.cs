@@ -33,19 +33,19 @@ public sealed class RegistroUsuarioService
         if (!ValidadorSolicitudRegistro.UsuarioValido(username))
         {
             throw new ArgumentException(
-                "El nombre de usuario no es valido.", nameof(username));
+                "El nombre de usuario no es válido.", nameof(username));
         }
 
         if (!ValidadorSolicitudRegistro.EmailValido(email))
         {
             throw new ArgumentException(
-                "El correo electronico no es valido.", nameof(email));
+                "El correo electrónico no es válido.", nameof(email));
         }
 
         if (!ValidadorSolicitudRegistro.PasswordValido(password))
         {
             throw new ArgumentException(
-                "La contrasena no cumple los requisitos.", nameof(password));
+                "La contraseña no cumple los requisitos.", nameof(password));
         }
 
         string usuarioNormalizado = username.Trim();

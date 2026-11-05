@@ -39,7 +39,7 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
                     columna.Spacing(12);
                     columna.Item().Element(c => ComponerTabla(c, documento));
                     if (documento.Filas.Count > 0)
-                        columna.Item().ShowEntire().Element(c => GraficoMecanicos.Componer(c, documento.Filas, _taller.Moneda));
+                        columna.Item().Element(c => GraficoMecanicos.Componer(c, documento.Filas, _taller.Moneda));
                 });
                 page.Footer().Element(contenedor => ComponerPie(contenedor, documento));
             });

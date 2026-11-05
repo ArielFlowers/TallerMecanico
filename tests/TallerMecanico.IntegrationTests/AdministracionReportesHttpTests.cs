@@ -82,6 +82,7 @@ public sealed class AdministracionReportesHttpTests
                 Assert.DoesNotContain("/Administracion/Solicitudes", pagina);
                 Assert.DoesNotContain("PasswordHash", pagina);
                 Assert.DoesNotContain(hash, pagina);
+                await VerificarRechazosAutoedicion(admin, usuarios);
 
                 using var filtrada = await admin.GetAsync("/Administracion/Usuarios?handler=Resultados&Busqueda=ana_foco");
                 Assert.True(filtrada.Headers.CacheControl?.NoStore);
@@ -129,6 +130,37 @@ public sealed class AdministracionReportesHttpTests
             }
         }
         finally { temporal.Delete(recursive: true); }
+    }
+
+    private static async Task VerificarRechazosAutoedicion(HttpClient admin, UsuarioRepository usuarios)
+    {
+        Usuario original = usuarios.ObtenerPorUsername("admin_prueba")!;
+        string estadoOriginal = JsonSerializer.Serialize(original);
+        string ruta = $"/Administracion/Usuarios/Editar/{original.Id}";
+        foreach (var (rol, activo, mensaje) in new[]
+        {
+            ("Administrador", false, "No puede desactivar su propia cuenta."),
+            ("Recepcionista", true, "No puede cambiar su propio rol.")
+        })
+        {
+            string formulario = await admin.GetStringAsync(ruta);
+            using var contenido = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = Token(formulario),
+                ["Usuario.Id"] = original.Id.ToString(),
+                ["Input.Email"] = "correo_modificado@example.test",
+                ["Input.Rol"] = rol,
+                ["Input.Activo"] = activo.ToString()
+            });
+            using var respuesta = await admin.PostAsync(ruta, contenido);
+            Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+            string html = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
+            string resumen = Regex.Match(html,
+                @"<div\b[^>]*class=""[^""]*\bvalidation-summary-errors\b[^""]*""[^>]*>[\s\S]*?</div>").Value;
+            Assert.Contains("role=\"alert\"", resumen);
+            Assert.Contains(mensaje, resumen);
+            Assert.Equal(estadoOriginal, JsonSerializer.Serialize(usuarios.ObtenerPorUsername("admin_prueba")));
+        }
     }
 
     private static void SembrarOrdenes(MySqlAisladoFixture db)

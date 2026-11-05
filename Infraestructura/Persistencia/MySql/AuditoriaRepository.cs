@@ -88,7 +88,8 @@ public sealed class AuditoriaRepository : IAuditoriaPort
                    Accion,
                    Entidad,
                    EntidadId,
-                   Fecha
+                   Fecha,
+                   Detalle
             FROM Auditoria
             ORDER BY Fecha DESC, Id DESC
             LIMIT @Cantidad;
