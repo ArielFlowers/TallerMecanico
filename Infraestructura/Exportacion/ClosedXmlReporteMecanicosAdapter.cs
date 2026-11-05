@@ -1,6 +1,6 @@
 using TallerMecanico.Aplicacion.DTOs.Reportes;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Infraestructura.Configuracion;
+using TallerMecanico.Aplicacion.Configuracion;
 
 namespace TallerMecanico.Infraestructura.Exportacion;
 
