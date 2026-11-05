@@ -56,7 +56,8 @@ const html = `<!doctype html><html><body><div class="hu3-usuarios">
 </div></body></html>`;
 
 (async () => {
-    const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
+    const channel = process.env.PLAYWRIGHT_CHANNEL || 'msedge';
+    const browser = await chromium.launch({ channel, headless: true });
     try {
         const page = await browser.newPage();
         const errores = [];

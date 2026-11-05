@@ -4,8 +4,8 @@ const path = require('node:path');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
 
 (async () => {
-    const channel = process.env.PLAYWRIGHT_CHANNEL || (process.platform === 'darwin' ? 'chrome' : undefined);
-    const browser = await chromium.launch({ headless: true, ...(channel ? { channel } : {}) });
+    const channel = process.env.PLAYWRIGHT_CHANNEL || 'msedge';
+    const browser = await chromium.launch({ channel, headless: true });
     try {
         const context = await browser.newContext({ ignoreHTTPSErrors: true });
         await context.addCookies(JSON.parse(process.env.TALLER_USUARIOS_REPORTES_COOKIES));
