@@ -7,7 +7,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
     const cookies = JSON.parse(process.env.TALLER_ORDEN_COOKIES_POR_ROL);
     try {
         for (const [rol, escenario] of [['Recepcionista', 'normal'], ['Administrador', 'normal'], ['Recepcionista', 'sin-ventanas'], ['Administrador', 'fallo-pdf']]) {
+            console.log(`${rol}/${escenario}: iniciando formulario.`);
             const context = await browser.newContext({ ignoreHTTPSErrors: true });
+            context.setDefaultTimeout(15000);
+            context.setDefaultNavigationTimeout(15000);
             await context.addCookies(cookies[rol]);
             if (escenario === 'sin-ventanas') await context.addInitScript(() => { window.open = () => null; });
             const page = await context.newPage();
@@ -107,8 +110,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
                 });
             }
             const pestañasAntes = pestanas.length;
-            const respuestaPdf = escenario === 'sin-ventanas' ? null : context.waitForEvent('response', respuesta => new URL(respuesta.url()).pathname === '/Ordenes/Comprobante');
-            await guardar();
+            console.log(`${rol}/${escenario}: guardando orden y esperando comprobante.`);
+            const esperaPdf = escenario === 'sin-ventanas' ? null : context.waitForEvent('response', respuesta => new URL(respuesta.url()).pathname === '/Ordenes/Comprobante');
+            const [, respuestaPdf] = await Promise.all([guardar(), esperaPdf]);
             assert.equal(new URL(page.url()).pathname, '/Ordenes');
             assert.equal(posts.length, enviosAntes + 1);
             const modal = page.locator('#comprobante-orden-dialog');
@@ -122,38 +126,45 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
             const enlace = page.getByRole('link', { name: `Ver comprobante de orden ${id}`, exact: true });
             assert.equal(await enlace.getAttribute('target'), null);
             if (respuestaPdf) {
-                const respuesta = await respuestaPdf;
+                const respuesta = respuestaPdf;
                 assert.equal(respuesta.url(), urlPdf.href);
                 assert.equal(respuesta.status(), escenario === 'fallo-pdf' ? 500 : 200);
                 if (escenario !== 'fallo-pdf') assert.match(respuesta.headers()['content-type'], /application\/pdf/);
                 assert.equal(pestanas.length, pestañasAntes + 1, 'Solo debe reservarse una pestaña por operación.');
-                for (const pestaña of context.pages()) if (pestaña !== page) await pestaña.close();
             } else {
                 assert.equal(pestanas.length, pestañasAntes);
-                const manualPdf = context.waitForEvent('response', respuesta => respuesta.url() === urlPdf.href);
-                await respaldo.click();
-                assert.equal((await manualPdf).status(), 200);
-                for (const pestaña of context.pages()) if (pestaña !== page) await pestaña.close();
+                const [manualPdf] = await Promise.all([
+                    context.waitForEvent('response', respuesta => respuesta.url() === urlPdf.href),
+                    context.waitForEvent('page'),
+                    respaldo.click()
+                ]);
+                assert.equal(manualPdf.status(), 200);
+                assert.equal(pestanas.length, pestañasAntes + 1, 'El respaldo debe abrir una sola pestaña.');
             }
+            assert.equal(context.pages().length, 2, 'Deben permanecer la aplicación y un solo comprobante.');
+            console.log(`${rol}/${escenario}: comprobante recibido; verificando respaldo e idempotencia.`);
 
             if (escenario === 'sin-ventanas' || escenario === 'fallo-pdf') {
                 if (escenario === 'fallo-pdf') await context.unroute('**/Ordenes/Comprobante?*');
-                const manual = context.waitForEvent('response', respuesta => respuesta.url() === urlPdf.href);
-                await enlace.click();
-                assert.equal((await manual).status(), 200);
+                const [manual] = await Promise.all([
+                    context.waitForEvent('response', respuesta => respuesta.url() === urlPdf.href),
+                    enlace.click()
+                ]);
+                assert.equal(manual.status(), 200);
                 assert.equal(await modal.getAttribute('open'), '');
                 assert.equal(posts.length, enviosAntes + 1, 'Reabrir el PDF no debe repetir el POST.');
                 await modal.locator('[data-cerrar-comprobante]').click();
             }
             if (rol === 'Recepcionista' && escenario === 'normal') {
                 const repetido = await context.request.post(`${base}/Ordenes/Crear?handler=Guardar`, {
-                    form: Object.fromEntries(new URLSearchParams(posts.at(-1).postData()))
+                    form: Object.fromEntries(new URLSearchParams(posts.at(-1).postData())), timeout: 15000
                 });
                 assert.equal(repetido.status(), 200);
                 const confirmacion = await page.evaluate(html => new DOMParser().parseFromString(html, 'text/html')
                     .querySelector('.ordenes-page > .orden-comprobante-aviso[role="status"]').textContent, await repetido.text());
                 assert.match(confirmacion, new RegExp(`orden #${id} ya se había guardado`));
             }
+            console.log(`${rol}/${escenario}: verificando recarga con el comprobante abierto.`);
             const solicitudesPdf = comprobantes.length, totalPestañas = pestanas.length;
             await page.reload({ waitUntil: 'domcontentloaded' });
             assert.equal(await page.locator('#comprobante-orden-dialog[open]').count(), 0);
@@ -163,9 +174,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
             await page.goto(`${base}/Ordenes`);
             assert.equal(pestanas.length, totalPestañas);
             assert.equal(comprobantes.length, solicitudesPdf);
-            assert.equal(context.pages().length, 1);
+            assert.equal(context.pages().length, 2, 'Recargar no debe cerrar el comprobante ni abrir otro.');
             assert.deepEqual(errores, []);
             console.log(`${rol}/${escenario}: confirmación, POST único, pestaña automática, respaldo, modal manual y recarga OK.`);
+            // El visor PDF puede bloquear page.close(); se cierran sus pestañas junto con el contexto.
             await context.close();
         }
     } finally { await browser.close(); }

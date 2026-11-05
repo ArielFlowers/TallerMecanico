@@ -5,7 +5,7 @@ using QuestPDF.Infrastructure;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura.Configuracion;
+using TallerMecanico.Aplicacion.Configuracion;
 
 namespace TallerMecanico.Infraestructura.Documentos;
 

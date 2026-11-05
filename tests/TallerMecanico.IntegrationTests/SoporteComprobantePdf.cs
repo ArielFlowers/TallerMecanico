@@ -7,7 +7,7 @@ using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Dominio.Servicios;
 using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Infraestructura.Configuracion;
+using TallerMecanico.Aplicacion.Configuracion;
 
 namespace TallerMecanico.IntegrationTests;
 
