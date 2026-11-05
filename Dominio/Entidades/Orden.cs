@@ -16,4 +16,21 @@ public sealed class Orden
     public DateTime FechaCreacion { get; set; }
     public string? AnuladoPor { get; set; }
     public DateTime? FechaAnulacion { get; set; }
+
+    public bool EstaAnulada => Estado == EstadoOrden.Anulada;
+
+    public bool PuedeAnularse() => !EstaAnulada;
+
+    public void Anular(string usuario, DateTime fechaUtc)
+    {
+        if (!PuedeAnularse())
+            throw new InvalidOperationException("La orden ya está anulada.");
+
+        Estado = EstadoOrden.Anulada;
+        AnuladoPor = usuario;
+        FechaAnulacion = fechaUtc;
+    }
+
+    public decimal CalcularTotal(IEnumerable<DetalleOrden> repuestos) =>
+        repuestos.Sum(repuesto => repuesto.Subtotal) + Servicios.Sum(servicio => servicio.Costo);
 }

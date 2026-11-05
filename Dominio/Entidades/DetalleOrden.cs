@@ -8,4 +8,8 @@ public sealed class DetalleOrden
     public int Cantidad { get; set; }
     public decimal PrecioUnitario { get; set; }
     public decimal Subtotal { get; set; }
+
+    public decimal CalcularSubtotal() => PrecioUnitario * Cantidad;
+
+    public bool EsValido() => Cantidad > 0 && PrecioUnitario > 0;
 }

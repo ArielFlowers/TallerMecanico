@@ -1,3 +1,4 @@
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -169,7 +170,7 @@ public sealed class OrdenesAutocompletadoHttpTests
             WorkingDirectory = MySqlAisladoFixture.RaizProyecto, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(ConsultaOrdenesService).Assembly.Location);
+        inicio.ArgumentList.Add(typeof(ConsultarOrdenesCasoUso).Assembly.Location);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

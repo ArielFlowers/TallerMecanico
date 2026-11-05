@@ -1,8 +1,8 @@
 using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Aplicacion.Puertos;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 
-public interface IBorradorOrdenPort
+public interface IBorradorOrden
 {
     Guid Guardar(OrdenFormViewModel formulario);
     OrdenFormViewModel? Obtener(Guid id);

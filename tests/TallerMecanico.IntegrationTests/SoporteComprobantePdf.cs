@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Dominio.Entidades;
@@ -22,9 +23,9 @@ public sealed class PdfContenidoFactAttribute : FactAttribute
 
 internal static class SoporteComprobantePdf
 {
-    public static ConsultaOrdenesFacade CrearFachada(ConsultaOrdenesService consultas,
-        ICurrentUser? usuario = null, IComprobanteOrdenPdf? generador = null, TimeProvider? reloj = null) =>
-        new(consultas, new ComprobanteOrdenService(consultas, generador ?? CrearGenerador(),
+    public static ConsultaOrdenesFacade CrearFachada(ConsultarOrdenesCasoUso consultas,
+        ICurrentUser? usuario = null, IComprobantePdf? generador = null, TimeProvider? reloj = null) =>
+        new(consultas, new GenerarComprobanteCasoUso(consultas, generador ?? CrearGenerador(),
             new ImporteEnPalabras(), usuario ?? new UsuarioPrueba(), reloj ?? TimeProvider.System));
 
     public static ComprobanteOrdenPdf CrearGenerador()

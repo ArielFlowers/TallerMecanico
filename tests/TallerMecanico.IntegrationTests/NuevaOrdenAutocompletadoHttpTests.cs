@@ -1,3 +1,4 @@
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -193,7 +194,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
             WorkingDirectory = MySqlAisladoFixture.RaizProyecto, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(OrdenServicioService).Assembly.Location);
+        inicio.ArgumentList.Add(typeof(CrearOrdenCasoUso).Assembly.Location);
         inicio.ArgumentList.Add("--urls"); inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
@@ -278,8 +278,7 @@ public sealed class CantidadesServiciosMySqlTests
     private static MySqlUnidadTrabajoOrden Unidad(MySqlAisladoFixture aislada) =>
         new(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance);
 
-    private static OrdenServicioService CrearServicio(MySqlAisladoFixture aislada,
-        UsuarioPrueba? usuario = null, IUnidadTrabajoOrdenPort? unidad = null) => new(
-        unidad ?? Unidad(aislada), usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System,
-        NullLogger<OrdenServicioService>.Instance);
+    private static OrdenServicioPrueba CrearServicio(MySqlAisladoFixture aislada,
+        UsuarioPrueba? usuario = null, IUnidadTrabajoOrden? unidad = null) => new(
+        unidad ?? Unidad(aislada), usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System);
 }

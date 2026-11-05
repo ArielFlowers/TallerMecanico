@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
 using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -16,10 +17,8 @@ using System.Threading.RateLimiting;
 using TallerMecanico.Infraestructura.Arranque;
 using TallerMecanico.Infraestructura.Sesion;
 using TallerMecanico.Aplicacion.Fachadas;
-using TallerMecanico.Dominio.Servicios;
 using TallerMecanico.Aplicacion.Configuracion;
 using TallerMecanico.Infraestructura.Configuracion;
-using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Infraestructura.Cache;
 using StackExchange.Redis;
 
@@ -109,21 +108,7 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(ConfiguracionTaller.Instancia);
-builder.Services.AddScoped<ITokenOrdenPort, TokenOrdenSesion>();
-builder.Services.AddScoped<IBorradorOrdenPort, BorradorOrdenSesion>();
-builder.Services.AddScoped<IUnidadTrabajoOrdenPort, MySqlUnidadTrabajoOrden>();
-builder.Services.AddScoped<ValidacionOrdenes>();
-builder.Services.AddScoped<OrdenServicioService>();
-builder.Services.AddScoped<OrdenServicioFacade>();
-builder.Services.AddScoped<CreadorConsultaOrdenes>();
-builder.Services.AddScoped<IConsultaOrdenesPort>(serviceProvider =>
-    serviceProvider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
-builder.Services.AddScoped<ConsultaOrdenesService>();
-builder.Services.AddScoped<ConsultaOrdenesFacade>();
-builder.Services.AddSingleton<ImporteEnPalabras>();
-builder.Services.AddScoped<IComprobanteOrdenPdf, ComprobanteOrdenPdf>();
-builder.Services.AddScoped<ComprobanteOrdenService>();
-QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+builder.Services.AddInfraestructuraOrdenes();
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(
         Argon2idOptions.SectionName));

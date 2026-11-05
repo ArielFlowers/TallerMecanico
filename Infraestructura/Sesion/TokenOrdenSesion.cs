@@ -1,9 +1,10 @@
 using System.Text.Json;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Infraestructura.Sesion;
 
-public sealed class TokenOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario, TimeProvider reloj) : ITokenOrdenPort
+public sealed class TokenOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario, TimeProvider reloj) : ITokenOrden
 {
     private sealed record TokenFormulario(string Usuario, DateTime VenceUtc);
     private ISession Session => SesionDisponible.Obtener(contexto.HttpContext);

@@ -1,8 +1,8 @@
 using TallerMecanico.Dominio.Entidades;
 
-namespace TallerMecanico.Aplicacion.Puertos;
+namespace TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 
-public interface IProductoStockOrdenPort
+public interface IProductoStockRepository
 {
     IReadOnlyList<Producto> BloquearPorId(IEnumerable<int> ids);
     bool Descontar(int productoId, int cantidad);

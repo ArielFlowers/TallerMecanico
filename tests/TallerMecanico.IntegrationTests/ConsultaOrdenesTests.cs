@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Dominio.Entidades;
@@ -26,7 +26,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(
-            new ConsultaOrdenesService(puerto, new UsuarioPrueba { Rol = rol }));
+            new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba { Rol = rol }));
         var fecha = new DateOnly(2026, 10, 12);
 
         Assert.Same(puerto.Ordenes, fachada.Obtener(EstadoOrden.Anulada, fecha));
@@ -45,7 +45,7 @@ public sealed class ConsultaOrdenesTests
     {
         var puerto = new ConsultasPrueba();
         var usuario = new UsuarioPrueba { EstaAutenticado = autenticado, Rol = rol, Username = username };
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, usuario));
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, usuario));
 
         Assert.Throws<UnauthorizedAccessException>(() => fachada.Obtener());
         Assert.Throws<UnauthorizedAccessException>(() => fachada.ObtenerDetalle(1));
@@ -57,7 +57,7 @@ public sealed class ConsultaOrdenesTests
     public void PageModel_ConsultaMedianteFachadaYRefrescaConLosMismosFiltros()
     {
         var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
         var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance)
         {
             Estado = EstadoOrden.Activa,
@@ -80,7 +80,7 @@ public sealed class ConsultaOrdenesTests
     public void PageModel_FiltrosInvalidosNoEjecutanConsultas()
     {
         var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
         var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
         pagina.ModelState.AddModelError(nameof(pagina.Estado), "Estado inválido.");
 
@@ -95,7 +95,7 @@ public sealed class ConsultaOrdenesTests
     public void Detalle_IdInvalidoNoConsultaElPuerto(int id)
     {
         var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
         var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         Assert.Null(fachada.ObtenerDetalle(id));
@@ -107,7 +107,7 @@ public sealed class ConsultaOrdenesTests
     public void Detalle_OrdenInexistenteDevuelve404SinConsultarListado()
     {
         var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
         var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         Assert.Null(fachada.ObtenerDetalle(999));
@@ -119,7 +119,7 @@ public sealed class ConsultaOrdenesTests
     public void Detalle_ErrorDePersistenciaDevuelve503SinExponerElErrorTecnico()
     {
         var puerto = new ConsultasPrueba { FallarDetalle = true };
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultaOrdenesService(puerto, new UsuarioPrueba()));
+        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
         var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
 
         var resultado = Assert.IsType<ObjectResult>(pagina.OnGetDetalle(1));
@@ -133,19 +133,19 @@ public sealed class ConsultaOrdenesTests
         var servicios = new ServiceCollection();
         servicios.AddScoped<DatabaseConnectionFactory, ConexionProhibida>();
         servicios.AddScoped<CreadorConsultaOrdenes>();
-        servicios.AddScoped<IConsultaOrdenesPort>(provider =>
+        servicios.AddScoped<IOrdenQueryRepository>(provider =>
             provider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
         using var provider = servicios.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = provider.CreateScope();
         using var otroScope = provider.CreateScope();
 
-        var puerto = scope.ServiceProvider.GetRequiredService<IConsultaOrdenesPort>();
+        var puerto = scope.ServiceProvider.GetRequiredService<IOrdenQueryRepository>();
         Assert.IsType<ConsultaOrdenesRepository>(puerto);
-        Assert.Same(puerto, scope.ServiceProvider.GetRequiredService<IConsultaOrdenesPort>());
-        Assert.NotSame(puerto, otroScope.ServiceProvider.GetRequiredService<IConsultaOrdenesPort>());
+        Assert.Same(puerto, scope.ServiceProvider.GetRequiredService<IOrdenQueryRepository>());
+        Assert.NotSame(puerto, otroScope.ServiceProvider.GetRequiredService<IOrdenQueryRepository>());
     }
 
-    private sealed class ConsultasPrueba : IConsultaOrdenesPort
+    private sealed class ConsultasPrueba : IOrdenQueryRepository
     {
         public IReadOnlyList<OrdenResumen> Ordenes { get; } =
             [new(1, new DateTime(2026, 10, 12), "1234ABC", "Ana Arce Pérez", "Juan López Núñez", "Cambio de aceite", 31m, EstadoOrden.Activa, "recepcion")];
