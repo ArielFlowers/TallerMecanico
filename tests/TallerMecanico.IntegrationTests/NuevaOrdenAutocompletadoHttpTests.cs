@@ -1,3 +1,4 @@
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -61,6 +62,13 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
                     await Task.Delay(250);
                 }
                 Assert.True(listo, "El servidor HTTPS aislado no inició.");
+                foreach (string destino in new[] { "Cliente", "Vehiculo", "Producto" })
+                {
+                    using var peticion = new HttpRequestMessage(HttpMethod.Post, "/Ordenes/Crear?handler=Nuevo" + destino);
+                    peticion.Headers.Add("X-Requested-With", "XMLHttpRequest");
+                    using var denegada = await anonimo.SendAsync(peticion);
+                    Assert.Equal(HttpStatusCode.Unauthorized, denegada.StatusCode);
+                }
                 string[] tipos = ["Vehiculos", "Servicios", "Mecanicos", "Productos"];
                 foreach (string tipo in tipos)
                 {
@@ -84,6 +92,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
                     using var cliente = NuevoCliente(url, cookies);
                     await IniciarSesion(cliente, rol, password);
                     if (rol == "Recepcionista") recepcionista = cookies;
+                    await VerificarControlesDeAlta(cliente);
                     foreach (string tipo in tipos)
                     {
                         using var respuesta = await cliente.GetAsync($"/Ordenes/Crear?handler=Sugerencias{tipo}&termino=prue");
@@ -136,6 +145,48 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
         finally { File.Delete(rutaCertificado); }
     }
 
+    private static async Task VerificarControlesDeAlta(HttpClient cliente)
+    {
+        string html = await cliente.GetStringAsync("/Ordenes/Crear");
+        foreach (string destino in new[] { "Cliente", "Vehiculo", "Producto" })
+        {
+            string idFormulario = "orden-nuevo-" + destino.ToLowerInvariant();
+            Assert.Matches($"<button[^>]+form=\"{idFormulario}\"[^>]*>", html);
+            string formulario = Regex.Match(html, $"<form\\b(?=[^>]*id=\"{idFormulario}\")[^>]*>.*?</form>", RegexOptions.Singleline).Value;
+            Assert.Contains("method=\"post\"", formulario);
+            Assert.Contains("__RequestVerificationToken", formulario);
+            string accion = WebUtility.HtmlDecode(Regex.Match(formulario, "action=\"([^\"]+)\"").Groups[1].Value);
+            Assert.Contains("handler=Nuevo" + destino, accion);
+            var campos = Regex.Matches(formulario, "<input[^>]*>").Select(campo => new KeyValuePair<string, string>(
+                WebUtility.HtmlDecode(Regex.Match(campo.Value, "name=\"([^\"]+)\"").Groups[1].Value),
+                WebUtility.HtmlDecode(Regex.Match(campo.Value, "value=\"([^\"]*)\"").Groups[1].Value)))
+                .Where(campo => !string.IsNullOrEmpty(campo.Key)).ToList();
+            campos.RemoveAll(campo => campo.Key is "Formulario.VehiculoId" or "Formulario.MecanicoId");
+            campos.AddRange(new Dictionary<string, string>
+            {
+                ["Formulario.VehiculoId"] = "1", ["Formulario.MecanicoId"] = "1",
+                ["Formulario.ServicioIds"] = "1", ["Formulario.CantidadesServicios[1]"] = "1",
+                ["Formulario.Lineas[0].ProductoId"] = "1", ["Formulario.Lineas[0].Cantidad"] = "2"
+            });
+            using var contenido = new FormUrlEncodedContent(campos);
+            using var respuesta = await cliente.PostAsync(accion, contenido);
+            Assert.Equal(HttpStatusCode.Redirect, respuesta.StatusCode);
+            var ubicacion = new Uri(cliente.BaseAddress!, respuesta.Headers.Location!);
+            Assert.Equal($"/{(destino == "Cliente" ? "Clientes" : destino == "Vehiculo" ? "Vehiculos" : "Productos")}", ubicacion.AbsolutePath);
+            string borrador = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(ubicacion.Query)["OrdenBorradorId"].ToString();
+            Assert.True(Guid.TryParse(borrador, out _));
+            Assert.Equal(HttpStatusCode.OK, (await cliente.GetAsync(ubicacion)).StatusCode);
+            string restaurada = await cliente.GetStringAsync("/Ordenes/Crear?BorradorId=" + borrador);
+            Assert.Contains("123ABC", restaurada);
+            Assert.Contains("José Muñoz", WebUtility.HtmlDecode(restaurada));
+            Assert.Matches("name=\"Formulario.Lineas\\[0\\].Cantidad\"[^>]*value=\"2\"", restaurada);
+            Assert.Contains("data-servicio-id=\"1\"", restaurada);
+            Assert.Matches("data-total-estimado>Bs. 50[.,]00", restaurada);
+            using var invalida = await cliente.PostAsync(accion, new FormUrlEncodedContent(new Dictionary<string, string>()));
+            Assert.Equal(HttpStatusCode.BadRequest, invalida.StatusCode);
+        }
+    }
+
     internal static ProcessStartInfo PrepararServidor(MySqlAisladoFixture aislada, string url, string certificado, string password)
     {
         var inicio = new ProcessStartInfo("dotnet")
@@ -143,7 +194,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
             WorkingDirectory = MySqlAisladoFixture.RaizProyecto, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(OrdenServicioService).Assembly.Location);
+        inicio.ArgumentList.Add(typeof(CrearOrdenCasoUso).Assembly.Location);
         inicio.ArgumentList.Add("--urls"); inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;

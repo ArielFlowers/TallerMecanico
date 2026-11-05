@@ -1,4 +1,6 @@
 using System.Data.Common;
+using MySqlConnector;
+using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -313,7 +315,11 @@ public class MecanicoRepository : IRepository<Mecanico>, IConsultaMecanicosPort
         using DbCommand command = connection.CreateCommand();
         command.CommandText = query;
         AddParameter(command, "@Id", id);
-        command.ExecuteNonQuery();
+        try { command.ExecuteNonQuery(); }
+        catch (MySqlException error) when (error.Number == 1451)
+        {
+            throw new RegistroRelacionadoException(error);
+        }
     }
 
     public bool ExistsByCi(

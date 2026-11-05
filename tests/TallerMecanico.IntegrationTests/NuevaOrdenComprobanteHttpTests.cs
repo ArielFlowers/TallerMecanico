@@ -78,10 +78,15 @@ public sealed class NuevaOrdenComprobanteHttpTests
                 inicio.Environment["TALLER_ORDEN_COOKIES_POR_ROL"] = JsonSerializer.Serialize(cookiesPorRol);
                 using var navegador = Process.Start(inicio)!;
                 Task<string> salidaNavegador = navegador.StandardOutput.ReadToEndAsync(), erroresNavegador = navegador.StandardError.ReadToEndAsync();
-                using var limite = new CancellationTokenSource(TimeSpan.FromMinutes(4));
+                using var limite = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+                bool tiempoAgotado = false;
                 try { await navegador.WaitForExitAsync(limite.Token); }
-                catch (OperationCanceledException) { navegador.Kill(entireProcessTree: true); throw; }
-                Assert.True(navegador.ExitCode == 0, await salidaNavegador + await erroresNavegador);
+                catch (OperationCanceledException) when (limite.IsCancellationRequested) { tiempoAgotado = true; }
+                finally { await FinalizarProcesoAsync(navegador); }
+                string diagnostico = await salidaNavegador.WaitAsync(TimeSpan.FromSeconds(10))
+                    + await erroresNavegador.WaitAsync(TimeSpan.FromSeconds(10));
+                Assert.False(tiempoAgotado, "El test PDF superó los 120 segundos. Se finalizó Node y su árbol de procesos.\n" + diagnostico);
+                Assert.True(navegador.ExitCode == 0, diagnostico);
                 Assert.Equal(4L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
                 Assert.Equal(6L, Convert.ToInt64(aislada.Escalar("SELECT Stock FROM Productos WHERE Id=1;")));
                 Assert.Equal(10L, Convert.ToInt64(aislada.Escalar("SELECT Stock FROM Productos WHERE Id=2;")));
@@ -98,12 +103,21 @@ public sealed class NuevaOrdenComprobanteHttpTests
             }
             finally
             {
-                if (!servidor.HasExited) servidor.Kill(entireProcessTree: true);
-                await servidor.WaitForExitAsync();
-                await salida;
-                await errores;
+                await FinalizarProcesoAsync(servidor);
+                await salida.WaitAsync(TimeSpan.FromSeconds(10));
+                await errores.WaitAsync(TimeSpan.FromSeconds(10));
             }
         }
         finally { File.Delete(ruta); }
+    }
+
+    private static async Task FinalizarProcesoAsync(Process proceso)
+    {
+        if (!proceso.HasExited)
+        {
+            try { proceso.Kill(entireProcessTree: true); }
+            catch (InvalidOperationException) when (proceso.HasExited) { }
+        }
+        await proceso.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
     }
 }

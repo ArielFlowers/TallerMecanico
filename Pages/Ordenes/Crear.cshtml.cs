@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Dto;
@@ -10,7 +10,7 @@ using TallerMecanico.Aplicacion.Dto;
 namespace TallerMecanico.Pages.Ordenes;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort borradores,
+public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borradores,
     VehiculoService vehiculos, MecanicoService mecanicos, ProductoService productos, ClienteService clientes,
     IServicioService servicios) : PageModel
 {
@@ -115,7 +115,13 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrdenPort bo
         if (ProductoNuevoId.HasValue && productos.ObtenerPorId(ProductoNuevoId.Value) is { } nuevo)
             AgregarProducto(nuevo, 1);
         Cargar();
-        Mensaje = TempData?["OrdenMensaje"] as string ?? TempData?["OrdenError"] as string;
+        Mensaje = TempData?["OrdenMensaje"] as string;
+        if (ClienteNuevoId.HasValue)
+            Mensaje = TempData?["ClienteExito"] as string ?? Mensaje;
+        if (ProductoNuevoId.HasValue)
+            Mensaje = TempData?["ProductoExito"] as string ?? Mensaje;
+        if (TempData?["OrdenError"] is string error && !string.IsNullOrWhiteSpace(error))
+            ModelState.AddModelError(string.Empty, error);
         if (TempData?.TryGetValue("OrdenCreadaId", out object? creada) == true && creada is int creadaId)
             OrdenCreadaId = creadaId;
         return Page();

@@ -113,6 +113,7 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.Contains("ordenes-estado-anulada", html);
                 Assert.Contains("Aplicar filtros", html);
                 Assert.Contains("Limpiar filtros", html);
+                ConstruirRutaRefresco(html);
                 Assert.Matches("<form[^>]+method=\"get\"", html);
                 Assert.Contains($"/Ordenes/Comprobante?id={activa}", html);
                 Assert.Contains($"data-comprobante-url=\"/Ordenes/Comprobante?id={activa}\"", html);
@@ -125,6 +126,25 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.DoesNotContain($"<span class=\"ordenes-id\">#{activa}</span>", filtrado);
                 Assert.Matches("<option[^>]+value=\"Anulada\"[^>]+selected", filtrado);
                 Assert.Contains("value=\"2026-10-12\"", filtrado);
+
+                string rutaConTodosLosFiltros = $"/Ordenes?Estado=Anulada&Fecha=2026-10-12&TerminoBusqueda={anulada}&OrdenSeleccionadaId={anulada}";
+                string seleccionada = await cliente.GetStringAsync(rutaConTodosLosFiltros);
+                string rutaRefresco = ConstruirRutaRefresco(seleccionada);
+                var parametros = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(cliente.BaseAddress!, rutaRefresco).Query);
+                Assert.Equal("Anulada", parametros["Estado"].ToString());
+                Assert.Equal("2026-10-12", parametros["Fecha"].ToString());
+                Assert.Equal(anulada.ToString(), parametros["TerminoBusqueda"].ToString());
+                Assert.Equal(anulada.ToString(), parametros["OrdenSeleccionadaId"].ToString());
+                string refrescada = await cliente.GetStringAsync(rutaRefresco);
+                Assert.Equal(1, ContarFilas(refrescada));
+                Assert.Contains($"<span class=\"ordenes-id\">#{anulada}</span>", refrescada);
+                Assert.Equal(rutaRefresco, ConstruirRutaRefresco(refrescada));
+
+                var limpiar = Regex.Match(refrescada, "<a[^>]+href=\"([^\"]+)\"[^>]*>\\s*Limpiar filtros\\s*</a>");
+                Assert.True(limpiar.Success);
+                Assert.Equal("/Ordenes", limpiar.Groups[1].Value);
+                string sinFiltros = await cliente.GetStringAsync(limpiar.Groups[1].Value);
+                Assert.Equal(3, ContarFilas(sinFiltros));
 
                 string invalido = await cliente.GetStringAsync("/Ordenes?Estado=NoExiste&Fecha=fecha-invalida");
                 Assert.Contains("validation-summary-errors", invalido);
@@ -184,9 +204,10 @@ public sealed class ConsultaOrdenesHttpTests
                 if (rol == "Recepcionista")
                 {
                     string rutaFiltrada = "/Ordenes?Estado=Anulada&Fecha=2026-10-12";
-                    Assert.Equal(1, ContarFilas(await cliente.GetStringAsync(rutaFiltrada)));
+                    string antesDeRefrescar = await cliente.GetStringAsync(rutaFiltrada);
+                    Assert.Equal(1, ContarFilas(antesDeRefrescar));
                     ConsultaOrdenesMySqlTests.CrearOrden(aislada, new DateTime(2026, 10, 12), EstadoOrden.Anulada);
-                    Assert.Equal(2, ContarFilas(await cliente.GetStringAsync(rutaFiltrada)));
+                    Assert.Equal(2, ContarFilas(await cliente.GetStringAsync(ConstruirRutaRefresco(antesDeRefrescar))));
                     Assert.Equal(4, ContarFilas(await cliente.GetStringAsync("/Ordenes")));
                     if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")))
                     {
@@ -205,6 +226,35 @@ public sealed class ConsultaOrdenesHttpTests
             await errores;
             File.Delete(rutaCertificado);
         }
+    }
+
+    private static string ConstruirRutaRefresco(string html)
+    {
+        string formulario = Regex.Match(html, "<form\\b(?=[^>]*id=\"ordenes-busqueda\")[^>]*>.*?</form>", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(formulario);
+        string apertura = Regex.Match(formulario, "<form[^>]*>").Value;
+        Assert.Contains("method=\"get\"", apertura);
+        Assert.Matches("<button[^>]+type=\"submit\"[^>]*>\\s*Refrescar\\s*</button>", formulario);
+        string boton = Regex.Match(formulario, "<button[^>]*>\\s*Refrescar\\s*</button>").Value;
+        Assert.DoesNotContain("formmethod", boton);
+        Assert.DoesNotContain("formaction", boton);
+
+        string estado = Regex.Match(formulario, "<select[^>]+name=\"Estado\"[^>]*>.*?</select>", RegexOptions.Singleline).Value;
+        string opcion = Regex.Match(estado, "<option(?=[^>]*selected)[^>]*>").Value;
+        var filtros = new Dictionary<string, string>
+        {
+            ["Estado"] = WebUtility.HtmlDecode(Regex.Match(opcion, "value=\"([^\"]*)\"").Groups[1].Value)
+        };
+        foreach (string nombre in new[] { "Fecha", "TerminoBusqueda", "OrdenSeleccionadaId" })
+        {
+            string campo = Regex.Match(formulario, $"<input\\b(?=[^>]*name=\"{nombre}\")[^>]*>").Value;
+            Assert.NotEmpty(campo);
+            filtros[nombre] = WebUtility.HtmlDecode(Regex.Match(campo, "value=\"([^\"]*)\"").Groups[1].Value);
+        }
+        string accion = WebUtility.HtmlDecode(Regex.Match(apertura, "action=\"([^\"]+)\"").Groups[1].Value);
+        Assert.Equal("/Ordenes", accion);
+        return accion + "?" + string.Join("&", filtros.Select(filtro =>
+            $"{filtro.Key}={Uri.EscapeDataString(filtro.Value)}"));
     }
 
     private static HttpClient CrearCliente(string url, CookieContainer? cookies = null) => new(new HttpClientHandler

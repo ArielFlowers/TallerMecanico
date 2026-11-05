@@ -42,7 +42,8 @@
 .nueva-orden-page .ordenes-crear-main > .ordenes-card { margin: 0 0 18px; }
 .nueva-orden-page .ordenes-crear-aside { position: sticky; top: 18px; align-self: start; max-height: calc(100vh - 36px); overflow-y: auto; scrollbar-width: thin; }
 .nueva-orden-page .ordenes-card { margin: 0 0 18px; padding: 24px; overflow: visible; color: var(--text-primary); background: var(--surface); border: 1px solid var(--border); border-radius: 13px; box-shadow: 0 3px 12px rgb(0 0 0 / 18%); }
-.nueva-orden-page > .service-validation[role="status"] { margin: 0 0 16px; padding: 11px 14px; color: var(--success); background: var(--surface-light); border: 1px solid var(--success); border-radius: 9px; font-size: 12px; }
+.nueva-orden-page > .ordenes-mensaje-exito { margin: 0 0 16px; padding: 11px 14px; color: var(--success); background: var(--surface-light); border: 1px solid var(--success); border-radius: 9px; font-size: 12px; }
+.nueva-orden-page .ordenes-altas { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 .nueva-orden-page .validation-summary-errors { margin: 0 0 16px; padding: 11px 14px; color: var(--danger); background: var(--surface-light); border: 1px solid var(--danger); border-radius: 9px; font-size: 12px; }
 .nueva-orden-page .ordenes-titulo-seccion { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
 .nueva-orden-page .ordenes-titulo-seccion h2 { margin: 1px 0 5px; color: var(--text-primary); font-size: 17px; font-weight: 700; letter-spacing: -.015em; }

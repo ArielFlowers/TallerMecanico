@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Servicios;
@@ -14,6 +16,59 @@ namespace TallerMecanico.IntegrationTests;
 public sealed class ServiciosAutocompletadoTests
 {
     [Trait("Area", "Backend")]
+    [Fact]
+    public async Task Servicio_UtilizaLosContratosInyectadosSinConvertirElRepositorio()
+    {
+        var repositorio = new RepositorioPrueba();
+        var consultas = new RepositorioPrueba();
+        var servicio = new ServicioService(repositorio, consultas);
+
+        Assert.Equal(2, servicio.ObtenerTodos().Count);
+        await servicio.SugerirAsync("aceite");
+
+        Assert.Equal(1, repositorio.LecturasCompletas);
+        Assert.Null(repositorio.TerminoSugerencias);
+        Assert.Equal("aceite", consultas.TerminoSugerencias);
+        Assert.Equal(0, consultas.LecturasCompletas);
+    }
+
+    [Trait("Area", "Backend")]
+    [Fact]
+    public void FactoryMethod_DiComparteRepositorioEntreContratosDentroDelScope()
+    {
+        var servicios = new ServiceCollection();
+        servicios.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:MySqlConnection"] = "Server=127.0.0.1;Port=1;Database=no_utilizada;"
+            }).Build());
+        servicios.AddScoped<DatabaseConnectionFactory, MySqlConnectionFactory>();
+        servicios.AddScoped<CreadorServicio>();
+        int repositoriosCreados = 0;
+        servicios.AddScoped<IRepository<Servicio>>(provider =>
+        {
+            repositoriosCreados++;
+            return provider.GetRequiredService<CreadorServicio>().CrearRepositorio();
+        });
+        servicios.AddScoped<IConsultaServiciosPort>(provider =>
+            (IConsultaServiciosPort)provider.GetRequiredService<IRepository<Servicio>>());
+        servicios.AddScoped<IServicioService, ServicioService>();
+        using var provider = servicios.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        using var scope = provider.CreateScope();
+        using var otroScope = provider.CreateScope();
+
+        var repositorio = scope.ServiceProvider.GetRequiredService<IRepository<Servicio>>();
+        Assert.IsType<ServicioRepository>(repositorio);
+        Assert.Same(repositorio, scope.ServiceProvider.GetRequiredService<IConsultaServiciosPort>());
+        Assert.IsType<ServicioService>(scope.ServiceProvider.GetRequiredService<IServicioService>());
+        Assert.Same(scope.ServiceProvider.GetRequiredService<IServicioService>(),
+            scope.ServiceProvider.GetRequiredService<IServicioService>());
+        Assert.Equal(1, repositoriosCreados);
+        Assert.NotSame(repositorio, otroScope.ServiceProvider.GetRequiredService<IRepository<Servicio>>());
+        Assert.Equal(2, repositoriosCreados);
+    }
+
+    [Trait("Area", "Backend")]
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -22,7 +77,7 @@ public sealed class ServiciosAutocompletadoTests
     public async Task TerminosCortosYLargos_NoConsultanMySql(string? termino)
     {
         var repositorio = new RepositorioPrueba();
-        var servicio = new ServicioService(new CreadorPrueba(repositorio));
+        var servicio = new ServicioService(repositorio, repositorio);
         Assert.Empty(await servicio.SugerirAsync(termino));
         Assert.Empty(await servicio.SugerirAsync(new string('a', 101)));
         Assert.Null(repositorio.TerminoSugerencias);
@@ -33,7 +88,7 @@ public sealed class ServiciosAutocompletadoTests
     public async Task Servicio_NormalizaSugerenciasPeroConservaEspaciosInternosDeBusquedaManual()
     {
         var repositorio = new RepositorioPrueba();
-        var servicio = new ServicioService(new CreadorPrueba(repositorio));
+        var servicio = new ServicioService(repositorio, repositorio);
         using var cancelacion = new CancellationTokenSource();
         await servicio.SugerirAsync("  caMBio   acei  ", cancelacion.Token);
         Assert.Equal("caMBio acei", repositorio.TerminoSugerencias);
@@ -48,7 +103,7 @@ public sealed class ServiciosAutocompletadoTests
     public async Task Pagina_UsaConsultaSqlSeleccionExactaYListadoCompletoSinFiltrarEnMemoria()
     {
         var repositorio = new RepositorioPrueba();
-        var pagina = new PaginaServicios(new ServicioService(new CreadorPrueba(repositorio)))
+        var pagina = new PaginaServicios(new ServicioService(repositorio, repositorio))
         {
             PageContext = new PageContext { HttpContext = new DefaultHttpContext() }
         };
@@ -148,18 +203,16 @@ public sealed class ServiciosAutocompletadoTests
         Assert.Throws<InvalidOperationException>(() => servicio.Eliminar(id));
     }
 
-    internal static ServicioService CrearServicio(MySqlAisladoFixture aislada) =>
-        new(new CreadorServicio(aislada.Factory), new UsuarioPrueba());
+    internal static ServicioService CrearServicio(MySqlAisladoFixture aislada)
+    {
+        var repositorio = new ServicioRepository(aislada.Factory);
+        return new ServicioService(repositorio, repositorio, new UsuarioPrueba());
+    }
 
     internal static int Crear(ServicioService servicio, string nombre, string descripcion)
     {
         servicio.Crear(new Servicio { Nombre = nombre, Descripcion = descripcion, Costo = 25, TiempoEstimadoHoras = 1 });
         return servicio.ObtenerTodos().Last(registro => registro.Nombre == nombre).Id;
-    }
-
-    private sealed class CreadorPrueba(RepositorioPrueba repositorio) : CreadorServicio(null!)
-    {
-        public override IRepository<Servicio> CrearRepositorio() => repositorio;
     }
 
     private sealed class RepositorioPrueba : IRepository<Servicio>, IConsultaServiciosPort

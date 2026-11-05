@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
@@ -20,8 +20,8 @@ public sealed class NuevaOrdenFechaTests
     public void FechaActual_UsaBoliviaIndependientementeDeLaZonaDelServidor(string utc, string fecha)
     {
         var reloj = new RelojPrueba { Ahora = DateTimeOffset.Parse(utc) };
-        var servicio = new OrdenServicioService(new UnidadNoUtilizada(), new UsuarioPrueba(),
-            new ValidacionOrdenes(), reloj, NullLogger<OrdenServicioService>.Instance);
+        var servicio = new OrdenServicioPrueba(new UnidadNoUtilizada(), new UsuarioPrueba(),
+            new ValidacionOrdenes(), reloj);
         Assert.Equal(DateTime.Parse(fecha), servicio.FechaActual);
     }
 
@@ -32,8 +32,8 @@ public sealed class NuevaOrdenFechaTests
         using var aislada = new MySqlAisladoFixture();
         NuevaOrdenAutocompletadoTests.Preparar(aislada);
         var reloj = new RelojPrueba { Ahora = DateTimeOffset.Parse("2026-10-19T03:59:59Z") };
-        var servicio = new OrdenServicioService(new MySqlUnidadTrabajoOrden(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance),
-            new UsuarioPrueba(), new ValidacionOrdenes(), reloj, NullLogger<OrdenServicioService>.Instance);
+        var servicio = new OrdenServicioPrueba(new MySqlUnidadTrabajoOrden(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance),
+            new UsuarioPrueba(), new ValidacionOrdenes(), reloj);
         var solicitud = new CrearOrdenSolicitud(1, 1, new DateTime(1999, 1, 1), Guid.NewGuid(), [new(1, 2)], 1);
         var primera = servicio.CrearOrden(solicitud);
         Assert.True(primera.Exito);
@@ -85,7 +85,7 @@ public sealed class NuevaOrdenFechaTests
         public override DateTimeOffset GetUtcNow() => Ahora;
     }
 
-    private sealed class UnidadNoUtilizada : IUnidadTrabajoOrdenPort
+    private sealed class UnidadNoUtilizada : IUnidadTrabajoOrden
     {
         public ITransaccionOrden Iniciar() => throw new InvalidOperationException("Solo se consulta el reloj.");
     }

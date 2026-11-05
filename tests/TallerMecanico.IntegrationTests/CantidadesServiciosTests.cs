@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 
@@ -28,8 +28,8 @@ public sealed class CantidadesServiciosTests
             : [new(1, 1), new(1, 3)];
         var solicitud = new CrearOrdenSolicitud(1, 1, DateTime.Today, Guid.NewGuid(), [],
             ServicioIds: [1], CantidadesServicios: cantidades);
-        var servicio = new OrdenServicioService(new UnidadNoUtilizable(), new UsuarioPrueba(),
-            new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
+        var servicio = new OrdenServicioPrueba(new UnidadNoUtilizable(), new UsuarioPrueba(),
+            new ValidacionOrdenes(), TimeProvider.System);
 
         var resultado = servicio.CrearOrden(solicitud);
 
@@ -88,7 +88,7 @@ public sealed class CantidadesServiciosTests
         return (Assert.IsType<OrdenFormViewModel>(contextoEnlace.Result.Model), contexto.ModelState);
     }
 
-    private sealed class UnidadNoUtilizable : IUnidadTrabajoOrdenPort
+    private sealed class UnidadNoUtilizable : IUnidadTrabajoOrden
     {
         public ITransaccionOrden Iniciar() => throw new InvalidOperationException("No debe abrirse una transacción.");
     }

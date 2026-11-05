@@ -10,7 +10,6 @@ using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Cache;
-using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -50,7 +49,7 @@ public sealed class InvalidacionDashboardTests
         var repositorio = new ServiciosPrueba();
         var redis = new ConexionRedisPrueba { FalloDel = new TimeoutException("dato-sensible") };
         var logger = new RegistradorCachePrueba<RedisCacheAdapter>();
-        var servicio = new ServicioService(new CreadorServiciosPrueba(repositorio),
+        var servicio = new ServicioService(repositorio, repositorio,
             cache: new RedisCacheAdapter(redis.Conexion, logger));
         redis.AntesDeEliminar = () => Assert.Single(repositorio.Registros);
 
@@ -72,7 +71,7 @@ public sealed class InvalidacionDashboardTests
     {
         var repositorio = new ServiciosPrueba();
         var cache = new CachePrueba(ResultadoEliminacionCache.Eliminada);
-        var servicio = new ServicioService(new CreadorServiciosPrueba(repositorio), cache: cache);
+        var servicio = new ServicioService(repositorio, repositorio, cache: cache);
 
         Assert.Throws<ArgumentException>(() => servicio.Crear(new Servicio()));
         Assert.Throws<InvalidOperationException>(() => servicio.Eliminar(1));
@@ -87,7 +86,7 @@ public sealed class InvalidacionDashboardTests
         var repositorio = new ServiciosPrueba();
         repositorio.Add(ServicioValido());
         var cache = new CachePrueba(ResultadoEliminacionCache.Eliminada);
-        var servicio = new ServicioService(new CreadorServiciosPrueba(repositorio), cache: cache);
+        var servicio = new ServicioService(repositorio, repositorio, cache: cache);
         Servicio existente = repositorio.Registros[0];
         existente.Nombre = "Servicio actualizado";
         existente.Costo = 30;
@@ -133,11 +132,6 @@ public sealed class InvalidacionDashboardTests
     {
         public IDictionary<string, object> LoadTempData(HttpContext context) => new Dictionary<string, object>();
         public void SaveTempData(HttpContext context, IDictionary<string, object> values) { }
-    }
-
-    private sealed class CreadorServiciosPrueba(ServiciosPrueba repositorio) : CreadorServicio(null!)
-    {
-        public override IRepository<Servicio> CrearRepositorio() => repositorio;
     }
 
     private sealed class ServiciosPrueba : IRepository<Servicio>, IConsultaServiciosPort

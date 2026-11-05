@@ -1,13 +1,13 @@
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
 
 // Intercepta operaciones reales para forzar fallos o concurrencia, sin simular MySQL.
 internal sealed class UnidadTrabajoInterceptada(
-    IUnidadTrabajoOrdenPort real,
+    IUnidadTrabajoOrden real,
     Action<string, int>? antes = null,
-    Action<string, int>? despues = null) : IUnidadTrabajoOrdenPort
+    Action<string, int>? despues = null) : IUnidadTrabajoOrden
 {
     public ITransaccionOrden Iniciar() => new Transaccion(real.Iniciar(), antes, despues);
 
@@ -17,10 +17,10 @@ internal sealed class UnidadTrabajoInterceptada(
         private readonly Action<string, int>? _antes;
         private readonly Action<string, int>? _despues;
         private readonly Dictionary<string, int> _cuentas = [];
-        public IOrdenPort Ordenes { get; }
-        public IDetalleOrdenPort Detalles { get; }
-        public IProductoStockOrdenPort Productos { get; }
-        public ICabeceraOrdenPort Cabecera => _real.Cabecera;
+        public IOrdenRepository Ordenes { get; }
+        public IDetalleOrdenRepository Detalles { get; }
+        public IProductoStockRepository Productos { get; }
+        public ICabeceraOrdenRepository Cabecera => _real.Cabecera;
 
         public Transaccion(ITransaccionOrden real, Action<string, int>? antes, Action<string, int>? despues)
         {
@@ -43,7 +43,7 @@ internal sealed class UnidadTrabajoInterceptada(
         public void Revertir() => _real.Revertir();
         public void Dispose() => _real.Dispose();
 
-        private sealed class OrdenInterceptada(IOrdenPort real, Transaccion contexto) : IOrdenPort
+        private sealed class OrdenInterceptada(IOrdenRepository real, Transaccion contexto) : IOrdenRepository
         {
             public Orden? ObtenerPorToken(Guid token) => contexto.Ejecutar("ObtenerToken", () => real.ObtenerPorToken(token));
             public Orden? ObtenerParaAnular(int id) => contexto.Ejecutar("ObtenerAnular", () => real.ObtenerParaAnular(id));
@@ -53,13 +53,13 @@ internal sealed class UnidadTrabajoInterceptada(
             public bool MarcarAnulada(int ordenId, string usuario, DateTime fechaUtc) => real.MarcarAnulada(ordenId, usuario, fechaUtc);
         }
 
-        private sealed class DetalleInterceptado(IDetalleOrdenPort real, Transaccion contexto) : IDetalleOrdenPort
+        private sealed class DetalleInterceptado(IDetalleOrdenRepository real, Transaccion contexto) : IDetalleOrdenRepository
         {
             public IReadOnlyList<DetalleOrden> ObtenerPorOrden(int ordenId) => real.ObtenerPorOrden(ordenId);
             public void Insertar(DetalleOrden detalle) => contexto.Ejecutar("InsertarDetalle", () => { real.Insertar(detalle); return true; });
         }
 
-        private sealed class ProductoInterceptado(IProductoStockOrdenPort real, Transaccion contexto) : IProductoStockOrdenPort
+        private sealed class ProductoInterceptado(IProductoStockRepository real, Transaccion contexto) : IProductoStockRepository
         {
             public IReadOnlyList<Producto> BloquearPorId(IEnumerable<int> ids) => real.BloquearPorId(ids);
             public bool Descontar(int id, int cantidad) => contexto.Ejecutar("Descontar", () => real.Descontar(id, cantidad));

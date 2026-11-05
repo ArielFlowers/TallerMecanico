@@ -1,3 +1,4 @@
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using System.Text;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 using TallerMecanico.Aplicacion.Servicios;
@@ -18,7 +19,7 @@ public sealed class ComprobanteMySqlTests
         object? orden = aislada.Escalar("SELECT CONCAT_WS('|', Id, Total, Token, Estado, CreadoPor, FechaCreacion) FROM Ordenes;");
         object? detalles = aislada.Escalar("SELECT GROUP_CONCAT(CONCAT_WS('|', Id, Cantidad, PrecioUnitario, Subtotal) ORDER BY Id) FROM DetalleOrdenes;");
         var usuario = new UsuarioPrueba { Username = "generador_copia" };
-        var consultas = new ConsultaOrdenesService(new CreadorConsultaOrdenes(aislada.Factory).CrearRepositorio(), usuario);
+        var consultas = new ConsultarOrdenesCasoUso(new CreadorConsultaOrdenes(aislada.Factory).CrearRepositorio(), usuario);
         var fachada = SoporteComprobantePdf.CrearFachada(consultas, usuario);
 
         byte[] primera = fachada.GenerarComprobante(id)!;

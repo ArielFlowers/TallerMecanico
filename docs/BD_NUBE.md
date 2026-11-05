@@ -36,8 +36,6 @@ coordinado mediante un bloqueo MySQL entre réplicas; no se carga una seed.
 
 Mantener `Maximum Pool Size=3` por réplica. Antes de aumentarlo, consultar el
 límite y uso efectivos del servicio, considerando todas las PCs y administración.
-Los límites y versiones documentados en [VALIDACION_MYSQL84.md](VALIDACION_MYSQL84.md)
-son evidencia fechada, no una garantía de valores futuros.
 
 La prueba administrativa `probar-trigger-nube.ps1` crea y elimina una base
 auxiliar. Solo corresponde a una preparación o diagnóstico coordinado por el

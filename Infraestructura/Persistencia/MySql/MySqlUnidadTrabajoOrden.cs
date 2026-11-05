@@ -1,14 +1,14 @@
 using System.Data;
 using System.Data.Common;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.Infraestructura.Persistencia.MySql;
 
 public sealed class MySqlUnidadTrabajoOrden(
-    DatabaseConnectionFactory connectionFactory, ILogger<MySqlUnidadTrabajoOrden> logger) : IUnidadTrabajoOrdenPort
+    DatabaseConnectionFactory connectionFactory, ILogger<MySqlUnidadTrabajoOrden> logger) : IUnidadTrabajoOrden
 {
     public ITransaccionOrden Iniciar()
     {
@@ -31,10 +31,10 @@ public sealed class MySqlUnidadTrabajoOrden(
         private readonly DbTransaction _transaccion;
         private readonly ILogger _logger;
         private bool _terminada;
-        public IOrdenPort Ordenes { get; }
-        public IDetalleOrdenPort Detalles { get; }
-        public IProductoStockOrdenPort Productos { get; }
-        public ICabeceraOrdenPort Cabecera { get; }
+        public IOrdenRepository Ordenes { get; }
+        public IDetalleOrdenRepository Detalles { get; }
+        public IProductoStockRepository Productos { get; }
+        public ICabeceraOrdenRepository Cabecera { get; }
 
         public Transaccion(DbConnection conexion, DatabaseConnectionFactory factory, ILogger logger)
         {

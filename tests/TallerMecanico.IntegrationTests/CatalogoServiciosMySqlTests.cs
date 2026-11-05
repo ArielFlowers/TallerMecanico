@@ -243,7 +243,7 @@ public sealed class CatalogoServiciosMySqlTests
     private static CrearOrdenSolicitud Solicitud(int servicioId, int cantidad) => new(
         1, 1, DateTime.Today, Guid.NewGuid(), [], ServicioIds: [servicioId], CantidadesServicios: [new(servicioId, cantidad)]);
 
-    private static OrdenServicioService Ordenes(MySqlAisladoFixture aislada) => new(
+    private static OrdenServicioPrueba Ordenes(MySqlAisladoFixture aislada) => new(
         new MySqlUnidadTrabajoOrden(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance),
-        new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System, NullLogger<OrdenServicioService>.Instance);
+        new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System);
 }

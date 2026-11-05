@@ -1,67 +1,88 @@
-# Cumplimiento de Rúbrica EC2 – verificación con evidencia (`refactor/hexagonal`)
+# Cumplimiento de la rúbrica: 3er Entregable
 
-> Verificado con `dotnet build` 0/0, tests 152 passed (9 ambientales por
-> `secrets.json` ausente, 37 skipped), `node --check` OK y grep sobre el código.
-> Comandos de verificación al final.
+Estado al 04/11/2026, según la rama `feature/adrian-3erEntregable` (basada en `main` `6a3ce87`). El trabajo de ramas sin fusionar no se cuenta como hecho. Actualizar este documento cuando se integre cada rama.
 
-## 1. Rúbrica funcional (74 pts)
+**Estados:** ✅ comprobado | 🔶 implementado, falta comprobarlo o completarlo | ❌ falta
 
-| Rubro (pts) | Estado | Evidencia (archivo:línea / comando) |
+## Resumen
+
+| Bloque | Estado | Pendiente principal |
 |---|---|---|
-| Login 4 | ✅ | `Pages/Auth/Login.cshtml(.cs)`; `Program.cs`: `AuthorizeFolder` + policies `SoloAdministrador`/`PersonalAutorizado` (18 matches); `_Layout.cshtml`: menú por rol con `IsInRole` (8 matches); `AccessDenied.cshtml` |
-| Sesiones 7 | ✅ | `Program.cs`: `AddSession` + `UseSession`; `ICurrentUser` desde sesión en todos los services; `CreadoPor/ModificadoPor/AnuladoPor` + `Fecha*` en 5 entidades + Órdenes (`DatabaseInitializer`: 8 cols `ModificadoPor`); tabla `Auditoria` (login/logout); ningún form pide usuario |
-| UI proceso 25 | ✅ | 2 buscadores: `_BuscadorVehiculo.cshtml`, `_BuscadorProducto.cshtml`; `+Nuevo vehículo/cliente/producto` con retorno al borrador (`Crear.cshtml.cs: OnPostNuevo*`); temporal ABM en sesión (`Agregar/ActualizarCantidad/QuitarLinea`); sumariados vivos (`resumen-lineas/cantidad/total` + `ordenes.js` sin conflicto); `confirm('¿Guardar orden?')` |
-| Transacción 10 | ✅ | `OrdenServicioFacade.CrearOrden` + `MySqlUnidadTrabajoOrden` (misma `DbConnection`, 25 matches `BeginTransaction/FOR UPDATE/Confirmar/Token`); `SELECT … FOR UPDATE` ordenado por Id; precios recalculados desde BD; `Descontar` condicional + rollback; idempotencia por token (`EsReenvio`); `CreadoPor` de sesión |
-| Anulación 8 | ✅ | `OnPostAnular` SoloAdmin + `confirm` (`Index.cshtml(.cs)`, 5 matches `Anular`); `AnularOrden`: `FOR UPDATE`, estado `Anulada`, restitución 1:1, re-anular devuelve “ya anulada” sin tocar stock; `AnuladoPor/FechaAnulacion` de sesión |
-| Select 2 + Modal 6 (8) | ✅ | `Ordenes/Index`: 1 fila por orden, filtros estado/fecha, Refrescar/Limpiar; `_DetalleOrden.cshtml` solo lectura vía `fetch` + `<dialog>` (tras fusionar `ordenes.js`) |
-| Comprobante 12 | ✅ | `ComprobanteOrdenPdf` (logo AP, `#7c3aed`, generales + detalle + total en letras + fecha Bolivia + `GeneradoPor` vs `CreadoPor`); auto `window.open` + enlace fallback (`Crear.cshtml`); `Comprobante.cshtml.cs` GET idempotente (PDF inline, 0 INSERT) |
-| **Subtotal funcional** | **74/74** | — |
+| Arquitecturas | 🔶 | Servicio 1 en Clean; falta completar los Servicios 2 y 3 en Hexagonal |
+| Servicio 1 (60) | 🔶 | Llamar a otra UI si falta un registro, refresco del listado, comprobante en otra pestaña y logo |
+| Servicios 2 y 3 (60) | ❌ | Generador de usuario, cambio de contraseña y los 2 reportes |
+| Documento, Anexo 1 (15) | ❌ | Sin redactar; solo existen las guías de arquitectura |
+| Clean Code y SOLID (10) | 🔶 | Ejemplos en las guías; falta el enlace al repositorio en el documento y sacar SQL de `UsuarioAdministracionService` |
+| Defensa (15) | ❌ | La guía se hará cuando estén todos los puntos |
+| Ortografía de la UI (−1 por error) | ❌ | Revisión completa sin hacer |
 
-## 2. Arquitectura y patrones (10 pts)
+## Arquitectura y patrones
 
-| Exigencia | Estado | Evidencia |
+| Exigencia | Estado | Evidencia o pendiente |
 |---|---|---|
-| Monolito por Responsabilidad Técnica | ✅ | `Dominio/`, `Aplicacion/`, `Infraestructura/`, `Pages/` (= Presentación). Ver `docs/ARQUITECTURA_HEXAGONAL.md` |
-| Hexagonal (Puertos y Adaptadores) | ✅ | 24 puertos en `Aplicacion/Puertos/` (`IClientePort`, `IOrdenPort`, `IRepository<T>`, `IFallbackHash`…); adaptadores en `Infraestructura/Persistencia/MySql`, `Sesion`, `Seguridad`, `Correo`, `Documentos`; `new Repo(` solo en `Persistencia/Fabricas`; `new MySqlConnection` solo en `Persistencia`; 0 `using Infraestructura` en `Aplicacion/Dominio` salvo `MecanicoService` (excepción Factory Method: el patrón exige depender del Creador) |
-| Facade (obligatorio) | ✅ | `Aplicacion/Fachadas/OrdenServicioFacade`, `ConsultaOrdenesFacade`, `RegistroFacade` — Pages solo llaman fachadas |
-| Factory Method | ✅ | `Persistencia/Fabricas/Creador*` (10) retornan `IRepository<T>`/puertos; `new` de repos solo ahí (grep vacío fuera) |
-| Singleton (3.er patrón) | ✅ | `Infraestructura/Configuracion/ConfiguracionTaller` (`Lazy<T>`) + `AddSingleton(Instancia)` inyectado en Pages y PDF |
-| Clean Code + SOLID | ✅ | SRP por capa; DIP (DI contra puertos, `Program.cs`); ISP (puertos de lectura vs escritura); OCP (nuevo adaptador sin tocar casos de uso); validaciones por entidad; 0 warnings de build |
+| Servicio 1 en Clean Architecture | ✅ | `Aplicacion/CasosUso/Ordenes/` y [ARQUITECTURA_CLEAN.md](ARQUITECTURA_CLEAN.md) |
+| Servicios 2 y 3 en Hexagonal | 🔶 | Usuarios usa `Aplicacion/Puertos`, con deuda en `UsuarioAdministracionService`; Reportes no está en `main` |
+| SBA | 🔶 | Según lo informado por el equipo, se acepta un solo proyecto con servicios lógicos; falta documentarlo en el Anexo 1 |
+| Al menos 3 patrones de diseño | ✅ | Facade, Factory Method y Singleton, además de Repository y Unit of Work |
+| Regla de dependencias | 🔶 | `ArquitecturaTests` en verde, con 6 servicios en su lista de pendientes |
 
-## 3. Defensa y forma (16 pts + ortografía)
+## Servicio 1: Órdenes (60)
 
-| Exigencia | Estado | Evidencia |
-|---|---|---|
-| Defensa individual | ✅ | `docs/DEFENSA_T6_HEXAGONAL.md`: tabla SOLID por integrante + recorrido demo 5 min |
-| Repo con historial | ✅ | Rama `refactor/hexagonal`, 8 commits (`git mv` conserva historia), PR a `main` |
-| Ortografía (−1 c/u) | ✅ | Tildes corregidas (`válido, verificación, electrónico, contraseña…`); `href="#"` neutralizados (CSS + JS, no navegan); sin `�` en vistas (era lectura de consola, archivos UTF-8 OK) |
+| Requisito | Pts | Estado | Evidencia o pendiente |
+|---|---:|---|---|
+| Al menos 2 buscadores | 8 | ✅ | 4 buscadores; usados en navegador |
+| Llamar a otra UI si falta un registro | 5 | ❌ | Existen `OnPostNuevoVehiculo`, `OnPostNuevoCliente` y `OnPostNuevoProducto`, pero **ninguna pantalla los llama**: al no encontrar un registro solo aparece "No se encontraron coincidencias" (Santiago) |
+| Agregar, editar y eliminar registros temporales | 9 | ✅ | Probado en navegador; el total se recalculó correctamente |
+| Datos sumariados | 2 | ✅ | Líneas, unidades y total |
+| Confirmación al guardar | 1 | ✅ | Diálogo "Confirmar orden" |
+| Transacción con commit y rollback, y usuario creador | 10 | ✅ | `OrdenesMySqlTests`; orden de prueba con total, stock y `CreadoPor` correctos |
+| Anulación, restitución y usuario que anula | 10 | ✅ | Probada en navegador: estado `Anulada`, `AnuladoPor` y `FechaAnulacion` registrados, y stock de 7 a 10 |
+| Select con refresco | 1 | 🔶 | Una fila por orden; **no hay botón Refrescar en `main`** (Santiago) |
+| Modal de detalle de solo lectura | 5 | ✅ | Comprobado: sin campos ni formularios |
+| Comprobante con línea gráfica y logo | 1 | 🔶 | Colores propios y monograma "AP"; falta el logo oficial (Gabo) |
+| Comprobante con datos completos | 7 | ✅ | `ComprobanteOrdenPdf` y pruebas de PDF |
+| Comprobante automático | 1 | 🔶 | Se abre solo, pero en un modal; el Anexo 2 indica otra pestaña (Santiago) |
 
-## 4. Comandos de verificación (SDK 10)
+## Servicios 2 y 3: Usuarios y Reportes (60)
+
+| Requisito | Pts | Estado | Evidencia o pendiente |
+|---|---:|---|---|
+| Login, sesiones y menú por rol | 10 | 🔶 | `_Layout.cshtml` usa `IsInRole`; falta revisar la UI |
+| Bitácora en atributos de auditoría | 10 | 🔶 | Las entidades tienen `ModificadoPor`; falta verificar cada CRUD |
+| Select de usuarios sin contraseña | 2 | 🔶 | Falta comprobarlo |
+| Insert con nombre de usuario por protocolo y activación por correo | 7 | ❌ | Hay invitación por correo; **falta el generador de nombre de usuario** |
+| Dar de baja a un usuario | 1 | 🔶 | `DesactivarUsuario`; falta comprobarlo |
+| Cambio de contraseña | 10 | ❌ | No está en `main` |
+| Reporte 1: lista, 2 tablas, 2 filtros, PDF y Excel | 10 | ❌ | No está en `main`; el menú no lleva a ninguna página |
+| Reporte 2: sumariado con gráfico, 2 tablas, 2 filtros, PDF y Excel | 10 | ❌ | No está en `main` |
+
+Hay trabajo sin fusionar en `origin/Ariel/HU3`. Las correcciones que necesita están en el plan del entregable.
+
+## Documento: Anexo 1 (15)
+
+| Sección | Estado |
+|---|---|
+| Carátula, introducción y objetivo | ❌ |
+| Contexto y requisitos funcionales | ❌ |
+| C4 niveles 1, 2, 3 y combinado | ❌ |
+| Diagramas de clases y capturas de patrones | ❌ |
+| Capturas de los estilos arquitectónicos | ❌ |
+| Ejemplos de cada principio SOLID | 🔶 Órdenes en [ARQUITECTURA_CLEAN.md](ARQUITECTURA_CLEAN.md); faltan capturas y pasarlos al documento |
+| URL y organización del repositorio | ❌ |
+| Conclusiones y bibliografía | ❌ |
+| Subida individual al LMS | ❌ |
+
+## Cómo se verificó
 
 ```powershell
-$env:PATH = "$env:LOCALAPPDATA\Microsoft\dotnet10;$env:PATH"
-$env:DOTNET_ROOT = "$env:LOCALAPPDATA\Microsoft\dotnet10"
-dotnet build                                            # 0 warnings, 0 errors
-node --check wwwroot/js/ordenes.js                      # sin conflicto
-dotnet test tests/TallerMecanico.IntegrationTests/…     # 152 passed; 9 fallan solo por secrets.json ausente
-# Hexagonal:
-Select-String -Path "Aplicacion/**","Dominio/**","Pages/**" -Pattern "new \w+Repository\("   # vacío
-Select-String -Path "Aplicacion/**","Dominio/**" -Pattern "using TallerMecanico\.Infraestructura"  # solo MecanicoService (Factory Method)
+dotnet build
+dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter "Area=Backend"
 ```
 
-## 5. Nota: arranque con BD local sucia (no es del refactor)
+- Las áreas Datos, API y Frontend requieren `TALLER_TEST_MYSQL`; ver el README.
+- Última ejecución completa, el 04/11/2026 sobre `a0f2909`: 526 pruebas sin fallos (Backend 390, Datos 122, API 10 y Frontend 4).
+- Prueba manual en Chrome sobre una base temporal aislada: crear orden, editar líneas, guardar, comprobante, listado, detalle y anular.
 
-Si al arrancar aparece `EnsureMecanicosEmptyForApellidoMigration`
-(“existen registros pendientes de migración manual”), la BD local tiene
-la tabla `Mecanicos` con la columna antigua `Apellidos` + filas. Es un
-guardián preexistente de `main` (no auto-dividir apellidos). Opciones:
+## Observaciones de la prueba manual
 
-```sql
--- A. Desarrollo (descarta datos): vaciar y dejar que migre solo
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE Mecanicos;
-SET FOREIGN_KEY_CHECKS = 1;
--- o reset total: DROP DATABASE taller_mecanico; CREATE DATABASE taller_mecanico CHARACTER SET utf8mb4;
--- B. Conservar datos: respaldar, repartir apellidos manualmente y retirar la columna vieja
--- (ver mensaje de la excepción), luego reiniciar.
-```
+- Al guardar una orden aparecen dos mensajes de éxito en `Pages/Ordenes/Index.cshtml`, y uno se muestra en rojo. El mensaje de anulación también sale en rojo.
