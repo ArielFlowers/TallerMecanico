@@ -23,4 +23,11 @@
   <ItemGroup>
     <ProjectReference Include="..\shared\TallerMecanico.Contratos\TallerMecanico.Contratos.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="TallerMecanico.Contratos" />
+    <Using Include="TallerMecanico.Contratos.Catalogos" />
+    <Using Include="TallerMecanico.Contratos.Dashboard" />
+    <Using Include="TallerMecanico.Contratos.Reportes" />
+    <Using Include="TallerMecanico.Contratos.Usuarios" />
+  </ItemGroup>
 </Project>

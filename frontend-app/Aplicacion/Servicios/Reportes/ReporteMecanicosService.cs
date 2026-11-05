@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using TallerMecanico.Aplicacion.DTOs.Reportes;
 using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Aplicacion.Servicios.Reportes;

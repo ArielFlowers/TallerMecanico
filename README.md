@@ -95,7 +95,7 @@ réplicas y Nginx. `NubeDown` detiene los servicios de la aplicación. No usar
 Ejecutar la suite xUnit desde la raíz:
 
 ```powershell
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj -- xUnit.ParallelizeTestCollections=false
+dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj -- xUnit.ParallelizeTestCollections=false
 ```
 
 Las pruebas de lógica funcionan sin configuración. Las de persistencia requieren
@@ -112,7 +112,7 @@ notepad tests/.env.test
 docker compose --project-directory . --env-file tests/.env.test -f tests/docker-compose.test.yml up -d --wait
 # Usar la misma clave que se puso en tests/.env.test:
 $env:TALLER_TEST_MYSQL = 'Server=127.0.0.1;Port=3308;User ID=root;Password=CLAVE_DE_PRUEBAS;SslMode=Disabled;'
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj -- xUnit.ParallelizeTestCollections=false
+dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj -- xUnit.ParallelizeTestCollections=false
 ```
 
 macOS (Terminal):
@@ -123,7 +123,7 @@ nano tests/.env.test
 docker compose --project-directory . --env-file tests/.env.test -f tests/docker-compose.test.yml up -d --wait
 # Usar la misma clave que se puso en tests/.env.test:
 export TALLER_TEST_MYSQL='Server=127.0.0.1;Port=3308;User ID=root;Password=CLAVE_DE_PRUEBAS;SslMode=Disabled;'
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj -- xUnit.ParallelizeTestCollections=false
+dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj -- xUnit.ParallelizeTestCollections=false
 ```
 
 `tests/.env.test` solo configura el contenedor descartable de pruebas y mantiene
@@ -153,7 +153,7 @@ La [guía de CI](docs/CI.md) explica los filtros por área, los checks y cómo
 reproducirlos. Por ejemplo, para ejecutar solo la lógica de backend:
 
 ```console
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --configuration Release --filter "Area=Backend" -- xUnit.ParallelizeTestCollections=false
+dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj --configuration Release --filter "Area=Backend" -- xUnit.ParallelizeTestCollections=false
 ```
 
 Localmente, los recorridos de navegador y la extracción de texto PDF se omiten

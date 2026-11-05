@@ -1,7 +1,6 @@
 using System.Globalization;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
-using TallerMecanico.Aplicacion.DTOs.Reportes;
 
 namespace TallerMecanico.Infraestructura.Documentos;
 

@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PROYECTO_PRUEBAS: tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj
+  PROYECTO_PRUEBAS: tests/frontend-app.Tests/frontend-app.Tests.csproj
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_NOLOGO: 'true'
 

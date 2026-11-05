@@ -1,4 +1,3 @@
-using TallerMecanico.Aplicacion.DTOs.Reportes;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Configuracion;
 using TallerMecanico.Infraestructura.Documentos;

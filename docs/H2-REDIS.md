@@ -126,7 +126,7 @@ Al ejecutar `docker compose -f docker-compose.yml start redis` la caché vuelve 
 
 ## 6. Pruebas automatizadas
 
-    dotnet test tests/TallerMecanico.IntegrationTests --filter FullyQualifiedName~DashboardCache
+    dotnet test tests/frontend-app.Tests --filter FullyQualifiedName~DashboardCache
 
 Cubren MISS, HIT, caché compartida, invalidación, expiración,
 valores corruptos y Redis no disponible.

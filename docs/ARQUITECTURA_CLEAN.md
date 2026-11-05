@@ -29,7 +29,7 @@ Pages  ──►  Fachadas  ──►  Casos de uso  ──►  Dominio
 Infraestructura ── implementa ── Contratos
 ```
 
-Las dependencias apuntan hacia el núcleo. Como todo está en un solo proyecto, el compilador no lo impide, y por eso `tests/TallerMecanico.IntegrationTests/ArquitecturaTests.cs` falla si `Dominio`, `Aplicacion` o `Pages` mencionan `TallerMecanico.Infraestructura` o `MySqlConnector`. Los archivos con deuda pendiente están en una lista dentro de esa prueba.
+Las dependencias apuntan hacia el núcleo. Como todo está en un solo proyecto, el compilador no lo impide, y por eso `tests/frontend-app.Tests/ArquitecturaTests.cs` falla si `Dominio`, `Aplicacion` o `Pages` mencionan `TallerMecanico.Infraestructura` o `MySqlConnector`. Los archivos con deuda pendiente están en una lista dentro de esa prueba.
 
 ## Casos de uso
 
@@ -97,7 +97,7 @@ Los setters siguen públicos porque los usa el mapeo ADO al leer de MySQL. Es un
 ## Pruebas
 
 ```powershell
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter "Area=Backend"
+dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj --filter "Area=Backend"
 ```
 
 - `OrdenDominioTests`: reglas del dominio, sin base de datos.

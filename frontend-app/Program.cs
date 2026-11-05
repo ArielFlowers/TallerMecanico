@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
+using TallerMecanico.Api;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -472,6 +473,11 @@ builder.Services.AddScoped<IGeneradorReporteMecanicosPdfPort, QuestPdfReporteMec
 builder.Services.AddScoped<IGeneradorReporteMecanicosExcelPort, ClosedXmlReporteMecanicosAdapter>();
 builder.Services.AddScoped<IReporteOrdenesPort, ReporteOrdenesService>();
 builder.Services.AddScoped<IReporteMecanicosPort, ReporteMecanicosService>();
+// =====================================================
+// CLIENTES HTTP DE LOS SERVICIOS BACKEND
+// =====================================================
+builder.Services.AddApisInternas(builder.Configuration);
+
 var app =
     builder.Build();
 configuracionRedis.RegistrarDiagnostico(app.Logger,
@@ -529,6 +535,17 @@ if (args.Contains(
                 .GetRequiredService<InicializacionUsuariosConsola>();
         inicializacion.Ejecutar();
     }
+    return;
+}
+
+// =====================================================
+// CREACIÓN DEL ESQUEMA SIN LEVANTAR EL SERVIDOR
+// =====================================================
+// Lo usan las pruebas. En A3 pasa a servicio-ordenes junto con DatabaseInitializer.
+if (args.Contains("--inicializar-esquema", StringComparer.OrdinalIgnoreCase))
+{
+    using IServiceScope scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<DatabaseInitializer>().Initialize();
     return;
 }
 
