@@ -66,17 +66,17 @@
 
     <div asp-validation-summary="All" class="ordenes-validacion" role="alert"></div>
 
-    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito))
-    {
-        <div class="service-validation" role="status">@Model.MensajeExito</div>
-    }
-    @if (Model.OrdenCreadaId.HasValue)
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito) || Model.OrdenCreadaId.HasValue)
     {
         <div class="orden-comprobante-aviso" role="status">
-            Orden #@Model.OrdenCreadaId.Value guardada. El comprobante se abrirá en una pestaña nueva.
-            Si no se abre, utiliza este enlace:
-            <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value"
-               target="_blank" rel="noopener" data-comprobante-creado>Abrir comprobante en otra pestaña</a>
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeExito)) { <span>@Model.MensajeExito</span> }
+            else { <span>Orden #@Model.OrdenCreadaId.Value guardada.</span> }
+            @if (Model.OrdenCreadaId.HasValue)
+            {
+                <span>El comprobante se abrirá en una pestaña nueva. Si no se abre, utiliza este enlace:</span>
+                <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value"
+                   target="_blank" rel="noopener" data-comprobante-creado>Abrir comprobante en otra pestaña</a>
+            }
         </div>
     }
 

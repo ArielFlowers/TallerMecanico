@@ -151,7 +151,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
                 });
                 assert.equal(repetido.status(), 200);
                 const confirmacion = await page.evaluate(html => new DOMParser().parseFromString(html, 'text/html')
-                    .querySelector('.ordenes-page > .service-validation[role="status"]').textContent, await repetido.text());
+                    .querySelector('.ordenes-page > .orden-comprobante-aviso[role="status"]').textContent, await repetido.text());
                 assert.match(confirmacion, new RegExp(`orden #${id} ya se había guardado`));
             }
             const solicitudesPdf = comprobantes.length, totalPestañas = pestanas.length;

@@ -21,7 +21,7 @@
         <a href="#resumen-orden" class="ordenes-flujo-paso"><span>3</span><span><strong>Confirmar</strong><small>Revisar el total</small></span></a>
     </nav>
 
-    @if (!string.IsNullOrWhiteSpace(Model.Mensaje)) { <div class="service-validation" role="status">@Model.Mensaje</div> }
+    @if (!string.IsNullOrWhiteSpace(Model.Mensaje)) { <div class="ordenes-mensaje-exito" role="status">@Model.Mensaje</div> }
     <div asp-validation-summary="ModelOnly" class="service-validation" role="alert"></div>
 
     <div class="ordenes-crear-layout">
@@ -67,6 +67,10 @@
                     <p class="ordenes-ayuda">El cliente de la orden será el asociado al vehículo seleccionado.</p>
                     <p id="orden-vehiculo-aviso" role="status" hidden="@(Model.VehiculoSeleccionado?.ClienteId.HasValue != false)">El vehículo requiere un cliente antes de guardar la orden.</p>
                     <span asp-validation-for="Formulario.VehiculoId" class="service-validation"></span>
+                    <div class="ordenes-altas">
+                        <button type="submit" form="orden-nuevo-cliente" class="services-btn services-btn-secondary">Nuevo cliente</button>
+                        <button type="submit" form="orden-nuevo-vehiculo" class="services-btn services-btn-secondary">Nuevo vehículo</button>
+                    </div>
                 </div>
                 <div class="ordenes-selector ordenes-servicios-selector ordenes-selector-servicio"
                      data-servicio-pendiente-id="@Model.ServicioSeleccionado?.Id"
@@ -152,6 +156,16 @@
         </section>
     </form>
 
+    <form method="post" id="orden-nuevo-cliente" asp-page-handler="NuevoCliente" data-preservar-scroll hidden>
+        <partial name="_ContextoNuevaOrden" model="Model" />
+    </form>
+    <form method="post" id="orden-nuevo-vehiculo" asp-page-handler="NuevoVehiculo" data-preservar-scroll hidden>
+        <partial name="_ContextoNuevaOrden" model="Model" />
+    </form>
+    <form method="post" id="orden-nuevo-producto" asp-page-handler="NuevoProducto" data-preservar-scroll hidden>
+        <partial name="_ContextoNuevaOrden" model="Model" />
+    </form>
+
     <section class="recent-orders ordenes-card ordenes-selectores-card" id="repuestos">
         <div class="ordenes-titulo-seccion"><span class="ordenes-paso">2</span><div><h2>Repuestos <span class="ordenes-opcional">Opcional</span></h2><p>Busca una pieza por nombre o código. La disponibilidad aparece al seleccionarla.</p></div></div>
         <form method="post" id="orden-agregar-producto" asp-page-handler="AgregarLinea" class="ordenes-agregar" data-preservar-scroll>
@@ -172,6 +186,9 @@
             <button type="submit" id="orden-boton-agregar-repuesto" class="services-btn services-btn-primary" disabled="@(Model.ProductoSeleccionado is null || Model.ProductoSeleccionado.Stock <= 0)">Agregar repuesto</button>
         </form>
         <p id="orden-producto-stock" class="ordenes-stock-status" data-estado-stock="@(Model.ProductoSeleccionado is null ? "inicial" : Model.ProductoSeleccionado.Stock > 0 ? "disponible" : "agotado")" role="status" aria-live="polite">@(Model.ProductoSeleccionado is null ? "El stock se mostrará aquí al seleccionar un producto." : Model.ProductoSeleccionado.Stock > 0 ? $"Disponibles: {Model.ProductoSeleccionado.Stock} unidades." : $"No hay stock disponible de {Model.ProductoSeleccionado.Nombre}.")</p>
+        <div class="ordenes-altas">
+            <button type="submit" form="orden-nuevo-producto" class="services-btn services-btn-secondary">Nuevo producto</button>
+        </div>
         <span asp-validation-for="ProductoId" class="service-validation"></span><span asp-validation-for="Cantidad" class="service-validation"></span>
         <div id="orden-lineas-lista">
 @if (Model.Lineas.Count == 0) { <div class="ordenes-vacio-detalle"><span aria-hidden="true">＋</span><p><strong>Aún no hay repuestos</strong><br />Puedes guardar la orden solo con un servicio.</p></div> }
