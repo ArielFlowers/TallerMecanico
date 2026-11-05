@@ -4,9 +4,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Infraestructura;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -18,10 +17,8 @@ using System.Threading.RateLimiting;
 using TallerMecanico.Infraestructura.Arranque;
 using TallerMecanico.Infraestructura.Sesion;
 using TallerMecanico.Aplicacion.Fachadas;
-using TallerMecanico.Dominio.Servicios;
 using TallerMecanico.Aplicacion.Configuracion;
 using TallerMecanico.Infraestructura.Configuracion;
-using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Infraestructura.Cache;
 using StackExchange.Redis;
 
@@ -111,22 +108,7 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(ConfiguracionTaller.Instancia);
-builder.Services.AddScoped<ITokenOrden, TokenOrdenSesion>();
-builder.Services.AddScoped<IBorradorOrden, BorradorOrdenSesion>();
-builder.Services.AddScoped<IUnidadTrabajoOrden, MySqlUnidadTrabajoOrden>();
-builder.Services.AddScoped<ValidacionOrdenes>();
-builder.Services.AddScoped<CrearOrdenCasoUso>();
-builder.Services.AddScoped<AnularOrdenCasoUso>();
-builder.Services.AddScoped<OrdenServicioFacade>();
-builder.Services.AddScoped<CreadorConsultaOrdenes>();
-builder.Services.AddScoped<IOrdenQueryRepository>(serviceProvider =>
-    serviceProvider.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
-builder.Services.AddScoped<ConsultarOrdenesCasoUso>();
-builder.Services.AddScoped<ConsultaOrdenesFacade>();
-builder.Services.AddSingleton<ImporteEnPalabras>();
-builder.Services.AddScoped<IComprobantePdf, ComprobanteOrdenPdf>();
-builder.Services.AddScoped<GenerarComprobanteCasoUso>();
-QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+builder.Services.AddInfraestructuraOrdenes();
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(
         Argon2idOptions.SectionName));

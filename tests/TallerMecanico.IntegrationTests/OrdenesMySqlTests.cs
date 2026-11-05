@@ -100,6 +100,17 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
     }
 
     [MySqlAisladoFact]
+    public void StockExacto_SeDescuentaHastaCeroSinFallar()
+    {
+        Datos datos = Preparar(stockA: 2);
+        var solicitud = Solicitud(datos, null, new LineaOrdenSolicitud(datos.A, 2));
+        ResultadoOrden resultado = Servicio().CrearOrden(solicitud);
+        Assert.True(resultado.Exito, string.Join("; ", resultado.Errores.Values));
+        Assert.Equal(0, Stock(datos.A));
+        Assert.Equal(1, ContarOrden(solicitud.Token));
+    }
+
+    [MySqlAisladoFact]
     public void ProductosRepetidos_SeAgrupanAntesDelStockYDeLosDetalles()
     {
         Datos datos = Preparar();
@@ -158,6 +169,18 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         Assert.True(reenvio.EsReenvio);
         Assert.Equal(EstadoOrden.Anulada, reenvio.Estado);
         Assert.Equal(10, Stock(datos.A));
+    }
+
+    [MySqlAisladoFact]
+    public void AnularOrdenInexistente_DevuelveErrorSinTocarStock()
+    {
+        Datos datos = Preparar();
+        var administrador = new UsuarioPrueba { Rol = "Administrador" };
+        ResultadoOrden resultado = Servicio(administrador).AnularOrden(int.MaxValue);
+        Assert.False(resultado.Exito);
+        Assert.Contains("OrdenId", resultado.Errores);
+        Assert.Equal(10, Stock(datos.A));
+        Assert.Equal(10, Stock(datos.B));
     }
 
     [MySqlAisladoFact]
