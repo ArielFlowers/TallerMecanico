@@ -66,7 +66,14 @@ body {
 
 .sidebar {
     width: 250px;
-    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    flex-shrink: 0;
+    overflow: hidden;
     background: var(--surface);
     border-right: 1px solid var(--border);
     display: flex;
@@ -80,6 +87,7 @@ body {
 
 .brand {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 12px;
     padding: 8px 10px 30px;
@@ -123,6 +131,10 @@ body {
 .sidebar-menu {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     gap: 4px;
 }
 
@@ -1292,6 +1304,7 @@ button.service-action {
 }
 
 .sidebar-bottom {
+    flex-shrink: 0;
     margin-top: auto;
     margin-bottom: 24px;
     padding-top: 12px;

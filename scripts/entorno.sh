@@ -57,8 +57,10 @@ comprobar_configuracion() {
     fi
     invocar_compose config --quiet
     local nombre_proyecto
-    # --no-interpolate evita mostrar o procesar las credenciales de .env.
-    nombre_proyecto="$(invocar_compose config --no-interpolate | sed -n 's/^name: //p')"
+    # Compose necesita interpolar la IP antes de analizar los puertos.
+    # El filtro solo captura el nombre; la configuración y sus secretos no se imprimen.
+    nombre_proyecto="$(invocar_compose config | sed -n 's/^name: //p')" ||
+        fallar 'No se pudo comprobar el nombre del proyecto Compose.'
     [[ "$nombre_proyecto" == "$proyecto" ]] || fallar 'El nombre del proyecto Compose fue cambiado. Quita COMPOSE_PROJECT_NAME de .env y de esta terminal.'
 }
 

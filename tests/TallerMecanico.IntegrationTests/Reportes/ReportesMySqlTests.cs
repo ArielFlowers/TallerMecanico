@@ -29,15 +29,15 @@ public sealed class ReportesMySqlTests(MySqlAisladoFixture basePrueba)
         return clienteId;
     }
 
-    private int CrearMecanico()
+    private int CrearMecanico(string nombres = "Mecanico")
     {
         int ci = Interlocked.Increment(ref _ci);
         return checked((int)basePrueba.Ejecutar("""
             INSERT INTO Mecanicos (Ci, Nombres, PrimerApellido, SegundoApellido,
                 Genero, Especialidad, Celular)
-            VALUES (@Ci, 'Mecanico', 'Reporte', 'Prueba',
+            VALUES (@Ci, @Nombres, 'Reporte', 'Prueba',
                 'Masculino', 'Sin Especialidad', '71234567');
-            """, ("@Ci", ci.ToString())));
+            """, ("@Ci", ci.ToString()), ("@Nombres", nombres)));
     }
 
     private int CrearServicio(string nombre, decimal costo)
@@ -174,5 +174,35 @@ public sealed class ReportesMySqlTests(MySqlAisladoFixture basePrueba)
         Assert.Equal(0, vacia.TotalOrdenes);
         Assert.Equal(0m, vacia.TotalFacturado);
         Assert.Equal(0m, vacia.PromedioPorOrden);
+    }
+
+    [MySqlAisladoFact]
+    public void ReporteMecanicos_FiltraNombreProgresivoYEscapaComodines()
+    {
+        string nombre = $"Zarina{Guid.NewGuid():N}";
+        int primero = CrearMecanico(nombre + " Uno");
+        int segundo = CrearMecanico(nombre + " Dos");
+        int literal = CrearMecanico(nombre + "_Literal");
+        var adapter = new ConsultaReportesMySqlAdapter(basePrueba.Factory);
+
+        var primeraLetra = adapter.ObtenerReporteMecanicos(
+            new FiltroReporteMecanicos { NombreMecanico = "z" }, "admin");
+        Assert.Contains(primeraLetra.Filas, fila => fila.MecanicoId == primero);
+        Assert.Contains(primeraLetra.Filas, fila => fila.MecanicoId == segundo);
+
+        var coincidencias = adapter.ObtenerReporteMecanicos(
+            new FiltroReporteMecanicos { NombreMecanico = nombre }, "admin");
+        Assert.Equal(3, coincidencias.Resumen.TotalMecanicos);
+        Assert.Equal(0, coincidencias.Resumen.TotalOrdenes);
+
+        var especifico = adapter.ObtenerReporteMecanicos(
+            new FiltroReporteMecanicos { NombreMecanico = nombre + " Uno" }, "admin");
+        Assert.Equal(primero, Assert.Single(especifico.Filas).MecanicoId);
+
+        var subrayado = adapter.ObtenerReporteMecanicos(
+            new FiltroReporteMecanicos { NombreMecanico = nombre + "_" }, "admin");
+        Assert.Equal(literal, Assert.Single(subrayado.Filas).MecanicoId);
+        Assert.Empty(adapter.ObtenerReporteMecanicos(
+            new FiltroReporteMecanicos { NombreMecanico = nombre + "%" }, "admin").Filas);
     }
 }

@@ -79,6 +79,10 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
         {
             info.Item().Text("Filtros aplicados").FontSize(8).Bold().FontColor(ColorSecundario);
             var filtros = new List<string>();
+            if (!string.IsNullOrWhiteSpace(documento.Filtro.NombreMecanico))
+            {
+                filtros.Add($"Nombre: {documento.Filtro.NombreMecanico}");
+            }
             if (documento.Filtro.FechaDesde.HasValue)
             {
                 filtros.Add($"Desde: {documento.Filtro.FechaDesde.Value:dd/MM/yyyy}");

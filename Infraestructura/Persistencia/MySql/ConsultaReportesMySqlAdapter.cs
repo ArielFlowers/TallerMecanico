@@ -153,6 +153,9 @@ public sealed class ConsultaReportesMySqlAdapter(
                 AND (@FechaDesde IS NULL OR Orden.Fecha >= @FechaDesde)
                 AND (@FechaHastaSiguiente IS NULL OR Orden.Fecha < @FechaHastaSiguiente)
             WHERE (@MecanicoId IS NULL OR Mecanico.Id = @MecanicoId)
+              AND (@NombreMecanico IS NULL OR CONCAT_WS(' ', Mecanico.Nombres,
+                   Mecanico.PrimerApellido, Mecanico.SegundoApellido)
+                   LIKE @NombreMecanico ESCAPE '!')
             GROUP BY Mecanico.Id, Mecanico.Nombres,
                      Mecanico.PrimerApellido, Mecanico.SegundoApellido, Mecanico.Ci
             ORDER BY TotalFacturado DESC, Mecanico.Id;
@@ -167,6 +170,11 @@ public sealed class ConsultaReportesMySqlAdapter(
             filtro.FechaDesde?.ToDateTime(TimeOnly.MinValue));
         AgregarParametro(comando, "@FechaHastaSiguiente", fechaHastaSiguiente);
         AgregarParametro(comando, "@MecanicoId", filtro.MecanicoId);
+        string? nombre = string.IsNullOrWhiteSpace(filtro.NombreMecanico)
+            ? null
+            : filtro.NombreMecanico.Trim().Replace("!", "!!")
+                .Replace("%", "!%").Replace("_", "!_");
+        AgregarParametro(comando, "@NombreMecanico", nombre is null ? null : $"%{nombre}%");
 
         var filas = new List<FilaReporteMecanico>();
         int totalOrdenes = 0;

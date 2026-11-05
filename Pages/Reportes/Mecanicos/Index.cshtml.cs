@@ -9,19 +9,17 @@ using TallerMecanico.Aplicacion.Servicios.Reportes;
 namespace TallerMecanico.Pages.Reportes.Mecanicos;
 
 [Authorize(Policy = "SoloAdministrador")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class IndexModel : PageModel
 {
     private readonly ReporteMecanicosService _reporte;
-    private readonly IConsultaReportesPort _consulta;
     private readonly ICurrentUser _usuarioActual;
 
     public IndexModel(
         ReporteMecanicosService reporte,
-        IConsultaReportesPort consulta,
         ICurrentUser usuarioActual)
     {
         _reporte = reporte;
-        _consulta = consulta;
         _usuarioActual = usuarioActual;
     }
 
@@ -32,12 +30,15 @@ public sealed class IndexModel : PageModel
 
     public string? MensajeError { get; private set; }
 
-    public IReadOnlyList<MecanicoListaDto> Mecanicos { get; private set; } = [];
-
     public void OnGet()
     {
-        Mecanicos = _consulta.ObtenerMecanicos();
         CargarDatos();
+    }
+
+    public IActionResult OnGetResultados()
+    {
+        CargarDatos();
+        return Partial("_Resultados", this);
     }
 
     public IActionResult OnPostExportarPdf()
@@ -55,6 +56,7 @@ public sealed class IndexModel : PageModel
 
     private void CargarDatos()
     {
+        UsarSoloNombre();
         try
         {
             Documento = _reporte.ObtenerDatos(Filtro, UsuarioActualNombre);
@@ -72,6 +74,7 @@ public sealed class IndexModel : PageModel
         string tipoContenido,
         string nombreArchivo)
     {
+        UsarSoloNombre();
         if (!ModelState.IsValid)
         {
             CargarDatos();
@@ -89,6 +92,12 @@ public sealed class IndexModel : PageModel
             CargarDatos();
             return Page();
         }
+    }
+
+    private void UsarSoloNombre()
+    {
+        // Los enlaces antiguos con fechas o ID no deben aplicar filtros invisibles.
+        Filtro = new FiltroReporteMecanicos { NombreMecanico = Filtro.NombreMecanico };
     }
 
     private string UsuarioActualNombre =>

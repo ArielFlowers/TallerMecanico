@@ -5,8 +5,9 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/password-toggle.css" asp-append-version="true" />
     <style>
-        section {
+        .cambio-contrasena {
             max-width: 680px;
             margin: 40px auto;
             padding: 24px;
@@ -15,7 +16,7 @@
     </style>
 }
 
-<section>
+<section class="cambio-contrasena">
     <h1>Cambiar contraseña</h1>
     <p>Por seguridad, deberá iniciar sesión nuevamente después del cambio.</p>
 
@@ -25,26 +26,65 @@
 
         <div style="margin-bottom:18px;">
             <label asp-for="Input.Actual">Contraseña actual</label>
-            <input asp-for="Input.Actual" type="password"
-                   autocomplete="current-password"
-                   class="form-control" required />
+            <div class="password-field">
+                <input asp-for="Input.Actual" type="password"
+                       autocomplete="current-password"
+                       class="form-control" required />
+                <button type="button" class="password-toggle" data-password-toggle
+                        data-password-label="contraseña actual" aria-controls="Input_Actual"
+                        aria-label="Mostrar contraseña actual" aria-pressed="false" hidden>
+                    <svg class="password-eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="password-eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m3 3 18 18M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-4.1 4.8M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.5 10.5 0 0 0 4.2-.9" />
+                    </svg>
+                </button>
+            </div>
             <span asp-validation-for="Input.Actual" class="text-danger"></span>
         </div>
 
         <div style="margin-bottom:18px;">
             <label asp-for="Input.Nueva">Nueva contraseña</label>
-            <input asp-for="Input.Nueva" type="password"
-                    minlength="8" maxlength="128"
-                   autocomplete="new-password"
-                   class="form-control" required />
+            <div class="password-field">
+                <input asp-for="Input.Nueva" type="password"
+                       minlength="8" maxlength="128"
+                       autocomplete="new-password"
+                       class="form-control" required />
+                <button type="button" class="password-toggle" data-password-toggle
+                        data-password-label="nueva contraseña" aria-controls="Input_Nueva"
+                        aria-label="Mostrar nueva contraseña" aria-pressed="false" hidden>
+                    <svg class="password-eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="password-eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m3 3 18 18M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-4.1 4.8M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.5 10.5 0 0 0 4.2-.9" />
+                    </svg>
+                </button>
+            </div>
             <span asp-validation-for="Input.Nueva" class="text-danger"></span>
         </div>
 
         <div style="margin-bottom:18px;">
             <label asp-for="Input.Confirmacion">Confirmar nueva contraseña</label>
-            <input asp-for="Input.Confirmacion" type="password"
-                   autocomplete="new-password"
-                   class="form-control" required />
+            <div class="password-field">
+                <input asp-for="Input.Confirmacion" type="password"
+                       autocomplete="new-password"
+                       class="form-control" required />
+                <button type="button" class="password-toggle" data-password-toggle
+                        data-password-label="confirmación de la nueva contraseña" aria-controls="Input_Confirmacion"
+                        aria-label="Mostrar confirmación de la nueva contraseña" aria-pressed="false" hidden>
+                    <svg class="password-eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="password-eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m3 3 18 18M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-4.1 4.8M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a10.5 10.5 0 0 0 4.2-.9" />
+                    </svg>
+                </button>
+            </div>
             <span asp-validation-for="Input.Confirmacion" class="text-danger"></span>
         </div>
 
@@ -62,4 +102,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/password-toggle.js" asp-append-version="true"></script>
 }

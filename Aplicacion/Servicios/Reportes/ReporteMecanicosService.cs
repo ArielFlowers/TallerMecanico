@@ -51,6 +51,16 @@ public sealed class ReporteMecanicosService
             throw new ArgumentNullException(nameof(filtro));
         }
 
+        filtro.NombreMecanico = string.IsNullOrWhiteSpace(filtro.NombreMecanico)
+            ? null
+            : filtro.NombreMecanico.Trim();
+
+        if (filtro.NombreMecanico?.Length > 300)
+        {
+            throw new ValidationException(
+                "El nombre del mecánico no puede superar los 300 caracteres.");
+        }
+
         if (filtro.FechaDesde.HasValue && filtro.FechaHasta.HasValue &&
             filtro.FechaDesde.Value > filtro.FechaHasta.Value)
         {

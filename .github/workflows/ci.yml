@@ -101,6 +101,7 @@ jobs:
           npm ci --no-audit --no-fund
           node node_modules/playwright/cli.js install --with-deps msedge
           echo "PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/tests/browser/node_modules/playwright" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_CHANNEL=msedge" >> "$GITHUB_ENV"
       - name: Ejecutar las pruebas del area
         run: >-
           dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore

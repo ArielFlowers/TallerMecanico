@@ -10,6 +10,11 @@ namespace TallerMecanico.IntegrationTests.Reportes;
 [Trait("Area", "Backend")]
 public class ClosedXmlReporteOrdenesAdapterTests
 {
+    static ClosedXmlReporteOrdenesAdapterTests()
+    {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Evaluation;
+    }
+
     [Fact]
     public void Generar_ProduceXlsxGenuinoConDatos()
     {
@@ -138,5 +143,53 @@ public class ClosedXmlReporteOrdenesAdapterTests
         Assert.StartsWith(
             "Reporte detallado",
             hoja.Cell(2, 1).GetString());
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(3, 0)]
+    [InlineData(0, 2)]
+    [InlineData(3, 2)]
+    public void Generar_IncrustaGraficoVisibleDespuesDelResumenSinPerderLogo(int activas, int anuladas)
+    {
+        var documento = new DocumentoReporteOrdenes
+        {
+            Filtro = new FiltroReporteOrdenes(),
+            Filas = Enumerable.Range(1, activas + anuladas).Select(id => new FilaReporteOrden
+            {
+                OrdenId = id,
+                Fecha = new DateTime(2026, 11, 5),
+                Placa = $"{id:0000}ABC",
+                NombreMecanico = "Mecánico Prueba",
+                Total = 100m,
+                Estado = id <= activas ? "Activa" : "Anulada",
+                CreadoPor = "admin"
+            }).ToList(),
+            Resumen = new ResumenReporteOrdenes
+            {
+                TotalOrdenes = activas + anuladas,
+                OrdenesActivas = activas,
+                OrdenesAnuladas = anuladas,
+                TotalGeneral = activas * 100m
+            },
+            GeneradoPor = "admin",
+            FechaGeneracion = DateTime.UtcNow
+        };
+
+        byte[] archivo = new ClosedXmlReporteOrdenesAdapter(ConfiguracionTaller.Instancia).Generar(documento);
+        SoporteComprobantePdf.GuardarMuestra(archivo, $"reporte-ordenes-{activas}-{anuladas}.xlsx");
+        using var libro = new XLWorkbook(new MemoryStream(archivo, writable: false));
+        var hoja = libro.Worksheet(1);
+        Assert.Equal(2, hoja.Pictures.Count);
+        var grafico = Assert.Single(hoja.Pictures, imagen => imagen.Name == "Órdenes por estado");
+        Assert.True(grafico.Width >= 600);
+        Assert.True(grafico.Height >= 200);
+        Assert.True(grafico.ImageStream.Length > 1000);
+        Assert.True(grafico.TopLeftCell.Address.RowNumber > activas + anuladas + 8);
+
+        int filaResumen = activas + anuladas + 5;
+        Assert.Equal((activas + anuladas).ToString("N0"), hoja.Cell(filaResumen, 2).GetString());
+        Assert.Equal(activas.ToString("N0"), hoja.Cell(filaResumen + 2, 2).GetString());
+        Assert.Equal(anuladas.ToString("N0"), hoja.Cell(filaResumen + 3, 2).GetString());
     }
 }

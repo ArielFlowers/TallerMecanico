@@ -34,7 +34,8 @@ public sealed class ClosedXmlReporteMecanicosAdapter(ConfiguracionTaller taller)
         {
             new() { Etiqueta = "Mecánicos", Valor = documento.Resumen.TotalMecanicos.ToString("N0") },
             new() { Etiqueta = "Órdenes totales", Valor = documento.Resumen.TotalOrdenes.ToString("N0") },
-            new() { Etiqueta = "Total facturado", Valor = $"{taller.Moneda} {documento.Resumen.TotalFacturado.ToString("N2")}" }
+            new() { Etiqueta = "Total facturado", Valor = $"{taller.Moneda} {documento.Resumen.TotalFacturado.ToString("N2")}" },
+            new() { Etiqueta = "Nombre del mecánico", Valor = documento.Filtro.NombreMecanico ?? "Todos" }
         };
 
         return XlsxBuilder.Build(
