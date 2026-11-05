@@ -12,8 +12,12 @@ namespace TallerMecanico.IntegrationTests;
 [Trait("Area", "API")]
 public sealed class UsuarioSesionRevocadaHttpTests
 {
-    [MySqlAisladoFact]
-    public async Task UsuarioDesactivado_PierdeSesionAutenticada()
+    [MySqlAisladoTheory]
+    [InlineData("Administrador", null)]
+    [InlineData("Administrador", "Recepcionista")]
+    [InlineData("Recepcionista", "Administrador")]
+    public async Task CuentaModificada_RevocaSesionAntesDeAutorizarYUsaRolActualAlIngresar(
+        string rolInicial, string? nuevoRol)
     {
         using var aislada = new MySqlAisladoFixture();
 
@@ -28,11 +32,12 @@ public sealed class UsuarioSesionRevocadaHttpTests
                  Rol, Activo, CreadoPor, FechaCreacion)
             VALUES
                 (@Username, @Hash, @Email, TRUE,
-                 'Recepcionista', TRUE, 'pruebas', UTC_TIMESTAMP());
+                 @Rol, TRUE, 'pruebas', UTC_TIMESTAMP());
             """,
             ("@Username", username),
             ("@Hash", hasher.GenerarHash(password)),
-            ("@Email", username + "@test.com")));
+            ("@Email", username + "@test.com"),
+            ("@Rol", rolInicial)));
 
         using var clave = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var solicitud = new CertificateRequest(
@@ -126,43 +131,34 @@ public sealed class UsuarioSesionRevocadaHttpTests
 
                 Assert.True(listo, "El servidor HTTPS aislado no inicio.");
 
-                string html = await cliente.GetStringAsync("/Auth/Login");
-
-                string campo = Regex.Match(
-                    html,
-                    "<input[^>]+name=\"__RequestVerificationToken\"[^>]*>"
-                ).Value;
-
-                string token = WebUtility.HtmlDecode(
-                    Regex.Match(campo, "value=\"([^\"]+)\"")
-                        .Groups[1].Value);
-
-                Assert.False(string.IsNullOrWhiteSpace(token));
-
-                using var formulario = new FormUrlEncodedContent(
-                    new Dictionary<string, string>
-                    {
-                        ["__RequestVerificationToken"] = token,
-                        ["Input.Username"] = username,
-                        ["Input.Password"] = password
-                    });
-
-                using var login = await cliente.PostAsync(
-                    "/Auth/Login", formulario);
-
-                Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+                await IniciarSesionAsync(cliente, username, password);
 
                 using var antes = await cliente.GetAsync("/Clientes");
 
                 Assert.Equal(HttpStatusCode.OK, antes.StatusCode);
 
-                // Desactivar el usuario en la base exclusivamente aislada.
-                aislada.Ejecutar(
-                    "UPDATE Usuarios SET Activo = FALSE WHERE Id = @Id;",
-                    ("@Id", id));
+                using var administracionAntes = await cliente.GetAsync("/Administracion/Usuarios");
+                Assert.Equal(rolInicial == "Administrador" ? HttpStatusCode.OK : HttpStatusCode.Redirect,
+                    administracionAntes.StatusCode);
+
+                // Modificar la cuenta en la base exclusivamente aislada.
+                if (nuevoRol is null)
+                {
+                    aislada.Ejecutar(
+                        "UPDATE Usuarios SET Activo = FALSE WHERE Id = @Id;",
+                        ("@Id", id));
+                }
+                else
+                {
+                    aislada.Ejecutar(
+                        "UPDATE Usuarios SET Rol = @Rol WHERE Id = @Id;",
+                        ("@Rol", nuevoRol), ("@Id", id));
+                }
 
                 // Mismo cliente, misma cookie: debe perder el acceso.
-                using var despues = await cliente.GetAsync("/Clientes");
+                // Incluso un ascenso debe revocarse antes de evaluar la autorización
+                // con los permisos antiguos y devolver AccessDenied.
+                using var despues = await cliente.GetAsync("/Administracion/Usuarios");
 
                 Assert.Equal(HttpStatusCode.Redirect, despues.StatusCode);
                 Assert.Contains(
@@ -174,6 +170,33 @@ public sealed class UsuarioSesionRevocadaHttpTests
                         .Cast<Cookie>()
                         .All(c => c.Name != "AutoTaller.Auth"),
                     "La cookie de autenticacion debe quedar invalidada.");
+
+                using var sinSesion = await cliente.GetAsync("/Clientes");
+                Assert.Equal(HttpStatusCode.Redirect, sinSesion.StatusCode);
+                Assert.Contains("/Auth/Login", sinSesion.Headers.Location?.ToString());
+
+                string paginaExpirada = WebUtility.HtmlDecode(
+                    await cliente.GetStringAsync("/Auth/Login?expired=1"));
+                Assert.Contains("su cuenta cambió o fue desactivada", paginaExpirada);
+
+                if (nuevoRol is not null)
+                {
+                    await IniciarSesionAsync(cliente, username, password);
+
+                    using var clientes = await cliente.GetAsync("/Clientes");
+                    Assert.Equal(HttpStatusCode.OK, clientes.StatusCode);
+
+                    using var administracion = await cliente.GetAsync("/Administracion/Usuarios");
+                    if (nuevoRol == "Recepcionista")
+                    {
+                        Assert.Equal(HttpStatusCode.Redirect, administracion.StatusCode);
+                        Assert.Contains("/Auth/AccessDenied", administracion.Headers.Location?.ToString());
+                    }
+                    else
+                    {
+                        Assert.Equal(HttpStatusCode.OK, administracion.StatusCode);
+                    }
+                }
             }
             finally
             {
@@ -189,5 +212,32 @@ public sealed class UsuarioSesionRevocadaHttpTests
         {
             File.Delete(rutaCertificado);
         }
+    }
+
+    private static async Task IniciarSesionAsync(HttpClient cliente, string username, string password)
+    {
+        string html = await cliente.GetStringAsync("/Auth/Login");
+        string campo = Regex.Match(
+            html,
+            "<input[^>]+name=\"__RequestVerificationToken\"[^>]*>"
+        ).Value;
+
+        string token = WebUtility.HtmlDecode(
+            Regex.Match(campo, "value=\"([^\"]+)\"")
+                .Groups[1].Value);
+
+        Assert.False(string.IsNullOrWhiteSpace(token));
+
+        using var formulario = new FormUrlEncodedContent(
+            new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token,
+                ["Input.Username"] = username,
+                ["Input.Password"] = password
+            });
+
+        using var login = await cliente.PostAsync("/Auth/Login", formulario);
+        Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+        Assert.Equal("/", login.Headers.Location?.ToString());
     }
 }

@@ -74,4 +74,54 @@ public class QuestPdfReporteMecanicosAdapterTests
         Assert.NotEmpty(pdf);
         Assert.StartsWith("%PDF", System.Text.Encoding.UTF8.GetString(pdf, 0, 5));
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(30)]
+    [InlineData(120)]
+    public void Generar_MuchosMecanicos_ConservaTablaYGraficoSinDesbordar(int cantidad)
+    {
+        byte[] pdf = new QuestPdfReporteMecanicosAdapter(ConfiguracionTaller.Instancia)
+            .Generar(CrearDocumento(cantidad));
+
+        Assert.StartsWith("%PDF", System.Text.Encoding.ASCII.GetString(pdf, 0, 5));
+        SoporteComprobantePdf.GuardarMuestra(pdf, $"reporte-mecanicos-{cantidad}.pdf");
+    }
+
+    [PdfContenidoFact]
+    public void Generar_MuchosMecanicos_IncluyeTodasLasFilasEnTablaYGrafico()
+    {
+        const int cantidad = 120;
+        byte[] pdf = new QuestPdfReporteMecanicosAdapter(ConfiguracionTaller.Instancia)
+            .Generar(CrearDocumento(cantidad));
+        string texto = SoporteComprobantePdf.ExtraerTexto(pdf);
+
+        Assert.Contains("Total facturado por mecánico", texto);
+        for (int indice = 1; indice <= cantidad; indice++)
+        {
+            string nombre = $"MecanicoPrueba{indice:000}";
+            Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(texto, nombre).Count);
+        }
+    }
+
+    private static DocumentoReporteMecanicos CrearDocumento(int cantidad) => new()
+    {
+        Filas = Enumerable.Range(1, cantidad).Select(indice => new FilaReporteMecanico
+        {
+            MecanicoId = indice,
+            NombreMecanico = $"MecanicoPrueba{indice:000}",
+            CiMecanico = $"{7000000 + indice}",
+            TotalOrdenes = indice % 3,
+            TotalFacturado = indice % 3 * 100m,
+            PromedioPorOrden = indice % 3 == 0 ? 0 : 100m
+        }).ToArray(),
+        Resumen = new ResumenReporteMecanicos
+        {
+            TotalMecanicos = cantidad,
+            TotalOrdenes = Enumerable.Range(1, cantidad).Sum(indice => indice % 3),
+            TotalFacturado = Enumerable.Range(1, cantidad).Sum(indice => indice % 3 * 100m)
+        },
+        GeneradoPor = "admin_prueba",
+        FechaGeneracion = DateTime.UtcNow
+    };
 }

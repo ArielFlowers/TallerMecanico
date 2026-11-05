@@ -147,9 +147,6 @@ builder.Services.AddScoped<RevisionSolicitudesService>();
 builder.Services.AddScoped<
     IUsuarioAdministracionPort,
     UsuarioRepository>();
-builder.Services.AddScoped<
-    IUsuarioAdministracionPort,
-    UsuarioRepository>();
 
 // Activación de invitaciones (Servicio 2).
 builder.Services.AddScoped<
@@ -608,8 +605,8 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseSession();
 app.UseAuthentication();
-app.UseAuthorization();
 app.UseValidarUsuarioActivo();
+app.UseAuthorization();
 // H1: endpoint liviano para comprobar balanceo y réplica real.
 // No reemplaza la identificación visible que agregaremos en Index.
 if (app.Environment.IsDevelopment())

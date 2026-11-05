@@ -46,7 +46,7 @@ public sealed class GmailEmailService : IEmailService
              !(enlace.Scheme == Uri.UriSchemeHttp && enlace.IsLoopback)))
         {
             throw new ArgumentException(
-                "El enlace de verificacion no es valido.");
+                "El enlace de verificación no es válido.");
         }
 
         var mensaje = new MimeMessage();

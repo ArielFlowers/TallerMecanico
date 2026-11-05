@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using TallerMecanico.Aplicacion.Puertos;
@@ -24,27 +25,37 @@ public sealed class ValidarUsuarioActivoMiddleware
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
-            string? userIdClaim = context.User.FindFirst(
-                System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            string[] identificadores = context.User.FindAll(ClaimTypes.NameIdentifier)
+                .Select(claim => claim.Value)
+                .ToArray();
 
-            if (int.TryParse(userIdClaim, out int userId) && userId > 0)
+            int userId = 0;
+            Usuario? usuario = identificadores.Length == 1 &&
+                int.TryParse(identificadores[0], out userId) && userId > 0
+                    ? usuarioPort.ObtenerPorId(userId)
+                    : null;
+
+            string[] roles = context.User.FindAll(ClaimTypes.Role)
+                .Select(claim => claim.Value)
+                .ToArray();
+
+            bool rolVigente = usuario is not null && roles.Length == 1 &&
+                string.Equals(roles[0], usuario.Rol, StringComparison.Ordinal);
+
+            if (usuario is null || !usuario.Activo || !rolVigente)
             {
-                Usuario? usuario = usuarioPort.ObtenerPorId(userId);
+                _logger.LogWarning(
+                    "Sesión revocada por cambios en la cuenta o identidad inválida: {UserId}",
+                    userId);
 
-                if (usuario is null || !usuario.Activo)
-                {
-                    _logger.LogWarning(
-                        "Usuario desactivado o inexistente intento de acceso: {UserId}",
-                        userId);
+                await context.SignOutAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme);
 
-                    await context.SignOutAsync(
-                        CookieAuthenticationDefaults.AuthenticationScheme);
+                context.Session.Clear();
+                context.User = new ClaimsPrincipal(new ClaimsIdentity());
 
-                    context.Session.Clear();
-
-                    context.Response.Redirect("/Auth/Login?expired=1");
-                    return;
-                }
+                context.Response.Redirect("/Auth/Login?expired=1");
+                return;
             }
         }
 

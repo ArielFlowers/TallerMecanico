@@ -39,7 +39,7 @@ public class LoginModel : PageModel
 
         if (expired == "1")
         {
-            MensajeExpirado = "Su sesión ha expirado porque su cuenta fue desactivada. Contacte al administrador.";
+            MensajeExpirado = "Su sesión ha expirado porque su cuenta cambió o fue desactivada. Inicie sesión nuevamente o contacte al administrador.";
         }
 
         return Page();

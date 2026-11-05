@@ -212,6 +212,7 @@
             <div class="card-body">
                 <form method="post">
                     <input type="hidden" asp-for="Usuario.Id" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
 
                     <div class="row mb-3">
                         <label class="col-sm-2 col-form-label">Usuario</label>
