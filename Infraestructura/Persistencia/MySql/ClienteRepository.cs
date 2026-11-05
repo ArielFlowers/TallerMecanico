@@ -1,4 +1,6 @@
 using System.Data.Common;
+using MySqlConnector;
+using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -322,7 +324,9 @@ public class ClienteRepository :
             command,
             cliente);
 
-        command.ExecuteNonQuery();
+        try { command.ExecuteNonQuery(); }
+        catch (MySqlException error) when (error.Number == 1062)
+        { throw new RegistroDuplicadoException(error); }
 
         command.CommandText = "SELECT LAST_INSERT_ID();";
         cliente.Id = Convert.ToInt32(command.ExecuteScalar());
@@ -363,7 +367,9 @@ public class ClienteRepository :
         AddParameter(command, "@FechaModificacion", cliente.FechaModificacion);
         AddParameter(command, "@Id", cliente.Id);
 
-        command.ExecuteNonQuery();
+        try { command.ExecuteNonQuery(); }
+        catch (MySqlException error) when (error.Number == 1062)
+        { throw new RegistroDuplicadoException(error); }
     }
 
     public void Delete(int id)
@@ -385,7 +391,9 @@ public class ClienteRepository :
 
         AddParameter(command, "@Id", id);
 
-        command.ExecuteNonQuery();
+        try { command.ExecuteNonQuery(); }
+        catch (MySqlException error) when (error.Number == 1451)
+        { throw new RegistroRelacionadoException(error); }
     }
 
     public int Count()

@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using MySqlConnector;
+using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Validaciones;
@@ -119,8 +119,7 @@ public class ClienteService
 
             normalizado.Id = cliente.Id;
         }
-        catch (MySqlException exception)
-            when (exception.Number == 1062)
+        catch (RegistroDuplicadoException)
         {
             errores[
                 nameof(
@@ -234,8 +233,7 @@ public class ClienteService
             _clientePort.Update(
                 cliente);
         }
-        catch (MySqlException exception)
-            when (exception.Number == 1062)
+        catch (RegistroDuplicadoException)
         {
             errores[
                 nameof(
@@ -279,8 +277,7 @@ public class ClienteService
             _clientePort.Delete(
                 id);
         }
-        catch (MySqlException exception)
-            when (exception.Number == 1451)
+        catch (RegistroRelacionadoException)
         {
             // Protección adicional por FK en caso de que
             // aparezca una relación entre la validación

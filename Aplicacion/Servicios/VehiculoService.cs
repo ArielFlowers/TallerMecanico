@@ -1,4 +1,4 @@
-using MySqlConnector;
+using TallerMecanico.Aplicacion.Errores;
 using System.Text.RegularExpressions;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
@@ -97,7 +97,7 @@ public class VehiculoService
         if (id <= 0 || _vehiculoPort.GetById(id) is null)
             return "El vehículo seleccionado ya no existe.";
         try { _vehiculoPort.Delete(id); }
-        catch (MySqlException error) when (error.Number == 1451)
+        catch (RegistroRelacionadoException)
         { return "No se puede eliminar el vehículo porque tiene órdenes asociadas."; }
         _cache?.InvalidarResumen();
         return null;
@@ -214,16 +214,14 @@ public class VehiculoService
                 _cache?.InvalidarResumen();
             }
         }
-        catch (MySqlException exception)
-            when (exception.Number == 1062)
+        catch (RegistroDuplicadoException)
         {
             errores[
                 nameof(
                     VehiculoFormViewModel.Placa)] =
                 MensajePlacaDuplicada;
         }
-        catch (MySqlException exception)
-            when (exception.Number == 1452)
+        catch (ReferenciaInexistenteException)
         {
             errores[
                 nameof(
