@@ -42,7 +42,7 @@ internal sealed class RegistroCorreoFixture
 
         public Task EnviarVerificacionAsync(
             string destinatario, string enlaceVerificacion,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, string? username = null)
         {
             Envios++;
             AntesDeEnviar?.Invoke();

@@ -133,7 +133,8 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
             _email.EnviarVerificacionAsync(
                 emailNormalizado,
                 EnlaceVerificacion.CrearActivacionInvitacion(uriBase, token),
-                cancellationToken).GetAwaiter().GetResult();
+                cancellationToken,
+                usuarioFinal).GetAwaiter().GetResult();
         }
         catch (Exception ex) when (
             ex is not OperationCanceledException ||

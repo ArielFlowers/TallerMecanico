@@ -331,8 +331,20 @@ builder.Services.AddRateLimiter(options =>
                 AutoReplenishment = true
             });
     });
+    options.OnRejected = (contexto, cancelacion) =>
+    {
+        contexto.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
+        return new ValueTask(contexto.HttpContext.Response.WriteAsync(
+            "Demasiados intentos. Espera un minuto e inténtalo de nuevo.", cancelacion));
+    };
     options.AddPolicy("LoginRateLimit", context =>
     {
+        // Solo cuentan los intentos de inicio de sesión, no abrir la página.
+        if (!HttpMethods.IsPost(context.Request.Method))
+        {
+            return RateLimitPartition.GetNoLimiter("login-lectura");
+        }
+
         string direccionIp =
             context.Connection.RemoteIpAddress?
                 .ToString() ?? "desconocida";

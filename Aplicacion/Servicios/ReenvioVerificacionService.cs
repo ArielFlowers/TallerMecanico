@@ -69,6 +69,7 @@ public sealed class ReenvioVerificacionService
             solicitud.EsInvitacionAdministrativa
                     ? EnlaceVerificacion.CrearActivacionInvitacion(uriBase, token)
                     : EnlaceVerificacion.CrearVerificacion(uriBase, token),
-            cancellationToken);
+            cancellationToken,
+            solicitud.Username);
     }
 }

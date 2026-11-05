@@ -751,7 +751,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
             if (ErrorConfiguracion) throw new ConfiguracionRegistroException("test");
         }
 
-        public Task EnviarVerificacionAsync(string destinatario, string enlaceVerificacion, CancellationToken cancellationToken = default)
+        public Task EnviarVerificacionAsync(string destinatario, string enlaceVerificacion, CancellationToken cancellationToken = default, string? username = null)
         {
             if (ErrorEnvio) throw new EnvioVerificacionException("test", "test", null);
             Enviado = true;

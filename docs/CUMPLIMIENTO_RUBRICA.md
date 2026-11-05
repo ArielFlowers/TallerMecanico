@@ -53,4 +53,6 @@ dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTest
 
 - La suite completa requiere `TALLER_TEST_MYSQL`, y las pruebas de navegador y de PDF requieren además `PLAYWRIGHT_MODULE` y `TALLER_PDF_PYTHON`; ver el README.
 - Recorrido con cada rol en Edge sobre una base temporal aislada: menú, filtros del Reporte 2, exportaciones de ambos reportes y alta de mecánico desde la orden.
-- El envío real del correo de activación no se probó en este recorrido; las pruebas lo cubren con un correo simulado.
+- Flujo de cuenta completo con Mailpit: invitación, correo con nombre de usuario, activación, enlace de un solo uso, cambio de contraseña y baja.
+- Envío por Gmail aceptado por SMTP; la llegada al buzón se confirma manualmente.
+- Reportes abiertos en Excel sin reparación, con logo, datos sumariados y gráfico.
