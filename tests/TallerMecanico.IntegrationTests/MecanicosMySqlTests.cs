@@ -1,4 +1,6 @@
 using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Aplicacion.Errores;
+using MySqlConnector;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -9,8 +11,36 @@ namespace TallerMecanico.IntegrationTests;
 [Trait("Area", "Datos")]
 public sealed class MecanicosMySqlTests
 {
+    [MySqlAisladoFact]
+    public void EliminarRelacionado_TraduceMySql1451SinEliminarMecanicoNiOrden()
+    {
+        using var aislada = new MySqlAisladoFixture();
+        int orden = ConsultaOrdenesMySqlTests.CrearOrden(aislada, new DateTime(2026, 11, 4));
+        int mecanico = Convert.ToInt32(aislada.Escalar("SELECT MecanicoId FROM Ordenes WHERE Id=@Id;", ("@Id", orden)));
+        var repositorio = new MecanicoRepository(aislada.Factory);
+
+        var error = Assert.Throws<RegistroRelacionadoException>(() => repositorio.Delete(mecanico));
+        Assert.Equal(1451, Assert.IsType<MySqlException>(error.InnerException).Number);
+        Assert.Equal("No se puede eliminar el mecánico porque tiene órdenes asociadas.", CrearServicio(aislada).Eliminar(mecanico));
+        Assert.NotNull(repositorio.GetById(mecanico));
+        Assert.Equal(1L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
+    }
+
+    [MySqlAisladoFact]
+    public void Eliminar_OtroErrorMySqlNoSeTraduceComoRelacionExistente()
+    {
+        using var aislada = new MySqlAisladoFixture();
+        aislada.Ejecutar("CREATE TRIGGER TRG_Prueba_FalloEliminar BEFORE DELETE ON Mecanicos FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo de prueba no relacionado';");
+        Assert.Empty(CrearServicio(aislada).Crear(MecanicosTests.FormularioValido()));
+        int id = Assert.Single(CrearServicio(aislada).Obtener()).Id;
+
+        var error = Assert.Throws<MySqlException>(() => new MecanicoRepository(aislada.Factory).Delete(id));
+        Assert.Equal(1644, error.Number);
+        Assert.Single(CrearServicio(aislada).Obtener());
+    }
+
     private static MecanicoService CrearServicio(MySqlAisladoFixture aislada) =>
-        new(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos());
+        MecanicosAutocompletadoTests.CrearServicio(aislada);
 
     [MySqlAisladoFact]
     public void Crear_SinSegundoApellidoPersisteVacioYConservaLaEntrada()

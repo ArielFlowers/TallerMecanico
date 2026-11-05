@@ -317,7 +317,7 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         Assert.Contains("órdenes asociadas", vehiculos.Delete(datos.Vehiculo));
         var productos = new ProductoService(new ProductoRepository(basePrueba.Factory), new ValidacionProductos(), new UsuarioPrueba());
         Assert.Contains("órdenes asociadas", productos.Eliminar(datos.A));
-        var mecanicos = new MecanicoService(new CreadorMecanico(basePrueba.Factory), new ValidacionMecanicos());
+        var mecanicos = MecanicosAutocompletadoTests.CrearServicio(basePrueba);
         Assert.Contains("órdenes asociadas", mecanicos.Eliminar(datos.Mecanico));
         Assert.True(Servicio(new UsuarioPrueba { Rol = "Administrador" }).AnularOrden(creada.OrdenId!.Value).Exito);
         Assert.Contains("órdenes asociadas", productos.Eliminar(datos.A));

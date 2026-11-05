@@ -172,7 +172,7 @@ public sealed class NuevaOrdenAutocompletadoTests
             usuario, new ValidacionOrdenes(), reloj, NullLogger<OrdenServicioService>.Instance);
         var pagina = new PaginaOrden(new OrdenServicioFacade(ordenes, new TokenOrdenSesion(acceso, usuario, reloj)),
             new BorradorOrdenSesion(acceso, usuario), VehiculosAutocompletadoTests.CrearServicio(aislada),
-            new MecanicoService(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos(), usuario),
+            MecanicosAutocompletadoTests.CrearServicio(aislada, usuario),
             ProductosAutocompletadoTests.CrearServicio(aislada), ClientesAutocompletadoTests.CrearServicio(aislada),
             ServiciosAutocompletadoTests.CrearServicio(aislada))
         {

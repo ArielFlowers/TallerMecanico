@@ -1,8 +1,7 @@
 using System.Text.RegularExpressions;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura.Persistencia;
-using TallerMecanico.Infraestructura.Persistencia.Fabricas;
+using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Aplicacion.Dto;
 
@@ -18,20 +17,21 @@ public class MecanicoService
 
     private static readonly Regex EspaciosConsecutivos = new(@"\s+", RegexOptions.Compiled);
 
-    private readonly MecanicoRepository _mecanicoRepository;
+    private readonly IRepository<Mecanico> _mecanicoRepository;
     private readonly IConsultaMecanicosPort _consultaMecanicos;
     private readonly ValidacionMecanicos _validacionMecanicos;
     private readonly ICurrentUser? _currentUser;
     private readonly ICacheResumenDashboardPort? _cache;
 
     public MecanicoService(
-        CreadorMecanico creadorMecanico,
+        IRepository<Mecanico> mecanicoRepository,
+        IConsultaMecanicosPort consultaMecanicos,
         ValidacionMecanicos validacionMecanicos,
         ICurrentUser? currentUser = null,
         ICacheResumenDashboardPort? cache = null)
     {
-        _mecanicoRepository = (MecanicoRepository)creadorMecanico.CrearRepositorio();
-        _consultaMecanicos = _mecanicoRepository;
+        _mecanicoRepository = mecanicoRepository;
+        _consultaMecanicos = consultaMecanicos;
         _validacionMecanicos = validacionMecanicos;
         _currentUser = currentUser;
         _cache = cache;
@@ -61,7 +61,7 @@ public class MecanicoService
             return _mecanicoRepository.GetAll();
         }
 
-        return _mecanicoRepository.Search(terminoBusqueda);
+        return _consultaMecanicos.Search(terminoBusqueda);
     }
 
     public IReadOnlyList<Mecanico> ObtenerPorId(int id)
@@ -123,7 +123,7 @@ public class MecanicoService
         }
 
         try { _mecanicoRepository.Delete(id); }
-        catch (MySqlConnector.MySqlException error) when (error.Number == 1451)
+        catch (RegistroRelacionadoException)
         { return "No se puede eliminar el mecánico porque tiene órdenes asociadas."; }
         _cache?.InvalidarResumen();
         return null;
@@ -141,7 +141,7 @@ public class MecanicoService
             return errores;
         }
 
-        if (_mecanicoRepository.ExistsByCi(
+        if (_consultaMecanicos.ExistsByCi(
                 mecanico.Ci,
                 mecanico.ComplementoCi,
                 idExcluido))

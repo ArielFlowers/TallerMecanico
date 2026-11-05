@@ -195,7 +195,7 @@ public sealed class MecanicosHttpTests
     private static async Task VerificarBuscador(
         HttpClient cliente, MySqlAisladoFixture aislada, string url, string password, int id, CookieContainer cookies)
     {
-        var servicio = new MecanicoService(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos());
+        var servicio = MecanicosAutocompletadoTests.CrearServicio(aislada);
         MecanicosAutocompletadoTests.Crear(servicio, "1234568", "Juan Carlos", "Pérez", "");
         MecanicosAutocompletadoTests.Crear(servicio, "7812345", "María Fernanda", "Muñoz", "");
         string antes = JsonSerializer.Serialize(servicio.Obtener());
