@@ -28,7 +28,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
             new UsuarioRepository(aislada.Factory).Agregar(new Usuario
             {
-                Username = rol, Rol = rol, PasswordHash = hash, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+                Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });
         using var clave = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var solicitud = new CertificateRequest("CN=localhost", clave, HashAlgorithmName.SHA256);

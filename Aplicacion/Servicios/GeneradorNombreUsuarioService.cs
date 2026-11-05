@@ -51,13 +51,14 @@ public sealed class GeneradorNombreUsuarioService : IGeneradorNombreUsuarioPort
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (sufijo++ > MaximoIntentos)
+            if (sufijo > MaximoIntentos)
             {
                 throw new InvalidOperationException(
                     "No se pudo generar un nombre de usuario único tras varios intentos.");
             }
 
             string sufijoTexto = $"-{sufijo}";
+            sufijo++;
             int espacioDisponible = LongitudMaxima - sufijoTexto.Length;
             string baseRecortada =
                 baseUsuario.Length > espacioDisponible

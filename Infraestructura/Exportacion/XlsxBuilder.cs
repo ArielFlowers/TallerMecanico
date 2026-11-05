@@ -5,6 +5,9 @@ namespace TallerMecanico.Infraestructura.Exportacion;
 
 internal static class XlsxBuilder
 {
+    private const string RecursoLogo =
+        "TallerMecanico.Infraestructura.Exportacion.logo-autotaller.png";
+
     public static byte[] Build(
         string nombreHoja,
         string tituloReporte,
@@ -12,7 +15,8 @@ internal static class XlsxBuilder
         IReadOnlyList<IReadOnlyList<object?>> filas,
         IReadOnlyList<XlsxFilaResumen>? resumen = null,
         IReadOnlyList<int>? columnasMoneda = null,
-        IReadOnlyList<int>? columnasFecha = null)
+        IReadOnlyList<int>? columnasFecha = null,
+        int? columnaGraficoBarras = null)
     {
         using var libro = new XLWorkbook();
         var hoja = libro.Worksheets.Add(nombreHoja);
@@ -34,6 +38,18 @@ internal static class XlsxBuilder
         titulo.Style.Font.FontSize = 18;
 
         hoja.Row(1).Height = 38;
+
+        // Logo institucional (monograma AP mientras no exista el logo oficial).
+        using (Stream? logo = typeof(XlsxBuilder).Assembly
+            .GetManifestResourceStream(RecursoLogo))
+        {
+            if (logo is not null)
+            {
+                hoja.AddPicture(logo)
+                    .MoveTo(hoja.Cell(1, Math.Max(1, columnas)))
+                    .WithSize(30, 30);
+            }
+        }
 
         // Nombre del reporte
         hoja.Cell(2, 1).Value = tituloReporte;
@@ -126,6 +142,15 @@ internal static class XlsxBuilder
             }
 
             filaActual++;
+        }
+
+        // Gráfico de barras nativo de Excel sobre la columna indicada.
+        if (columnaGraficoBarras.HasValue && filas.Count > 0)
+        {
+            int columna = columnaGraficoBarras.Value + 1;
+            hoja.Range(4, columna, 3 + filas.Count, columna)
+                .AddConditionalFormat()
+                .DataBar(XLColor.FromHtml("#7C3AED"));
         }
 
         // Resumen

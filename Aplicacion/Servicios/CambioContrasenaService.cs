@@ -38,13 +38,13 @@ public sealed class CambioContrasenaService(
             return false;
         }
 
-        if (nueva.Length < 12 || nueva.Length > 128 ||
+        if (nueva.Length < 8 || nueva.Length > 128 ||
             !nueva.Any(char.IsUpper) ||
             !nueva.Any(char.IsLower) ||
             !nueva.Any(char.IsDigit) ||
             !nueva.Any(c => !char.IsLetterOrDigit(c)))
         {
-            error = "La nueva contraseña debe tener entre 12 y 128 caracteres, "
+            error = "La nueva contraseña debe tener entre 8 y 128 caracteres, "
                   + "mayúscula, minúscula, número y carácter especial.";
             return false;
         }

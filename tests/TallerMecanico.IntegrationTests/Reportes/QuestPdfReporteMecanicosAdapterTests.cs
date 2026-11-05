@@ -4,7 +4,7 @@ using TallerMecanico.Infraestructura.Documentos;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests.Reportes;
-
+[Trait("Area", "Backend")]
 public class QuestPdfReporteMecanicosAdapterTests
 {
     static QuestPdfReporteMecanicosAdapterTests()

@@ -51,6 +51,8 @@ public sealed class CambiarContrasenaModel(
         public string Actual { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Ingrese la nueva contraseña.")]
+        [StringLength(128, MinimumLength = 8,
+        ErrorMessage = "La nueva contraseña debe tener entre 8 y 128 caracteres.")]
         public string Nueva { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Confirme la nueva contraseña.")]

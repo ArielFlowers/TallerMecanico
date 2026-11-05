@@ -4,7 +4,7 @@ using TallerMecanico.Dominio.Entidades;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests.Reportes;
-
+[Trait("Area", "Backend")]
 public class CambioContrasenaServiceTests
 {
     private sealed class UsuarioFalso : IUsuarioPort
@@ -66,6 +66,27 @@ public class CambioContrasenaServiceTests
         Assert.Equal("usuario1", auditoria.Ultimo.Username);
     }
 
+    [Fact]
+    public void Cambiar_AceptaContrasenaDeOchoCaracteres()
+    {
+        var usuarios = new UsuarioFalso();
+        var hasher = new HasherFalso();
+        var currentUser = new CurrentUserFalso();
+        var auditoria = new AuditoriaFalsa();
+
+        var servicio = new CambioContrasenaService(
+            usuarios, hasher, currentUser, auditoria);
+
+        bool resultado = servicio.Cambiar(
+            "actual",
+            "Clave12!",
+            "Clave12!",
+            out string error);
+
+        Assert.True(resultado);
+        Assert.Equal(string.Empty, error);
+        Assert.Equal("HASH_Clave12!", usuarios.Usuario.PasswordHash);
+    }
     [Fact]
     public void Cambiar_RechazaContrasenaActualIncorrecta()
     {

@@ -1,10 +1,8 @@
-using System.Data.Common;
 using System.Security.Cryptography;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Validaciones;
-using TallerMecanico.Infraestructura.Persistencia;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -17,7 +15,7 @@ public sealed class UsuarioAdministracionService
     private readonly IAuditoriaPort _auditoria;
     private readonly ICurrentUser _usuarioActual;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly IActivacionInvitacionPort _activacionInvitacion;
     private readonly IGeneradorNombreUsuarioPort _generador;
 
     public UsuarioAdministracionService(
@@ -28,7 +26,7 @@ public sealed class UsuarioAdministracionService
         IAuditoriaPort auditoria,
         ICurrentUser usuarioActual,
         IPasswordHasher passwordHasher,
-        DatabaseConnectionFactory connectionFactory,
+        IActivacionInvitacionPort activacionInvitacion,
         IGeneradorNombreUsuarioPort generador)
     {
         _usuarios = usuarios;
@@ -38,7 +36,7 @@ public sealed class UsuarioAdministracionService
         _auditoria = auditoria;
         _usuarioActual = usuarioActual;
         _passwordHasher = passwordHasher;
-        _connectionFactory = connectionFactory;
+        _activacionInvitacion = activacionInvitacion;
         _generador = generador;
     }
 
@@ -66,7 +64,7 @@ public sealed class UsuarioAdministracionService
         if (!ValidadorSolicitudRegistro.PasswordValido(password))
         {
             throw new ArgumentException(
-                "La contraseña debe tener entre 12 y 128 caracteres y no comenzar ni terminar con espacios.",
+                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
                 nameof(password));
         }
 
@@ -184,185 +182,23 @@ public sealed class UsuarioAdministracionService
         string tokenHash = Convert.ToHexString(
             SHA256.HashData(tokenBytes));
 
-        using DbConnection connection =
-            _connectionFactory.CreateConnection();
+        var resultado = _activacionInvitacion.ActivarPorTokenHash(tokenHash);
 
-        connection.Open();
-
-        using DbTransaction transaction =
-            connection.BeginTransaction();
-
-        string username;
-        string email;
-        string passwordHash;
-        string rolUsuario;
-        long solicitudId;
-
-        try
+        if (!resultado.Exito)
         {
-            // Bloquear exclusivamente la solicitud asociada al token.
-            using (DbCommand buscar = connection.CreateCommand())
-            {
-                buscar.Transaction = transaction;
-
-                buscar.CommandText = """
-                    SELECT Id, Username, Email, PasswordHash, Rol
-                    FROM SolicitudesRegistro
-                    WHERE TokenVerificacionHash = @TokenHash
-                      AND Estado = 'PendienteVerificacion'
-                      AND EmailVerificadoEn IS NULL
-                      AND TokenExpiraEn > UTC_TIMESTAMP(6)
-                    LIMIT 1
-                    FOR UPDATE;
-                    """;
-
-                AddParameter(buscar, "@TokenHash", tokenHash);
-
-                using DbDataReader reader = buscar.ExecuteReader();
-
-                if (!reader.Read())
-                {
-                    transaction.Rollback();
-                    errorMessage =
-                        "El enlace de invitación no es válido o ha expirado.";
-                    return false;
-                }
-
-                solicitudId = reader.GetInt64(
-                    reader.GetOrdinal("Id"));
-
-                username = reader.GetString(
-                    reader.GetOrdinal("Username"));
-
-                email = reader.GetString(
-                    reader.GetOrdinal("Email"));
-
-                passwordHash = reader.GetString(
-                    reader.GetOrdinal("PasswordHash"));
-
-                int indiceRol = reader.GetOrdinal("Rol");
-
-                rolUsuario = reader.IsDBNull(indiceRol)
-                    ? string.Empty
-                    : reader.GetString(indiceRol);
-            }
-
-            // Las invitaciones antiguas sin contraseña no son activables.
-            if (string.IsNullOrWhiteSpace(passwordHash) ||
-                (rolUsuario != "Administrador" &&
-                 rolUsuario != "Recepcionista"))
-            {
-                transaction.Rollback();
-                errorMessage =
-                    "La invitación no tiene credenciales o rol válidos.";
-                return false;
-            }
-
-            // Crear usuario dentro de la misma transacción.
-            using (DbCommand insertar = connection.CreateCommand())
-            {
-                insertar.Transaction = transaction;
-
-                insertar.CommandText = """
-                    INSERT INTO Usuarios
-                    (
-                        Username,
-                        PasswordHash,
-                        Email,
-                        EmailVerificado,
-                        Rol,
-                        Activo,
-                        CreadoPor,
-                        FechaCreacion
-                    )
-                    VALUES
-                    (
-                        @Username,
-                        @PasswordHash,
-                        @Email,
-                        1,
-                        @Rol,
-                        1,
-                        @CreadoPor,
-                        UTC_TIMESTAMP()
-                    );
-                    """;
-
-                AddParameter(insertar, "@Username", username);
-                AddParameter(insertar, "@PasswordHash", passwordHash);
-                AddParameter(insertar, "@Email", email);
-                AddParameter(insertar, "@Rol", rolUsuario);
-                AddParameter(insertar, "@CreadoPor", "sistema");
-
-                if (insertar.ExecuteNonQuery() != 1)
-                {
-                    transaction.Rollback();
-                    errorMessage = "No se pudo crear el usuario.";
-                    return false;
-                }
-            }
-
-            // Confirmar el correo y aprobar la solicitud
-            // dentro de la misma transacción.
-            using (DbCommand actualizar = connection.CreateCommand())
-            {
-                actualizar.Transaction = transaction;
-
-                actualizar.CommandText = """
-                    UPDATE SolicitudesRegistro
-                    SET Estado = 'Aprobada',
-                        EmailVerificadoEn = UTC_TIMESTAMP(6),
-                        FechaResolucion = UTC_TIMESTAMP(6),
-                        TokenVerificacionHash = NULL,
-                        TokenExpiraEn = NULL,
-                        RevisadoPorUsuarioId = NULL
-                    WHERE Id = @SolicitudId
-                      AND TokenVerificacionHash = @TokenHash
-                      AND Estado = 'PendienteVerificacion'
-                      AND EmailVerificadoEn IS NULL
-                      AND TokenExpiraEn > UTC_TIMESTAMP(6);
-                    """;
-
-                AddParameter(actualizar, "@SolicitudId", solicitudId);
-                AddParameter(actualizar, "@TokenHash", tokenHash);
-
-                if (actualizar.ExecuteNonQuery() != 1)
-                {
-                    transaction.Rollback();
-                    errorMessage =
-                        "No se pudo completar la activación.";
-                    return false;
-                }
-            }
-
-            // Las dos operaciones se guardan juntas.
-            transaction.Commit();
-        }
-        catch
-        {
-            try
-            {
-                transaction.Rollback();
-            }
-            catch
-            {
-                // La transacción puede haberse cerrado
-                // o la conexión puede haber fallado.
-            }
-
-            throw;
+            errorMessage = resultado.MensajeError;
+            return false;
         }
 
-        // Auditoría posterior a la confirmación de la transacción.
         _auditoria.Registrar(new RegistroAuditoria
         {
             UsuarioId = null,
-            Username = username,
+            Username = resultado.Username,
             Accion = "USUARIO_ACTIVADO",
             Entidad = "Usuario",
-            EntidadId = username,
+            EntidadId = resultado.Username!,
             Fecha = DateTime.UtcNow,
-            Detalle = $"Rol asignado: {rolUsuario}"
+            Detalle = $"Rol asignado: {resultado.Rol}"
         });
 
         return true;
@@ -552,14 +388,4 @@ public sealed class UsuarioAdministracionService
         return administradorId;
     }
 
-    private static void AddParameter(
-        DbCommand command,
-        string nombre,
-        object? valor)
-    {
-        DbParameter parametro = command.CreateParameter();
-        parametro.ParameterName = nombre;
-        parametro.Value = valor ?? DBNull.Value;
-        command.Parameters.Add(parametro);
-    }
 }

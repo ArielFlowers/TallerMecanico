@@ -23,7 +23,7 @@ public class RegistroUsuarioServiceTests
         string token = servicio.CrearSolicitudPendiente(
             "empleado123",
             "Empleado@Empresa.com.bo",
-            "ClaveSegura123");
+            "ClaveSegura123!");
 
         Assert.NotNull(solicitudes.Guardada);
 
@@ -50,8 +50,8 @@ public class RegistroUsuarioServiceTests
     }
 
     [Theory]
-    [InlineData("ab", "empleado@empresa.com", "ClaveSegura123")]
-    [InlineData("empleado", "correo-invalido", "ClaveSegura123")]
+    [InlineData("ab", "empleado@empresa.com", "ClaveSegura123!")]
+    [InlineData("empleado", "correo-invalido", "ClaveSegura123!")]
     [InlineData("empleado", "empleado@empresa.com", "123")]
     public void CrearSolicitud_RechazaDatosInvalidos(
         string username, string email, string password)
@@ -87,7 +87,7 @@ public class RegistroUsuarioServiceTests
             servicio.CrearSolicitudPendiente(
                 "empleado123",
                 "empleado@empresa.com",
-                "ClaveSegura123"));
+                "ClaveSegura123!"));
 
         Assert.Null(solicitudes.Guardada);
     }
@@ -109,7 +109,7 @@ public class RegistroUsuarioServiceTests
             servicio.CrearSolicitudPendiente(
                 "empleado123",
                 "empleado@empresa.com",
-                "ClaveSegura123"));
+                "ClaveSegura123!"));
 
         Assert.Null(solicitudes.Guardada);
     }

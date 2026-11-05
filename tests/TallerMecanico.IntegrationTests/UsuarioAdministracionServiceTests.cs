@@ -1,9 +1,5 @@
-using System.Collections;
-using System.Data;
-using System.Data.Common;
-using System.Diagnostics.CodeAnalysis;
+
 using System.Linq;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
@@ -14,7 +10,6 @@ using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Infraestructura.Seguridad;
-using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Aplicacion.Validaciones;
 using Xunit;
 
@@ -30,8 +25,8 @@ public class UsuarioAdministracionServiceTests
     private readonly AuditoriaFalsa _auditoria;
     private readonly CurrentUserFalso _currentUser;
     private readonly HasherFalso _hasher;
-    private readonly ConnectionFactoryFalsa _connectionFactory;
-    private readonly GeneradorNombreUsuarioFalso _generador;
+    private readonly IActivacionInvitacionPort _activacionInvitacion;
+    private readonly IGeneradorNombreUsuarioPort _generador;
     private readonly UsuarioAdministracionService _service;
 
     public UsuarioAdministracionServiceTests()
@@ -41,10 +36,21 @@ public class UsuarioAdministracionServiceTests
         _email = new EmailFalso();
         _configuration = new ConfigurationFalsa();
         _auditoria = new AuditoriaFalsa();
-        _currentUser = new CurrentUserFalso { UsuarioId = 1, Username = "admin", Rol = "Administrador", EstaAutenticado = true };
+        _currentUser = new CurrentUserFalso
+        {
+            UsuarioId = 1,
+            Username = "admin",
+            Rol = "Administrador",
+            EstaAutenticado = true
+        };
         _hasher = new HasherFalso();
-        _connectionFactory = new ConnectionFactoryFalsa(_usuarios);
-        _generador = new GeneradorNombreUsuarioFalso();
+
+        _activacionInvitacion =
+            new ActivacionInvitacionFalsa(_usuarios, _solicitudes);
+
+        _generador = new GeneradorNombreUsuarioService(
+            _usuarios,
+            _solicitudes);
 
         _service = new UsuarioAdministracionService(
             _usuarios,
@@ -54,14 +60,18 @@ public class UsuarioAdministracionServiceTests
             _auditoria,
             _currentUser,
             _hasher,
-            _connectionFactory,
+            _activacionInvitacion,
             _generador);
     }
 
     [Fact]
     public void CrearInvitacion_GeneraSolicitudYEnviaCorreo()
     {
-        string token = _service.CrearInvitacion("nuevo_usuario", "nuevo@test.com", "Recepcionista", "ClaveSegura123!");
+        string token = _service.CrearInvitacion(
+            "nuevo_usuario",
+            "nuevo@test.com",
+            "Recepcionista",
+            "ClaveSegura123!");
 
         Assert.NotNull(token);
         Assert.Equal(64, token.Length);
@@ -88,7 +98,11 @@ public class UsuarioAdministracionServiceTests
     [Fact]
     public void CrearInvitacion_GeneraSolicitudConRolAdministrador()
     {
-        string token = _service.CrearInvitacion("admin_user", "admin@test.com", "Administrador", "ClaveSegura123!");
+        string token = _service.CrearInvitacion(
+            "admin_user",
+            "admin@test.com",
+            "Administrador",
+            "ClaveSegura123!");
 
         Assert.NotNull(token);
 
@@ -108,10 +122,16 @@ public class UsuarioAdministracionServiceTests
     [InlineData("nuevo_usuario", "correo-invalido", "Recepcionista")]
     [InlineData("nuevo_usuario", "nuevo@test.com", "Invalido")]
     public void CrearInvitacion_RechazaDatosInvalidos(
-        string username, string email, string rol)
+        string username,
+        string email,
+        string rol)
     {
         Assert.Throws<ArgumentException>(() =>
-            _service.CrearInvitacion(username, email, rol, "ClaveSegura123!"));
+            _service.CrearInvitacion(
+                username,
+                email,
+                rol,
+                "ClaveSegura123!"));
 
         Assert.Null(_solicitudes.Guardada);
     }
@@ -122,7 +142,11 @@ public class UsuarioAdministracionServiceTests
         _usuarios.UsernameExiste = true;
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            _service.CrearInvitacion("existente", "nuevo@test.com", "Recepcionista", "ClaveSegura123!"));
+            _service.CrearInvitacion(
+                "existente",
+                "nuevo@test.com",
+                "Recepcionista",
+                "ClaveSegura123!"));
 
         Assert.Null(_solicitudes.Guardada);
     }
@@ -133,7 +157,11 @@ public class UsuarioAdministracionServiceTests
         _solicitudes.EmailExiste = true;
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            _service.CrearInvitacion("nuevo_usuario", "existente@test.com", "Recepcionista", "ClaveSegura123!"));
+            _service.CrearInvitacion(
+                "nuevo_usuario",
+                "existente@test.com",
+                "Recepcionista",
+                "ClaveSegura123!"));
 
         Assert.Null(_solicitudes.Guardada);
     }
@@ -144,37 +172,49 @@ public class UsuarioAdministracionServiceTests
         _currentUser.EstaAutenticado = false;
 
         Assert.Throws<UnauthorizedAccessException>(() =>
-            _service.CrearInvitacion("nuevo_usuario", "nuevo@test.com", "Recepcionista", "ClaveSegura123!"));
+            _service.CrearInvitacion(
+                "nuevo_usuario",
+                "nuevo@test.com",
+                "Recepcionista",
+                "ClaveSegura123!"));
     }
 
     [Fact]
     public void ActivarUsuarioDesdeInvitacion_CreaUsuarioConRolRecepcionista()
     {
-        string rawToken = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+        string rawToken =
+            "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+
         byte[] tokenBytes = Convert.FromHexString(rawToken);
-        string tokenHash = Convert.ToHexString(SHA256.HashData(tokenBytes));
+        string tokenHash =
+            Convert.ToHexString(SHA256.HashData(tokenBytes));
 
         var solicitud = new SolicitudRegistro
         {
             Id = 1,
             Username = "nuevo_usuario",
             Email = "nuevo@test.com",
-            PasswordHash = string.Empty,
+            PasswordHash = "HASH_Password123456",
             Estado = "PendienteVerificacion",
             TokenVerificacionHash = tokenHash,
             TokenExpiraEn = DateTime.UtcNow.AddHours(1),
             FechaSolicitud = DateTime.UtcNow,
             Rol = "Recepcionista"
         };
+
         _solicitudes.SolicitudPorToken = solicitud;
         _solicitudes.TokenHashParaConfirmar = tokenHash;
 
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(rawToken, out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
+            rawToken,
+            out string? error);
 
         Assert.True(resultado);
         Assert.Null(error);
 
-        var usuario = _usuarios.Usuarios.Values.FirstOrDefault(u => u.Username == "nuevo_usuario");
+        var usuario = _usuarios.Usuarios.Values
+            .FirstOrDefault(u => u.Username == "nuevo_usuario");
+
         Assert.NotNull(usuario);
         Assert.Equal("Recepcionista", usuario!.Rol);
         Assert.True(usuario.Activo);
@@ -189,31 +229,39 @@ public class UsuarioAdministracionServiceTests
     [Fact]
     public void ActivarUsuarioDesdeInvitacion_CreaUsuarioConRolAdministrador()
     {
-        string rawToken = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+        string rawToken =
+            "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+
         byte[] tokenBytes = Convert.FromHexString(rawToken);
-        string tokenHash = Convert.ToHexString(SHA256.HashData(tokenBytes));
+        string tokenHash =
+            Convert.ToHexString(SHA256.HashData(tokenBytes));
 
         var solicitud = new SolicitudRegistro
         {
             Id = 2,
             Username = "nuevo_admin",
             Email = "nuevo_admin@test.com",
-            PasswordHash = string.Empty,
+            PasswordHash = "HASH_Password123456",
             Estado = "PendienteVerificacion",
             TokenVerificacionHash = tokenHash,
             TokenExpiraEn = DateTime.UtcNow.AddHours(1),
             FechaSolicitud = DateTime.UtcNow,
             Rol = "Administrador"
         };
+
         _solicitudes.SolicitudPorToken = solicitud;
         _solicitudes.TokenHashParaConfirmar = tokenHash;
 
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(rawToken, out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
+            rawToken,
+            out string? error);
 
-        Assert.True(resultado);
+        Assert.True(resultado, error);
         Assert.Null(error);
 
-        var usuario = _usuarios.Usuarios.Values.FirstOrDefault(u => u.Username == "nuevo_admin");
+        var usuario = _usuarios.Usuarios.Values
+            .FirstOrDefault(u => u.Username == "nuevo_admin");
+
         Assert.NotNull(usuario);
         Assert.Equal("Administrador", usuario!.Rol);
         Assert.True(usuario.Activo);
@@ -226,7 +274,9 @@ public class UsuarioAdministracionServiceTests
     [Fact]
     public void ActivarUsuarioDesdeInvitacion_RechazaTokenInvalido()
     {
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion("token_invalido", out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
+            "token_invalido",
+            out string? error);
 
         Assert.False(resultado);
         Assert.Equal("Token inválido.", error);
@@ -248,9 +298,12 @@ public class UsuarioAdministracionServiceTests
     [Fact]
     public void ActivarUsuarioDesdeInvitacion_RechazaSolicitudYaProcesada()
     {
-        string rawToken = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+        string rawToken =
+            "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+
         byte[] tokenBytes = Convert.FromHexString(rawToken);
-        string tokenHash = Convert.ToHexString(SHA256.HashData(tokenBytes));
+        string tokenHash =
+            Convert.ToHexString(SHA256.HashData(tokenBytes));
 
         var solicitud = new SolicitudRegistro
         {
@@ -264,13 +317,18 @@ public class UsuarioAdministracionServiceTests
             FechaSolicitud = DateTime.UtcNow,
             Rol = "Recepcionista"
         };
+
         _solicitudes.SolicitudPorToken = solicitud;
         _solicitudes.TokenHashParaConfirmar = tokenHash;
 
-        bool resultado = _service.ActivarUsuarioDesdeInvitacion(rawToken, out string? error);
+        bool resultado = _service.ActivarUsuarioDesdeInvitacion(
+            rawToken,
+            out string? error);
 
         Assert.False(resultado);
-        Assert.Equal("El enlace de invitación no es válido o ha expirado.", error);
+        Assert.Equal(
+            "El enlace de invitación no es válido o ha expirado.",
+            error);
     }
 
     [Fact]
@@ -286,6 +344,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[2] = usuario;
 
         bool resultado = _service.ActualizarUsuario(
@@ -321,6 +380,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "sistema",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[1] = usuario;
 
         bool resultado = _service.ActualizarUsuario(
@@ -347,6 +407,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "sistema",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[1] = usuario;
 
         bool resultado = _service.ActualizarUsuario(
@@ -373,6 +434,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "sistema",
             FechaCreacion = DateTime.UtcNow
         };
+
         var admin2 = new Usuario
         {
             Id = 2,
@@ -383,6 +445,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[1] = admin1;
         _usuarios.Usuarios[2] = admin2;
 
@@ -396,7 +459,9 @@ public class UsuarioAdministracionServiceTests
             out string? error);
 
         Assert.False(resultado);
-        Assert.Equal("No puede desactivar el último administrador activo.", error);
+        Assert.Equal(
+            "No puede desactivar el último administrador activo.",
+            error);
     }
 
     [Fact]
@@ -412,9 +477,12 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[2] = usuario;
 
-        bool resultado = _service.DesactivarUsuario(2, out string? error);
+        bool resultado = _service.DesactivarUsuario(
+            2,
+            out string? error);
 
         Assert.True(resultado);
         Assert.Null(error);
@@ -437,9 +505,12 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "sistema",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[1] = usuario;
 
-        bool resultado = _service.DesactivarUsuario(1, out string? error);
+        bool resultado = _service.DesactivarUsuario(
+            1,
+            out string? error);
 
         Assert.False(resultado);
         Assert.Equal("No puede desactivar su propia cuenta.", error);
@@ -458,6 +529,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "sistema",
             FechaCreacion = DateTime.UtcNow
         };
+
         var admin2 = new Usuario
         {
             Id = 2,
@@ -468,15 +540,20 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[1] = admin1;
         _usuarios.Usuarios[2] = admin2;
 
         _currentUser.UsuarioId = 1;
 
-        bool resultado = _service.DesactivarUsuario(2, out string? error);
+        bool resultado = _service.DesactivarUsuario(
+            2,
+            out string? error);
 
         Assert.False(resultado);
-        Assert.Equal("No puede desactivar el último administrador activo.", error);
+        Assert.Equal(
+            "No puede desactivar el último administrador activo.",
+            error);
     }
 
     [Fact]
@@ -492,9 +569,12 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[2] = usuario;
 
-        bool resultado = _service.ReactivarUsuario(2, out string? error);
+        bool resultado = _service.ReactivarUsuario(
+            2,
+            out string? error);
 
         Assert.True(resultado);
         Assert.Null(error);
@@ -517,9 +597,12 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[2] = usuario;
 
-        bool resultado = _service.ReactivarUsuario(2, out string? error);
+        bool resultado = _service.ReactivarUsuario(
+            2,
+            out string? error);
 
         Assert.False(resultado);
         Assert.Equal("El usuario ya está activo.", error);
@@ -538,6 +621,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "sistema",
             FechaCreacion = DateTime.UtcNow
         };
+
         var admin2 = new Usuario
         {
             Id = 2,
@@ -548,6 +632,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[1] = admin1;
         _usuarios.Usuarios[2] = admin2;
 
@@ -561,7 +646,9 @@ public class UsuarioAdministracionServiceTests
             out string? error);
 
         Assert.False(resultado);
-        Assert.Equal("No puede desactivar el último administrador activo.", error);
+        Assert.Equal(
+            "No puede desactivar el último administrador activo.",
+            error);
     }
 
     [Fact]
@@ -577,6 +664,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "sistema",
             FechaCreacion = DateTime.UtcNow
         };
+
         var admin2 = new Usuario
         {
             Id = 2,
@@ -587,6 +675,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[1] = admin1;
         _usuarios.Usuarios[2] = admin2;
         _usuarios.AdminActivosCount = 2;
@@ -619,6 +708,7 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[2] = usuario;
 
         bool resultado = _service.ActualizarUsuario(
@@ -645,9 +735,12 @@ public class UsuarioAdministracionServiceTests
             CreadoPor = "admin",
             FechaCreacion = DateTime.UtcNow
         };
+
         _usuarios.Usuarios[2] = usuario;
 
-        bool resultado = _service.DesactivarUsuario(2, out string? error);
+        bool resultado = _service.DesactivarUsuario(
+            2,
+            out string? error);
 
         Assert.True(resultado);
         Assert.True(_usuarios.UltimaDesactivacionAtomicaExitosa);
@@ -657,13 +750,18 @@ public class UsuarioAdministracionServiceTests
     public void CrearInvitacion_GeneraNombreUsuarioDesdeCorreoCuandoEstaVacio()
     {
         string token = _service.CrearInvitacion(
-            "", "Juan.Pérez@empresa.com", "Recepcionista", "ClaveSegura123!");
+            "",
+            "Juan.Pérez@empresa.com",
+            "Recepcionista",
+            "ClaveSegura123!");
 
         Assert.NotNull(token);
+
         var solicitud = _solicitudes.Guardada;
         Assert.NotNull(solicitud);
         Assert.Equal("juan.perez", solicitud!.Username);
-        Assert.Equal("juan.perez@empresa.com", solicitud.Email);
+        Assert.Equal("juan.pérez@empresa.com", solicitud.Email);
+
         var auditoria = _auditoria.UltimoRegistro;
         Assert.NotNull(auditoria);
         Assert.Equal("USUARIO_INVITADO", auditoria!.Accion);
@@ -685,12 +783,16 @@ public class UsuarioAdministracionServiceTests
         };
 
         string token = _service.CrearInvitacion(
-            "", "Ana.Lopez@empresa.com", "Recepcionista", "ClaveSegura123!");
+            "",
+            "Ana.Lopez@empresa.com",
+            "Recepcionista",
+            "ClaveSegura123!");
 
         Assert.NotNull(token);
+
         var solicitud = _solicitudes.Guardada;
         Assert.NotNull(solicitud);
-        Assert.Equal("ana.lopez-2", solicitud!.Username);
+        Assert.Equal("ana.lopez-1", solicitud!.Username);
     }
 
     private sealed class UsuariosFalsos : IUsuarioAdministracionPort
@@ -711,9 +813,11 @@ public class UsuarioAdministracionServiceTests
         public Usuario? ObtenerPorIdConCredenciales(int id)
             => Usuarios.TryGetValue(id, out var u) ? u : null;
 
-        public bool ExisteUsername(string username) => UsernameExiste || Usuarios.Values.Any(u => u.Username == username);
+        public bool ExisteUsername(string username)
+            => UsernameExiste || Usuarios.Values.Any(u => u.Username == username);
 
-        public bool ExisteEmail(string email) => EmailExiste || Usuarios.Values.Any(u => u.Email == email);
+        public bool ExisteEmail(string email)
+            => EmailExiste || Usuarios.Values.Any(u => u.Email == email);
 
         public void Agregar(Usuario usuario)
         {
@@ -729,19 +833,33 @@ public class UsuarioAdministracionServiceTests
             }
         }
 
-        public IReadOnlyList<UsuarioListadoDto> Listar(int pagina, int tamanoPagina)
+        public IReadOnlyList<UsuarioListadoDto> Listar(
+            int pagina,
+            int tamanoPagina)
             => Usuarios.Values
                 .OrderByDescending(u => u.FechaCreacion)
                 .Skip((pagina - 1) * tamanoPagina)
                 .Take(tamanoPagina)
-                .Select(u => new UsuarioListadoDto(u.Id, u.Username, u.Email ?? "", u.Rol, u.Activo, u.FechaCreacion))
+                .Select(u => new UsuarioListadoDto(
+                    u.Id,
+                    u.Username,
+                    u.Email ?? "",
+                    u.Rol,
+                    u.Activo,
+                    u.FechaCreacion))
                 .ToList();
 
         public int ContarTotal() => Usuarios.Count;
 
         public int ContarAdministradoresActivos() => AdminActivosCount;
 
-        public bool ActualizarUsuarioAtomico(int id, string email, string rol, bool activo, string modificadoPor, out string errorMessage)
+        public bool ActualizarUsuarioAtomico(
+            int id,
+            string email,
+            string rol,
+            bool activo,
+            string modificadoPor,
+            out string errorMessage)
         {
             errorMessage = string.Empty;
 
@@ -751,13 +869,19 @@ public class UsuarioAdministracionServiceTests
                 return false;
             }
 
-            var adminsActivos = Usuarios.Values.Count(u => u.Rol == "Administrador" && u.Activo);
-            bool esAdminActual = usuario.Rol == "Administrador" && usuario.Activo;
-            bool seraAdminActivo = activo && rol == "Administrador";
+            var adminsActivos = Usuarios.Values.Count(
+                u => u.Rol == "Administrador" && u.Activo);
+
+            bool esAdminActual =
+                usuario.Rol == "Administrador" && usuario.Activo;
+
+            bool seraAdminActivo =
+                activo && rol == "Administrador";
 
             if (esAdminActual && !seraAdminActivo && adminsActivos <= 1)
             {
-                errorMessage = "No puede desactivar el último administrador activo.";
+                errorMessage =
+                    "No puede desactivar el último administrador activo.";
                 return false;
             }
 
@@ -772,28 +896,37 @@ public class UsuarioAdministracionServiceTests
             return true;
         }
 
-        public bool DesactivarUsuarioAtomico(int id, string modificadoPor, out string errorMessage)
+        public bool DesactivarUsuarioAtomico(
+            int id,
+            string modificadoPor,
+            out string errorMessage)
         {
             errorMessage = string.Empty;
 
             if (!Usuarios.TryGetValue(id, out var usuario))
             {
-                errorMessage = "El usuario ya está desactivado o no existe.";
+                errorMessage =
+                    "El usuario ya está desactivado o no existe.";
                 return false;
             }
 
-            var adminsActivos = Usuarios.Values.Count(u => u.Rol == "Administrador" && u.Activo);
-            bool esAdminActual = usuario.Rol == "Administrador" && usuario.Activo;
+            var adminsActivos = Usuarios.Values.Count(
+                u => u.Rol == "Administrador" && u.Activo);
+
+            bool esAdminActual =
+                usuario.Rol == "Administrador" && usuario.Activo;
 
             if (esAdminActual && adminsActivos <= 1)
             {
-                errorMessage = "No puede desactivar el último administrador activo.";
+                errorMessage =
+                    "No puede desactivar el último administrador activo.";
                 return false;
             }
 
             if (!usuario.Activo)
             {
-                errorMessage = "El usuario ya está desactivado o no existe.";
+                errorMessage =
+                    "El usuario ya está desactivado o no existe.";
                 return false;
             }
 
@@ -816,6 +949,7 @@ public class UsuarioAdministracionServiceTests
         public SolicitudRegistro? SolicitudPorToken { get; set; }
 
         public bool ExisteUsername(string username) => UsernameExiste;
+
         public bool ExisteEmail(string email) => EmailExiste;
 
         public void Agregar(SolicitudRegistro solicitud)
@@ -825,22 +959,38 @@ public class UsuarioAdministracionServiceTests
         }
 
         public SolicitudRegistro? ObtenerPorId(long id) => null;
+
         public SolicitudRegistro? ObtenerPorTokenHash(string tokenHash)
-            => tokenHash == TokenHashParaConfirmar ? SolicitudPorToken : null;
-        public SolicitudRegistro? ObtenerPendientePorEmail(string email) => null;
-        public bool IntentarRenovarTokenConLimite(long solicitudId, string nuevoTokenHash, DateTime nuevaExpiracion) => false;
+            => tokenHash == TokenHashParaConfirmar
+                ? SolicitudPorToken
+                : null;
+
+        public SolicitudRegistro? ObtenerPendientePorEmail(string email)
+            => null;
+
+        public bool IntentarRenovarTokenConLimite(
+            long solicitudId,
+            string nuevoTokenHash,
+            DateTime nuevaExpiracion)
+            => false;
+
         public SolicitudRegistro? ConfirmarEmail(string tokenHash)
         {
-            if (tokenHash == TokenHashParaConfirmar && SolicitudPorToken != null && SolicitudPorToken.Estado == "PendienteVerificacion")
+            if (tokenHash == TokenHashParaConfirmar &&
+                SolicitudPorToken != null &&
+                SolicitudPorToken.Estado == "PendienteVerificacion")
             {
                 SolicitudPorToken.Estado = "PendienteAprobacion";
                 SolicitudPorToken.EmailVerificadoEn = DateTime.UtcNow;
                 SolicitudPorToken.TokenVerificacionHash = null;
                 SolicitudPorToken.TokenExpiraEn = null;
+
                 return SolicitudPorToken;
             }
+
             return null;
         }
+
         public void Actualizar(SolicitudRegistro solicitud) { }
     }
 
@@ -854,15 +1004,26 @@ public class UsuarioAdministracionServiceTests
 
         public void ValidarConfiguracion()
         {
-            if (ErrorConfiguracion) throw new ConfiguracionRegistroException("test");
+            if (ErrorConfiguracion)
+            {
+                throw new ConfiguracionRegistroException("test");
+            }
         }
 
-        public Task EnviarVerificacionAsync(string destinatario, string enlaceVerificacion, CancellationToken cancellationToken = default)
+        public Task EnviarVerificacionAsync(
+            string destinatario,
+            string enlaceVerificacion,
+            CancellationToken cancellationToken = default)
         {
-            if (ErrorEnvio) throw new EnvioVerificacionException("test", "test", null);
+            if (ErrorEnvio)
+            {
+                throw new EnvioVerificacionException("test", "test", null);
+            }
+
             Enviado = true;
             Destinatario = destinatario;
             Enlace = enlaceVerificacion;
+
             return Task.CompletedTask;
         }
     }
@@ -871,23 +1032,49 @@ public class UsuarioAdministracionServiceTests
     {
         public string? this[string key]
         {
-            get => key == "App:PublicBaseUrl" ? "https://localhost" : string.Empty;
+            get => key == "App:PublicBaseUrl"
+                ? "https://localhost"
+                : string.Empty;
             set { }
         }
-        public IEnumerable<IConfigurationSection> GetChildren() => Array.Empty<IConfigurationSection>();
-        public IChangeToken GetReloadToken() => new CancellationChangeToken(new CancellationTokenSource().Token);
-        public IConfigurationSection GetSection(string key) => new ConfigurationSectionFalsa(key);
+
+        public IEnumerable<IConfigurationSection> GetChildren()
+            => Array.Empty<IConfigurationSection>();
+
+        public IChangeToken GetReloadToken()
+            => new CancellationChangeToken(
+                new CancellationTokenSource().Token);
+
+        public IConfigurationSection GetSection(string key)
+            => new ConfigurationSectionFalsa(key);
     }
 
     private sealed class ConfigurationSectionFalsa : IConfigurationSection
     {
         public string Key { get; }
         public string Path { get; }
-        public string? this[string key] { get => string.Empty; set { } }
-        public string? Value { get => string.Empty; set { } }
-        public IEnumerable<IConfigurationSection> GetChildren() => Array.Empty<IConfigurationSection>();
-        public IChangeToken GetReloadToken() => new CancellationChangeToken(new CancellationTokenSource().Token);
-        public IConfigurationSection GetSection(string key) => new ConfigurationSectionFalsa(key);
+
+        public string? this[string key]
+        {
+            get => string.Empty;
+            set { }
+        }
+
+        public string? Value
+        {
+            get => string.Empty;
+            set { }
+        }
+
+        public IEnumerable<IConfigurationSection> GetChildren()
+            => Array.Empty<IConfigurationSection>();
+
+        public IChangeToken GetReloadToken()
+            => new CancellationChangeToken(
+                new CancellationTokenSource().Token);
+
+        public IConfigurationSection GetSection(string key)
+            => new ConfigurationSectionFalsa(key);
 
         public ConfigurationSectionFalsa(string key)
         {
@@ -899,8 +1086,12 @@ public class UsuarioAdministracionServiceTests
     private sealed class AuditoriaFalsa : IAuditoriaPort
     {
         public RegistroAuditoria? UltimoRegistro { get; private set; }
-        public void Registrar(RegistroAuditoria registro) => UltimoRegistro = registro;
-        public IReadOnlyList<RegistroAuditoria> ObtenerRecientes(int cantidad) => [];
+
+        public void Registrar(RegistroAuditoria registro)
+            => UltimoRegistro = registro;
+
+        public IReadOnlyList<RegistroAuditoria> ObtenerRecientes(int cantidad)
+            => [];
     }
 
     private sealed class CurrentUserFalso : ICurrentUser
@@ -913,211 +1104,104 @@ public class UsuarioAdministracionServiceTests
 
     private sealed class HasherFalso : IPasswordHasher
     {
-        public string GenerarHash(string password) => "HASH_" + password;
-        public bool VerificarPassword(string password, string hash) => hash == "HASH_" + password;
+        public string GenerarHash(string password)
+            => "HASH_" + password;
+
+        public bool VerificarPassword(string password, string hash)
+            => hash == "HASH_" + password;
     }
 
-    private sealed class ConnectionFactoryFalsa : DatabaseConnectionFactory
+    private sealed class ActivacionInvitacionFalsa
+        : IActivacionInvitacionPort
     {
         private readonly UsuariosFalsos _usuarios;
+        private readonly SolicitudesFalsas _solicitudes;
 
-        public ConnectionFactoryFalsa(UsuariosFalsos usuarios) : base(
-            new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        public ActivacionInvitacionFalsa(
+            UsuariosFalsos usuarios,
+            SolicitudesFalsas solicitudes)
+        {
+            _usuarios = usuarios;
+            _solicitudes = solicitudes;
+        }
+
+        public ResultadoActivacionInvitacion ActivarPorTokenHash(
+            string tokenHash)
+        {
+            const string errorInvitacion =
+                "El enlace de invitación no es válido o ha expirado.";
+
+            var solicitud = _solicitudes.SolicitudPorToken;
+
+            if (solicitud is null ||
+                tokenHash != _solicitudes.TokenHashParaConfirmar ||
+                tokenHash != solicitud.TokenVerificacionHash ||
+                solicitud.Estado != "PendienteVerificacion" ||
+                solicitud.EmailVerificadoEn != null ||
+                !solicitud.TokenExpiraEn.HasValue ||
+                solicitud.TokenExpiraEn.Value <= DateTime.UtcNow)
             {
-                ["ConnectionStrings:Test"] = "test"
-            }).Build(), "Test")
-        {
-            _usuarios = usuarios;
-        }
-
-        public override DbConnection CreateConnection() => new FakeConnection(_usuarios);
-    }
-
-    private sealed class FakeConnection : DbConnection
-    {
-        private readonly UsuariosFalsos _usuarios;
-
-        public FakeConnection(UsuariosFalsos usuarios)
-        {
-            _usuarios = usuarios;
-        }
-
-        [AllowNull]
-        public override string ConnectionString { get; set; } = "";
-        public override string Database => "";
-        public override string DataSource => "";
-        public override string ServerVersion => "";
-        public override ConnectionState State => ConnectionState.Open;
-        public override void ChangeDatabase(string databaseName) { }
-        public override void Close() { }
-        public override void Open() { }
-        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => new FakeTransaction(this);
-        protected override DbCommand CreateDbCommand() => new FakeCommand(this, _usuarios);
-    }
-
-    private sealed class FakeTransaction : DbTransaction
-    {
-        private readonly FakeConnection _connection;
-        public FakeTransaction(FakeConnection connection) => _connection = connection;
-        protected override DbConnection DbConnection => _connection;
-        public override IsolationLevel IsolationLevel => IsolationLevel.ReadCommitted;
-        public override void Commit() { }
-        public override void Rollback() { }
-    }
-
-    private sealed class FakeCommand : DbCommand
-    {
-        private FakeConnection? _connection;
-        private readonly FakeParameterCollection _parameters = new();
-        private readonly UsuariosFalsos _usuarios;
-
-        public FakeCommand(FakeConnection connection, UsuariosFalsos usuarios)
-        {
-            _connection = connection;
-            _usuarios = usuarios;
-        }
-
-        [AllowNull]
-        public override string CommandText { get; set; } = "";
-        public override int CommandTimeout { get; set; }
-        public override CommandType CommandType { get; set; }
-        public override bool DesignTimeVisible { get; set; }
-        public override UpdateRowSource UpdatedRowSource { get; set; }
-        protected override DbParameter CreateDbParameter() => new FakeParameter();
-        protected override DbConnection? DbConnection { get => _connection; set => _connection = value as FakeConnection; }
-        protected override DbParameterCollection DbParameterCollection => _parameters;
-        protected override DbTransaction? DbTransaction { get; set; }
-        public override void Cancel() { }
-        public override int ExecuteNonQuery()
-        {
-            if (CommandText.Contains("INSERT INTO Usuarios", StringComparison.OrdinalIgnoreCase))
-            {
-                var username = GetParameterValue("@Username") as string;
-                var passwordHash = GetParameterValue("@PasswordHash") as string;
-                var email = GetParameterValue("@Email") as string;
-                var rol = GetParameterValue("@Rol") as string;
-                var creadoPor = GetParameterValue("@CreadoPor") as string;
-
-                if (!string.IsNullOrEmpty(username))
-                {
-                    var usuario = new Usuario
-                    {
-                        Username = username!,
-                        PasswordHash = passwordHash ?? "",
-                        Email = email,
-                        EmailVerificado = true,
-                        Rol = rol ?? "Recepcionista",
-                        Activo = true,
-                        CreadoPor = creadoPor ?? "sistema",
-                        FechaCreacion = DateTime.UtcNow
-                    };
-                    _usuarios.Agregar(usuario);
-                }
-                return 1;
+                return new ResultadoActivacionInvitacion(
+                    false,
+                    null,
+                    null,
+                    errorInvitacion);
             }
-            return 1;
+
+            if (string.IsNullOrWhiteSpace(solicitud.PasswordHash) ||
+                (solicitud.Rol != "Administrador" &&
+                 solicitud.Rol != "Recepcionista"))
+            {
+                return new ResultadoActivacionInvitacion(
+                    false,
+                    null,
+                    null,
+                    "La invitación no tiene credenciales o rol válidos.");
+            }
+
+            var usuario = new Usuario
+            {
+                Username = solicitud.Username,
+                PasswordHash = solicitud.PasswordHash,
+                Email = solicitud.Email,
+                EmailVerificado = true,
+                Rol = solicitud.Rol!,
+                Activo = true,
+                CreadoPor = "sistema",
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            _usuarios.Agregar(usuario);
+
+            solicitud.Estado = "Aprobada";
+            solicitud.EmailVerificadoEn = DateTime.UtcNow;
+            solicitud.FechaResolucion = DateTime.UtcNow;
+            solicitud.TokenVerificacionHash = null;
+            solicitud.TokenExpiraEn = null;
+            solicitud.RevisadoPorUsuarioId = null;
+
+            return new ResultadoActivacionInvitacion(
+                true,
+                solicitud.Username,
+                solicitud.Rol,
+                null);
         }
-        public override object? ExecuteScalar() => null;
-        public override void Prepare() { }
-        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => new FakeReader();
-
-        private object? GetParameterValue(string name)
-        {
-            var param = _parameters.Cast<FakeParameter>().FirstOrDefault(p => p.ParameterName == name);
-            return param?.Value;
-        }
     }
 
-    private sealed class FakeParameter : DbParameter
-    {
-        [AllowNull]
-        public override string ParameterName { get; set; } = "";
-        public override object? Value { get; set; }
-        public override DbType DbType { get; set; }
-        public override int Size { get; set; }
-        public override byte Precision { get; set; }
-        public override byte Scale { get; set; }
-        public override bool SourceColumnNullMapping { get; set; }
-        public override DataRowVersion SourceVersion { get; set; }
-        public override bool IsNullable { get; set; }
-        [AllowNull]
-        public override string SourceColumn { get; set; } = "";
-        public override ParameterDirection Direction { get; set; } = ParameterDirection.Input;
-        public override void ResetDbType() { }
-    }
-
-    private sealed class FakeParameterCollection : DbParameterCollection
-    {
-        private readonly List<DbParameter> _params = new();
-        public override int Count => _params.Count;
-        public override bool IsFixedSize => false;
-        public override bool IsReadOnly => false;
-        public override bool IsSynchronized => false;
-        public override object SyncRoot => this;
-        public override int Add(object value) { _params.Add((DbParameter)value); return _params.Count - 1; }
-        public override void AddRange(Array values) => _params.AddRange(values.Cast<DbParameter>());
-        public override void Clear() => _params.Clear();
-        public override bool Contains(string name) => _params.Any(p => p.ParameterName == name);
-        public override bool Contains(object value) => _params.Contains(value);
-        public override void CopyTo(Array array, int index) => _params.CopyTo((DbParameter[])array, index);
-        public override IEnumerator GetEnumerator() => _params.GetEnumerator();
-        public override int IndexOf(string name) => _params.FindIndex(p => p.ParameterName == name);
-        public override int IndexOf(object value) => _params.IndexOf((DbParameter)value);
-        public override void Insert(int index, object value) => _params.Insert(index, (DbParameter)value);
-        public override void Remove(object value) => _params.Remove((DbParameter)value);
-        public override void RemoveAt(int index) => _params.RemoveAt(index);
-        public override void RemoveAt(string name) => _params.RemoveAt(_params.FindIndex(p => p.ParameterName == name));
-        protected override DbParameter GetParameter(string name) => _params.First(p => p.ParameterName == name);
-        protected override DbParameter GetParameter(int index) => _params[index];
-        protected override void SetParameter(string name, DbParameter value) => _params[_params.FindIndex(p => p.ParameterName == name)] = value;
-        protected override void SetParameter(int index, DbParameter value) => _params[index] = value;
-    }
-
-    private sealed class FakeReader : DbDataReader
-    {
-        public override int Depth => 0;
-        public override int FieldCount => 0;
-        public override bool HasRows => false;
-        public override bool IsClosed => false;
-        public override int RecordsAffected => 0;
-        public override object this[int i] => null!;
-        public override object this[string name] => null!;
-        public override void Close() { }
-        public override bool Read() => false;
-        public override string GetName(int i) => "";
-        public override int GetOrdinal(string name) => 0;
-        public override bool GetBoolean(int i) => false;
-        public override DateTime GetDateTime(int i) => default;
-        public override decimal GetDecimal(int i) => 0;
-        public override double GetDouble(int i) => 0;
-        public override float GetFloat(int i) => 0;
-        public override Guid GetGuid(int i) => Guid.Empty;
-        public override short GetInt16(int i) => 0;
-        public override int GetInt32(int i) => 0;
-        public override long GetInt64(int i) => 0;
-        public override string GetString(int i) => "";
-        public override object GetValue(int i) => null!;
-        public override int GetValues(object[] values) => 0;
-        public override bool IsDBNull(int i) => true;
-        public override Type GetFieldType(int i) => typeof(object);
-        public override DataTable GetSchemaTable() => null!;
-        public override IEnumerator GetEnumerator() => Array.Empty<object>().GetEnumerator();
-        public override string GetDataTypeName(int i) => "";
-        public override long GetChars(int i, long fieldOffset, char[]? buffer, int bufferOffset, int length) => 0;
-        public override bool NextResult() => false;
-        public override long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferOffset, int length) => 0;
-        public override byte GetByte(int i) => 0;
-        public override char GetChar(int i) => '\0';
-    }
-
-    private sealed class GeneradorNombreUsuarioFalso : IGeneradorNombreUsuarioPort
+    private sealed class GeneradorNombreUsuarioFalso
+        : IGeneradorNombreUsuarioPort
     {
         public string GenerarUsuarioUnico(
             string correoElectronico,
             CancellationToken cancellationToken = default)
         {
-            string baseUsuario = correoElectronico.Split('@', 2)[0].ToLowerInvariant();
-            return baseUsuario.Length > 0 ? baseUsuario : "usuario";
+            string baseUsuario = correoElectronico
+                .Split('@', 2)[0]
+                .ToLowerInvariant();
+
+            return baseUsuario.Length > 0
+                ? baseUsuario
+                : "usuario";
         }
     }
 }

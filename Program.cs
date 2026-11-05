@@ -160,6 +160,15 @@ builder.Services.AddScoped<RevisionSolicitudesService>();
 builder.Services.AddScoped<
     IUsuarioAdministracionPort,
     UsuarioRepository>();
+builder.Services.AddScoped<
+    IUsuarioAdministracionPort,
+    UsuarioRepository>();
+
+// Activación de invitaciones (Servicio 2).
+builder.Services.AddScoped<
+    IActivacionInvitacionPort,
+    ActivacionInvitacionMySqlAdapter>();
+
 builder.Services.AddScoped<UsuarioAdministracionService>();
 builder.Services.AddScoped<CambioContrasenaService>();
 builder.Services.AddScoped<

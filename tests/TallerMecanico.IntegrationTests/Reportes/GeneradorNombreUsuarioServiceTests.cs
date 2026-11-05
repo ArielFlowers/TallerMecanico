@@ -7,7 +7,7 @@ using TallerMecanico.Dominio.Entidades;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests.Reportes;
-
+[Trait("Area", "Backend")]
 public class GeneradorNombreUsuarioServiceTests
 {
     private sealed class PuertosFalsos : IUsuarioPort, ISolicitudRegistroPort
@@ -67,7 +67,7 @@ public class GeneradorNombreUsuarioServiceTests
 
         string resultado = servicio.GenerarUsuarioUnico("Ana.Lopez@empresa.com");
 
-        Assert.Equal("ana.lopez-2", resultado);
+        Assert.Equal("ana.lopez-1", resultado);
     }
 
     [Fact]
@@ -81,6 +81,6 @@ public class GeneradorNombreUsuarioServiceTests
         string resultado = servicio.GenerarUsuarioUnico($"{baseLargo}@empresa.com");
 
         Assert.True(resultado.Length <= 50);
-        Assert.EndsWith("-2", resultado);
+        Assert.EndsWith("-1", resultado);
     }
 }

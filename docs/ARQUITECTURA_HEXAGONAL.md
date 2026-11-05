@@ -60,6 +60,29 @@ solo en Persistencia.
 - Eventos: tabla `Auditoria` (login/logout) + trigger
   `TRG_Servicios_HistorialCosto` intacto (costo sí registra, descripción no).
 
+## Gestión de usuarios (HU3)
+
+- **Username explícito**: se recorta y valida con
+  `ValidadorSolicitudRegistro.UsuarioValido` (3–50 caracteres, sin
+  duplicados en `Usuarios` ni en `SolicitudesRegistro`).
+- **Username desde correo**: si el administrador no lo indica,
+  `GeneradorNombreUsuarioService` toma la parte local del correo, elimina
+  acentos, pasa a minúsculas, conserva letras/números/`.`/`_`/`-`,
+  convierte el resto de separadores en `-`, recorta guiones y limita a 50
+  caracteres. Si el resultado tiene menos de 3 caracteres usa `usuario`.
+  Ante colisión agrega sufijos `-1`, `-2`, ... (máximo 100 intentos)
+  comprobando `Usuarios` y `SolicitudesRegistro`.
+- **Invitación**: normaliza el correo a minúsculas, valida la contraseña
+  (8–128, mayúscula, minúscula, número y símbolo, sin espacios en los
+  extremos), guarda el hash Argon2id en `SolicitudesRegistro`, genera un
+  token aleatorio de 32 bytes (64 hex) y solo persiste su SHA-256, con
+  expiración de 1 hora. El correo lleva el enlace de activación.
+- **Activación**: `ActivacionInvitacionMySqlAdapter` busca y bloquea la
+  solicitud por hash de token dentro de una transacción, crea el usuario
+  y marca la solicitud como `Aprobada`; si falla, revierte ambas
+  operaciones. La auditoría registra `USUARIO_INVITADO` y
+  `USUARIO_ACTIVADO`.
+
 ## Dashboard por rol
 
 `DashboardService` con conteos reales (mecánicos ya no hardcodeado).

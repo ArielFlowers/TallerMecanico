@@ -46,18 +46,23 @@ public class ValidadorSolicitudRegistroTests
         Assert.False(ValidadorSolicitudRegistro.EmailValido(email));
     }
 
-    [Fact]
-    public void PasswordValido_AceptaPasswordDeDoceCaracteres()
+    [Theory]
+    [InlineData("Clave12!")]
+    [InlineData("ClaveSegura12!")]
+    public void PasswordValido_AceptaPasswordConComplejidad(string password)
     {
-        Assert.True(
-            ValidadorSolicitudRegistro.PasswordValido("ClaveSegura12"));
+        Assert.True(ValidadorSolicitudRegistro.PasswordValido(password));
     }
 
     [Theory]
     [InlineData("")]
-    [InlineData("Corta123")]
-    [InlineData(" ClaveSegura12")]
-    [InlineData("ClaveSegura12 ")]
+    [InlineData("Corta1!")]
+    [InlineData("sinmayus1!")]
+    [InlineData("SINMINUS1!")]
+    [InlineData("SinNumero!")]
+    [InlineData("SinEspecial1")]
+    [InlineData(" ClaveSeg12!")]
+    [InlineData("ClaveSeg12! ")]
     public void PasswordValido_RechazaPasswordsIncorrectas(string password)
     {
         Assert.False(ValidadorSolicitudRegistro.PasswordValido(password));
@@ -67,6 +72,7 @@ public class ValidadorSolicitudRegistroTests
     public void PasswordValido_RechazaMasDe128Caracteres()
     {
         Assert.False(
-            ValidadorSolicitudRegistro.PasswordValido(new string('A', 129)));
+            ValidadorSolicitudRegistro.PasswordValido(
+                "Aa1!" + new string('a', 125)));
     }
 }

@@ -3,7 +3,7 @@ using TallerMecanico.Aplicacion.Servicios.Reportes;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests.Reportes;
-
+[Trait("Area", "Backend")]
 public class ReporteOrdenesServiceTests
 {
     [Fact]

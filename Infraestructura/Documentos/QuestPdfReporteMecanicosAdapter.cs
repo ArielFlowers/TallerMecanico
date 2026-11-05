@@ -37,7 +37,6 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
                 page.Content().PaddingVertical(16).Column(columna =>
                 {
                     columna.Spacing(12);
-                    columna.Item().Element(c => ComponerResumen(c, documento));
                     columna.Item().Element(c => ComponerTabla(c, documento));
                     columna.Item().Element(c => ComponerGrafico(c, documento));
                 });
@@ -212,10 +211,13 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
                     : 0;
                 if (porcentaje < 4) porcentaje = 4;
 
+                decimal restante = Math.Max(0.01m, 100m - porcentaje);
+
                 columna.Item().PaddingBottom(4).Row(filaRow =>
                 {
                     filaRow.ConstantItem(110).Text(fila.NombreMecanico).FontSize(7.5f);
-                    filaRow.RelativeItem((float)porcentaje).Background(ColorPrincipal);
+                    filaRow.RelativeItem((float)porcentaje).Height(10).Background(ColorPrincipal);
+                    filaRow.RelativeItem((float)restante).Height(10);
                     filaRow.ConstantItem(70).AlignRight()
                         .Text($"{_taller.Moneda} {fila.TotalFacturado.ToString("N2", Cultura)}")
                         .FontSize(7.5f).FontColor(ColorSecundario);
@@ -226,24 +228,29 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
 
     private void ComponerPie(IContainer contenedor, DocumentoReporteMecanicos documento)
     {
-        contenedor.BorderTop(1).BorderColor(ColorBorde).PaddingTop(10).DefaultTextStyle(
-            estilo => estilo.FontSize(7.5f).FontColor(ColorSecundario))
-            .Column(columna =>
-            {
-                columna.Spacing(4);
-                columna.Item().Text($"Generado por: {documento.GeneradoPor}");
-                columna.Item().Text($"Generación: {AFechaBolivia(documento.FechaGeneracion):dd/MM/yyyy HH:mm} (Hora de Bolivia)");
-                columna.Item().Row(fila =>
+        contenedor.Column(columna =>
+        {
+            columna.Item().Element(c => ComponerResumen(c, documento));
+
+            columna.Item().PaddingTop(10).BorderTop(1).BorderColor(ColorBorde)
+                .DefaultTextStyle(estilo => estilo.FontSize(7.5f).FontColor(ColorSecundario))
+                .Column(detalle =>
                 {
-                    fila.RelativeItem().Text($"Reporte: estadístico por mecánico | {_taller.NombreTaller}");
-                    fila.AutoItem().Text(texto =>
+                    detalle.Spacing(4);
+                    detalle.Item().Text($"Generado por: {documento.GeneradoPor}");
+                    detalle.Item().Text($"Generación: {AFechaBolivia(documento.FechaGeneracion):dd/MM/yyyy HH:mm} (Hora de Bolivia)");
+                    detalle.Item().Row(fila =>
                     {
-                        texto.Span("Página ");
-                        texto.CurrentPageNumber();
-                        texto.Span(" de ");
-                        texto.TotalPages();
+                        fila.RelativeItem().Text($"Reporte: estadístico por mecánico | {_taller.NombreTaller}");
+                        fila.AutoItem().Text(texto =>
+                        {
+                            texto.Span("Página ");
+                            texto.CurrentPageNumber();
+                            texto.Span(" de ");
+                            texto.TotalPages();
+                        });
                     });
                 });
-            });
+        });
     }
 }

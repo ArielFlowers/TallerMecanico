@@ -45,7 +45,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var generador = new GeneradorNombreUsuarioIntegracionFalso();
 
         return new UsuarioAdministracionService(
-            usuarios, solicitudes, emailService, config, auditoria, currentUser, hasher, _fixture.Factory, generador);
+            usuarios, solicitudes, emailService, config, auditoria, currentUser, hasher, new ActivacionInvitacionMySqlAdapter(_fixture.Factory),generador);
     }
 
     private (int Id, string Username) CrearUsuarioAdmin(string? username = null)
@@ -353,7 +353,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
     }
 
     [MySqlAisladoFact]
-    public void ActivarUsuarioDesdeInvitacion_RechazaPasswordCorto()
+    public void CrearInvitacion_RechazaPasswordCorto()
     {
         LimpiarDatosPrueba();
         CrearUsuarioAdmin();
@@ -361,12 +361,14 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("user_pass");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
+        var excepcion = Assert.Throws<ArgumentException>(() =>
+            servicio.CrearInvitacion(
+                username, $"{username}@test.com", "Recepcionista", "Corta1!"));
 
-        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, out string? error);
-
-        Assert.False(resultado);
-        Assert.Contains("contraseña no cumple", error!);
+        Assert.Contains("contrase", excepcion.Message);
+        Assert.Equal(0, Convert.ToInt32(_fixture.Escalar(
+            "SELECT COUNT(*) FROM SolicitudesRegistro WHERE Username = @Username;",
+            ("@Username", username))));
     }
 
     [MySqlAisladoFact]

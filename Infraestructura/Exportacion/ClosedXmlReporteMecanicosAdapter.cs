@@ -43,6 +43,7 @@ public sealed class ClosedXmlReporteMecanicosAdapter(ConfiguracionTaller taller)
             cabeceras,
             filas,
             resumen,
-            columnasMoneda: new[] { 4, 5 });
+            columnasMoneda: new[] { 4, 5 },
+            columnaGraficoBarras: 4);
     }
 }

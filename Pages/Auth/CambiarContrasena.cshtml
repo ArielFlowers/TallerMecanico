@@ -34,6 +34,7 @@
         <div style="margin-bottom:18px;">
             <label asp-for="Input.Nueva">Nueva contraseña</label>
             <input asp-for="Input.Nueva" type="password"
+                    minlength="8" maxlength="128"
                    autocomplete="new-password"
                    class="form-control" required />
             <span asp-validation-for="Input.Nueva" class="text-danger"></span>
@@ -48,7 +49,7 @@
         </div>
 
         <p>
-            Mínimo 12 caracteres, incluyendo mayúscula,
+            Mínimo 8 caracteres, incluyendo mayúscula,
             minúscula, número y carácter especial.
         </p>
 

@@ -28,8 +28,8 @@ public sealed class MecanicosHttpTests
         new UsuarioRepository(aislada.Factory).Agregar(new Usuario
         {
             Username = "admin_prueba", Rol = "Administrador",
-            PasswordHash = hasher.GenerarHash(password), CreadoPor = "pruebas",
-            FechaCreacion = DateTime.UtcNow
+            PasswordHash = hasher.GenerarHash(password), EmailVerificado = true,
+            CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
 
         var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -231,7 +231,7 @@ public sealed class MecanicosHttpTests
         new UsuarioRepository(aislada.Factory).Agregar(new Usuario
         {
             Username = "recepcion_prueba", Rol = "Recepcionista", PasswordHash = hasher.GenerarHash(password),
-            CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+            EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
         using (var recepcionista = NuevoCliente(url))
         {

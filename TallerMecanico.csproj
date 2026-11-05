@@ -20,6 +20,9 @@
     <Compile Remove="tests\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Infraestructura\Exportacion\logo-autotaller.png" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Remove="tests\**\*" />
     <None Remove="tests\**\*" />
     <EmbeddedResource Remove="tests\**\*" />

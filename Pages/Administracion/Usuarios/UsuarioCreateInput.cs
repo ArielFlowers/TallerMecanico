@@ -29,7 +29,7 @@ public sealed class UsuarioCreateInput : IValidatableObject
         if (!ValidadorSolicitudRegistro.PasswordValido(Password))
         {
             yield return new ValidationResult(
-                "La contraseña debe tener entre 12 y 128 caracteres y no comenzar ni terminar con espacios.",
+                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
                 new[] { nameof(Password) });
         }
 

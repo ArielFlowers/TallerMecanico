@@ -30,7 +30,7 @@ public sealed class ConsultaReportesMySqlAdapter(
         }
 
         const string consulta = """
-            SELECT Orden.Id,
+            SELECT Orden.Id AS OrdenId,
                    Orden.Fecha,
                    Vehiculo.Placa,
                    NULLIF(CONCAT_WS(' ', Cliente.Nombres,
@@ -39,7 +39,13 @@ public sealed class ConsultaReportesMySqlAdapter(
                    CONCAT_WS(' ', Mecanico.Nombres,
                        Mecanico.PrimerApellido, Mecanico.SegundoApellido)
                        AS NombreMecanico,
-                   Servicio.Nombre AS NombreServicio,
+                   COALESCE((
+                       SELECT GROUP_CONCAT(
+                           DetalleServicio.NombreServicio
+                           ORDER BY DetalleServicio.Id SEPARATOR ', ')
+                       FROM DetalleServiciosOrdenes AS DetalleServicio
+                       WHERE DetalleServicio.OrdenId = Orden.Id
+                   ), Servicio.Nombre) AS NombreServicio,
                    Orden.Total,
                    Orden.Estado,
                    Orden.CreadoPor
@@ -84,10 +90,10 @@ public sealed class ConsultaReportesMySqlAdapter(
                 CreadoPor = lector.GetString(lector.GetOrdinal(nameof(FilaReporteOrden.CreadoPor)))
             };
 
-            totalGeneral += fila.Total;
             if (string.Equals(fila.Estado, "Activa", StringComparison.OrdinalIgnoreCase))
             {
                 ordenesActivas++;
+                totalGeneral += fila.Total;
             }
             else if (string.Equals(fila.Estado, "Anulada", StringComparison.OrdinalIgnoreCase))
             {
@@ -134,15 +140,16 @@ public sealed class ConsultaReportesMySqlAdapter(
         // LEFT JOIN sobre Ordenes para incluir mecánicos sin órdenes
         // dentro del rango filtrado y tratar la relación como opcional.
         const string consulta = """
-            SELECT Mecanico.Id,
+            SELECT Mecanico.Id AS MecanicoId,
                    CONCAT_WS(' ', Mecanico.Nombres,
                        Mecanico.PrimerApellido, Mecanico.SegundoApellido)
                        AS NombreMecanico,
-                   Mecanico.Ci,
+                   Mecanico.Ci AS CiMecanico,
                    COUNT(Orden.Id) AS TotalOrdenes,
                    COALESCE(SUM(Orden.Total), 0) AS TotalFacturado
             FROM Mecanicos AS Mecanico
             LEFT JOIN Ordenes AS Orden ON Orden.MecanicoId = Mecanico.Id
+                AND Orden.Estado = 'Activa'
                 AND (@FechaDesde IS NULL OR Orden.Fecha >= @FechaDesde)
                 AND (@FechaHastaSiguiente IS NULL OR Orden.Fecha < @FechaHastaSiguiente)
             WHERE (@MecanicoId IS NULL OR Mecanico.Id = @MecanicoId)
