@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TallerMecanico</RootNamespace>
     <UserSecretsId>dc3ea966-c2b1-4a21-afd4-d81695b9ec71</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
@@ -16,15 +17,10 @@
     <PackageReference Include="Humanizer.Core.es" Version="3.0.10" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="tests\**\*.cs" />
-  </ItemGroup>
-  <ItemGroup>
+<ItemGroup>
     <EmbeddedResource Include="Infraestructura\Exportacion\logo-autotaller.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Remove="tests\**\*" />
-    <None Remove="tests\**\*" />
-    <EmbeddedResource Remove="tests\**\*" />
+    <ProjectReference Include="..\shared\TallerMecanico.Contratos\TallerMecanico.Contratos.csproj" />
   </ItemGroup>
 </Project>

@@ -127,7 +127,7 @@ ejecutar nube build >/dev/null
 ejecutar nube logs >/dev/null
 exigir_log 'logs --follow --tail 80 app1'
 ejecutar nube usuarios >/dev/null
-exigir_log 'exec app1 dotnet TallerMecanico.dll --inicializar-usuarios'
+exigir_log 'exec app1 dotnet TallerMecanico.Frontend.dll --inicializar-usuarios'
 
 TALLER_PRUEBA_DOCKER_ERROR=1 esperar_fallo ejecutar nube status
 TALLER_PRUEBA_OS=windows esperar_fallo ejecutar nube status

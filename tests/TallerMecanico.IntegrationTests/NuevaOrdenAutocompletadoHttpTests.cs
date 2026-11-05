@@ -191,7 +191,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
     {
         var inicio = new ProcessStartInfo("dotnet")
         {
-            WorkingDirectory = MySqlAisladoFixture.RaizProyecto, UseShellExecute = false, CreateNoWindow = true,
+            WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
         inicio.ArgumentList.Add(typeof(CrearOrdenCasoUso).Assembly.Location);

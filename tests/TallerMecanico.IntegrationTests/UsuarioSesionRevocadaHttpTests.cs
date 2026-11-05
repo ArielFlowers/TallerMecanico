@@ -70,7 +70,7 @@ public sealed class UsuarioSesionRevocadaHttpTests
         {
             var inicio = new ProcessStartInfo("dotnet")
             {
-                WorkingDirectory = MySqlAisladoFixture.RaizProyecto,
+                WorkingDirectory = MySqlAisladoFixture.RaizFrontend,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,

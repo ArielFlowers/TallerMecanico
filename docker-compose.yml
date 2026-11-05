@@ -13,7 +13,7 @@ x-app-common: &app-common
   # Cada PC construye la imagen desde su codigo actual.
   build:
     context: .
-    dockerfile: Dockerfile
+    dockerfile: frontend-app/Dockerfile
 
   image: ${APP_IMAGE:-taller-mecanico:local}
   pull_policy: build

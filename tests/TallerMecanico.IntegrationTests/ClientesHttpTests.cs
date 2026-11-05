@@ -152,7 +152,7 @@ public sealed class ClientesHttpTests
     {
         var inicio = new ProcessStartInfo("dotnet")
         {
-            WorkingDirectory = MySqlAisladoFixture.RaizProyecto, UseShellExecute = false, CreateNoWindow = true,
+            WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
         inicio.ArgumentList.Add(typeof(ClienteService).Assembly.Location);

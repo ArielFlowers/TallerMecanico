@@ -50,7 +50,7 @@ public sealed class AutocompletadoTests
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             ApplicationName = typeof(BuscadorAutocompletadoModel).Assembly.GetName().Name,
-            ContentRootPath = raiz, EnvironmentName = "Production"
+            ContentRootPath = MySqlAisladoFixture.RaizFrontend, EnvironmentName = "Production"
         });
         builder.Logging.ClearProviders();
         builder.WebHost.UseUrls("http://127.0.0.1:0");

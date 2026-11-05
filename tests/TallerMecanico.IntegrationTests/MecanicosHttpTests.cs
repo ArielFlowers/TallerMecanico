@@ -120,7 +120,7 @@ public sealed class MecanicosHttpTests
     {
         var inicio = new ProcessStartInfo("dotnet")
         {
-            WorkingDirectory = MySqlAisladoFixture.RaizProyecto,
+            WorkingDirectory = MySqlAisladoFixture.RaizFrontend,
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };

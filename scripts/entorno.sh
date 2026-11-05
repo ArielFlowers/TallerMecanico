@@ -158,6 +158,6 @@ case "$accion" in
         ;;
     usuarios)
         comprobar_configuracion
-        invocar_compose exec app1 dotnet TallerMecanico.dll --inicializar-usuarios
+        invocar_compose exec app1 dotnet TallerMecanico.Frontend.dll --inicializar-usuarios
         ;;
 esac

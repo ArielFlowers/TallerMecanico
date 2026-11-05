@@ -7,15 +7,18 @@ FROM ${DOTNET_SDK_IMAGE} AS build
 
 WORKDIR /src
 
+# El contexto de construccion es la raiz del monorepo.
 # Restaurar dependencias
-COPY TallerMecanico.csproj ./
-RUN dotnet restore TallerMecanico.csproj
+COPY shared/TallerMecanico.Contratos/TallerMecanico.Contratos.csproj shared/TallerMecanico.Contratos/
+COPY frontend-app/TallerMecanico.Frontend.csproj frontend-app/
+RUN dotnet restore frontend-app/TallerMecanico.Frontend.csproj
 
 # Copiar el codigo fuente
-COPY . .
+COPY shared/ shared/
+COPY frontend-app/ frontend-app/
 
 # Publicar la aplicacion
-RUN dotnet publish TallerMecanico.csproj \
+RUN dotnet publish frontend-app/TallerMecanico.Frontend.csproj \
     -c Release \
     -o /app/publish \
     --no-restore \
@@ -34,4 +37,4 @@ EXPOSE 8080
 COPY --from=build /app/publish .
 
 # Iniciar AutoTaller Pro
-ENTRYPOINT ["dotnet", "TallerMecanico.dll"]
+ENTRYPOINT ["dotnet", "TallerMecanico.Frontend.dll"]

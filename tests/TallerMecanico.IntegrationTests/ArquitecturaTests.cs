@@ -53,10 +53,6 @@ public sealed class ArquitecturaTests
 
     private static string BuscarRaiz()
     {
-        DirectoryInfo? carpeta = new(AppContext.BaseDirectory);
-        while (carpeta is not null && !File.Exists(Path.Combine(carpeta.FullName, "TallerMecanico.csproj")))
-            carpeta = carpeta.Parent;
-
-        return carpeta?.FullName ?? throw new InvalidOperationException("No se encontró la raíz del repositorio.");
+        return MySqlAisladoFixture.RaizFrontend;
     }
 }

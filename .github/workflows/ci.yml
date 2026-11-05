@@ -136,7 +136,7 @@ jobs:
       - name: Preparar .NET y compilar
         uses: ./.github/actions/preparar-pruebas
       - name: Publicar para el sistema actual
-        run: dotnet publish TallerMecanico.csproj --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado"
+        run: dotnet publish frontend-app/TallerMecanico.Frontend.csproj --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado"
       - name: Validar lanzadores y rutas con espacios
         run: |
           bash -n scripts/entorno.sh

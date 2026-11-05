@@ -32,10 +32,11 @@ public sealed class MySqlAisladoFixture : IDisposable
         get
         {
             for (var directorio = new DirectoryInfo(AppContext.BaseDirectory); directorio is not null; directorio = directorio.Parent)
-                if (File.Exists(Path.Combine(directorio.FullName, "TallerMecanico.csproj"))) return directorio.FullName;
+                if (File.Exists(Path.Combine(directorio.FullName, "TallerMecanico.sln"))) return directorio.FullName;
             throw new DirectoryNotFoundException("No se encontró la raíz del proyecto.");
         }
     }
+    public static string RaizFrontend => Path.Combine(RaizProyecto, "frontend-app");
     private readonly string? _servidor;
     private readonly string _base = $"autotaller_test_{Guid.NewGuid():N}";
     private bool _creada;

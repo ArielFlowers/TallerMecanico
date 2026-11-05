@@ -160,7 +160,7 @@ try {
         }
         'usuarios' {
             Comprobar-Configuracion
-            Invocar-Compose @('exec', 'app1', 'dotnet', 'TallerMecanico.dll', '--inicializar-usuarios')
+            Invocar-Compose @('exec', 'app1', 'dotnet', 'TallerMecanico.Frontend.dll', '--inicializar-usuarios')
         }
     }
 } finally {

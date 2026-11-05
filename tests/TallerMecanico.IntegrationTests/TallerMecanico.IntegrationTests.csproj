@@ -15,6 +15,6 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\TallerMecanico.csproj" />
+    <ProjectReference Include="..\..\frontend-app\TallerMecanico.Frontend.csproj" />
   </ItemGroup>
 </Project>

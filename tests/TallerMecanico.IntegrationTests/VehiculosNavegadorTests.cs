@@ -58,7 +58,7 @@ public sealed class VehiculosNavegadorTests
 
         var inicio = new ProcessStartInfo("dotnet")
         {
-            WorkingDirectory = raiz, UseShellExecute = false, CreateNoWindow = true,
+            WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
         inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
