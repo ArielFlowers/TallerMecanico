@@ -6,10 +6,7 @@ public sealed class ArquitecturaTests
     private static readonly string[] Prohibidos = ["TallerMecanico.Infraestructura", "MySqlConnector"];
 
     // Deuda ya asignada en el plan del entregable. Quitar cada archivo al corregirlo.
-    private static readonly string[] Pendientes =
-    [
-        "Aplicacion/Servicios/UsuarioAdministracionService.cs"
-    ];
+    private static readonly string[] Pendientes = [];
 
     [Fact]
     public void Dominio_Aplicacion_Y_Pages_NoDependenDeInfraestructura()

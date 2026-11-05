@@ -1,0 +1,412 @@
+@page
+@model TallerMecanico.Pages.Reportes.Mecanicos.IndexModel
+@{
+    ViewData["Title"] = "Reporte Estadístico por Mecánico";
+}
+
+<style>
+    .hu3-reporte-mecanicos {
+        max-width: 1400px;
+        color: var(--text-primary);
+    }
+
+    .hu3-reporte-mecanicos h1 {
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .hu3-reporte-mecanicos .filtros {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    .hu3-reporte-mecanicos .form-label {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    .hu3-reporte-mecanicos .form-control,
+    .hu3-reporte-mecanicos .form-select {
+        background-color: var(--surface-light);
+        color: var(--text-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-sm);
+        min-height: 40px;
+        width: 100%;
+    }
+
+    .hu3-reporte-mecanicos .acciones {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .hu3-reporte-mecanicos .btn {
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .hu3-reporte-mecanicos .btn-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+
+    .hu3-reporte-mecanicos .btn-primary:hover {
+        background: var(--primary-hover);
+    }
+
+    .hu3-reporte-mecanicos .btn-outline-secondary {
+        color: var(--primary-hover);
+        border-color: var(--primary);
+    }
+
+    .hu3-reporte-mecanicos .btn-outline-secondary:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .hu3-reporte-mecanicos .estadisticas {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .hu3-reporte-mecanicos .estadistica {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .hu3-reporte-mecanicos .estadistica .etiqueta {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .hu3-reporte-mecanicos .estadistica .valor {
+        color: var(--text-primary);
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .hu3-reporte-mecanicos .estadistica:first-child {
+        border-top: 3px solid var(--primary);
+    }
+
+    .hu3-reporte-mecanicos .grafico-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .hu3-reporte-mecanicos .grafico-panel h2 {
+        color: var(--text-primary);
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 14px;
+    }
+
+    .hu3-reporte-mecanicos .grafico-barra {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+        height: 30px;
+    }
+
+    .hu3-reporte-mecanicos .grafico-etiqueta {
+        width: 150px;
+        flex-shrink: 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .hu3-reporte-mecanicos .grafico-progreso {
+        flex: 1;
+        height: 100%;
+        background: var(--surface-hover);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hu3-reporte-mecanicos .grafico-relleno {
+        height: 100%;
+        background: var(--primary);
+        border-radius: var(--radius-sm);
+        transition: width 0.5s ease;
+    }
+
+    .hu3-reporte-mecanicos .grafico-valor {
+        width: 110px;
+        flex-shrink: 0;
+        text-align: right;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .hu3-reporte-mecanicos .table-responsive {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: auto;
+        margin-bottom: 20px;
+    }
+
+    .hu3-reporte-mecanicos table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .hu3-reporte-mecanicos th {
+        background: var(--surface-light);
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: left;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+    }
+
+    .hu3-reporte-mecanicos td {
+        color: var(--text-primary);
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    .hu3-reporte-mecanicos td.text-end {
+        text-align: right;
+    }
+
+    .hu3-reporte-mecanicos .vacío {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+    }
+
+    .hu3-reporte-mecanicos .alerta {
+        background: var(--surface-light);
+        color: var(--text-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 14px;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+    }
+
+    .hu3-reporte-mecanicos .pie {
+        margin-top: 24px;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        border-top: 1px solid var(--border);
+        padding-top: 12px;
+    }
+
+    @@media (max-width: 768px) {
+        .hu3-reporte-mecanicos .estadisticas {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .hu3-reporte-mecanicos .acciones {
+            flex-direction: column;
+        }
+        .hu3-reporte-mecanicos .grafico-barra {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+            height: auto;
+        }
+        .hu3-reporte-mecanicos .grafico-etiqueta,
+        .hu3-reporte-mecanicos .grafico-valor {
+            width: auto;
+            text-align: left;
+        }
+        .hu3-reporte-mecanicos .grafico-valor {
+            text-align: right;
+            margin-left: auto;
+        }
+    }
+</style>
+
+<div class="container py-4 hu3-reporte-mecanicos">
+    <nav aria-label="Navegación de reportes"
+         style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+        <a asp-page="/Reportes/Index" class="btn btn-outline-secondary">
+            Centro de reportes
+        </a>
+        <a asp-page="/Reportes/Ordenes/Index" class="btn btn-outline-secondary">
+            Órdenes
+        </a>
+        <a asp-page="/Reportes/Mecanicos/Index" class="btn btn-outline-secondary">
+            Mecánicos
+        </a>
+    </nav>
+    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h1>Reporte estadístico por mecánico</h1>
+            <p class="text-muted">AutoTaller Pro - Agregación real de órdenes por mecánico.</p>
+        </div>
+        <div class="acciones">
+            <form method="post" asp-page-handler="ExportarPdf" style="margin:0;">
+                <input type="hidden" asp-for="Filtro.FechaDesde" />
+                <input type="hidden" asp-for="Filtro.FechaHasta" />
+                <input type="hidden" asp-for="Filtro.MecanicoId" />
+                <button type="submit" class="btn btn-primary" title="Exportar a PDF">
+                    <span>PDF</span>
+                </button>
+            </form>
+            <form method="post" asp-page-handler="ExportarExcel" style="margin:0;">
+                <input type="hidden" asp-for="Filtro.FechaDesde" />
+                <input type="hidden" asp-for="Filtro.FechaHasta" />
+                <input type="hidden" asp-for="Filtro.MecanicoId" />
+                <button type="submit" class="btn btn-outline-secondary" title="Exportar a Excel">
+                    <span>Excel</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.MensajeError))
+    {
+        <div class="alerta" role="alert">@Model.MensajeError</div>
+    }
+
+    <form method="get" class="filtros" novalidate>
+        <div>
+            <label class="form-label">Fecha desde</label>
+            <input asp-for="Filtro.FechaDesde" type="date" class="form-control" />
+        </div>
+        <div>
+            <label class="form-label">Fecha hasta</label>
+            <input asp-for="Filtro.FechaHasta" type="date" class="form-control" />
+        </div>
+        <div>
+            <label class="form-label">Mecánico</label>
+            <select asp-for="Filtro.MecanicoId" class="form-select">
+                <option value="">Todos los mecánicos</option>
+                @foreach (var m in Model.Mecanicos)
+                {
+                    <option value="@m.Id">@m.Nombre</option>
+                }
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+        </div>
+    </form>
+
+    @if (Model.Documento is null || Model.Documento.Filas.Count == 0)
+    {
+        <div class="table-responsive">
+            <div class="vacío">
+                <p>No se encontraron registros de mecánicos con los criterios seleccionados.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        var documento = Model.Documento!;
+        decimal maximo = documento.Filas.Any()
+            ? documento.Filas.Max(f => f.TotalFacturado)
+            : 0;
+        if (maximo <= 0) maximo = 1;
+
+        <section class="estadisticas" aria-label="Resumen del reporte estadístico">
+            <div class="estadistica">
+                <span class="etiqueta">Mecánicos</span>
+                <strong class="valor">@documento.Resumen.TotalMecanicos</strong>
+            </div>
+            <div class="estadistica">
+                <span class="etiqueta">Órdenes totales</span>
+                <strong class="valor">@documento.Resumen.TotalOrdenes</strong>
+            </div>
+            <div class="estadistica">
+                <span class="etiqueta">Total facturado</span>
+                <strong class="valor">@documento.Resumen.TotalFacturado.ToString("N2")</strong>
+            </div>
+        </section>
+
+        <section class="grafico-panel" aria-label="Gráfico de barras por mecánico">
+            <h2>Distribución del total facturado por mecánico</h2>
+            @foreach (var fila in documento.Filas)
+            {
+                decimal porcentaje = maximo > 0
+                    ? (decimal)fila.TotalFacturado / maximo * 100
+                    : 0;
+                if (porcentaje < 6) porcentaje = 6;
+
+                <div class="grafico-barra">
+                    <span class="grafico-etiqueta">@fila.NombreMecanico</span>
+                    <div class="grafico-progreso">
+                        <div class="grafico-relleno"
+                             style="width:@porcentaje.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
+                    </div>
+                    <span class="grafico-valor">@fila.TotalFacturado.ToString("N2")</span>
+                </div>
+            }
+        </section>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th># Mecánico</th>
+                        <th>Mecánico</th>
+                        <th>C.I.</th>
+                        <th class="text-end">Órdenes</th>
+                        <th class="text-end">Total facturado</th>
+                        <th class="text-end">Promedio por orden</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var fila in documento.Filas)
+                    {
+                        <tr>
+                            <td>@fila.MecanicoId</td>
+                            <td>@fila.NombreMecanico</td>
+                            <td>@fila.CiMecanico</td>
+                            <td class="text-end">@fila.TotalOrdenes.ToString("N0")</td>
+                            <td class="text-end">@fila.TotalFacturado.ToString("N2")</td>
+                            <td class="text-end">@fila.PromedioPorOrden.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pie">
+            <span>Reporte generado por @documento.GeneradoPor el @documento.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</span>
+            <span class="float-end">AutoTaller Pro</span>
+        </div>
+    }
+</div>

@@ -31,8 +31,12 @@ public static class ValidadorSolicitudRegistro
     public static bool PasswordValido(string? password)
     {
         return password is not null
-            && password.Length >= 12
+            && password.Length >= 8
             && password.Length <= 128
-            && password == password.Trim();
+            && password == password.Trim()
+            && password.Any(char.IsUpper)
+            && password.Any(char.IsLower)
+            && password.Any(char.IsDigit)
+            && password.Any(c => !char.IsLetterOrDigit(c));
     }
 }

@@ -33,7 +33,7 @@ public sealed class VehiculosNavegadorTests
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         new UsuarioRepository(aislada.Factory).Agregar(new Usuario
         {
-            Username = "ec2_ui", PasswordHash = hasher.GenerarHash(password), Rol = "Recepcionista",
+            Username = "ec2_ui", PasswordHash = hasher.GenerarHash(password), Rol = "Recepcionista", EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
         var clientes = new ClienteRepository(aislada.Factory);

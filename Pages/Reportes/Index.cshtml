@@ -1,0 +1,127 @@
+@page
+@{
+    ViewData["Title"] = "Centro de Reportes";
+}
+
+<style>
+    .centro-reportes {
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 36px 20px;
+        color: var(--text-primary);
+    }
+
+    .centro-reportes h1 {
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .centro-reportes .descripcion {
+        color: var(--text-secondary);
+        margin-bottom: 32px;
+    }
+
+    .centro-reportes .tarjetas {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .centro-reportes .tarjeta {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        transition: border-color .2s, transform .2s;
+    }
+
+    .centro-reportes .tarjeta:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .centro-reportes .icono {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: var(--primary-soft);
+        color: var(--primary-hover);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 25px;
+    }
+
+    .centro-reportes .tarjeta h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .centro-reportes .tarjeta p {
+        color: var(--text-secondary);
+        flex: 1;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .centro-reportes .enlace {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary);
+        color: #fff;
+        border-radius: var(--radius-sm);
+        padding: 12px 20px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background .2s;
+    }
+
+    .centro-reportes .enlace:hover {
+        background: var(--primary-hover);
+        color: #fff;
+    }
+
+    .centro-reportes .enlace:focus-visible {
+        outline: 2px solid var(--primary-hover);
+        outline-offset: 3px;
+    }
+</style>
+
+<div class="centro-reportes">
+    <h1>Centro de Reportes</h1>
+    <p class="descripcion">
+        Consulta la información del taller, analiza resultados y
+        exporta reportes en PDF o Excel.
+    </p>
+
+    <div class="tarjetas">
+        <section class="tarjeta">
+            <div class="icono" aria-hidden="true">▤</div>
+            <h2>Órdenes de trabajo</h2>
+            <p>
+                Consulta las órdenes registradas, filtra por
+                fechas y estados, y revisa sus importes.
+            </p>
+            <a asp-page="/Reportes/Ordenes/Index" class="enlace">
+                Ver reporte de órdenes
+            </a>
+        </section>
+
+        <section class="tarjeta">
+            <div class="icono" aria-hidden="true">▥</div>
+            <h2>Estadísticas de mecánicos</h2>
+            <p>
+                Analiza la productividad de los mecánicos,
+                sus órdenes y los importes facturados.
+            </p>
+            <a asp-page="/Reportes/Mecanicos/Index" class="enlace">
+                Ver estadísticas
+            </a>
+        </section>
+    </div>
+</div>

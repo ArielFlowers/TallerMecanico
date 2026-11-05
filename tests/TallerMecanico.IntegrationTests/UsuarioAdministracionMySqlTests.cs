@@ -42,9 +42,10 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         }).Build();
         var emailService = email ?? new CorreoSimulado();
         var currentUser = usuarioActual ?? new CurrentUserFalso { UsuarioId = 1, Username = "admin", Rol = "Administrador", EstaAutenticado = true };
+        var generador = new GeneradorNombreUsuarioIntegracionFalso();
 
         return new UsuarioAdministracionService(
-            usuarios, solicitudes, emailService, config, auditoria, currentUser, hasher, _fixture.Factory);
+            usuarios, solicitudes, emailService, config, auditoria, currentUser, hasher, new ActivacionInvitacionMySqlAdapter(_fixture.Factory),generador);
     }
 
     private (int Id, string Username) CrearUsuarioAdmin(string? username = null)
@@ -189,7 +190,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio();
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            servicio.CrearInvitacion(existing, Unique("nuevo") + "@test.com", "Recepcionista"));
+            servicio.CrearInvitacion(existing, Unique("nuevo") + "@test.com", "Recepcionista", "ClaveSegura123!"));
     }
 
     [MySqlAisladoFact]
@@ -199,10 +200,10 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         CrearUsuarioAdmin();
         var servicio = CrearServicio();
         string username = Unique("pendiente");
-        servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista");
+        servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            servicio.CrearInvitacion(username, Unique("otro") + "@test.com", "Recepcionista"));
+            servicio.CrearInvitacion(username, Unique("otro") + "@test.com", "Recepcionista", "ClaveSegura123!"));
     }
 
     [MySqlAisladoFact]
@@ -216,7 +217,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio();
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            servicio.CrearInvitacion(Unique("nuevo"), email, "Recepcionista"));
+            servicio.CrearInvitacion(Unique("nuevo"), email, "Recepcionista", "ClaveSegura123!"));
     }
 
     [MySqlAisladoFact]
@@ -226,10 +227,10 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         CrearUsuarioAdmin();
         var servicio = CrearServicio();
         string email = Unique("pendiente") + "@test.com";
-        servicio.CrearInvitacion(Unique("user1"), email, "Recepcionista");
+        servicio.CrearInvitacion(Unique("user1"), email, "Recepcionista", "ClaveSegura123!");
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
-            servicio.CrearInvitacion(Unique("user2"), email, "Recepcionista"));
+            servicio.CrearInvitacion(Unique("user2"), email, "Recepcionista", "ClaveSegura123!"));
     }
 
     [MySqlAisladoFact]
@@ -261,7 +262,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("nuevo_user");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista");
+        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
 
         Assert.False(string.IsNullOrWhiteSpace(token));
         Assert.Equal(64, token.Length);
@@ -282,7 +283,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("nuevo_admin");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Administrador");
+        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Administrador", "ClaveSegura123!");
 
         var solicitud = _fixture.Escalar("SELECT Username, Rol FROM SolicitudesRegistro WHERE Username = @Username", ("@Username", username));
         Assert.NotNull(solicitud);
@@ -297,10 +298,10 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("activado_user");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista");
+        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
 
         // NO llamar MarcarSolicitudComoVerificada: la activación maneja la verificación internamente
-        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, "Password123456", out string? error);
+        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, out string? error);
 
         Assert.True(resultado);
         Assert.Null(error);
@@ -324,9 +325,9 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("activado_admin");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Administrador");
+        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Administrador", "ClaveSegura123!");
 
-        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, "Password123456", out string? error);
+        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, out string? error);
 
         Assert.True(resultado);
         Assert.Null(error);
@@ -345,14 +346,14 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         CrearUsuarioAdmin();
         var servicio = CrearServicio();
 
-        bool resultado = servicio.ActivarUsuarioDesdeInvitacion("token_invalido", "Password123456", out string? error);
+        bool resultado = servicio.ActivarUsuarioDesdeInvitacion("token_invalido", out string? error);
 
         Assert.False(resultado);
         Assert.Equal("Token inválido.", error);
     }
 
     [MySqlAisladoFact]
-    public void ActivarUsuarioDesdeInvitacion_RechazaPasswordCorto()
+    public void CrearInvitacion_RechazaPasswordCorto()
     {
         LimpiarDatosPrueba();
         CrearUsuarioAdmin();
@@ -360,12 +361,14 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("user_pass");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista");
+        var excepcion = Assert.Throws<ArgumentException>(() =>
+            servicio.CrearInvitacion(
+                username, $"{username}@test.com", "Recepcionista", "Corta1!"));
 
-        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, "corto", out string? error);
-
-        Assert.False(resultado);
-        Assert.Contains("contraseña no cumple", error!);
+        Assert.Contains("contrase", excepcion.Message);
+        Assert.Equal(0, Convert.ToInt32(_fixture.Escalar(
+            "SELECT COUNT(*) FROM SolicitudesRegistro WHERE Username = @Username;",
+            ("@Username", username))));
     }
 
     [MySqlAisladoFact]
@@ -377,7 +380,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("user_proc");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista");
+        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
 
         // Marcar como ya procesada (Aprobada) - esto simula un intento previo
         _fixture.Ejecutar("""
@@ -387,7 +390,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
             WHERE Username = @Username;
             """, ("@Username", username));
 
-        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, "Password123456", out string? error);
+        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, out string? error);
 
         Assert.False(resultado);
         Assert.Equal("El enlace de invitación no es válido o ha expirado.", error);
@@ -405,7 +408,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         string email = $"{username}@test.com";
 
         string token = servicio.CrearInvitacion(
-            username, email, "Recepcionista");
+            username, email, "Recepcionista", "ClaveSegura123!");
 
         // Simular expiracion sin esperar una hora.
         _fixture.Ejecutar("""
@@ -414,8 +417,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
             WHERE Username = @Username;
             """, ("@Username", username));
 
-        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(
-            token, "Password123456", out string? error);
+        bool resultado = servicio.ActivarUsuarioDesdeInvitacion(token, out string? error);
 
         Assert.False(resultado);
         Assert.Equal(
@@ -610,7 +612,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("auditado");
 
-        servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista");
+        servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
 
         // Obtener Accion y Detalle por separado
         var accion = _fixture.Escalar("SELECT Accion FROM Auditoria WHERE Entidad = 'Usuario' AND EntidadId = @EntidadId ORDER BY Fecha DESC LIMIT 1", ("@EntidadId", username));
@@ -629,10 +631,10 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(email: email);
         string username = Unique("auditado_activar");
 
-        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista");
+        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
 
         // NO llamar MarcarSolicitudComoVerificada
-        servicio.ActivarUsuarioDesdeInvitacion(token, "Password123456", out _);
+        servicio.ActivarUsuarioDesdeInvitacion(token, out _);
 
         // La activación registra USUARIO_ACTIVADO con EntidadId = username
         // Obtener la acción más reciente (debe ser USUARIO_ACTIVADO, no USUARIO_INVITADO)
@@ -685,7 +687,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var servicio = CrearServicio(usuarioActual: currentUser);
 
         Assert.Throws<UnauthorizedAccessException>(() =>
-            servicio.CrearInvitacion(Unique("nuevo"), Unique("nuevo") + "@test.com", "Recepcionista"));
+            servicio.CrearInvitacion(Unique("nuevo"), Unique("nuevo") + "@test.com", "Recepcionista", "ClaveSegura123!"));
     }
 
     [MySqlAisladoFact]
@@ -759,5 +761,16 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         {
             Hash = hasher.GenerarHash(Guid.NewGuid().ToString("N"));
         }
+    }
+}
+
+internal sealed class GeneradorNombreUsuarioIntegracionFalso : IGeneradorNombreUsuarioPort
+{
+    public string GenerarUsuarioUnico(
+        string correoElectronico,
+        CancellationToken cancellationToken = default)
+    {
+        string baseUsuario = correoElectronico.Split('@', 2)[0].ToLowerInvariant();
+        return baseUsuario.Length > 0 ? baseUsuario : "usuario";
     }
 }

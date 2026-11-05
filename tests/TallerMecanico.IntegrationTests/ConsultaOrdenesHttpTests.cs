@@ -33,7 +33,7 @@ public sealed class ConsultaOrdenesHttpTests
             new UsuarioRepository(aislada.Factory).Agregar(new Usuario
             {
                 Username = rol, PasswordHash = passwordHash, Rol = rol,
-                CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+                EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });
         }
 

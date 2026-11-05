@@ -1,10 +1,8 @@
-using System.Data.Common;
 using System.Security.Cryptography;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Validaciones;
-using TallerMecanico.Infraestructura.Persistencia;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -17,7 +15,8 @@ public sealed class UsuarioAdministracionService
     private readonly IAuditoriaPort _auditoria;
     private readonly ICurrentUser _usuarioActual;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly DatabaseConnectionFactory _connectionFactory;
+    private readonly IActivacionInvitacionPort _activacionInvitacion;
+    private readonly IGeneradorNombreUsuarioPort _generador;
 
     public UsuarioAdministracionService(
         IUsuarioAdministracionPort usuarios,
@@ -27,7 +26,8 @@ public sealed class UsuarioAdministracionService
         IAuditoriaPort auditoria,
         ICurrentUser usuarioActual,
         IPasswordHasher passwordHasher,
-        DatabaseConnectionFactory connectionFactory)
+        IActivacionInvitacionPort activacionInvitacion,
+        IGeneradorNombreUsuarioPort generador)
     {
         _usuarios = usuarios;
         _solicitudes = solicitudes;
@@ -36,22 +36,18 @@ public sealed class UsuarioAdministracionService
         _auditoria = auditoria;
         _usuarioActual = usuarioActual;
         _passwordHasher = passwordHasher;
-        _connectionFactory = connectionFactory;
+        _activacionInvitacion = activacionInvitacion;
+        _generador = generador;
     }
 
     public string CrearInvitacion(
         string username,
         string email,
         string rol,
+        string password,
         CancellationToken cancellationToken = default)
     {
         ValidarAdministrador();
-
-        if (!ValidadorSolicitudRegistro.UsuarioValido(username))
-        {
-            throw new ArgumentException(
-                "El nombre de usuario no es válido.", nameof(username));
-        }
 
         if (!ValidadorSolicitudRegistro.EmailValido(email))
         {
@@ -65,11 +61,37 @@ public sealed class UsuarioAdministracionService
                 "El rol debe ser Administrador o Recepcionista.", nameof(rol));
         }
 
-        string usuarioNormalizado = username.Trim();
+        if (!ValidadorSolicitudRegistro.PasswordValido(password))
+        {
+            throw new ArgumentException(
+                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
+                nameof(password));
+        }
+
         string emailNormalizado = email.Trim().ToLowerInvariant();
 
-        if (_usuarios.ExisteUsername(usuarioNormalizado) ||
-            _solicitudes.ExisteUsername(usuarioNormalizado))
+        string usuarioFinal;
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            // Protocolo de generación de nombre de usuario a partir del correo.
+            usuarioFinal = _generador.GenerarUsuarioUnico(
+                emailNormalizado, cancellationToken);
+        }
+        else
+        {
+            string usuarioNormalizado = username.Trim();
+
+            if (!ValidadorSolicitudRegistro.UsuarioValido(usuarioNormalizado))
+            {
+                throw new ArgumentException(
+                    "El nombre de usuario no es válido.", nameof(username));
+            }
+
+            usuarioFinal = usuarioNormalizado;
+        }
+
+        if (_usuarios.ExisteUsername(usuarioFinal) ||
+            _solicitudes.ExisteUsername(usuarioFinal))
         {
             throw new SolicitudRegistroDuplicadaException(nameof(SolicitudRegistro.Username));
         }
@@ -88,9 +110,9 @@ public sealed class UsuarioAdministracionService
 
         var solicitud = new SolicitudRegistro
         {
-            Username = usuarioNormalizado,
+            Username = usuarioFinal,
             Email = emailNormalizado,
-            PasswordHash = string.Empty,
+            PasswordHash = _passwordHasher.GenerarHash(password),
             Estado = "PendienteVerificacion",
             TokenVerificacionHash = tokenHash,
             TokenExpiraEn = ahora.AddHours(1),
@@ -125,7 +147,7 @@ public sealed class UsuarioAdministracionService
             Username = _usuarioActual.Username,
             Accion = "USUARIO_INVITADO",
             Entidad = "Usuario",
-            EntidadId = usuarioNormalizado,
+            EntidadId = usuarioFinal,
             Fecha = DateTime.UtcNow,
             Detalle = $"Rol: {rol}"
         });
@@ -135,7 +157,6 @@ public sealed class UsuarioAdministracionService
 
     public bool ActivarUsuarioDesdeInvitacion(
         string token,
-        string password,
         out string? errorMessage)
     {
         errorMessage = null;
@@ -146,13 +167,8 @@ public sealed class UsuarioAdministracionService
             return false;
         }
 
-        if (!ValidadorSolicitudRegistro.PasswordValido(password))
-        {
-            errorMessage = "La contraseña no cumple los requisitos mínimos (12-128 caracteres).";
-            return false;
-        }
-
         byte[] tokenBytes;
+
         try
         {
             tokenBytes = Convert.FromHexString(token);
@@ -163,112 +179,30 @@ public sealed class UsuarioAdministracionService
             return false;
         }
 
-        string tokenHash = Convert.ToHexString(SHA256.HashData(tokenBytes));
+        string tokenHash = Convert.ToHexString(
+            SHA256.HashData(tokenBytes));
 
-        var solicitud = _solicitudes.ConfirmarEmail(tokenHash);
+        var resultado = _activacionInvitacion.ActivarPorTokenHash(tokenHash);
 
-        if (solicitud is null || solicitud.Estado != "PendienteAprobacion")
+        if (!resultado.Exito)
         {
-            errorMessage = "El enlace de invitación no es válido o ha expirado.";
+            errorMessage = resultado.MensajeError;
             return false;
         }
 
-        string passwordHash = _passwordHasher.GenerarHash(password);
-
-        using DbConnection connection = _connectionFactory.CreateConnection();
-        connection.Open();
-
-        using DbTransaction transaction = connection.BeginTransaction();
-
-        try
+        _auditoria.Registrar(new RegistroAuditoria
         {
-            using DbCommand insertar = connection.CreateCommand();
-            insertar.Transaction = transaction;
+            UsuarioId = null,
+            Username = resultado.Username,
+            Accion = "USUARIO_ACTIVADO",
+            Entidad = "Usuario",
+            EntidadId = resultado.Username!,
+            Fecha = DateTime.UtcNow,
+            Detalle = $"Rol asignado: {resultado.Rol}"
+        });
 
-            string rolUsuario = solicitud.Rol ?? "Recepcionista";
-
-            insertar.CommandText = """
-                INSERT INTO Usuarios
-                (
-                    Username,
-                    PasswordHash,
-                    Email,
-                    EmailVerificado,
-                    Rol,
-                    Activo,
-                    CreadoPor,
-                    FechaCreacion
-                )
-                VALUES
-                (
-                    @Username,
-                    @PasswordHash,
-                    @Email,
-                    1,
-                    @Rol,
-                    1,
-                    @CreadoPor,
-                    UTC_TIMESTAMP()
-                );
-                """;
-
-            AddParameter(insertar, "@Username", solicitud.Username);
-            AddParameter(insertar, "@PasswordHash", passwordHash);
-            AddParameter(insertar, "@Email", solicitud.Email);
-            AddParameter(insertar, "@Rol", rolUsuario);
-            AddParameter(insertar, "@CreadoPor", "sistema");
-
-            if (insertar.ExecuteNonQuery() != 1)
-            {
-                transaction.Rollback();
-                errorMessage = "No se pudo crear el usuario.";
-                return false;
-            }
-
-            using DbCommand actualizar = connection.CreateCommand();
-            actualizar.Transaction = transaction;
-
-            actualizar.CommandText = """
-                UPDATE SolicitudesRegistro
-                SET Estado = 'Aprobada',
-                    FechaResolucion = UTC_TIMESTAMP(6),
-                    RevisadoPorUsuarioId = NULL
-                WHERE Id = @SolicitudId
-                  AND Estado = 'PendienteAprobacion'
-                  AND EmailVerificadoEn IS NOT NULL;
-                """;
-
-            AddParameter(actualizar, "@SolicitudId", solicitud.Id);
-
-            if (actualizar.ExecuteNonQuery() != 1)
-            {
-                transaction.Rollback();
-                errorMessage = "No se pudo completar la activación.";
-                return false;
-            }
-
-            transaction.Commit();
-
-            _auditoria.Registrar(new RegistroAuditoria
-            {
-                UsuarioId = null,
-                Username = solicitud.Username,
-                Accion = "USUARIO_ACTIVADO",
-                Entidad = "Usuario",
-                EntidadId = solicitud.Username,
-                Fecha = DateTime.UtcNow,
-                Detalle = $"Rol asignado: {rolUsuario}"
-            });
-
-            return true;
-        }
-        catch
-        {
-            transaction.Rollback();
-            throw;
-        }
+        return true;
     }
-
     public bool ActualizarUsuario(
         int id,
         string email,
@@ -454,14 +388,4 @@ public sealed class UsuarioAdministracionService
         return administradorId;
     }
 
-    private static void AddParameter(
-        DbCommand command,
-        string nombre,
-        object? valor)
-    {
-        DbParameter parametro = command.CreateParameter();
-        parametro.ParameterName = nombre;
-        parametro.Value = valor ?? DBNull.Value;
-        command.Parameters.Add(parametro);
-    }
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.Errores;
@@ -9,7 +10,7 @@ namespace TallerMecanico.IntegrationTests;
 [Trait("Area", "Backend")]
 public sealed class RegistroFacadeTests
 {
-    private const string PasswordPrueba = "ClaveSoloParaPruebas123";
+    private const string PasswordPrueba = "ClaveSoloParaPruebas123!";
 
     [Theory]
     [InlineData(null)]
@@ -92,72 +93,62 @@ public sealed class RegistroFacadeTests
         Assert.Equal(0, fixture.Usuarios.Consultas);
     }
 
-    [Theory]
-    [InlineData("Aceptado")]
-    [InlineData("Duplicado")]
-    [InlineData("FalloEnvio")]
-    public async Task Pagina_MismoResultadoPublicoSinSecretos(string caso)
+    [Fact]
+    public void Pagina_RegistroPublicoGet_RedirigeAlLogin()
     {
         var fixture = new RegistroCorreoFixture();
-        fixture.Usuarios.UsernameExiste = caso == "Duplicado";
-        const string contenidoSensible = "NO_REGISTRAR_PASSWORD_TOKEN_COOKIE";
-        if (caso == "FalloEnvio") fixture.Correo.ErrorEnvio = new IOException(contenidoSensible);
-
         var logger = new LoggerEnMemoria<RegistroModel>();
+
         var page = new RegistroModel(fixture.CrearFachada(), logger)
         {
-            PageContext = new PageContext { HttpContext = new DefaultHttpContext() },
-            Input = new RegistroInput
+            PageContext = new PageContext
             {
-                Username = "empleado", Email = "empleado@example.com",
-                Password = PasswordPrueba, ConfirmarPassword = PasswordPrueba
+                HttpContext = new DefaultHttpContext()
             }
         };
 
-        Assert.IsType<PageResult>(await page.OnPostAsync(CancellationToken.None));
-        Assert.True(page.SolicitudRecibida);
-        Assert.True(page.ModelState.IsValid);
-        Assert.Empty(page.Input.Password);
-        Assert.Empty(page.Input.Username);
-        Assert.All(logger.Entradas, entrada =>
-        {
-            Assert.Null(entrada.Error);
-            Assert.DoesNotContain(contenidoSensible, entrada.Mensaje);
-            Assert.DoesNotContain(PasswordPrueba, entrada.Mensaje);
-            Assert.DoesNotContain("empleado@example.com", entrada.Mensaje);
-            if (fixture.Solicitudes.Guardada is not null)
-                Assert.DoesNotContain(fixture.Solicitudes.Guardada.TokenVerificacionHash!, entrada.Mensaje);
-        });
-        if (caso == "FalloEnvio") Assert.NotNull(fixture.Solicitudes.Guardada);
-        if (caso == "Duplicado") Assert.Null(fixture.Solicitudes.Guardada);
+        var resultado = page.OnGet();
+
+        var redireccion =
+            Assert.IsType<RedirectToPageResult>(resultado);
+
+        Assert.Equal("/Auth/Login", redireccion.PageName);
+        Assert.Null(fixture.Solicitudes.Guardada);
     }
 
     [Fact]
-    public async Task Pagina_ConfiguracionInvalidaSeDiagnosticaSinRevelarla()
+    public void Pagina_RegistroPublicoPost_RechazaSinGuardarDatos()
     {
         var fixture = new RegistroCorreoFixture();
-        fixture.Correo.ErrorConfiguracion = new ConfiguracionRegistroException("Email:Smtp:Password");
         var logger = new LoggerEnMemoria<RegistroModel>();
+
         var page = new RegistroModel(fixture.CrearFachada(), logger)
         {
-            PageContext = new PageContext { HttpContext = new DefaultHttpContext() },
+            PageContext = new PageContext
+            {
+                HttpContext = new DefaultHttpContext()
+            },
             Input = new RegistroInput
             {
-                Username = "empleado", Email = "empleado@example.com",
-                Password = PasswordPrueba, ConfirmarPassword = PasswordPrueba
+                Username = "empleado",
+                Email = "empleado@example.com",
+                Password = PasswordPrueba,
+                ConfirmarPassword = PasswordPrueba
             }
         };
 
-        await page.OnPostAsync(CancellationToken.None);
+        var resultado = page.OnPostAsync(CancellationToken.None);
 
+        Assert.IsType<NotFoundResult>(resultado);
         Assert.False(page.SolicitudRecibida);
         Assert.Null(fixture.Solicitudes.Guardada);
-        Assert.Contains(logger.Entradas, entrada => entrada.Mensaje.Contains("Email:Smtp:Password"));
-        Assert.All(page.ModelState.Values.SelectMany(valor => valor.Errors),
-            error => Assert.DoesNotContain("Email:Smtp", error.ErrorMessage));
-        Assert.All(logger.Entradas, entrada => Assert.DoesNotContain(PasswordPrueba, entrada.Mensaje));
-    }
 
+        Assert.All(logger.Entradas, entrada =>
+        {
+            Assert.DoesNotContain(PasswordPrueba, entrada.Mensaje);
+            Assert.DoesNotContain("empleado@example.com", entrada.Mensaje);
+        });
+    }
     [Fact]
     public async Task Reenvio_ConfiguracionInvalidaNoConsumeIntervalo()
     {
