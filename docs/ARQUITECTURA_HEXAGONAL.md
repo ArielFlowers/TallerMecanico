@@ -4,10 +4,19 @@
 > Stack: Razor Pages .NET 10 + ADO.NET (`MySqlConnector`) + MySQL 8. Sin EF Core.
 > `Pages/` no se mueve físicamente (rompería rutas Razor): se declara como **Presentación**.
 
-## Estado actual
+## Puertos y adaptadores
 
-- **Servicio 2 (Usuarios):** ya está en `main` con puertos y adaptadores. `UsuarioAdministracionService` todavía accede a la base directamente, y esa deuda figura en `ArquitecturaTests`.
-- **Servicio 3 (Reportes):** todavía no está en `main`; está en integración en una rama aparte.
+| Lado | Puerto (`Aplicacion/Puertos`) | Quién lo usa o implementa |
+|---|---|---|
+| Entrada | `IGestionUsuariosPort` | Lo usan las páginas de Usuarios y lo implementa `UsuarioAdministracionService` |
+| Entrada | `ICambioContrasenaPort` | Lo usa `Pages/Auth/CambiarContrasena` y lo implementa `CambioContrasenaService` |
+| Entrada | `IReporteOrdenesPort`, `IReporteMecanicosPort` | Los usan las páginas de Reportes y los implementan `ReporteOrdenesService` y `ReporteMecanicosService` |
+| Salida | `IUsuarioAdministracionPort`, `IActivacionInvitacionPort`, `ISolicitudRegistroPort`, `IAuditoriaPort` | Adaptadores MySQL de `Infraestructura/Persistencia/MySql` |
+| Salida | `IConsultaReportesPort` | `ConsultaReportesMySqlAdapter` |
+| Salida | `IGeneradorReporte*PdfPort`, `IGeneradorReporte*ExcelPort` | Adaptadores QuestPDF y ClosedXML |
+| Salida | `IEmailService`, `IPasswordHasher` | `GmailEmailService`, `Argon2idPasswordHasher` |
+
+`IGeneradorNombreUsuarioPort` es la excepción: `GeneradorNombreUsuarioService` lo implementa dentro de `Aplicacion`, porque el protocolo es una regla de negocio y no depende de tecnología externa.
 
 ## Estructura
 
@@ -41,17 +50,15 @@ Regla de dependencias: `Presentacion -> Aplicacion -> Dominio`; `Infraestructura
 
 ## Auditoría (quién hizo qué)
 
-- Creador: `CreadoPor` + `FechaCreacion` en Clientes, Vehículos, Productos, Servicios, Mecánicos y Órdenes (desde sesión, nunca del formulario).
+- Creador: `CreadoPor` + `FechaCreacion` en Clientes, Vehículos, Productos, Servicios, Mecánicos y Órdenes (desde sesión, nunca del formulario). En Usuarios, `CreadoPor` es el administrador que envió la invitación.
 - Modificación: `ModificadoPor` + `FechaModificacion` en las entidades editables.
 - Anulación: `AnuladoPor` + `FechaAnulacion` en Órdenes.
+- Eliminación en catálogos: como el borrado es físico, queda en la tabla `Auditoria` con usuario, fecha y datos del registro (`CLIENTE_ELIMINADO`, `VEHICULO_ELIMINADO`, `PRODUCTO_ELIMINADO`, `MECANICO_ELIMINADO` y `SERVICIO_ELIMINADO`).
 - Eventos: tabla `Auditoria` y trigger `TRG_Servicios_HistorialCosto`.
 
 ## Gestión de usuarios (HU3)
 
-- **Username explícito**: se recorta y valida con
-  `ValidadorSolicitudRegistro.UsuarioValido` (3–50 caracteres, sin
-  duplicados en `Usuarios` ni en `SolicitudesRegistro`).
-- **Username desde correo**: si el administrador no lo indica,
+- **Protocolo del nombre de usuario**: el administrador no lo escribe.
   `GeneradorNombreUsuarioService` toma la parte local del correo, elimina
   acentos, pasa a minúsculas, conserva letras/números/`.`/`_`/`-`,
   convierte el resto de separadores en `-`, recorta guiones y limita a 50
@@ -68,6 +75,15 @@ Regla de dependencias: `Presentacion -> Aplicacion -> Dominio`; `Infraestructura
   y marca la solicitud como `Aprobada`; si falla, revierte ambas
   operaciones. La auditoría registra `USUARIO_INVITADO` y
   `USUARIO_ACTIVADO`.
+
+## Reportes
+
+| Reporte | Tablas | Filtros | Salidas |
+|---|---|---|---|
+| 1: lista ordenada de órdenes | Ordenes, Vehiculos, Clientes, Mecanicos, Servicios y DetalleServiciosOrdenes | Fecha desde, fecha hasta y estado | Pantalla, PDF y Excel |
+| 2: información sumariada por mecánico, con gráfico de barras | Mecanicos y Ordenes | Nombre, fecha desde y fecha hasta | Pantalla, PDF y Excel |
+
+Ambos usan el logo en el encabezado y los datos sumariados al pie.
 
 ## Dashboard por rol
 

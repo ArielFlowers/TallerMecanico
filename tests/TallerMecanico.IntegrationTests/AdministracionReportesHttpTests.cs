@@ -102,10 +102,15 @@ public sealed class AdministracionReportesHttpTests
                 await VerificarExportaciones(admin, mecanicos);
 
                 string enlaceAntiguo = WebUtility.HtmlDecode(await admin.GetStringAsync(
-                    "/Reportes/Mecanicos?Filtro.NombreMecanico=Alberto&Filtro.FechaDesde=2040-01-01&Filtro.MecanicoId=99999"));
+                    "/Reportes/Mecanicos?Filtro.NombreMecanico=Alberto&Filtro.FechaDesde=2000-01-01&Filtro.MecanicoId=99999"));
                 Assert.Contains("Alberto Rojas Uno", enlaceAntiguo);
-                Assert.Contains("350", enlaceAntiguo);
+                Assert.Matches(@">\s*350[.,]00\s*<", enlaceAntiguo);
                 Assert.DoesNotContain("Beatriz Perez Dos", enlaceAntiguo);
+
+                string fueraDeRango = WebUtility.HtmlDecode(await admin.GetStringAsync(
+                    "/Reportes/Mecanicos?Filtro.NombreMecanico=Alberto&Filtro.FechaDesde=2040-01-01"));
+                Assert.Contains("Alberto Rojas Uno", fueraDeRango);
+                Assert.DoesNotMatch(@">\s*350[.,]00\s*<", fueraDeRango);
 
                 if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")))
                 {

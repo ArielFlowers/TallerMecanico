@@ -125,7 +125,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await screenshot('estados-ordenes.png');
 
         await page.goto(`${base}/Reportes/Mecanicos`);
-        assert.equal(await page.locator('#reporte-mecanicos-filtros input[type="date"]').count(), 0);
+        assert.equal(await page.locator('#reporte-mecanicos-filtros input[type="date"]').count(), 2);
         const mechanicSearch = page.getByRole('searchbox', { name: 'Nombre del mecánico' });
         const rows = page.locator('#reporte-mecanicos-resultados tbody tr');
         assert.equal(await rows.count(), 2);
@@ -154,6 +154,22 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         assert.equal(await page.locator('.grafico-barra').count(), 1);
         assert.equal(await page.locator('.grafico-etiqueta').innerText(), 'Alberto Rojas Uno');
         await screenshot('filtro-mecanicos.png');
+        const filterDate = async value => {
+            const response = page.waitForResponse(r => {
+                const url = new URL(r.url());
+                return url.searchParams.get('handler') === 'Resultados' && url.searchParams.get('Filtro.FechaDesde') === value;
+            });
+            await page.getByLabel('Fecha desde').fill(value);
+            assert.equal((await response).status(), 200);
+            await page.waitForFunction(() => document.querySelector('#reporte-mecanicos-resultados').getAttribute('aria-busy') === 'false');
+        };
+        await filterDate('2040-01-01');
+        assert.doesNotMatch(await rows.innerText(), /350[.,]00/);
+        const exportDates = await page.locator('#reporte-mecanicos-resultados input[name="Filtro.FechaDesde"]')
+            .evaluateAll(inputs => inputs.map(input => input.value));
+        assert.deepEqual(exportDates, ['2040-01-01', '2040-01-01']);
+        await filterDate('');
+        assert.match(await rows.innerText(), /350[.,]00/);
         await filterMechanics('sin_coincidencias_987');
         assert.equal(await rows.count(), 0);
         assert.equal(await page.locator('.grafico-barra').count(), 0);

@@ -41,7 +41,7 @@
             results.innerHTML = html;
             window.history.replaceState(null, '', pageUrl);
             const total = results.querySelector('[data-total-mecanicos]')?.dataset.totalMecanicos;
-            status.textContent = total === undefined ? '' : `${total} mecánico(s) encontrados.`;
+            status.textContent = total === undefined ? '' : `${total} mecánico(s) encontrado(s).`;
             setBusy(false);
         } catch (error) {
             if (requestVersion !== version || error.name === 'AbortError') return;
@@ -70,6 +70,9 @@
         if (!event.isComposing) schedule(200);
     });
     search.addEventListener('compositionend', () => schedule(200));
+    form.querySelectorAll('input[type="date"]').forEach(fecha => {
+        fecha.addEventListener('change', () => schedule(0));
+    });
     form.addEventListener('submit', event => {
         event.preventDefault();
         schedule(0);

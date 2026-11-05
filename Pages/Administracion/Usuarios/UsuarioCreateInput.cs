@@ -5,21 +5,22 @@ namespace TallerMecanico.Pages.Administracion.Usuarios;
 
 public sealed class UsuarioCreateInput : IValidatableObject
 {
-    [StringLength(50, MinimumLength = 3, ErrorMessage = "El usuario debe tener entre 3 y 50 caracteres.")]
-    public string Username { get; set; } = string.Empty;
-
+    [Display(Name = "Correo electrónico")]
     [Required(ErrorMessage = "Ingrese un correo electrónico.")]
     [EmailAddress(ErrorMessage = "Ingrese un correo electrónico válido.")]
     [StringLength(254, ErrorMessage = "El correo no puede superar 254 caracteres.")]
     public string Email { get; set; } = string.Empty;
 
+    [Display(Name = "Rol")]
     [Required(ErrorMessage = "Seleccione un rol.")]
     public string Rol { get; set; } = string.Empty;
 
+    [Display(Name = "Contraseña")]
     [Required(ErrorMessage = "Ingrese una contraseña.")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = string.Empty;
 
+    [Display(Name = "Confirmar contraseña")]
     [Required(ErrorMessage = "Confirme la contraseña.")]
     [DataType(DataType.Password)]
     [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden.")]
@@ -31,14 +32,6 @@ public sealed class UsuarioCreateInput : IValidatableObject
             yield return new ValidationResult(
                 "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
                 new[] { nameof(Password) });
-        }
-
-        if (!string.IsNullOrWhiteSpace(Username) &&
-            !ValidadorSolicitudRegistro.UsuarioValido(Username))
-        {
-            yield return new ValidationResult(
-                "Use entre 3 y 50 caracteres: letras, números, punto, guion o guion bajo.",
-                new[] { nameof(Username) });
         }
 
         if (!ValidadorSolicitudRegistro.EmailValido(Email))

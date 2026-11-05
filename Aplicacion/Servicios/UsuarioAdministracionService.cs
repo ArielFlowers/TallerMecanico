@@ -6,7 +6,7 @@ using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
-public sealed class UsuarioAdministracionService
+public sealed class UsuarioAdministracionService : IGestionUsuariosPort
 {
     private readonly IUsuarioAdministracionPort _usuarios;
     private readonly ISolicitudRegistroPort _solicitudes;
@@ -118,7 +118,8 @@ public sealed class UsuarioAdministracionService
             TokenExpiraEn = ahora.AddHours(1),
             FechaSolicitud = ahora,
             UltimoIntentoVerificacionEn = ahora,
-            Rol = rol
+            Rol = rol,
+            CreadoPor = _usuarioActual.Username
         };
 
         _solicitudes.Agregar(solicitud);

@@ -22,14 +22,17 @@ public class MecanicoService
     private readonly ValidacionMecanicos _validacionMecanicos;
     private readonly ICurrentUser? _currentUser;
     private readonly ICacheResumenDashboardPort? _cache;
+    private readonly IAuditoriaPort? _auditoria;
 
     public MecanicoService(
         IRepository<Mecanico> mecanicoRepository,
         IConsultaMecanicosPort consultaMecanicos,
         ValidacionMecanicos validacionMecanicos,
         ICurrentUser? currentUser = null,
-        ICacheResumenDashboardPort? cache = null)
+        ICacheResumenDashboardPort? cache = null,
+        IAuditoriaPort? auditoria = null)
     {
+        _auditoria = auditoria;
         _mecanicoRepository = mecanicoRepository;
         _consultaMecanicos = consultaMecanicos;
         _validacionMecanicos = validacionMecanicos;
@@ -117,7 +120,8 @@ public class MecanicoService
 
     public string? Eliminar(int id)
     {
-        if (_mecanicoRepository.GetById(id) is null)
+        Mecanico? mecanico = _mecanicoRepository.GetById(id);
+        if (mecanico is null)
         {
             return "El mecánico seleccionado ya no existe.";
         }
@@ -125,6 +129,16 @@ public class MecanicoService
         try { _mecanicoRepository.Delete(id); }
         catch (RegistroRelacionadoException)
         { return "No se puede eliminar el mecánico porque tiene órdenes asociadas."; }
+        _auditoria?.Registrar(new RegistroAuditoria
+        {
+            UsuarioId = _currentUser?.UsuarioId,
+            Username = _currentUser?.Username,
+            Accion = "MECANICO_ELIMINADO",
+            Entidad = "Mecanico",
+            EntidadId = id.ToString(),
+            Fecha = DateTime.UtcNow,
+            Detalle = $"CI: {mecanico.Ci}, Nombre: {mecanico.Nombres} {mecanico.PrimerApellido}"
+        });
         _cache?.InvalidarResumen();
         return null;
     }

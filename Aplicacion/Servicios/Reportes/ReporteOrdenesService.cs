@@ -4,7 +4,7 @@ using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Aplicacion.Servicios.Reportes;
 
-public sealed class ReporteOrdenesService
+public sealed class ReporteOrdenesService : IReporteOrdenesPort
 {
     private static readonly string[] EstadosValidos = { "Activa", "Anulada" };
 

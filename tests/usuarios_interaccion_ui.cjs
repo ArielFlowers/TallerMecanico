@@ -34,7 +34,7 @@ function parcial(parametros = new URLSearchParams()) {
             <a class="page-link" data-usuarios-pagina href="/Administracion/Usuarios?${escapar(destino)}">${indice + 1}</a></li>`;
     }).join('');
     return `<div data-usuarios-resultados data-pagina="${pagina}" data-total="${filtrados.length}">
-        <p>${filtrados.length} usuario(s) encontrados.</p><table><tbody>${filas}</tbody></table><ul>${enlaces}</ul></div>`;
+        <p>${filtrados.length} usuario(s) encontrado(s).</p><table><tbody>${filas}</tbody></table><ul>${enlaces}</ul></div>`;
 }
 
 const html = `<!doctype html><html><body><div class="hu3-usuarios">

@@ -22,11 +22,14 @@ public class ProductoService
     private readonly ValidacionProductos _validacionProductos;
 
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditoriaPort? _auditoria;
     public ProductoService(
         IProductoPort productoPort,
         ValidacionProductos validacionProductos,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IAuditoriaPort? auditoria = null)
     {
+        _auditoria = auditoria;
         _productoPort = productoPort;
         _validacionProductos = validacionProductos;
         _currentUser = currentUser;
@@ -254,6 +257,17 @@ public class ProductoService
         try { _productoPort.Delete(id); }
         catch (RegistroRelacionadoException)
         { return "No se puede eliminar el producto porque tiene órdenes asociadas."; }
+
+        _auditoria?.Registrar(new RegistroAuditoria
+        {
+            UsuarioId = _currentUser.UsuarioId,
+            Username = _currentUser.Username,
+            Accion = "PRODUCTO_ELIMINADO",
+            Entidad = "Producto",
+            EntidadId = id.ToString(),
+            Fecha = DateTime.UtcNow,
+            Detalle = $"Código: {producto.Codigo}, Nombre: {producto.Nombre}"
+        });
 
         return null;
     }

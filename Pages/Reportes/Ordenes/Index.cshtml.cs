@@ -4,17 +4,16 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using TallerMecanico.Aplicacion.DTOs.Reportes;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Servicios.Reportes;
 
 namespace TallerMecanico.Pages.Reportes.Ordenes;
 
 [Authorize(Policy = "SoloAdministrador")]
 public sealed class IndexModel : PageModel
 {
-    private readonly ReporteOrdenesService _reporte;
+    private readonly IReporteOrdenesPort _reporte;
     private readonly ICurrentUser _usuarioActual;
 
-    public IndexModel(ReporteOrdenesService reporte, ICurrentUser usuarioActual)
+    public IndexModel(IReporteOrdenesPort reporte, ICurrentUser usuarioActual)
     {
         _reporte = reporte;
         _usuarioActual = usuarioActual;

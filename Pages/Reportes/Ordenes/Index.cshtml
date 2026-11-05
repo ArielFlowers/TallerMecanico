@@ -313,7 +313,7 @@
                     {
                         <tr>
                             <td>@fila.OrdenId</td>
-                            <td>@fila.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@fila.Fecha.ToString("dd/MM/yyyy")</td>
                             <td>@fila.Placa</td>
                             <td>@(fila.NombreCliente ?? "Sin cliente")</td>
                             <td>@fila.NombreMecanico</td>
@@ -331,7 +331,7 @@
         </div>
 
         <div class="pie">
-            <span>Reporte generado por @documento.GeneradoPor el @documento.FechaGeneracion.ToString("dd/MM/yyyy HH:mm")</span>
+            <span>Reporte generado por @documento.GeneradoPor el @DateTime.SpecifyKind(documento.FechaGeneracion, DateTimeKind.Utc).AddHours(-4).ToString("dd/MM/yyyy HH:mm") (hora de Bolivia)</span>
             <span class="float-end">AutoTaller Pro</span>
         </div>
     }

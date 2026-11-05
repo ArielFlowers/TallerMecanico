@@ -49,6 +49,7 @@ public sealed class ClosedXmlReporteOrdenesAdapter(ConfiguracionTaller taller)
             resumen,
             columnasMoneda: new[] { 6 },
             columnasFecha: new[] { 1 },
-            grafico: GraficoEstadosOrdenes.GenerarImagen(documento.Resumen));
+            grafico: GraficoEstadosOrdenes.GenerarImagen(documento.Resumen),
+            tituloGrafico: "Órdenes por estado");
     }
 }

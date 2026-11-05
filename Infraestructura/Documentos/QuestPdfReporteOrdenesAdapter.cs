@@ -58,8 +58,7 @@ public sealed class QuestPdfReporteOrdenesAdapter(ConfiguracionTaller taller)
         {
             bloque.Item().BorderBottom(2).BorderColor(ColorPrincipal).PaddingBottom(16).Row(fila =>
         {
-            fila.ConstantItem(44).Height(44).Background(ColorPrincipal).AlignCenter().AlignMiddle()
-                .Text("AP").FontSize(20).Bold().FontColor(Colors.White);
+            fila.ConstantItem(44).Height(44).Image(LogoTaller.Imagen);
             fila.RelativeItem().PaddingLeft(12).Column(marca =>
             {
                 marca.Item().Text(_taller.NombreTaller).FontSize(20).Bold();
@@ -137,20 +136,21 @@ public sealed class QuestPdfReporteOrdenesAdapter(ConfiguracionTaller taller)
         {
             tabla.ColumnsDefinition(columnas =>
             {
-                columnas.ConstantColumn(42);
+                columnas.ConstantColumn(34);
+                columnas.ConstantColumn(66);
                 columnas.RelativeColumn(2);
                 columnas.RelativeColumn(2);
                 columnas.RelativeColumn(2);
-                columnas.RelativeColumn(1);
-                columnas.ConstantColumn(70);
-                columnas.ConstantColumn(52);
+                columnas.RelativeColumn(2);
+                columnas.ConstantColumn(66);
+                columnas.ConstantColumn(50);
             });
 
             tabla.Header(cabecera =>
             {
                 foreach (string titulo in new[]
                 {
-                    "#", "Placa", "Cliente", "Mecánico", "Servicio", "Total", "Estado"
+                    "#", "Fecha", "Placa", "Cliente", "Mecánico", "Servicio", "Total", "Estado"
                 })
                 {
                     cabecera.Cell().Background(ColorPrincipal).Padding(8).Text(titulo)
@@ -160,7 +160,7 @@ public sealed class QuestPdfReporteOrdenesAdapter(ConfiguracionTaller taller)
 
             if (documento.Filas.Count == 0)
             {
-                tabla.Cell().ColumnSpan(7).Padding(16).AlignCenter()
+                tabla.Cell().ColumnSpan(8).Padding(16).AlignCenter()
                     .Text("No se encontraron órdenes con los filtros seleccionados.")
                     .FontColor(ColorSecundario).Italic();
                 return;
@@ -170,6 +170,8 @@ public sealed class QuestPdfReporteOrdenesAdapter(ConfiguracionTaller taller)
             {
                 tabla.Cell().BorderBottom(1).BorderColor(ColorBorde).Padding(8)
                     .Text(fila.OrdenId.ToString()).FontSize(8);
+                tabla.Cell().BorderBottom(1).BorderColor(ColorBorde).Padding(8)
+                    .Text(fila.Fecha.ToString("dd/MM/yyyy", Cultura)).FontSize(8);
                 tabla.Cell().BorderBottom(1).BorderColor(ColorBorde).Padding(8)
                     .Text(fila.Placa).FontSize(8);
                 tabla.Cell().BorderBottom(1).BorderColor(ColorBorde).Padding(8)

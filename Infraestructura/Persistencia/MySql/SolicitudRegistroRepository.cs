@@ -58,7 +58,8 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
                 UltimoIntentoVerificacionEn,
                 FechaResolucion,
                 RevisadoPorUsuarioId,
-                Rol
+                Rol,
+                CreadoPor
             )
             VALUES
             (
@@ -73,7 +74,8 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
                 @UltimoIntentoVerificacionEn,
                 @FechaResolucion,
                 @RevisadoPorUsuarioId,
-                @Rol
+                @Rol,
+                @CreadoPor
             );
             """;
 
@@ -341,7 +343,8 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
             UltimoIntentoVerificacionEn = LeerFecha(reader, "UltimoIntentoVerificacionEn"),
             FechaResolucion = LeerFecha(reader, "FechaResolucion"),
             RevisadoPorUsuarioId = LeerEntero(reader, "RevisadoPorUsuarioId"),
-            Rol = LeerString(reader, "Rol")
+            Rol = LeerString(reader, "Rol"),
+            CreadoPor = LeerString(reader, "CreadoPor")
         };
     }
 
@@ -403,6 +406,7 @@ public sealed class SolicitudRegistroRepository : ISolicitudRegistroPort
         AgregarParametro(command, "@FechaResolucion", solicitud.FechaResolucion);
         AgregarParametro(command, "@RevisadoPorUsuarioId", solicitud.RevisadoPorUsuarioId);
         AgregarParametro(command, "@Rol", solicitud.Rol);
+        AgregarParametro(command, "@CreadoPor", solicitud.CreadoPor);
     }
 
     private static void AgregarParametro(

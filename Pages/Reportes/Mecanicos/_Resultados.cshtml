@@ -7,10 +7,14 @@
 <div class="acciones" data-total-mecanicos="@(Model.Documento?.Filas.Count ?? 0)">
     <form method="post" asp-page="./Index" asp-page-handler="ExportarPdf" style="margin:0;">
         <input type="hidden" asp-for="Filtro.NombreMecanico" />
+        <input type="hidden" asp-for="Filtro.FechaDesde" />
+        <input type="hidden" asp-for="Filtro.FechaHasta" />
         <button type="submit" class="btn btn-primary" data-exportar-reporte>Exportar PDF</button>
     </form>
     <form method="post" asp-page="./Index" asp-page-handler="ExportarExcel" style="margin:0;">
         <input type="hidden" asp-for="Filtro.NombreMecanico" />
+        <input type="hidden" asp-for="Filtro.FechaDesde" />
+        <input type="hidden" asp-for="Filtro.FechaHasta" />
         <button type="submit" class="btn btn-outline-secondary" data-exportar-reporte>Exportar Excel</button>
     </form>
 </div>

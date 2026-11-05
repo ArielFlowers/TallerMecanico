@@ -4,7 +4,7 @@ using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Aplicacion.Servicios.Reportes;
 
-public sealed class ReporteMecanicosService
+public sealed class ReporteMecanicosService : IReporteMecanicosPort
 {
     private readonly IConsultaReportesPort _consulta;
     private readonly IGeneradorReporteMecanicosPdfPort _pdf;

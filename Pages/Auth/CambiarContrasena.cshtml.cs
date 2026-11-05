@@ -4,13 +4,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Pages.Auth;
 
 [Authorize]
 public sealed class CambiarContrasenaModel(
-    CambioContrasenaService servicio) : PageModel
+    ICambioContrasenaPort servicio) : PageModel
 {
     [BindProperty]
     public Entrada Input { get; set; } = new();

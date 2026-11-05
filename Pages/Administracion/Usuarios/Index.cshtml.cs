@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.DTOs;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.Pages.Administracion.Usuarios;
 
@@ -15,11 +14,11 @@ public sealed class IndexModel : PageModel
     private const int TamanoPaginaMaximo = 100;
 
     private readonly IUsuarioConsultaPort _usuarioConsultaPort;
-    private readonly UsuarioAdministracionService _usuarioAdministracion;
+    private readonly IGestionUsuariosPort _usuarioAdministracion;
 
     public IndexModel(
         IUsuarioConsultaPort usuarioConsultaPort,
-        UsuarioAdministracionService usuarioAdministracion)
+        IGestionUsuariosPort usuarioAdministracion)
     {
         _usuarioConsultaPort = usuarioConsultaPort;
         _usuarioAdministracion = usuarioAdministracion;

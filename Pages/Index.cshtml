@@ -38,7 +38,7 @@
     <div class="dashboard">
         <div class="dashboard-header">
             <div>
-                <h1>Dashboard</h1>
+                <h1>Panel de control</h1>
                 <p>Resumen general del taller mecánico — Vista: @(User.IsInRole("Administrador") ? "Administrador" : "Recepcionista")</p>
             </div>
 
@@ -91,7 +91,7 @@
             };
 
             <div class="cache-panel" title="Origen de los datos del dashboard (Redis compartido entre réplicas)">
-                <span class="cache-estado @claseCache">Cache: @estadoCache</span>
+                <span class="cache-estado @claseCache">Caché: @estadoCache</span>
                 @if (Model.Cache.Publicacion is TallerMecanico.Aplicacion.Dto.EstadoPublicacionResumen.RechazadaPorGeneracion
                     or TallerMecanico.Aplicacion.Dto.EstadoPublicacionResumen.EntradaExistente)
                 {
