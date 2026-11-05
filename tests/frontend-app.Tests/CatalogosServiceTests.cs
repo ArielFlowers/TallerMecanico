@@ -50,14 +50,13 @@ public sealed class CatalogosServiceTests
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public void Vehiculo_ConflictoDuranteEscrituraConservaElCampoYNoInvalidaCache(bool actualizar, bool referencia)
+    public void Vehiculo_ConflictoDuranteEscrituraConservaElCampoY(bool actualizar, bool referencia)
     {
         Exception error = referencia
             ? new ReferenciaInexistenteException(new InvalidOperationException())
             : new RegistroDuplicadoException(new InvalidOperationException());
         var puertos = new PuertosConFallo(error);
-        var cache = new CachePrueba();
-        var servicio = new VehiculoService(puertos, puertos, new ValidacionVehiculos(), new UsuarioPrueba(), cache);
+        var servicio = new VehiculoService(puertos, puertos, new ValidacionVehiculos(), new UsuarioPrueba());
         var formulario = VehiculosAutocompletadoTests.Formulario(1);
         formulario.Id = 1;
 
@@ -68,7 +67,6 @@ public sealed class CatalogosServiceTests
         Assert.Contains(referencia ? nameof(VehiculoFormViewModel.ClienteId) : nameof(VehiculoFormViewModel.Placa),
             resultado.Errores.Keys);
         Assert.Equal(1, puertos.Escrituras);
-        Assert.Equal(0, cache.Invalidaciones);
     }
 
     [Theory]
@@ -78,11 +76,9 @@ public sealed class CatalogosServiceTests
     public void Eliminar_RelacionCreadaTrasLaConsultaConservaMensaje(string catalogo, string mensaje)
     {
         var puertos = new PuertosConFallo(new RegistroRelacionadoException(new InvalidOperationException()));
-        var cache = new CachePrueba();
 
-        Assert.Equal(mensaje, Eliminar(catalogo, puertos, cache));
+        Assert.Equal(mensaje, Eliminar(catalogo, puertos));
         Assert.Equal(1, puertos.Escrituras);
-        Assert.Equal(0, cache.Invalidaciones);
     }
 
     [Theory]
@@ -99,10 +95,9 @@ public sealed class CatalogosServiceTests
     {
         var error = new InvalidOperationException("Fallo de persistencia no relacionado.");
         var puertos = new PuertosConFallo(error);
-        var cache = new CachePrueba();
         Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
         {
-            if (operacion == "Eliminar") { Eliminar(catalogo, puertos, cache); return; }
+            if (operacion == "Eliminar") { Eliminar(catalogo, puertos); return; }
             bool actualizar = operacion == "Actualizar";
             switch (catalogo)
             {
@@ -117,21 +112,20 @@ public sealed class CatalogosServiceTests
                     if (actualizar) productos.Actualizar(producto); else productos.Crear(producto);
                     break;
                 default:
-                    var vehiculos = new VehiculoService(puertos, puertos, new ValidacionVehiculos(), cache: cache);
+                    var vehiculos = new VehiculoService(puertos, puertos, new ValidacionVehiculos());
                     var vehiculo = VehiculosAutocompletadoTests.Formulario(1); vehiculo.Id = 1;
                     if (actualizar) vehiculos.Update(vehiculo); else vehiculos.Create(vehiculo);
                     break;
             }
         }));
         Assert.Equal(1, puertos.Escrituras);
-        Assert.Equal(0, cache.Invalidaciones);
     }
 
-    private static string? Eliminar(string catalogo, PuertosConFallo puertos, CachePrueba cache) => catalogo switch
+    private static string? Eliminar(string catalogo, PuertosConFallo puertos) => catalogo switch
     {
         "Cliente" => new ClienteService(puertos, puertos, new ValidacionClientes(), new UsuarioPrueba()).Eliminar(1),
         "Producto" => new ProductoService(puertos, new ValidacionProductos(), new UsuarioPrueba()).Eliminar(1),
-        _ => new VehiculoService(puertos, puertos, new ValidacionVehiculos(), cache: cache).Delete(1)
+        _ => new VehiculoService(puertos, puertos, new ValidacionVehiculos()).Delete(1)
     };
 
     private sealed class PuertosConFallo(Exception? error) : IClientePort, IProductoPort, IVehiculoPort
@@ -204,12 +198,4 @@ public sealed class CatalogosServiceTests
         public IReadOnlyList<RegistroAuditoria> ObtenerRecientes(int cantidad) => Registros;
     }
 
-    private sealed class CachePrueba : ICacheResumenDashboardPort
-    {
-        public int Invalidaciones { get; private set; }
-        public ResultadoEliminacionCache InvalidarResumen() { Invalidaciones++; return ResultadoEliminacionCache.Eliminada; }
-        public LecturaResumenDashboard ObtenerResumen() => throw new NotSupportedException();
-        public EstadoPublicacionResumen PublicarResumen(LecturaResumenDashboard lectura, string valor, TimeSpan expiracion) => throw new NotSupportedException();
-        public TimeSpan? TiempoRestanteResumen() => null;
-    }
 }

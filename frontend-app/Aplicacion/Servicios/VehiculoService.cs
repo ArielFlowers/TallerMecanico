@@ -26,7 +26,6 @@ public class VehiculoService
 
     private readonly ICurrentUser? _currentUser;
 
-    private readonly ICacheResumenDashboardPort? _cache;
 
     private readonly IAuditoriaPort? _auditoria;
 
@@ -35,7 +34,6 @@ public class VehiculoService
         IClientePort clientePort,
         ValidacionVehiculos validacionVehiculos,
         ICurrentUser? currentUser = null,
-        ICacheResumenDashboardPort? cache = null,
         IAuditoriaPort? auditoria = null)
     {
         _auditoria = auditoria;
@@ -52,8 +50,6 @@ public class VehiculoService
         _currentUser =
             currentUser;
 
-        _cache =
-            cache;
     }
 
     public List<Vehiculo> GetAll()
@@ -115,7 +111,6 @@ public class VehiculoService
             Fecha = DateTime.UtcNow,
             Detalle = $"Placa: {vehiculo.Placa}"
         });
-        _cache?.InvalidarResumen();
         return null;
     }
 
@@ -227,7 +222,6 @@ public class VehiculoService
                 _vehiculoPort.Add(
                     vehiculo);
 
-                _cache?.InvalidarResumen();
             }
         }
         catch (RegistroDuplicadoException)

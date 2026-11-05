@@ -22,9 +22,6 @@ using TallerMecanico.Infraestructura.Arranque;
 using TallerMecanico.Infraestructura.Sesion;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.Configuracion;
-using TallerMecanico.Infraestructura.Configuracion;
-using TallerMecanico.Infraestructura.Cache;
-using StackExchange.Redis;
 
 var builder =
     WebApplication.CreateBuilder(args);
@@ -212,56 +209,11 @@ builder.Services.AddAuthorization(options =>
 });
 
 // =====================================================
-// H2: REDIS COMO CACHÉ DISTRIBUIDA
+// SESIÓN EN MEMORIA
 // =====================================================
-// Docker Compose define REDIS_HOST=redis para las 3 réplicas.
-// Sin host en REDIS_HOST ni Redis:Host se usa memoria local
-// para la sesión y la caché del dashboard queda deshabilitada.
-ConfiguracionRedis configuracionRedis = ConfiguracionRedis.Leer(builder.Configuration);
-
-builder.Services.AddSingleton(new OpcionesCacheDashboard
-{
-    Expiracion = TimeSpan.FromSeconds(configuracionRedis.ExpiracionDashboardSegundos)
-});
-builder.Services.AddScoped<DashboardCacheService>();
-
-if (configuracionRedis.Habilitado)
-{
-    var opcionesRedis = new ConfigurationOptions
-    {
-        AbortOnConnectFail = false,
-        ConnectTimeout = 2000,
-        SyncTimeout = 1000,
-        AsyncTimeout = 1000,
-        ClientName = $"autotaller-{Environment.MachineName}"
-    };
-    opcionesRedis.EndPoints.Add(
-        configuracionRedis.Host!,
-        configuracionRedis.Puerto);
-
-    IConnectionMultiplexer conexionRedis =
-        ConnectionMultiplexer.Connect(opcionesRedis);
-
-    builder.Services.AddSingleton(conexionRedis);
-    builder.Services.AddSingleton<RedisCacheAdapter>();
-    builder.Services.AddSingleton<ICacheDistribuidaPort>(servicios => servicios.GetRequiredService<RedisCacheAdapter>());
-    builder.Services.AddSingleton<ICacheResumenDashboardPort>(servicios => servicios.GetRequiredService<RedisCacheAdapter>());
-
-    // La sesión (borradores y tokens de órdenes) se comparte entre réplicas.
-    builder.Services.AddStackExchangeRedisCache(options =>
-    {
-        options.InstanceName = "autotaller:sesion:";
-        options.ConnectionMultiplexerFactory =
-            () => Task.FromResult(conexionRedis);
-    });
-}
-else
-{
-    builder.Services.AddSingleton<CacheDistribuidaDeshabilitada>();
-    builder.Services.AddSingleton<ICacheDistribuidaPort>(servicios => servicios.GetRequiredService<CacheDistribuidaDeshabilitada>());
-    builder.Services.AddSingleton<ICacheResumenDashboardPort>(servicios => servicios.GetRequiredService<CacheDistribuidaDeshabilitada>());
-    builder.Services.AddDistributedMemoryCache();
-}
+// Borradores y tokens de órdenes. Hay una sola instancia del Frontend,
+// así que la sesión puede vivir en su memoria.
+builder.Services.AddDistributedMemoryCache();
 
 // =====================================================
 // SESSION
@@ -480,8 +432,6 @@ builder.Services.AddApisInternas(builder.Configuration);
 
 var app =
     builder.Build();
-configuracionRedis.RegistrarDiagnostico(app.Logger,
-    app.Services.GetService<IConnectionMultiplexer>()?.IsConnected == true);
 // =====================================================
 // RESTABLECIMIENTO ADMINISTRATIVO DE CONTRASEÑA
 // =====================================================
@@ -632,35 +582,6 @@ if (app.Environment.IsDevelopment())
     {
         replica = Environment.MachineName
     })).AllowAnonymous();
-
-    // H2: equivalente a redis-cli ping desde cada réplica.
-    app.MapGet("/h2/redis", (ICacheDistribuidaPort cache, IServiceProvider servicios) =>
-    {
-        IConnectionMultiplexer? redis =
-            servicios.GetService<IConnectionMultiplexer>();
-        TimeSpan? latencia = null;
-
-        if (redis?.IsConnected == true)
-        {
-            try
-            {
-                latencia = redis.GetDatabase().Ping();
-            }
-            catch (Exception error) when (error is RedisException or TimeoutException)
-            {
-                latencia = null;
-            }
-        }
-
-        return Results.Ok(new
-        {
-            replica = Environment.MachineName,
-            redis = latencia.HasValue ? "PONG" : "NO DISPONIBLE",
-            latenciaMs = latencia?.TotalMilliseconds,
-            clave = ClavesCache.DashboardResumen,
-            ttlSegundos = cache.TiempoRestante(ClavesCache.DashboardResumen)?.TotalSeconds
-        });
-    }).AllowAnonymous();
 }
 
 app.MapStaticAssets();

@@ -23,7 +23,7 @@ con las mismas credenciales.
 Con cuentas autorizadas, crear un cliente ficticio válido en una PC y encontrarlo
 en la otra. Apagar el stack web de una PC y comprobar que la otra sigue accediendo
 a Aiven. Coordinar estos cambios con el equipo. Compartir MySQL no comparte las
-cookies entre PCs: cada integrante mantiene su Redis y sus claves Data Protection.
+cookies entre PCs: cada integrante mantiene sus claves Data Protection y su sesión.
 
 La migración y recuperación corresponden al [responsable de la base](BD_NUBE.md).
 El antiguo anfitrión/Tailscale no interviene en este flujo.

@@ -69,7 +69,7 @@ relaciones. Para revisar primero una réplica:
 
 ```powershell
 docker compose -f docker-compose.yml build app1
-docker compose -f docker-compose.yml up -d --no-build redis app1
+docker compose -f docker-compose.yml up -d --no-build app1
 docker compose -f docker-compose.yml logs app1 --tail 80
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bd/verificar-nube.ps1
 ```

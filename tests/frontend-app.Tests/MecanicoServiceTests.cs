@@ -69,20 +69,16 @@ public sealed class MecanicoServiceTests
     public void Contratos_ConservanValidacionDuplicadosAuditoriaYCache()
     {
         var repositorio = new RepositorioPrueba();
-        var cache = new CachePrueba();
-        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos(), new UsuarioPrueba(), cache);
+        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos(), new UsuarioPrueba());
         var invalido = MecanicosTests.FormularioValido("1");
         Assert.NotEmpty(servicio.Crear(invalido));
         Assert.Empty(repositorio.Registros);
-        Assert.Equal(0, cache.Invalidaciones);
 
         var entrada = MecanicosTests.FormularioValido();
         Assert.Empty(servicio.Crear(entrada));
-        Assert.Equal(1, cache.Invalidaciones);
         var creado = Assert.Single(servicio.Obtener());
         Assert.False(string.IsNullOrWhiteSpace(creado.CreadoPor));
         Assert.Single(servicio.Crear(entrada));
-        Assert.Equal(1, cache.Invalidaciones);
         entrada.Celular = "71234568";
         var actualizado = servicio.Actualizar(creado.Id, entrada);
         Assert.True(actualizado.Actualizado);
@@ -91,30 +87,24 @@ public sealed class MecanicoServiceTests
         Assert.Equal(creado.CreadoPor, editado.CreadoPor);
         Assert.Equal(creado.FechaCreacion, editado.FechaCreacion);
         Assert.NotNull(editado.FechaModificacion);
-        Assert.Equal(1, cache.Invalidaciones);
         Assert.Null(servicio.Eliminar(editado.Id));
         Assert.Empty(repositorio.Registros);
-        Assert.Equal(2, cache.Invalidaciones);
         Assert.Equal("El mecánico seleccionado ya no existe.", servicio.Eliminar(editado.Id));
-        Assert.Equal(2, cache.Invalidaciones);
     }
 
     [Fact]
-    public void Eliminar_RelacionadoConservaMensajeYNoInvalidaCache()
+    public void Eliminar_RelacionadoConservaMensajeY()
     {
         var repositorio = new RepositorioPrueba();
-        var cache = new CachePrueba();
-        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos(), cache: cache);
+        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos());
         repositorio.Add(new Mecanico { Ci = "1234567" });
         repositorio.ErrorEliminar = new RegistroRelacionadoException(new InvalidOperationException("Conflicto de prueba"));
 
         Assert.Equal("No se puede eliminar el mecánico porque tiene órdenes asociadas.", servicio.Eliminar(1));
         Assert.Single(repositorio.Registros);
-        Assert.Equal(0, cache.Invalidaciones);
         var otroError = new InvalidOperationException("Fallo no relacionado");
         repositorio.ErrorEliminar = otroError;
         Assert.Same(otroError, Assert.Throws<InvalidOperationException>(() => servicio.Eliminar(1)));
-        Assert.Equal(0, cache.Invalidaciones);
     }
 
     [Fact]
@@ -188,12 +178,4 @@ public sealed class MecanicoServiceTests
         }
     }
 
-    private sealed class CachePrueba : ICacheResumenDashboardPort
-    {
-        public int Invalidaciones { get; private set; }
-        public ResultadoEliminacionCache InvalidarResumen() { Invalidaciones++; return ResultadoEliminacionCache.Eliminada; }
-        public LecturaResumenDashboard ObtenerResumen() => throw new NotSupportedException();
-        public EstadoPublicacionResumen PublicarResumen(LecturaResumenDashboard lectura, string valor, TimeSpan expiracion) => throw new NotSupportedException();
-        public TimeSpan? TiempoRestanteResumen() => null;
-    }
 }

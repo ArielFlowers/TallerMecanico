@@ -13,21 +13,18 @@ public class ServicioService : IServicioService
     private readonly IRepository<Servicio> _servicioRepository;
     private readonly IConsultaServiciosPort _consultaServicios;
     private readonly ICurrentUser? _currentUser;
-    private readonly ICacheResumenDashboardPort? _cache;
     private readonly IAuditoriaPort? _auditoria;
 
     public ServicioService(
         IRepository<Servicio> servicioRepository,
         IConsultaServiciosPort consultaServicios,
         ICurrentUser? currentUser = null,
-        ICacheResumenDashboardPort? cache = null,
         IAuditoriaPort? auditoria = null)
     {
         _auditoria = auditoria;
         _servicioRepository = servicioRepository;
         _consultaServicios = consultaServicios;
         _currentUser = currentUser;
-        _cache = cache;
     }
 
     public List<Servicio> ObtenerTodos()
@@ -81,7 +78,6 @@ public class ServicioService : IServicioService
         servicio.FechaCreacion = DateTime.Now;
 
         _servicioRepository.Add(servicio);
-        _cache?.InvalidarResumen();
     }
 
     public void Actualizar(Servicio servicio)
@@ -128,7 +124,6 @@ public class ServicioService : IServicioService
             Fecha = DateTime.UtcNow,
             Detalle = $"Nombre: {servicio.Nombre}"
         });
-        _cache?.InvalidarResumen();
     }
 
     private void ValidarExistencia(int id)

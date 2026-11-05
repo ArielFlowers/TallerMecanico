@@ -21,7 +21,6 @@ public class MecanicoService
     private readonly IConsultaMecanicosPort _consultaMecanicos;
     private readonly ValidacionMecanicos _validacionMecanicos;
     private readonly ICurrentUser? _currentUser;
-    private readonly ICacheResumenDashboardPort? _cache;
     private readonly IAuditoriaPort? _auditoria;
 
     public MecanicoService(
@@ -29,7 +28,6 @@ public class MecanicoService
         IConsultaMecanicosPort consultaMecanicos,
         ValidacionMecanicos validacionMecanicos,
         ICurrentUser? currentUser = null,
-        ICacheResumenDashboardPort? cache = null,
         IAuditoriaPort? auditoria = null)
     {
         _auditoria = auditoria;
@@ -37,7 +35,6 @@ public class MecanicoService
         _consultaMecanicos = consultaMecanicos;
         _validacionMecanicos = validacionMecanicos;
         _currentUser = currentUser;
-        _cache = cache;
     }
 
     public IReadOnlyDictionary<string, string> Crear(
@@ -52,7 +49,6 @@ public class MecanicoService
         }
 
         _mecanicoRepository.Add(CrearMecanico(mecanicoNormalizado));
-        _cache?.InvalidarResumen();
 
         return errores;
     }
@@ -139,7 +135,6 @@ public class MecanicoService
             Fecha = DateTime.UtcNow,
             Detalle = $"CI: {mecanico.Ci}, Nombre: {mecanico.Nombres} {mecanico.PrimerApellido}"
         });
-        _cache?.InvalidarResumen();
         return null;
     }
 
