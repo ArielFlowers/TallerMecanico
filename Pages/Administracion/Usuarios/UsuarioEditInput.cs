@@ -5,11 +5,13 @@ namespace TallerMecanico.Pages.Administracion.Usuarios;
 
 public sealed class UsuarioEditInput : IValidatableObject
 {
+    [Display(Name = "Correo electrónico")]
     [Required(ErrorMessage = "Ingrese un correo electrónico.")]
     [EmailAddress(ErrorMessage = "Ingrese un correo electrónico válido.")]
     [StringLength(254, ErrorMessage = "El correo no puede superar 254 caracteres.")]
     public string Email { get; set; } = string.Empty;
 
+    [Display(Name = "Rol")]
     [Required(ErrorMessage = "Seleccione un rol.")]
     public string Rol { get; set; } = string.Empty;
 

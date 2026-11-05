@@ -3,7 +3,7 @@ namespace TallerMecanico.IntegrationTests;
 [Trait("Area", "Backend")]
 public sealed class ArquitecturaTests
 {
-    private static readonly string[] Prohibidos = ["TallerMecanico.Infraestructura", "MySqlConnector"];
+    private static readonly string[] Prohibidos = ["TallerMecanico.Infraestructura", "MySqlConnector", "QuestPDF", "ClosedXML"];
 
     // Deuda ya asignada en el plan del entregable. Quitar cada archivo al corregirlo.
     private static readonly string[] Pendientes = [];

@@ -57,6 +57,7 @@ public class DatabaseInitializer
             CreateSolicitudesRegistroTable(connection);
             EnsureSolicitudesRegistroReenvioSchema(connection);
             EnsureSolicitudesRegistroRolSchema(connection);
+            EnsureSolicitudesRegistroCreadoPorSchema(connection);
             CreateAuditoriaTable(connection);
             EnsureAuditoriaDetalleSchema(connection);
         }
@@ -1347,6 +1348,25 @@ public class DatabaseInitializer
             """
             ALTER TABLE SolicitudesRegistro
             ADD COLUMN Rol VARCHAR(20) NULL;
+            """);
+    }
+
+    private static void EnsureSolicitudesRegistroCreadoPorSchema(
+        DbConnection connection)
+    {
+        if (ColumnExists(
+                connection,
+                "SolicitudesRegistro",
+                "CreadoPor"))
+        {
+            return;
+        }
+
+        ExecuteCommand(
+            connection,
+            """
+            ALTER TABLE SolicitudesRegistro
+            ADD COLUMN CreadoPor VARCHAR(50) NULL;
             """);
     }
 

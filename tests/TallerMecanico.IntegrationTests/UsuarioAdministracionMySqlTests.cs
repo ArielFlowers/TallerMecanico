@@ -275,6 +275,22 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
     }
 
     [MySqlAisladoFact]
+    public void ActivarInvitacion_GuardaAlAdministradorComoCreador()
+    {
+        LimpiarDatosPrueba();
+        var (id, adminUsername) = CrearUsuarioAdmin();
+        var usuarioActual = new CurrentUserFalso { UsuarioId = id, Username = adminUsername, Rol = "Administrador", EstaAutenticado = true };
+        var servicio = CrearServicio(usuarioActual, new CorreoSimulado());
+        string username = Unique("creado_por");
+
+        string token = servicio.CrearInvitacion(username, $"{username}@test.com", "Recepcionista", "ClaveSegura123!");
+
+        Assert.True(servicio.ActivarUsuarioDesdeInvitacion(token, out _));
+        Assert.Equal(adminUsername, _fixture.Escalar(
+            "SELECT CreadoPor FROM Usuarios WHERE Username = @Username", ("@Username", username)));
+    }
+
+    [MySqlAisladoFact]
     public void CrearInvitacion_GeneraSolicitudConRolAdministrador()
     {
         LimpiarDatosPrueba();
@@ -735,7 +751,7 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
             if (ErrorConfiguracion) throw new ConfiguracionRegistroException("test");
         }
 
-        public Task EnviarVerificacionAsync(string destinatario, string enlaceVerificacion, CancellationToken cancellationToken = default)
+        public Task EnviarVerificacionAsync(string destinatario, string enlaceVerificacion, CancellationToken cancellationToken = default, string? username = null)
         {
             if (ErrorEnvio) throw new EnvioVerificacionException("test", "test", null);
             Enviado = true;

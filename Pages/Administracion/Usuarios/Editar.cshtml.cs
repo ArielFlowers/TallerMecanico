@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Pages.Administracion.Usuarios;
 
@@ -12,11 +11,11 @@ namespace TallerMecanico.Pages.Administracion.Usuarios;
 public sealed class EditarModel : PageModel
 {
     private readonly IUsuarioAdministracionPort _usuarioPort;
-    private readonly UsuarioAdministracionService _usuarioAdministracion;
+    private readonly IGestionUsuariosPort _usuarioAdministracion;
 
     public EditarModel(
         IUsuarioAdministracionPort usuarioPort,
-        UsuarioAdministracionService usuarioAdministracion)
+        IGestionUsuariosPort usuarioAdministracion)
     {
         _usuarioPort = usuarioPort;
         _usuarioAdministracion = usuarioAdministracion;

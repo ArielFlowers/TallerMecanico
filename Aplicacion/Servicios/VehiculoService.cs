@@ -28,13 +28,18 @@ public class VehiculoService
 
     private readonly ICacheResumenDashboardPort? _cache;
 
+    private readonly IAuditoriaPort? _auditoria;
+
     public VehiculoService(
         IVehiculoPort vehiculoPort,
         IClientePort clientePort,
         ValidacionVehiculos validacionVehiculos,
         ICurrentUser? currentUser = null,
-        ICacheResumenDashboardPort? cache = null)
+        ICacheResumenDashboardPort? cache = null,
+        IAuditoriaPort? auditoria = null)
     {
+        _auditoria = auditoria;
+
         _vehiculoPort =
             vehiculoPort;
 
@@ -94,11 +99,22 @@ public class VehiculoService
     public string? Delete(
         int id)
     {
-        if (id <= 0 || _vehiculoPort.GetById(id) is null)
+        Vehiculo? vehiculo = id > 0 ? _vehiculoPort.GetById(id) : null;
+        if (vehiculo is null)
             return "El vehículo seleccionado ya no existe.";
         try { _vehiculoPort.Delete(id); }
         catch (RegistroRelacionadoException)
         { return "No se puede eliminar el vehículo porque tiene órdenes asociadas."; }
+        _auditoria?.Registrar(new RegistroAuditoria
+        {
+            UsuarioId = _currentUser?.UsuarioId,
+            Username = _currentUser?.Username,
+            Accion = "VEHICULO_ELIMINADO",
+            Entidad = "Vehiculo",
+            EntidadId = id.ToString(),
+            Fecha = DateTime.UtcNow,
+            Detalle = $"Placa: {vehiculo.Placa}"
+        });
         _cache?.InvalidarResumen();
         return null;
     }

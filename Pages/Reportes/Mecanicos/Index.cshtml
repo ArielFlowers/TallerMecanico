@@ -282,7 +282,7 @@
     </nav>
     <div class="mb-4">
         <h1>Reporte estadístico por mecánico</h1>
-        <p class="text-muted">Consulta las órdenes y la facturación por nombre del mecánico.</p>
+        <p class="text-muted">Consulta las órdenes y la facturación por nombre del mecánico y rango de fechas.</p>
     </div>
 
     <form method="get" class="filtros" id="reporte-mecanicos-filtros"
@@ -296,6 +296,14 @@
             <p class="text-muted" style="margin:8px 0 0;font-size:.85rem;">
                 Los resultados se filtran mientras escribes.
             </p>
+        </div>
+        <div>
+            <label asp-for="Filtro.FechaDesde" class="form-label">Fecha desde</label>
+            <input asp-for="Filtro.FechaDesde" type="date" class="form-control" />
+        </div>
+        <div>
+            <label asp-for="Filtro.FechaHasta" class="form-label">Fecha hasta</label>
+            <input asp-for="Filtro.FechaHasta" type="date" class="form-control" />
         </div>
         <div>
             <button type="submit" class="btn btn-primary">Buscar</button>

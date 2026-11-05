@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.Pages.Auth;
@@ -10,9 +10,9 @@ namespace TallerMecanico.Pages.Auth;
 [EnableRateLimiting("EmailVerificationRateLimit")]
 public sealed class ActivarInvitacionModel : PageModel
 {
-    private readonly UsuarioAdministracionService _usuarioAdministracion;
+    private readonly IGestionUsuariosPort _usuarioAdministracion;
 
-    public ActivarInvitacionModel(UsuarioAdministracionService usuarioAdministracion)
+    public ActivarInvitacionModel(IGestionUsuariosPort usuarioAdministracion)
     {
         _usuarioAdministracion = usuarioAdministracion;
     }

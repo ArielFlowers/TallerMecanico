@@ -146,6 +146,16 @@
                         <button type="button" class="ordenes-cambiar-eleccion" data-cambiar-eleccion="orden-mecanico">Cambiar</button>
                     </div>
                     <span asp-validation-for="Formulario.MecanicoId" class="service-validation"></span>
+                    @if (User.IsInRole("Administrador"))
+                    {
+                        <div class="ordenes-altas">
+                            <button type="submit" form="orden-nuevo-mecanico" class="services-btn services-btn-secondary">Nuevo mecánico</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="ordenes-ayuda">Si falta un mecánico, pide a un administrador que lo registre.</p>
+                    }
                 </div>
                 <div class="ordenes-fecha">
                     <span id="orden-fecha-etiqueta">Fecha de la orden</span>
@@ -163,6 +173,9 @@
         <partial name="_ContextoNuevaOrden" model="Model" />
     </form>
     <form method="post" id="orden-nuevo-producto" asp-page-handler="NuevoProducto" data-preservar-scroll hidden>
+        <partial name="_ContextoNuevaOrden" model="Model" />
+    </form>
+    <form method="post" id="orden-nuevo-mecanico" asp-page-handler="NuevoMecanico" data-preservar-scroll hidden>
         <partial name="_ContextoNuevaOrden" model="Model" />
     </form>
 

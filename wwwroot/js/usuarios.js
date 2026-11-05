@@ -50,7 +50,7 @@
             const bloque = plantilla.content.querySelector('[data-usuarios-resultados]');
             if (!bloque) throw new Error('No se pudo actualizar la lista. Vuelve a intentarlo.');
             resultados.replaceChildren(plantilla.content);
-            estado.textContent = `${bloque.dataset.total} usuario(s) encontrados.`;
+            estado.textContent = `${bloque.dataset.total} usuario(s) encontrado(s).`;
 
             if (enfocarPaginacion) {
                 const enlaceActual = resultados.querySelector('.page-item.active .page-link');

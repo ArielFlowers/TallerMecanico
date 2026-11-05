@@ -124,6 +124,22 @@ public sealed class GmailEmailServiceTests
     }
 
     [Fact]
+    public async Task Invitacion_IndicaElNombreDeUsuarioYNoPideAprobacion()
+    {
+        var cliente = new ClienteSmtpSimulado();
+        var servicio = new GmailEmailService(
+            ConfiguracionMailpit(),
+            crearCliente: () => cliente);
+
+        await servicio.EnviarVerificacionAsync("empleado@example.com", Enlace, username: "ana.nunez");
+
+        Assert.Equal("Activa tu cuenta - AutoTaller Pro", cliente.Ultimo!.Subject);
+        Assert.Contains("Tu nombre de usuario es: ana.nunez", cliente.Ultimo.TextBody);
+        Assert.Contains(Enlace, cliente.Ultimo.TextBody);
+        Assert.DoesNotContain("aprobaci", cliente.Ultimo.TextBody, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task MailpitSinCredenciales_NoAutentica()
     {
         var cliente = new ClienteSmtpSimulado();
@@ -238,6 +254,7 @@ public sealed class GmailEmailServiceTests
         public string? EtapaConFallo { get; set; }
         public Exception? ErrorCierre { get; set; }
         public int Envios { get; private set; }
+        public MimeMessage? Ultimo { get; private set; }
         public int Cierres { get; private set; }
         public int Autenticaciones { get; private set; }
         public SecureSocketOptions Seguridad { get; private set; }
@@ -271,6 +288,7 @@ public sealed class GmailEmailServiceTests
             CancellationToken cancellationToken = default, ITransferProgress? progress = null)
         {
             Envios++;
+            Ultimo = message;
             FallarSiCorresponde("Envio");
             return Task.FromResult("ACEPTADO_SIMULADO");
         }

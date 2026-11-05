@@ -1,4 +1,5 @@
 using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Aplicacion.Servicios;
@@ -7,7 +8,7 @@ public sealed class CambioContrasenaService(
     IUsuarioPort usuarios,
     IPasswordHasher passwordHasher,
     ICurrentUser currentUser,
-    IAuditoriaPort auditoria)
+    IAuditoriaPort auditoria) : ICambioContrasenaPort
 {
     public bool Cambiar(
         string actual,
@@ -38,11 +39,7 @@ public sealed class CambioContrasenaService(
             return false;
         }
 
-        if (nueva.Length < 8 || nueva.Length > 128 ||
-            !nueva.Any(char.IsUpper) ||
-            !nueva.Any(char.IsLower) ||
-            !nueva.Any(char.IsDigit) ||
-            !nueva.Any(c => !char.IsLetterOrDigit(c)))
+        if (!ValidadorSolicitudRegistro.PasswordValido(nueva))
         {
             error = "La nueva contraseña debe tener entre 8 y 128 caracteres, "
                   + "mayúscula, minúscula, número y carácter especial.";

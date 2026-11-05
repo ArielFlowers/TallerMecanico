@@ -14,13 +14,16 @@ public class ServicioService : IServicioService
     private readonly IConsultaServiciosPort _consultaServicios;
     private readonly ICurrentUser? _currentUser;
     private readonly ICacheResumenDashboardPort? _cache;
+    private readonly IAuditoriaPort? _auditoria;
 
     public ServicioService(
         IRepository<Servicio> servicioRepository,
         IConsultaServiciosPort consultaServicios,
         ICurrentUser? currentUser = null,
-        ICacheResumenDashboardPort? cache = null)
+        ICacheResumenDashboardPort? cache = null,
+        IAuditoriaPort? auditoria = null)
     {
+        _auditoria = auditoria;
         _servicioRepository = servicioRepository;
         _consultaServicios = consultaServicios;
         _currentUser = currentUser;
@@ -110,10 +113,21 @@ public class ServicioService : IServicioService
     {
         ValidarExistencia(id);
 
-        if (_servicioRepository.GetById(id)!.CodigoCatalogo is not null)
+        Servicio servicio = _servicioRepository.GetById(id)!;
+        if (servicio.CodigoCatalogo is not null)
             throw new InvalidOperationException("No se puede eliminar un servicio del catálogo de Nueva Orden.");
 
         _servicioRepository.Delete(id);
+        _auditoria?.Registrar(new RegistroAuditoria
+        {
+            UsuarioId = _currentUser?.UsuarioId,
+            Username = _currentUser?.Username,
+            Accion = "SERVICIO_ELIMINADO",
+            Entidad = "Servicio",
+            EntidadId = id.ToString(),
+            Fecha = DateTime.UtcNow,
+            Detalle = $"Nombre: {servicio.Nombre}"
+        });
         _cache?.InvalidarResumen();
     }
 

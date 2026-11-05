@@ -33,7 +33,8 @@ public sealed class GmailEmailService : IEmailService
     public async Task EnviarVerificacionAsync(
         string destinatario,
         string enlaceVerificacion,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? username = null)
     {
         var configuracion = ObtenerConfiguracionValidada();
 
@@ -52,25 +53,28 @@ public sealed class GmailEmailService : IEmailService
 
         mensaje.From.Add(configuracion.Remitente);
         mensaje.To.Add(MailboxAddress.Parse(destinatario));
-        mensaje.Subject = "Verifica tu correo - AutoTaller Pro";
+        mensaje.Subject = "Activa tu cuenta - AutoTaller Pro";
 
         mensaje.Body = new TextPart("plain")
         {
             Text =
-                "Has solicitado una cuenta en AutoTaller Pro." +
+                "Un administrador creó tu cuenta en AutoTaller Pro." +
                 Environment.NewLine +
                 Environment.NewLine +
-                "Verifica tu correo utilizando este enlace:" +
+                (username is null
+                    ? string.Empty
+                    : "Tu nombre de usuario es: " + username +
+                      Environment.NewLine +
+                      Environment.NewLine) +
+                "Activa tu cuenta utilizando este enlace:" +
                 Environment.NewLine +
                 enlaceVerificacion +
                 Environment.NewLine +
                 Environment.NewLine +
                 "El enlace vence en una hora." +
                 Environment.NewLine +
-                "Despues necesitaras aprobacion del administrador." +
                 Environment.NewLine +
-                Environment.NewLine +
-                "Si no solicitaste esta cuenta, ignora este mensaje."
+                "Si no esperabas este correo, ignóralo."
         };
 
         using SmtpClient cliente = _crearCliente();

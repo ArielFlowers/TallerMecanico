@@ -25,14 +25,17 @@ public class ClienteService
     private readonly IVehiculoPort _vehiculoPort;
     private readonly ValidacionClientes _validacionClientes;
     private readonly ICurrentUser _currentUser;
+    private readonly IAuditoriaPort? _auditoria;
 
 
     public ClienteService(
             IClientePort clientePort,
             IVehiculoPort vehiculoPort,
             ValidacionClientes validacionClientes,
-            ICurrentUser currentUser)
+            ICurrentUser currentUser,
+            IAuditoriaPort? auditoria = null)
     {
+        _auditoria = auditoria;
         _clientePort = clientePort;
         _vehiculoPort = vehiculoPort;
         _validacionClientes = validacionClientes;
@@ -284,6 +287,17 @@ public class ClienteService
             // y el DELETE.
             return MensajeClienteConVehiculos;
         }
+
+        _auditoria?.Registrar(new RegistroAuditoria
+        {
+            UsuarioId = _currentUser.UsuarioId,
+            Username = _currentUser.Username,
+            Accion = "CLIENTE_ELIMINADO",
+            Entidad = "Cliente",
+            EntidadId = id.ToString(),
+            Fecha = DateTime.UtcNow,
+            Detalle = $"CI: {cliente.Ci}, Nombre: {cliente.Nombres} {cliente.PrimerApellido}"
+        });
 
         return null;
     }

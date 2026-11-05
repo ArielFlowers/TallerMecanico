@@ -156,8 +156,8 @@ builder.Services.AddScoped<
     IActivacionInvitacionPort,
     ActivacionInvitacionMySqlAdapter>();
 
-builder.Services.AddScoped<UsuarioAdministracionService>();
-builder.Services.AddScoped<CambioContrasenaService>();
+builder.Services.AddScoped<IGestionUsuariosPort, UsuarioAdministracionService>();
+builder.Services.AddScoped<ICambioContrasenaPort, CambioContrasenaService>();
 builder.Services.AddScoped<
     IAuthenticationService,
     AuthenticationService>();
@@ -331,8 +331,20 @@ builder.Services.AddRateLimiter(options =>
                 AutoReplenishment = true
             });
     });
+    options.OnRejected = (contexto, cancelacion) =>
+    {
+        contexto.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
+        return new ValueTask(contexto.HttpContext.Response.WriteAsync(
+            "Demasiados intentos. Espera un minuto e inténtalo de nuevo.", cancelacion));
+    };
     options.AddPolicy("LoginRateLimit", context =>
     {
+        // Solo cuentan los intentos de inicio de sesión, no abrir la página.
+        if (!HttpMethods.IsPost(context.Request.Method))
+        {
+            return RateLimitPartition.GetNoLimiter("login-lectura");
+        }
+
         string direccionIp =
             context.Connection.RemoteIpAddress?
                 .ToString() ?? "desconocida";
@@ -461,8 +473,8 @@ builder.Services.AddScoped<IGeneradorReporteOrdenesPdfPort, QuestPdfReporteOrden
 builder.Services.AddScoped<IGeneradorReporteOrdenesExcelPort, ClosedXmlReporteOrdenesAdapter>();
 builder.Services.AddScoped<IGeneradorReporteMecanicosPdfPort, QuestPdfReporteMecanicosAdapter>();
 builder.Services.AddScoped<IGeneradorReporteMecanicosExcelPort, ClosedXmlReporteMecanicosAdapter>();
-builder.Services.AddScoped<ReporteOrdenesService>();
-builder.Services.AddScoped<ReporteMecanicosService>();
+builder.Services.AddScoped<IReporteOrdenesPort, ReporteOrdenesService>();
+builder.Services.AddScoped<IReporteMecanicosPort, ReporteMecanicosService>();
 var app =
     builder.Build();
 configuracionRedis.RegistrarDiagnostico(app.Logger,

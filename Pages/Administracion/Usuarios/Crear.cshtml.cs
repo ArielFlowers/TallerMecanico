@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.Errores;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Pages.Administracion.Usuarios;
 
@@ -11,9 +11,9 @@ namespace TallerMecanico.Pages.Administracion.Usuarios;
 [Authorize(Policy = "SoloAdministrador")]
 public sealed class CrearModel : PageModel
 {
-    private readonly UsuarioAdministracionService _usuarioAdministracion;
+    private readonly IGestionUsuariosPort _usuarioAdministracion;
 
-    public CrearModel(UsuarioAdministracionService usuarioAdministracion)
+    public CrearModel(IGestionUsuariosPort usuarioAdministracion)
     {
         _usuarioAdministracion = usuarioAdministracion;
     }
@@ -37,7 +37,7 @@ public sealed class CrearModel : PageModel
         {
             await Task.Run(() =>
                 _usuarioAdministracion.CrearInvitacion(
-                    Input.Username,
+                    string.Empty,
                     Input.Email,
                     Input.Rol,
                     Input.Password,
@@ -49,12 +49,9 @@ public sealed class CrearModel : PageModel
         }
         catch (SolicitudRegistroDuplicadaException ex)
         {
-            string campo = ex.Campo switch
-            {
-                nameof(SolicitudRegistro.Username) => nameof(Input.Username),
-                nameof(SolicitudRegistro.Email) => nameof(Input.Email),
-                _ => string.Empty
-            };
+            string campo = ex.Campo == nameof(SolicitudRegistro.Email)
+                ? nameof(Input.Email)
+                : string.Empty;
 
             ModelState.AddModelError(campo, "Ya existe un usuario o solicitud pendiente con ese valor.");
             return Page();

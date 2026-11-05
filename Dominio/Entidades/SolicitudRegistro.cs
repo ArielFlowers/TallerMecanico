@@ -28,5 +28,7 @@ public class SolicitudRegistro
 
     public string? Rol { get; set; }
 
+    public string? CreadoPor { get; set; }
+
     public bool EsInvitacionAdministrativa => !string.IsNullOrEmpty(Rol);
 }

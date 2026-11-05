@@ -157,7 +157,7 @@ public class ReenvioVerificacionServiceTests
         public Task EnviarVerificacionAsync(
             string destinatario,
             string enlaceVerificacion,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, string? username = null)
         {
             Envios++;
             Destinatario = destinatario;

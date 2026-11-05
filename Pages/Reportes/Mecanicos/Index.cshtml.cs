@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using TallerMecanico.Aplicacion.DTOs.Reportes;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Servicios.Reportes;
 
 namespace TallerMecanico.Pages.Reportes.Mecanicos;
 
@@ -12,11 +11,11 @@ namespace TallerMecanico.Pages.Reportes.Mecanicos;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class IndexModel : PageModel
 {
-    private readonly ReporteMecanicosService _reporte;
+    private readonly IReporteMecanicosPort _reporte;
     private readonly ICurrentUser _usuarioActual;
 
     public IndexModel(
-        ReporteMecanicosService reporte,
+        IReporteMecanicosPort reporte,
         ICurrentUser usuarioActual)
     {
         _reporte = reporte;
@@ -56,7 +55,7 @@ public sealed class IndexModel : PageModel
 
     private void CargarDatos()
     {
-        UsarSoloNombre();
+        IgnorarFiltroOculto();
         try
         {
             Documento = _reporte.ObtenerDatos(Filtro, UsuarioActualNombre);
@@ -74,7 +73,7 @@ public sealed class IndexModel : PageModel
         string tipoContenido,
         string nombreArchivo)
     {
-        UsarSoloNombre();
+        IgnorarFiltroOculto();
         if (!ModelState.IsValid)
         {
             CargarDatos();
@@ -94,10 +93,10 @@ public sealed class IndexModel : PageModel
         }
     }
 
-    private void UsarSoloNombre()
+    private void IgnorarFiltroOculto()
     {
-        // Los enlaces antiguos con fechas o ID no deben aplicar filtros invisibles.
-        Filtro = new FiltroReporteMecanicos { NombreMecanico = Filtro.NombreMecanico };
+        // La pantalla filtra por nombre y fechas; un enlace antiguo con ID no debe aplicar un filtro invisible.
+        Filtro.MecanicoId = null;
     }
 
     private string UsuarioActualNombre =>

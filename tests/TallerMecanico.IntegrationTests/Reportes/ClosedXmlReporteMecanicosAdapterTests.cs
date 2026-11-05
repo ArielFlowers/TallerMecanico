@@ -72,7 +72,7 @@ public class ClosedXmlReporteMecanicosAdapterTests
             Assert.Contains("xl/styles.xml", nombres);
             Assert.Contains("xl/worksheets/sheet1.xml", nombres);
             Assert.Contains(nombres, n => n.StartsWith("xl/media/", StringComparison.Ordinal));
-            Assert.Contains(
+            Assert.DoesNotContain(
                 "dataBar",
                 LeerEntrada(archivo, "xl/worksheets/sheet1.xml"));
         }
@@ -81,6 +81,9 @@ public class ClosedXmlReporteMecanicosAdapterTests
             new MemoryStream(xlsx, writable: false));
 
         var hoja = libroLeido.Worksheet(1);
+
+        var grafico = Assert.Single(hoja.Pictures, imagen => imagen.Name == "Total facturado por mecánico");
+        Assert.True(grafico.ImageStream.Length > 1000);
 
         Assert.Equal("AutoTaller Pro", hoja.Cell(1, 1).GetString());
         Assert.Equal(

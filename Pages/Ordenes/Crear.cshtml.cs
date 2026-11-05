@@ -245,6 +245,13 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
         return RedirectToPage("/Productos/Index", new { OrdenBorradorId = id });
     }
 
+    public IActionResult OnPostNuevoMecanico()
+    {
+        if (!User.IsInRole("Administrador")) return Forbid();
+        Guid id = borradores.Guardar(Formulario);
+        return RedirectToPage("/Mecanicos/Index", new { OrdenBorradorId = id });
+    }
+
     private IActionResult PersistirYVolver()
     {
         if (Formulario.Token == Guid.Empty) Formulario.Token = facade.GenerarTokenFormulario();

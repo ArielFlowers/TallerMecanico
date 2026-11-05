@@ -47,6 +47,9 @@ La migración `008_catalogo_servicios.sql` agrega `CodigoCatalogo` opcional y ú
 los metadatos pendientes y la conservación histórica se describen en
 [catálogo de servicios](../catalogo-servicios.md).
 
+La migración `009_creador_invitaciones.sql` agrega `CreadoPor` opcional en
+`SolicitudesRegistro`. Las invitaciones anteriores quedan con "sistema" como creador al activarse.
+
 El inicializador comprueba las columnas y el índice único antes de agregarlos. Conserva tablas, registros, contraseñas, correos, roles y marcas de verificación existentes.
 
 | Estado anterior | Comportamiento de la versión actual |

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 
 namespace TallerMecanico.Pages.Mecanicos;
 
@@ -14,10 +15,12 @@ public class IndexModel : PageModel
         "El mecánico seleccionado ya no existe.";
 
     private readonly MecanicoService _mecanicoService;
+    private readonly IBorradorOrden _borradoresOrden;
 
-    public IndexModel(MecanicoService mecanicoService)
+    public IndexModel(MecanicoService mecanicoService, IBorradorOrden borradoresOrden)
     {
         _mecanicoService = mecanicoService;
+        _borradoresOrden = borradoresOrden;
     }
 
     public IReadOnlyList<Mecanico> Mecanicos { get; private set; } = [];
@@ -27,6 +30,9 @@ public class IndexModel : PageModel
 
     [BindProperty(SupportsGet = true)]
     public int? MecanicoSeleccionadoId { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public Guid? OrdenBorradorId { get; set; }
 
     [BindProperty]
     public MecanicoInputModel MecanicoInput { get; set; } = new();
@@ -44,6 +50,11 @@ public class IndexModel : PageModel
 
     public void OnGet()
     {
+        if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
+        {
+            FormularioActivo = FormularioCrear;
+        }
+
         CargarMecanicos();
     }
 
@@ -64,6 +75,12 @@ public class IndexModel : PageModel
             FormularioActivo = FormularioCrear;
             CargarMecanicos();
             return Page();
+        }
+
+        if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
+        {
+            TempData["OrdenMensaje"] = "Mecánico registrado correctamente. Ya puedes elegirlo en la orden.";
+            return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId });
         }
 
         MensajeExito = "Mecánico registrado correctamente.";

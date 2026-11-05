@@ -43,6 +43,7 @@ public sealed class ActivacionInvitacionMySqlAdapter
         string email;
         string passwordHash;
         string rolUsuario;
+        string creadoPor;
         long solicitudId;
 
         try
@@ -54,7 +55,7 @@ public sealed class ActivacionInvitacionMySqlAdapter
                 buscar.Transaction = transaction;
 
                 buscar.CommandText = """
-                    SELECT Id, Username, Email, PasswordHash, Rol
+                    SELECT Id, Username, Email, PasswordHash, Rol, CreadoPor
                     FROM SolicitudesRegistro
                     WHERE TokenVerificacionHash = @TokenHash
                       AND Estado = 'PendienteVerificacion'
@@ -95,6 +96,12 @@ public sealed class ActivacionInvitacionMySqlAdapter
                 rolUsuario = reader.IsDBNull(indiceRol)
                     ? string.Empty
                     : reader.GetString(indiceRol);
+
+                int indiceCreadoPor = reader.GetOrdinal("CreadoPor");
+
+                creadoPor = reader.IsDBNull(indiceCreadoPor)
+                    ? "sistema"
+                    : reader.GetString(indiceCreadoPor);
             }
 
             // Comprobar que las credenciales y el rol sean válidos.
@@ -145,7 +152,7 @@ public sealed class ActivacionInvitacionMySqlAdapter
                 AddParameter(insertar, "@PasswordHash", passwordHash);
                 AddParameter(insertar, "@Email", email);
                 AddParameter(insertar, "@Rol", rolUsuario);
-                AddParameter(insertar, "@CreadoPor", "sistema");
+                AddParameter(insertar, "@CreadoPor", creadoPor);
 
                 if (insertar.ExecuteNonQuery() != 1)
                 {

@@ -16,8 +16,9 @@ internal static class XlsxBuilder
         IReadOnlyList<XlsxFilaResumen>? resumen = null,
         IReadOnlyList<int>? columnasMoneda = null,
         IReadOnlyList<int>? columnasFecha = null,
-        int? columnaGraficoBarras = null,
-        byte[]? grafico = null)
+        byte[]? grafico = null,
+        string tituloGrafico = "Gráfico",
+        int altoGrafico = 250)
     {
         using var libro = new XLWorkbook();
         var hoja = libro.Worksheets.Add(nombreHoja);
@@ -95,7 +96,7 @@ internal static class XlsxBuilder
 
                     case DateTime fecha:
                         celda.Value = fecha;
-                        celda.Style.DateFormat.Format = "dd/mm/yyyy hh:mm";
+                        celda.Style.DateFormat.Format = "dd/mm/yyyy";
                         break;
 
                     case decimal numero:
@@ -131,7 +132,7 @@ internal static class XlsxBuilder
 
                 if (fechas.Contains(i) && valor is DateTime)
                 {
-                    celda.Style.DateFormat.Format = "dd/mm/yyyy hh:mm";
+                    celda.Style.DateFormat.Format = "dd/mm/yyyy";
                 }
             }
 
@@ -143,15 +144,6 @@ internal static class XlsxBuilder
             }
 
             filaActual++;
-        }
-
-        // Gráfico de barras nativo de Excel sobre la columna indicada.
-        if (columnaGraficoBarras.HasValue && filas.Count > 0)
-        {
-            int columna = columnaGraficoBarras.Value + 1;
-            hoja.Range(4, columna, 3 + filas.Count, columna)
-                .AddConditionalFormat()
-                .DataBar(XLColor.FromHtml("#7C3AED"));
         }
 
         // Resumen
@@ -189,9 +181,9 @@ internal static class XlsxBuilder
         if (grafico is not null)
         {
             using var imagenGrafico = new MemoryStream(grafico, writable: false);
-            hoja.AddPicture(imagenGrafico, "Órdenes por estado")
+            hoja.AddPicture(imagenGrafico, tituloGrafico)
                 .MoveTo(hoja.Cell(filaActual + 2, 1))
-                .WithSize(650, 250);
+                .WithSize(650, altoGrafico);
         }
 
         // Generar XLSX genuino

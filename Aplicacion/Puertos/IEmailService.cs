@@ -9,5 +9,6 @@ public interface IEmailService
     Task EnviarVerificacionAsync(
         string destinatario,
         string enlaceVerificacion,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string? username = null);
 }

@@ -38,7 +38,8 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
                 {
                     columna.Spacing(12);
                     columna.Item().Element(c => ComponerTabla(c, documento));
-                    columna.Item().Element(c => ComponerGrafico(c, documento));
+                    if (documento.Filas.Count > 0)
+                        columna.Item().ShowEntire().Element(c => GraficoMecanicos.Componer(c, documento.Filas, _taller.Moneda));
                 });
                 page.Footer().Element(contenedor => ComponerPie(contenedor, documento));
             });
@@ -58,8 +59,7 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
         {
             bloque.Item().BorderBottom(2).BorderColor(ColorPrincipal).PaddingBottom(16).Row(fila =>
         {
-            fila.ConstantItem(44).Height(44).Background(ColorPrincipal).AlignCenter().AlignMiddle()
-                .Text("AP").FontSize(20).Bold().FontColor(Colors.White);
+            fila.ConstantItem(44).Height(44).Image(LogoTaller.Imagen);
             fila.RelativeItem().PaddingLeft(12).Column(marca =>
             {
                 marca.Item().Text(_taller.NombreTaller).FontSize(20).Bold();
@@ -183,49 +183,6 @@ public sealed class QuestPdfReporteMecanicosAdapter(ConfiguracionTaller taller)
                 tabla.Cell().BorderBottom(1).BorderColor(ColorBorde).Padding(8)
                     .AlignRight().Text($"{_taller.Moneda} {fila.PromedioPorOrden.ToString("N2", Cultura)}")
                     .FontSize(8);
-            }
-        });
-    }
-
-    private void ComponerGrafico(IContainer contenedor, DocumentoReporteMecanicos documento)
-    {
-        if (documento.Filas.Count == 0)
-        {
-            contenedor.Text("No hay datos para mostrar el gráfico.")
-                .FontColor(ColorSecundario).Italic();
-            return;
-        }
-
-        decimal maximo = documento.Filas.Max(f => f.TotalFacturado);
-        if (maximo <= 0)
-        {
-            maximo = 1;
-        }
-
-        contenedor.Column(columna =>
-        {
-            columna.Spacing(8);
-            columna.Item().Text("Distribución del total facturado por mecánico")
-                .FontSize(9).Bold().FontColor(ColorPrincipal);
-
-            foreach (var fila in documento.Filas)
-            {
-                decimal porcentaje = maximo > 0
-                    ? (decimal)fila.TotalFacturado / maximo * 100
-                    : 0;
-                if (porcentaje < 4) porcentaje = 4;
-
-                decimal restante = Math.Max(0.01m, 100m - porcentaje);
-
-                columna.Item().PaddingBottom(4).Row(filaRow =>
-                {
-                    filaRow.ConstantItem(110).Text(fila.NombreMecanico).FontSize(7.5f);
-                    filaRow.RelativeItem((float)porcentaje).Height(10).Background(ColorPrincipal);
-                    filaRow.RelativeItem((float)restante).Height(10);
-                    filaRow.ConstantItem(70).AlignRight()
-                        .Text($"{_taller.Moneda} {fila.TotalFacturado.ToString("N2", Cultura)}")
-                        .FontSize(7.5f).FontColor(ColorSecundario);
-                });
             }
         });
     }

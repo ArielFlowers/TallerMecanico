@@ -134,10 +134,10 @@ public sealed class CatalogosServiceTests
         _ => new VehiculoService(puertos, puertos, new ValidacionVehiculos(), cache: cache).Delete(1)
     };
 
-    private sealed class PuertosConFallo(Exception error) : IClientePort, IProductoPort, IVehiculoPort
+    private sealed class PuertosConFallo(Exception? error) : IClientePort, IProductoPort, IVehiculoPort
     {
         public int Escrituras { get; private set; }
-        private void FallarEscritura() { Escrituras++; throw error; }
+        private void FallarEscritura() { Escrituras++; throw error!; }
         IReadOnlyList<Cliente> IClientePort.GetAll() => [];
         IReadOnlyList<Producto> IProductoPort.GetAll() => [];
         IReadOnlyList<Vehiculo> IVehiculoPort.GetAll() => [];
@@ -160,9 +160,48 @@ public sealed class CatalogosServiceTests
         public void Update(Cliente cliente) => FallarEscritura();
         public void Update(Producto producto) => FallarEscritura();
         public void Update(Vehiculo vehiculo) => FallarEscritura();
-        public void Delete(int id) => FallarEscritura();
+        public void Delete(int id) { Escrituras++; if (error is not null) throw error; }
         public bool Descontar(int productoId, int cantidad) => throw new NotSupportedException();
         public void Restituir(int productoId, int cantidad) => throw new NotSupportedException();
+    }
+
+    [Fact]
+    public void Eliminar_RegistraQuienLoHizoEnLaBitacora()
+    {
+        var puertos = new PuertosConFallo(null);
+        var auditoria = new AuditoriaPrueba();
+
+        new ClienteService(puertos, puertos, new ValidacionClientes(), new UsuarioPrueba(), auditoria).Eliminar(1);
+        new ProductoService(puertos, new ValidacionProductos(), new UsuarioPrueba(), auditoria).Eliminar(1);
+        new VehiculoService(puertos, puertos, new ValidacionVehiculos(), new UsuarioPrueba(), auditoria: auditoria).Delete(1);
+
+        Assert.Equal(["CLIENTE_ELIMINADO", "PRODUCTO_ELIMINADO", "VEHICULO_ELIMINADO"],
+            auditoria.Registros.Select(registro => registro.Accion));
+        Assert.All(auditoria.Registros, registro =>
+        {
+            Assert.Equal("recepcion_prueba", registro.Username);
+            Assert.Equal("1", registro.EntidadId);
+        });
+    }
+
+    [Fact]
+    public void Eliminar_NoRegistraEnLaBitacoraSiElBorradoFalla()
+    {
+        var puertos = new PuertosConFallo(new RegistroRelacionadoException(new InvalidOperationException()));
+        var auditoria = new AuditoriaPrueba();
+
+        new ProductoService(puertos, new ValidacionProductos(), new UsuarioPrueba(), auditoria).Eliminar(1);
+
+        Assert.Empty(auditoria.Registros);
+    }
+
+    private sealed class AuditoriaPrueba : IAuditoriaPort
+    {
+        public List<RegistroAuditoria> Registros { get; } = [];
+
+        public void Registrar(RegistroAuditoria registro) => Registros.Add(registro);
+
+        public IReadOnlyList<RegistroAuditoria> ObtenerRecientes(int cantidad) => Registros;
     }
 
     private sealed class CachePrueba : ICacheResumenDashboardPort
