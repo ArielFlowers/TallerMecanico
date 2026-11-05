@@ -36,6 +36,8 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
                 columna.Item().ShowEntire().Background(ColorFondo).Padding(16).Column(total =>
                 {
                     total.Spacing(8);
+                    total.Item().AlignRight().Text($"Subtotal de servicios: {_taller.Moneda} {FormatearImporte(ObtenerServicios(orden).Sum(servicio => servicio.Costo))}");
+                    total.Item().AlignRight().Text($"Subtotal de repuestos: {_taller.Moneda} {FormatearImporte(orden.Productos.Sum(producto => producto.Subtotal))}");
                     total.Item().AlignRight().Text($"TOTAL: {_taller.Moneda} {FormatearImporte(orden.Total)}")
                         .FontSize(18).Bold().FontColor(ColorPrincipal);
                     total.Item().Text(totalLiteral).SemiBold();
@@ -61,8 +63,7 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
     {
         contenedor.BorderBottom(2).BorderColor(ColorPrincipal).PaddingBottom(16).Row(fila =>
         {
-            fila.ConstantItem(44).Height(44).Background(ColorPrincipal).AlignCenter().AlignMiddle()
-                .Text("AP").FontSize(20).Bold().FontColor(Colors.White);
+            fila.ConstantItem(44).Height(44).Image(LogoTaller.Imagen);
             fila.RelativeItem().PaddingLeft(12).Column(marca =>
             {
                 marca.Item().Text(_taller.NombreTaller).FontSize(20).Bold();
@@ -94,9 +95,7 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
                     $"Placa: {orden.Placa}", $"Marca: {orden.Marca}", $"Modelo: {orden.Modelo}"));
             });
             columna.Item().Element(caja => ComponerCaja(caja, "MECÁNICO RESPONSABLE", orden.NombreMecanico));
-            IReadOnlyList<ServicioOrdenDetalle> servicios = orden.Servicios.Count > 0
-                ? orden.Servicios
-                : orden.Servicio is null ? [] : [orden.Servicio];
+            IReadOnlyList<ServicioOrdenDetalle> servicios = ObtenerServicios(orden);
             if (servicios.Count > 0)
             {
                 string[] lineasServicio = servicios.SelectMany(servicio => new[]
@@ -113,6 +112,11 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
         });
     }
 
+    private static IReadOnlyList<ServicioOrdenDetalle> ObtenerServicios(OrdenDetalle orden) =>
+        orden.Servicios.Count > 0
+            ? orden.Servicios
+            : orden.Servicio is null ? [] : [orden.Servicio];
+
     private static void ComponerCaja(IContainer contenedor, string titulo, params string[] lineas)
     {
         contenedor.Border(1).BorderColor(ColorBorde).Padding(12).Column(columna =>
@@ -125,6 +129,12 @@ public sealed class ComprobanteOrdenPdf(ConfiguracionTaller taller) : IComproban
 
     private static void ComponerProductos(IContainer contenedor, IReadOnlyList<ProductoOrdenDetalle> productos)
     {
+        if (productos.Count == 0)
+        {
+            contenedor.Text("Sin repuestos en esta orden.").FontColor(ColorSecundario);
+            return;
+        }
+
         contenedor.Table(tabla =>
         {
             tabla.ColumnsDefinition(columnas =>

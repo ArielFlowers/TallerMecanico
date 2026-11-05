@@ -18,7 +18,7 @@
 <div class="dashboard ordenes-page">
     <div class="dashboard-header">
         <div>
-            <p class="ordenes-kicker">TALLER MECÁNICO</p>
+            <p class="ordenes-kicker">AUTOTALLER PRO</p>
             <h1>Gestión de Órdenes</h1>
             <p>Busca, revisa y administra las órdenes de trabajo del taller.</p>
         </div>
@@ -70,7 +70,7 @@
     {
         <div class="orden-comprobante-aviso" role="status">
             @if (!string.IsNullOrWhiteSpace(Model.MensajeExito)) { <span>@Model.MensajeExito</span> }
-            else { <span>Orden #@Model.OrdenCreadaId.Value guardada.</span> }
+            else { <span>Orden #@Model.OrdenCreadaId guardada.</span> }
             @if (Model.OrdenCreadaId.HasValue)
             {
                 <span>El comprobante se abrirá en una pestaña nueva. Si no se abre, utiliza este enlace:</span>

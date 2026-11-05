@@ -24,6 +24,12 @@
             <span aria-hidden="true">＋</span>
             Nuevo Registro
         </button>
+        @if (Model.OrdenBorradorId.HasValue)
+        {
+            <a asp-page="/Ordenes/Crear"
+               asp-route-borradorId="@Model.OrdenBorradorId"
+               class="mecanicos-btn mecanicos-btn-secondary">Volver a la orden</a>
+        }
     </div>
 
     @if (!string.IsNullOrEmpty(Model.MensajeExito))
@@ -42,6 +48,7 @@
 
     <div class="mecanicos-toolbar">
         <form method="get" class="mecanicos-search" id="mecanicos-busqueda" role="search">
+            <input type="hidden" name="OrdenBorradorId" value="@Model.OrdenBorradorId" />
             <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
             {
                 Id = "mecanicos-autocompletado",
@@ -180,6 +187,7 @@
 
     <form method="post" class="mecanicos-form" id="mecanico-form">
         <input asp-for="MecanicoId" type="hidden" />
+        <input type="hidden" name="OrdenBorradorId" value="@Model.OrdenBorradorId" />
         <input type="hidden"
                name="TerminoBusqueda"
                value="@Model.TerminoBusqueda" />

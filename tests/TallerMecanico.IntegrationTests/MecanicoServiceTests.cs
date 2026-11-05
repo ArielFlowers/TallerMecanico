@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using Microsoft.Extensions.DependencyInjection;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
@@ -14,6 +18,53 @@ namespace TallerMecanico.IntegrationTests;
 [Trait("Area", "Backend")]
 public sealed class MecanicoServiceTests
 {
+    [Fact]
+    public void AltaDesdeOrden_AbreElFormularioYVuelveConElBorrador()
+    {
+        var repositorio = new RepositorioPrueba();
+        var borradores = new BorradoresPrueba();
+        Guid orden = borradores.Guardar(new OrdenFormViewModel());
+        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos(), new UsuarioPrueba());
+        var pagina = new TallerMecanico.Pages.Mecanicos.IndexModel(servicio, borradores)
+        {
+            OrdenBorradorId = orden,
+            MecanicoInput = MecanicosTests.FormularioValido(),
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new TemporalesPrueba())
+        };
+
+        pagina.OnGet();
+        Assert.Equal("crear", pagina.FormularioActivo);
+
+        var redireccion = Assert.IsType<RedirectToPageResult>(pagina.OnPostCrear());
+        Assert.Equal("/Ordenes/Crear", redireccion.PageName);
+        Assert.Equal(orden, redireccion.RouteValues!["BorradorId"]);
+        Assert.Single(repositorio.Registros);
+        Assert.NotNull(borradores.Obtener(orden));
+    }
+
+    private sealed class BorradoresPrueba : IBorradorOrden
+    {
+        private readonly Dictionary<Guid, OrdenFormViewModel> _borradores = [];
+
+        public Guid Guardar(OrdenFormViewModel formulario)
+        {
+            Guid id = Guid.NewGuid();
+            _borradores[id] = formulario;
+            return id;
+        }
+
+        public OrdenFormViewModel? Obtener(Guid id) => _borradores.GetValueOrDefault(id);
+
+        public void Eliminar(Guid id) => _borradores.Remove(id);
+    }
+
+    private sealed class TemporalesPrueba : ITempDataProvider
+    {
+        public IDictionary<string, object> LoadTempData(HttpContext context) => new Dictionary<string, object>();
+
+        public void SaveTempData(HttpContext context, IDictionary<string, object> values) { }
+    }
+
     [Fact]
     public void Contratos_ConservanValidacionDuplicadosAuditoriaYCache()
     {
