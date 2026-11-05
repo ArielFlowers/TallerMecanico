@@ -60,10 +60,13 @@ public sealed class NuevaOrdenAutocompletadoTests
     {
         using var aislada = new MySqlAisladoFixture();
         Preparar(aislada);
+        int filtros = checked((int)aislada.Ejecutar("INSERT INTO Servicios (CodigoCatalogo,Nombre,Descripcion,Costo,TiempoEstimadoHoras,UnidadCantidad) VALUES ('CAMBIO_FILTROS','Cambio de filtros','Servicio ficticio por unidad',100,1,'unidad');"));
         var sesion = new SesionPrueba();
         var pagina = CrearPagina(aislada, sesion);
         pagina.OnGet();
-        pagina.Formulario.VehiculoId = 1; pagina.Formulario.MecanicoId = 1; pagina.Formulario.ServicioId = 1;
+        pagina.Formulario.VehiculoId = 1; pagina.Formulario.MecanicoId = 1;
+        pagina.Formulario.ServicioIds = [1, filtros];
+        pagina.Formulario.CantidadesServicios = new() { [1] = 1, [filtros] = 3 };
         pagina.ProductoId = 1; pagina.Cantidad = 2;
         var agregado = Assert.IsType<RedirectToPageResult>(pagina.OnPostAgregarLinea());
         Guid id = (Guid)agregado.RouteValues!["BorradorId"]!;
@@ -73,15 +76,16 @@ public sealed class NuevaOrdenAutocompletadoTests
             restaurada.BorradorId = id;
             restaurada.OnGet();
             Assert.Equal("123ABC", restaurada.BuscarVehiculo);
-            Assert.Equal("Cambio de Aceite", Assert.Single(restaurada.ServiciosSeleccionados).Nombre);
+            Assert.Equal("Cambio de Aceite", restaurada.ServiciosSeleccionados[0].Nombre);
+            Assert.Equal(3, restaurada.ServiciosSeleccionados.Single(servicio => servicio.Id == filtros).Cantidad);
             Assert.Null(restaurada.TextoServicio);
             Assert.Equal("José Muñoz", restaurada.TextoMecanico);
             Assert.Equal(1, restaurada.Formulario.VehiculoId);
             Assert.Equal(1, restaurada.Formulario.MecanicoId);
-            Assert.Equal(new[] { 1 }, restaurada.Formulario.ServicioIds);
+            Assert.Equal(new[] { 1, filtros }, restaurada.Formulario.ServicioIds);
             Assert.Null(restaurada.Formulario.ServicioId);
             Assert.Equal(2, Assert.Single(restaurada.Lineas).Cantidad);
-            Assert.Equal(50m, restaurada.TotalEstimado);
+            Assert.Equal(350m, restaurada.TotalEstimado);
             var retorno = Assert.IsType<RedirectToPageResult>(destino switch
             {
                 "Cliente" => restaurada.OnPostNuevoCliente(),
@@ -96,6 +100,25 @@ public sealed class NuevaOrdenAutocompletadoTests
         Assert.Equal(1, trasCliente.Formulario.ClienteNuevoId);
         Assert.Single(trasCliente.Lineas);
         Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
+    }
+
+    [MySqlAisladoTheory]
+    [InlineData("ClienteNuevoId", "ClienteExito")]
+    [InlineData("ProductoNuevoId", "ProductoExito")]
+    public void Mensajes_DeRetornoConsumenExitoYConservanErroresReales(string propiedad, string clave)
+    {
+        using var aislada = new MySqlAisladoFixture();
+        Preparar(aislada);
+        var pagina = CrearPagina(aislada);
+        typeof(PaginaOrden).GetProperty(propiedad)!.SetValue(pagina, 1);
+        pagina.TempData[clave] = "Registro creado correctamente.";
+        pagina.TempData["OrdenError"] = "Error real de prueba.";
+        pagina.OnGet();
+        Assert.Equal("Registro creado correctamente.", pagina.Mensaje);
+        Assert.Equal("Error real de prueba.", Assert.Single(pagina.ModelState[string.Empty]!.Errors).ErrorMessage);
+        pagina.TempData.Save();
+        Assert.False(pagina.TempData.ContainsKey(clave));
+        Assert.False(pagina.TempData.ContainsKey("OrdenError"));
     }
 
     [MySqlAisladoFact]
@@ -172,7 +195,7 @@ public sealed class NuevaOrdenAutocompletadoTests
             usuario, new ValidacionOrdenes(), reloj);
         var pagina = new PaginaOrden(ordenes.CrearFacade(new TokenOrdenSesion(acceso, usuario, reloj)),
             new BorradorOrdenSesion(acceso, usuario), VehiculosAutocompletadoTests.CrearServicio(aislada),
-            new MecanicoService(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos(), usuario),
+            MecanicosAutocompletadoTests.CrearServicio(aislada, usuario),
             ProductosAutocompletadoTests.CrearServicio(aislada), ClientesAutocompletadoTests.CrearServicio(aislada),
             ServiciosAutocompletadoTests.CrearServicio(aislada))
         {

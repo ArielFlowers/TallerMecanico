@@ -61,7 +61,9 @@ public sealed class ConsultaOrdenesTests
         var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance)
         {
             Estado = EstadoOrden.Activa,
-            Fecha = new DateOnly(2026, 10, 12)
+            Fecha = new DateOnly(2026, 10, 12),
+            TerminoBusqueda = "1234ABC",
+            OrdenSeleccionadaId = 1
         };
 
         Assert.IsType<PageResult>(pagina.OnGet());
@@ -70,6 +72,8 @@ public sealed class ConsultaOrdenesTests
         Assert.Equal(2, puerto.Consultas);
         Assert.Equal(pagina.Estado, puerto.Estado);
         Assert.Equal(pagina.Fecha, puerto.Fecha);
+        Assert.Equal(pagina.TerminoBusqueda, puerto.TerminoBusqueda);
+        Assert.Equal(pagina.OrdenSeleccionadaId, puerto.OrdenSeleccionadaId);
     }
 
     [Fact]
@@ -148,6 +152,8 @@ public sealed class ConsultaOrdenesTests
         public int Consultas { get; private set; }
         public EstadoOrden? Estado { get; private set; }
         public DateOnly? Fecha { get; private set; }
+        public string? TerminoBusqueda { get; private set; }
+        public int? OrdenSeleccionadaId { get; private set; }
         public OrdenDetalle Detalle { get; } = new() { Id = 1 };
         public int ConsultasDetalle { get; private set; }
         public bool FallarDetalle { get; init; }
@@ -169,6 +175,8 @@ public sealed class ConsultaOrdenesTests
             Consultas++;
             Estado = estado;
             Fecha = fecha;
+            TerminoBusqueda = terminoBusqueda;
+            OrdenSeleccionadaId = ordenSeleccionadaId;
             return Ordenes;
         }
     }

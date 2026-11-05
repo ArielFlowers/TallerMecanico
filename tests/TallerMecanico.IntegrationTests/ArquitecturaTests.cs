@@ -8,12 +8,7 @@ public sealed class ArquitecturaTests
     // Deuda ya asignada en el plan del entregable. Quitar cada archivo al corregirlo.
     private static readonly string[] Pendientes =
     [
-        "Aplicacion/Servicios/ClienteService.cs",
-        "Aplicacion/Servicios/MecanicoService.cs",
-        "Aplicacion/Servicios/ProductoService.cs",
-        "Aplicacion/Servicios/ServicioService.cs",
-        "Aplicacion/Servicios/UsuarioAdministracionService.cs",
-        "Aplicacion/Servicios/VehiculoService.cs"
+        "Aplicacion/Servicios/UsuarioAdministracionService.cs"
     ];
 
     [Fact]

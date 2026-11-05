@@ -7,14 +7,21 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
     const cookies = JSON.parse(process.env.TALLER_ORDEN_COOKIES_POR_ROL);
     try {
         for (const [rol, escenario] of [['Recepcionista', 'normal'], ['Administrador', 'normal'], ['Recepcionista', 'sin-ventanas'], ['Administrador', 'fallo-pdf']]) {
+            console.log(`${rol}/${escenario}: iniciando formulario.`);
             const context = await browser.newContext({ ignoreHTTPSErrors: true });
+            context.setDefaultTimeout(15000);
+            context.setDefaultNavigationTimeout(15000);
             await context.addCookies(cookies[rol]);
-            // El comprobante debe funcionar aunque el navegador no permita abrir ventanas.
-            await context.addInitScript(() => { window.open = () => { throw new Error('No se deben abrir ventanas para el comprobante.'); }; });
+            if (escenario === 'sin-ventanas') await context.addInitScript(() => { window.open = () => null; });
             const page = await context.newPage();
             const errores = [], posts = [], comprobantes = [], pestanas = [];
             page.on('pageerror', error => errores.push(error.message));
             context.on('page', pestana => pestanas.push(pestana));
+            const esperarCierreDeReservas = async () => {
+                for (let intento = 0; intento < 100 && context.pages().length > 1; intento++)
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                assert.equal(context.pages().length, 1, 'Una operación fallida no debe dejar pestañas de espera.');
+            };
             context.on('request', request => {
                 const url = new URL(request.url());
                 if (request.method() === 'POST' && url.pathname === '/Ordenes/Crear' && url.searchParams.get('handler') === 'Guardar') posts.push(request);
@@ -44,7 +51,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
             if (rol === 'Recepcionista' && escenario === 'normal') {
                 await guardar();
                 assert.equal(new URL(page.url()).pathname, '/Ordenes/Crear');
-                assert.equal(pestanas.length, 0);
+                await esperarCierreDeReservas();
                 assert.equal(comprobantes.length, 0);
                 assert.match(await page.locator('[data-valmsg-for="Formulario.ServicioIds"]').first().innerText(), /al menos un servicio/);
             }
@@ -64,6 +71,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
                 await guardar();
                 assert.equal(new URL(page.url()).pathname, '/Ordenes/Crear');
                 assert.equal(comprobantes.length, pdfAntes);
+                await esperarCierreDeReservas();
                 assert.equal(await page.locator('#comprobante-orden-dialog[open]').count(), 0);
                 assert.match(await page.locator('.validation-summary-errors').innerText(), /Stock insuficiente/);
                 await verificarFecha();
@@ -101,59 +109,75 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
                     formulario.addEventListener('submit', () => formulario.requestSubmit(), { once: true });
                 });
             }
-            const respuestaPdf = context.waitForEvent('response', respuesta => new URL(respuesta.url()).pathname === '/Ordenes/Comprobante');
-            await guardar();
+            const pestañasAntes = pestanas.length;
+            console.log(`${rol}/${escenario}: guardando orden y esperando comprobante.`);
+            const esperaPdf = escenario === 'sin-ventanas' ? null : context.waitForEvent('response', respuesta => new URL(respuesta.url()).pathname === '/Ordenes/Comprobante');
+            const [, respuestaPdf] = await Promise.all([guardar(), esperaPdf]);
             assert.equal(new URL(page.url()).pathname, '/Ordenes');
             assert.equal(posts.length, enviosAntes + 1);
             const modal = page.locator('#comprobante-orden-dialog');
-            await modal.locator('[data-comprobante-frame]').waitFor();
-            assert.equal(await modal.getAttribute('open'), '');
-            const urlPdf = new URL(await modal.getAttribute('data-comprobante-inicial'), base);
+            assert.equal(await modal.getAttribute('open'), null);
+            const respaldo = page.locator('[data-comprobante-creado]');
+            const urlPdf = new URL(await respaldo.getAttribute('href'), base);
+            assert.equal(await respaldo.getAttribute('target'), '_blank');
+            assert.equal(await respaldo.isVisible(), true);
             const id = Number(urlPdf.searchParams.get('id'));
             assert.ok(id > 0);
             const enlace = page.getByRole('link', { name: `Ver comprobante de orden ${id}`, exact: true });
             assert.equal(await enlace.getAttribute('target'), null);
-            assert.equal(await modal.locator('[data-comprobante-frame]').getAttribute('src'), urlPdf.pathname + urlPdf.search);
-            const respuesta = await respuestaPdf;
-            assert.equal(respuesta.url(), urlPdf.href);
-            assert.equal(respuesta.status(), escenario === 'fallo-pdf' ? 500 : 200);
-            if (escenario !== 'fallo-pdf') assert.match(respuesta.headers()['content-type'], /application\/pdf/);
-            assert.equal(pestanas.length, 0, 'El comprobante debe mostrarse dentro de la pagina.');
-            await modal.locator('[data-cerrar-comprobante]').click();
-            assert.equal(await modal.getAttribute('open'), null);
-            // El evento close limpia el visor en una tarea posterior al clic.
-            await modal.locator('[data-comprobante-frame][src="about:blank"]').waitFor({ state: 'attached' });
+            if (respuestaPdf) {
+                const respuesta = respuestaPdf;
+                assert.equal(respuesta.url(), urlPdf.href);
+                assert.equal(respuesta.status(), escenario === 'fallo-pdf' ? 500 : 200);
+                if (escenario !== 'fallo-pdf') assert.match(respuesta.headers()['content-type'], /application\/pdf/);
+                assert.equal(pestanas.length, pestañasAntes + 1, 'Solo debe reservarse una pestaña por operación.');
+            } else {
+                assert.equal(pestanas.length, pestañasAntes);
+                const [manualPdf] = await Promise.all([
+                    context.waitForEvent('response', respuesta => respuesta.url() === urlPdf.href),
+                    context.waitForEvent('page'),
+                    respaldo.click()
+                ]);
+                assert.equal(manualPdf.status(), 200);
+                assert.equal(pestanas.length, pestañasAntes + 1, 'El respaldo debe abrir una sola pestaña.');
+            }
+            assert.equal(context.pages().length, 2, 'Deben permanecer la aplicación y un solo comprobante.');
+            console.log(`${rol}/${escenario}: comprobante recibido; verificando respaldo e idempotencia.`);
 
             if (escenario === 'sin-ventanas' || escenario === 'fallo-pdf') {
                 if (escenario === 'fallo-pdf') await context.unroute('**/Ordenes/Comprobante?*');
-                const manual = context.waitForEvent('response', respuesta => respuesta.url() === urlPdf.href);
-                await enlace.click();
-                assert.equal((await manual).status(), 200);
+                const [manual] = await Promise.all([
+                    context.waitForEvent('response', respuesta => respuesta.url() === urlPdf.href),
+                    enlace.click()
+                ]);
+                assert.equal(manual.status(), 200);
                 assert.equal(await modal.getAttribute('open'), '');
                 assert.equal(posts.length, enviosAntes + 1, 'Reabrir el PDF no debe repetir el POST.');
                 await modal.locator('[data-cerrar-comprobante]').click();
             }
             if (rol === 'Recepcionista' && escenario === 'normal') {
                 const repetido = await context.request.post(`${base}/Ordenes/Crear?handler=Guardar`, {
-                    form: Object.fromEntries(new URLSearchParams(posts.at(-1).postData()))
+                    form: Object.fromEntries(new URLSearchParams(posts.at(-1).postData())), timeout: 15000
                 });
                 assert.equal(repetido.status(), 200);
                 const confirmacion = await page.evaluate(html => new DOMParser().parseFromString(html, 'text/html')
-                    .querySelector('.ordenes-page > .service-validation[role="status"]').textContent, await repetido.text());
+                    .querySelector('.ordenes-page > .orden-comprobante-aviso[role="status"]').textContent, await repetido.text());
                 assert.match(confirmacion, new RegExp(`orden #${id} ya se había guardado`));
             }
-            const solicitudesPdf = comprobantes.length;
+            console.log(`${rol}/${escenario}: verificando recarga con el comprobante abierto.`);
+            const solicitudesPdf = comprobantes.length, totalPestañas = pestanas.length;
             await page.reload({ waitUntil: 'domcontentloaded' });
             assert.equal(await page.locator('#comprobante-orden-dialog[open]').count(), 0);
             assert.equal(comprobantes.length, solicitudesPdf);
             await page.goto(`${base}/Ordenes/Crear`);
             await verificarFecha();
             await page.goto(`${base}/Ordenes`);
-            assert.equal(pestanas.length, 0);
+            assert.equal(pestanas.length, totalPestañas);
             assert.equal(comprobantes.length, solicitudesPdf);
-            assert.equal(context.pages().length, 1);
+            assert.equal(context.pages().length, 2, 'Recargar no debe cerrar el comprobante ni abrir otro.');
             assert.deepEqual(errores, []);
-            console.log(`${rol}/${escenario}: fecha Bolivia, confirmacion/cancelacion, POST unico, stock, PDF en modal, recuperacion y recarga OK.`);
+            console.log(`${rol}/${escenario}: confirmación, POST único, pestaña automática, respaldo, modal manual y recarga OK.`);
+            // El visor PDF puede bloquear page.close(); se cierran sus pestañas junto con el contexto.
             await context.close();
         }
     } finally { await browser.close(); }

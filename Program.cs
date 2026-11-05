@@ -367,6 +367,12 @@ builder.Services.AddScoped<IRepository<Producto>>(
 // =====================================================
 // PUERTOS HEXAGONALES
 // =====================================================
+builder.Services.AddScoped<IConsultaMecanicosPort>(
+    serviceProvider =>
+        (IConsultaMecanicosPort)serviceProvider.GetRequiredService<IRepository<Mecanico>>());
+builder.Services.AddScoped<IConsultaServiciosPort>(
+    serviceProvider =>
+        (IConsultaServiciosPort)serviceProvider.GetRequiredService<IRepository<Servicio>>());
 builder.Services.AddScoped<IClientePort>(
     serviceProvider =>
         (IClientePort)

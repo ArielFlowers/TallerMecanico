@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -17,12 +16,13 @@ public class ServicioService : IServicioService
     private readonly ICacheResumenDashboardPort? _cache;
 
     public ServicioService(
-        CreadorServicio creadorServicio,
+        IRepository<Servicio> servicioRepository,
+        IConsultaServiciosPort consultaServicios,
         ICurrentUser? currentUser = null,
         ICacheResumenDashboardPort? cache = null)
     {
-        _servicioRepository = creadorServicio.CrearRepositorio();
-        _consultaServicios = (IConsultaServiciosPort)_servicioRepository;
+        _servicioRepository = servicioRepository;
+        _consultaServicios = consultaServicios;
         _currentUser = currentUser;
         _cache = cache;
     }

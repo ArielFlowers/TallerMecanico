@@ -22,17 +22,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
             await page.locator('#confirmar-orden-dialog[open]').waitFor();
             await enviar(page.locator('[data-confirmar-orden]'));
         };
-        // Los endpoints de retorno de borradores se conservan por compatibilidad.
-        // La pantalla actual ya no ofrece los antiguos botones de alta de otros modulos.
         const abrirAlta = async destino => {
-            const campos = await page.locator('#orden-agregar-producto').evaluate(form => Array.from(new FormData(form).entries()));
-            const respuesta = await context.request.post(`${process.env.TALLER_NUEVA_ORDEN_URL}/Ordenes/Crear?handler=Nuevo${destino}`, {
-                data: new URLSearchParams(campos).toString(),
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                maxRedirects: 0
-            });
-            assert.equal(respuesta.status(), 302);
-            await page.goto(new URL(respuesta.headers().location, process.env.TALLER_NUEVA_ORDEN_URL).href);
+            const etiquetas = { Cliente: 'Nuevo cliente', Vehiculo: 'Nuevo vehículo', Producto: 'Nuevo producto' };
+            await enviar(page.getByRole('button', { name: etiquetas[destino], exact: true }));
         };
         const seleccionar = async (tipo, termino, teclado = false) => {
             await texto(tipo).fill(termino);
@@ -119,6 +111,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await enviar(page.locator('#cliente-boton-crear'));
         await comprobarContexto();
         assert.notEqual(await page.locator('#orden-agregar-producto input[name="Formulario.ClienteNuevoId"]').inputValue(), '');
+        assert.equal(await page.locator('.ordenes-mensaje-exito[role="status"]').count(), 1);
+        assert.match(await page.locator('.ordenes-mensaje-exito').innerText(), /Cliente registrado correctamente/);
 
         await abrirAlta('Vehiculo');
         assert.ok(new URL(page.url()).searchParams.get('OrdenBorradorId'));
@@ -140,6 +134,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await page.locator('#producto-stock-minimo').fill('0');
         await enviar(page.locator('#producto-boton-crear'));
         await comprobarContexto('321XYZ', 3);
+        assert.equal(await page.locator('.ordenes-mensaje-exito[role="status"]').count(), 1);
         assert.equal(await total(), 74.6);
 
         await seleccionar('producto', 'buj');
@@ -183,6 +178,13 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await guardar();
         assert.equal(new URL(page.url()).pathname, '/Ordenes');
         assert.match(await page.locator('.ordenes-total').innerText(), /74,60/);
+        const aviso = page.locator('.orden-comprobante-aviso[role="status"]');
+        assert.equal(await aviso.count(), 1);
+        assert.equal((await aviso.innerText()).match(/guardada correctamente/g).length, 1);
+        assert.equal(await page.locator('.service-validation[role="status"]').count(), 0);
+        assert.equal(await aviso.evaluate(elemento => getComputedStyle(elemento).color), 'rgb(74, 222, 128)');
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        assert.equal(await page.locator('.orden-comprobante-aviso[role="status"]').count(), 0);
         assert.deepEqual(errores, []);
         console.log('Nueva Orden: cuatro selectores independientes, invalidación, costo sin respuestas antiguas, productos/cantidades, retornos reales Cliente/Vehículo/Producto, errores, móvil y creación con precio del servidor OK.');
     } finally { await browser.close(); }

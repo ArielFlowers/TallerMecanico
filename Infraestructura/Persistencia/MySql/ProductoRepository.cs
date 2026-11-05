@@ -1,4 +1,6 @@
 using System.Data.Common;
+using MySqlConnector;
+using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -294,7 +296,9 @@ public class ProductoRepository :
             producto,
             incluirAuditoria: true);
 
-        command.ExecuteNonQuery();
+        try { command.ExecuteNonQuery(); }
+        catch (MySqlException error) when (error.Number == 1062)
+        { throw new RegistroDuplicadoException(error); }
     }
 
     public void Update(
@@ -343,7 +347,9 @@ public class ProductoRepository :
             "@Id",
             producto.Id);
 
-        command.ExecuteNonQuery();
+        try { command.ExecuteNonQuery(); }
+        catch (MySqlException error) when (error.Number == 1062)
+        { throw new RegistroDuplicadoException(error); }
     }
 
     public void Delete(
@@ -370,7 +376,9 @@ public class ProductoRepository :
             "@Id",
             id);
 
-        command.ExecuteNonQuery();
+        try { command.ExecuteNonQuery(); }
+        catch (MySqlException error) when (error.Number == 1451)
+        { throw new RegistroRelacionadoException(error); }
     }
 
     public bool Descontar(

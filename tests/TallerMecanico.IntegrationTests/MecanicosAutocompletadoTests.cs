@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Persistencia;
@@ -21,8 +22,8 @@ public sealed class MecanicosAutocompletadoTests
         {
             ["ConnectionStrings:MySqlConnection"] = "Server=servidor-inexistente;Database=no_usar;User ID=prueba"
         }).Build();
-        var servicio = new MecanicoService(
-            new CreadorMecanico(new MySqlConnectionFactory(configuracion)), new ValidacionMecanicos());
+        var repositorio = new MecanicoRepository(new MySqlConnectionFactory(configuracion));
+        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos());
         Assert.Empty(await servicio.SugerirAsync(termino));
         Assert.Empty(await servicio.SugerirAsync(new string('a', 101)));
     }
@@ -93,8 +94,11 @@ public sealed class MecanicosAutocompletadoTests
         Assert.Equal(3, servicio.Obtener().Count);
     }
 
-    private static MecanicoService CrearServicio(MySqlAisladoFixture aislada) =>
-        new(new CreadorMecanico(aislada.Factory), new ValidacionMecanicos());
+    internal static MecanicoService CrearServicio(MySqlAisladoFixture aislada, ICurrentUser? usuario = null)
+    {
+        var repositorio = new MecanicoRepository(aislada.Factory);
+        return new MecanicoService(repositorio, repositorio, new ValidacionMecanicos(), usuario);
+    }
 
     internal static void Crear(MecanicoService servicio, string ci, string nombres, string primerApellido, string? segundoApellido)
     {

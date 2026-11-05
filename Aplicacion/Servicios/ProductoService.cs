@@ -1,4 +1,4 @@
-using MySqlConnector;
+using TallerMecanico.Aplicacion.Errores;
 using System.Text.RegularExpressions;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
@@ -111,8 +111,7 @@ public class ProductoService
             _productoPort.Add(
                 producto);
         }
-        catch (MySqlException exception)
-            when (exception.Number == 1062)
+        catch (RegistroDuplicadoException)
         {
             errores[
                 nameof(
@@ -222,8 +221,7 @@ public class ProductoService
             _productoPort.Update(
                 producto);
         }
-        catch (MySqlException exception)
-            when (exception.Number == 1062)
+        catch (RegistroDuplicadoException)
         {
             errores[
                 nameof(
@@ -254,7 +252,7 @@ public class ProductoService
         }
 
         try { _productoPort.Delete(id); }
-        catch (MySqlException error) when (error.Number == 1451)
+        catch (RegistroRelacionadoException)
         { return "No se puede eliminar el producto porque tiene órdenes asociadas."; }
 
         return null;
