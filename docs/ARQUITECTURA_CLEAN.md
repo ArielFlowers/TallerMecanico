@@ -19,7 +19,7 @@ Los servicios están separados de forma lógica dentro de un solo proyecto.
 | Fachadas | `Aplicacion/Fachadas/` | Punto de entrada para las páginas |
 | Infraestructura | `Infraestructura/` | MySQL, QuestPDF y sesión; implementa los contratos |
 | Presentación | `Pages/Ordenes/` | Pantallas Razor. No se mueve porque rompería sus rutas |
-| Composición | `Program.cs` | Conecta cada contrato con su implementación |
+| Composición | `Program.cs` e `Infraestructura/RegistroDependencias.cs` | Conecta cada contrato con su implementación |
 
 ## Regla de dependencias
 
