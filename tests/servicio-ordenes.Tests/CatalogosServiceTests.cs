@@ -1,4 +1,3 @@
-using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Servicios;
@@ -197,5 +196,4 @@ public sealed class CatalogosServiceTests
 
         public IReadOnlyList<RegistroAuditoria> ObtenerRecientes(int cantidad) => Registros;
     }
-
 }

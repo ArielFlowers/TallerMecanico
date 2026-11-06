@@ -1,4 +1,3 @@
-using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Errores;
 using MySqlConnector;
 using TallerMecanico.Aplicacion.Servicios;
