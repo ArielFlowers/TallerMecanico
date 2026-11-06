@@ -1,3 +1,4 @@
+using TallerMecanico.Api;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
@@ -48,39 +49,39 @@ public sealed class ProductosAutocompletadoTests
 
     [Trait("Area", "Backend")]
     [Fact]
-    public void CrearDesdeOrden_ConservaBorradorYPermisosDeRecepcionista()
+    public async Task CrearDesdeOrden_ConservaBorradorYPermisosDeRecepcionista()
     {
         var (pagina, puerto, borradores) = CrearPagina("Recepcionista");
         Guid orden = borradores.Guardar(new OrdenFormViewModel { MecanicoId = 12 });
         pagina.OrdenBorradorId = orden;
         pagina.ProductoInput = Formulario();
-        var resultado = Assert.IsType<RedirectToPageResult>(pagina.OnPostCrear());
+        var resultado = Assert.IsType<RedirectToPageResult>(await pagina.OnPostCrearAsync());
         Assert.Equal("/Ordenes/Crear", resultado.PageName);
         Assert.Equal(orden, resultado.RouteValues!["BorradorId"]);
-        Assert.Equal(puerto.Datos.Single().Id, resultado.RouteValues["ProductoNuevoId"]);
+        Assert.Equal(7, resultado.RouteValues["ProductoNuevoId"]);
         Assert.Equal(12, borradores.Obtener(orden)!.MecanicoId);
 
         pagina.OrdenBorradorId = Guid.NewGuid();
-        Assert.IsType<ForbidResult>(pagina.OnPostCrear());
-        Assert.IsType<ForbidResult>(pagina.OnPostActualizar());
-        Assert.IsType<ForbidResult>(pagina.OnPostEliminar());
-        Assert.Single(puerto.Datos);
+        Assert.IsType<ForbidResult>(await pagina.OnPostCrearAsync());
+        Assert.IsType<ForbidResult>(await pagina.OnPostActualizarAsync());
+        Assert.IsType<ForbidResult>(await pagina.OnPostEliminarAsync());
+        Assert.Single(puerto.Llamadas, llamada => llamada.StartsWith("POST "));
     }
 
     [Trait("Area", "Backend")]
     [Fact]
-    public void Administrador_CrudConservaFiltrosYContextoSinCambiarElRetornoEspecial()
+    public async Task Administrador_CrudConservaFiltrosYContextoSinCambiarElRetornoEspecial()
     {
         var (pagina, puerto, _) = CrearPagina("Administrador");
         pagina.ProductoInput = Formulario();
         pagina.TerminoBusqueda = "Filtro";
-        Assert.IsType<RedirectToPageResult>(pagina.OnPostCrear());
-        int id = puerto.Datos.Single().Id;
+        Assert.IsType<RedirectToPageResult>(await pagina.OnPostCrearAsync());
+        int id = 7;
         pagina.ProductoId = id;
         pagina.ProductoSeleccionadoId = id;
         pagina.OrdenBorradorId = Guid.NewGuid();
         pagina.ProductoInput.Nombre = "Filtro Actualizado";
-        foreach (var resultado in new[] { pagina.OnPostActualizar(), pagina.OnPostEliminar() })
+        foreach (var resultado in new[] { await pagina.OnPostActualizarAsync(), await pagina.OnPostEliminarAsync() })
         {
             var redireccion = Assert.IsType<RedirectToPageResult>(resultado);
             Assert.Equal(id, redireccion.RouteValues![nameof(pagina.ProductoSeleccionadoId)]);
@@ -176,7 +177,7 @@ public sealed class ProductosAutocompletadoTests
         return servicio.Buscar(codigo).Single(producto => producto.Codigo == codigo).Id;
     }
 
-    private static (PaginaProductos Pagina, ProductosPrueba Puerto, BorradorOrdenSesion Borradores) CrearPagina(string rol)
+    private static (PaginaProductos Pagina, ApiFalsa Api, BorradorOrdenSesion Borradores) CrearPagina(string rol)
     {
         var contexto = new DefaultHttpContext
         {
@@ -185,9 +186,14 @@ public sealed class ProductosAutocompletadoTests
         };
         var usuario = new UsuarioPrueba { Rol = rol };
         var borradores = new BorradorOrdenSesion(new HttpContextAccessor { HttpContext = contexto }, usuario);
-        var puerto = new ProductosPrueba();
-        var servicio = new ProductoService(puerto, new ValidacionProductos(), usuario);
-        return (new PaginaProductos(servicio, borradores)
+        var puerto = new ApiFalsa();
+        var formulario = Formulario(); formulario.Id = 7;
+        puerto.Json("GET api/productos", new[] { new ProductoDto { Id = 7, Codigo = "FIL-001", Nombre = "Filtro De Aceite" } });
+        puerto.Json("GET api/productos/7", new ProductoDto { Id = 7, Codigo = "FIL-001", Nombre = "Filtro De Aceite" });
+        puerto.Json("POST api/productos", new ResultadoFormulario<ProductoFormViewModel>(formulario, new Dictionary<string, string>()));
+        puerto.Json("PUT api/productos/7", new ResultadoFormulario<ProductoFormViewModel>(formulario, new Dictionary<string, string>()));
+        puerto.Json("DELETE api/productos/7", new { });
+        return (new PaginaProductos(new ProductosApi(puerto.Cliente()), borradores)
         {
             PageContext = new PageContext { HttpContext = contexto },
             TempData = new TempDataDictionary(contexto, new TemporalesPrueba())

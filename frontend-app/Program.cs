@@ -102,7 +102,7 @@ builder.Services.AddRazorPages(options =>
         "PersonalAutorizado");
     options.Conventions.AuthorizeFolder(
     "/Mecanicos",
-    "SoloAdministrador");
+    "PersonalAutorizado");
     options.Conventions.AuthorizeFolder(
         "/Reportes",
         "SoloAdministrador");

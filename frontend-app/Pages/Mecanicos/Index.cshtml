@@ -18,12 +18,15 @@
             <p>Administra el personal técnico registrado en el taller.</p>
         </div>
 
+        @if (Model.PuedeAdministrar)
+        {
         <button type="button"
                 class="mecanicos-btn mecanicos-btn-primary"
                 id="abrir-crear-mecanico">
             <span aria-hidden="true">＋</span>
             Nuevo Registro
         </button>
+        }
         @if (Model.OrdenBorradorId.HasValue)
         {
             <a asp-page="/Ordenes/Crear"
@@ -134,6 +137,8 @@
                                 </td>
                                 <td>@mecanico.Celular</td>
                                 <td>
+                                    @if (Model.PuedeAdministrar)
+                                    {
                                     <div class="mecanicos-row-actions">
                                         <button type="button"
                                                 class="mecanico-action mecanico-action-edit"
@@ -159,6 +164,7 @@
                                             Eliminar
                                         </button>
                                     </div>
+                                    }
                                 </td>
                             </tr>
                         }
