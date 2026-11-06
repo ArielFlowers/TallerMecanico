@@ -155,6 +155,7 @@ public sealed class VehiculosAutocompletadoHttpTests
         inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
+        aislada.ConfigurarFrontend(inicio);
         return inicio;
     }
 

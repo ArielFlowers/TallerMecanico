@@ -92,6 +92,7 @@ public sealed class UsuarioSesionRevocadaHttpTests
             inicio.Environment["Kestrel__Certificates__Default__Password"] =
                 claveCertificado;
 
+            aislada.ConfigurarFrontend(inicio);
             using var servidor = Process.Start(inicio)!;
             Task<string> salida = servidor.StandardOutput.ReadToEndAsync();
             Task<string> errores = servidor.StandardError.ReadToEndAsync();

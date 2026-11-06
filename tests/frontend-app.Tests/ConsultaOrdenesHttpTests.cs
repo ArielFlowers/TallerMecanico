@@ -66,6 +66,7 @@ public sealed class ConsultaOrdenesHttpTests
         inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = rutaCertificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = passwordCertificado;
+        aislada.ConfigurarFrontend(inicio);
         using Process servidor = Process.Start(inicio)!;
         Task<string> salida = servidor.StandardOutput.ReadToEndAsync();
         Task<string> errores = servidor.StandardError.ReadToEndAsync();
