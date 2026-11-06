@@ -1,71 +1,34 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Validaciones;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Servicios;
 
-public class CreateModel : PageModel
+public class CreateModel(ServiciosApi serviciosApi) : ServiciosPageModel
 {
-    private readonly IServicioService _servicioService;
-    private readonly ValidacionServicios _validacionServicios;
+    [BindProperty] public ServicioFormViewModel Formulario { get; set; } = new();
+    [TempData] public string? MensajeExito { get; set; }
 
-    public CreateModel(
-        IServicioService servicioService,
-        ValidacionServicios validacionServicios)
+    public Task<IActionResult> OnGetAsync() => AtenderAsync(() => Task.FromResult<IActionResult>(Page()));
+
+    public Task<IActionResult> OnPostAsync() => AtenderAsync(async () =>
     {
-        _servicioService = servicioService;
-        _validacionServicios = validacionServicios;
-    }
-
-    [BindProperty]
-    public ServicioFormViewModel Formulario { get; set; } = new();
-
-    [TempData]
-    public string? MensajeExito { get; set; }
-
-    public IActionResult OnPost()
-    {
-        AgregarErroresDeFormato();
-
-        if (!ModelState.IsValid)
+        if (!ModelState.IsValid) return Page();
+        try
         {
-            return Page();
+            var resultado = await serviciosApi.CrearAsync(Formulario);
+            Formulario = resultado.Formulario;
+            ModelState.Clear();
+            foreach (var error in resultado.Errores)
+                ModelState.AddModelError(string.IsNullOrWhiteSpace(error.Key) ? string.Empty : $"Formulario.{error.Key}", error.Value);
+        }
+        catch (ValidationException error)
+        {
+            ModelState.AddModelError(string.Empty, error.Message);
         }
 
-        Servicio servicio = CrearServicioDesdeFormulario();
-
-        _servicioService.Crear(servicio);
-
+        if (!ModelState.IsValid) return Page();
         MensajeExito = "Servicio creado correctamente.";
-
         return RedirectToPage("./Index");
-    }
-
-    private void AgregarErroresDeFormato()
-    {
-        IReadOnlyDictionary<string, string> errores =
-            _validacionServicios.Validar(Formulario);
-
-        foreach (KeyValuePair<string, string> error in errores)
-        {
-            ModelState.AddModelError(
-                $"Formulario.{error.Key}",
-                error.Value);
-        }
-    }
-
-    private Servicio CrearServicioDesdeFormulario()
-    {
-        return new Servicio
-        {
-            Nombre = Formulario.Nombre,
-            Descripcion = Formulario.Descripcion,
-            Costo = Formulario.Costo,
-            TiempoEstimadoHoras = Formulario.TiempoEstimadoHoras,
-            UnidadCantidad = string.IsNullOrWhiteSpace(Formulario.UnidadCantidad) ? null : Formulario.UnidadCantidad.Trim()
-        };
-    }
+    });
 }

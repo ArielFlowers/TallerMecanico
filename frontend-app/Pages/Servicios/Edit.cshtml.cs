@@ -1,93 +1,22 @@
+using System.ComponentModel.DataAnnotations;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Validaciones;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Servicios;
 
-public class EditModel : PageModel
+public class EditModel(ServiciosApi serviciosApi) : ServiciosPageModel
 {
-    private readonly IServicioService _servicioService;
-    private readonly ValidacionServicios _validacionServicios;
-
-    public EditModel(
-        IServicioService servicioService,
-        ValidacionServicios validacionServicios)
-    {
-        _servicioService = servicioService;
-        _validacionServicios = validacionServicios;
-    }
-
-    [BindProperty]
-    public ServicioFormViewModel Formulario { get; set; } = new();
-
-    [TempData]
-    public string? MensajeExito { get; set; }
-
+    [BindProperty] public ServicioFormViewModel Formulario { get; set; } = new();
+    [TempData] public string? MensajeExito { get; set; }
     public int ServicioId { get; private set; }
 
-    public IActionResult OnGet(int id)
+    public Task<IActionResult> OnGetAsync(int id) => AtenderAsync(async () =>
     {
-        Servicio? servicio = _servicioService.ObtenerPorId(id);
-
-        if (servicio is null)
-        {
-            return NotFound();
-        }
-
+        var servicio = await serviciosApi.ObtenerPorIdAsync(id, HttpContext.RequestAborted);
+        if (servicio is null) return NotFound();
         ServicioId = servicio.Id;
-        Formulario = CrearFormularioDesdeServicio(servicio);
-
-        return Page();
-    }
-
-    public IActionResult OnPost(int id)
-    {
-        ServicioId = id;
-
-        AgregarErroresDeFormato();
-
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
-
-        Servicio servicio = CrearServicioDesdeFormulario(id);
-
-        try
-        {
-            _servicioService.Actualizar(servicio);
-        }
-        catch (InvalidOperationException ex)
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
-            return Page();
-        }
-
-        MensajeExito = "Servicio actualizado correctamente.";
-
-        return RedirectToPage("./Index");
-    }
-
-    private void AgregarErroresDeFormato()
-    {
-        IReadOnlyDictionary<string, string> errores =
-            _validacionServicios.Validar(Formulario);
-
-        foreach (KeyValuePair<string, string> error in errores)
-        {
-            ModelState.AddModelError(
-                $"Formulario.{error.Key}",
-                error.Value);
-        }
-    }
-
-    private static ServicioFormViewModel CrearFormularioDesdeServicio(
-        Servicio servicio)
-    {
-        return new ServicioFormViewModel
+        Formulario = new ServicioFormViewModel
         {
             Nombre = servicio.Nombre,
             Descripcion = servicio.Descripcion,
@@ -95,18 +24,32 @@ public class EditModel : PageModel
             TiempoEstimadoHoras = servicio.TiempoEstimadoHoras,
             UnidadCantidad = servicio.UnidadCantidad
         };
-    }
+        return Page();
+    });
 
-    private Servicio CrearServicioDesdeFormulario(int id)
+    public Task<IActionResult> OnPostAsync(int id) => AtenderAsync(async () =>
     {
-        return new Servicio
+        ServicioId = id;
+        if (!ModelState.IsValid) return Page();
+        try
         {
-            Id = id,
-            Nombre = Formulario.Nombre,
-            Descripcion = Formulario.Descripcion,
-            Costo = Formulario.Costo,
-            TiempoEstimadoHoras = Formulario.TiempoEstimadoHoras,
-            UnidadCantidad = string.IsNullOrWhiteSpace(Formulario.UnidadCantidad) ? null : Formulario.UnidadCantidad.Trim()
-        };
-    }
+            var resultado = await serviciosApi.ActualizarAsync(id, Formulario);
+            Formulario = resultado.Formulario;
+            ModelState.Clear();
+            foreach (var error in resultado.Errores)
+                ModelState.AddModelError(string.IsNullOrWhiteSpace(error.Key) ? string.Empty : $"Formulario.{error.Key}", error.Value);
+        }
+        catch (ValidationException error)
+        {
+            ModelState.AddModelError(string.Empty, error.Message);
+        }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.NotFound)
+        {
+            ModelState.AddModelError(string.Empty, "El servicio solicitado no existe.");
+        }
+
+        if (!ModelState.IsValid) return Page();
+        MensajeExito = "Servicio actualizado correctamente.";
+        return RedirectToPage("./Index");
+    });
 }
