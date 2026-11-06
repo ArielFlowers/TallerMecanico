@@ -1,0 +1,34 @@
+@startuml C4_Nivel1_Contexto
+!pragma layout smetana
+title C4 - Nivel 1: Contexto del sistema AutoTaller Pro
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 12
+skinparam ArrowColor #4A5568
+skinparam BorderColor #4A5568
+
+actor "Administrador" as Admin
+actor "Recepcionista" as Recep
+actor "Mecánico" as Mec
+
+rectangle "AutoTaller Pro\nFrontend + Servicio de órdenes +\nServicio de usuarios + Servicio de reportes" as Sistema #7C3AED {
+  [Frontend Razor Pages] as FE
+  [Servicio 1: Órdenes] as S1
+  [Servicio 2: Usuarios] as S2
+  [Servicio 3: Reportes] as S3
+}
+
+cloud "Correo SMTP\n(Gmail)" as SMTP #F6AD55
+database "Base de datos\nMySQL 8.4 (Aiven)" as BD #4299E1
+
+Admin --> FE : Gestiona usuarios,\nreportes y anulaciones
+Recep --> FE : Registra órdenes,\nclientes y vehículos
+Mec --> FE : Consulta órdenes\ny trabajo asignado
+FE --> S1 : HTTP interno
+FE --> S2 : HTTP interno
+FE --> S3 : HTTP interno
+S2 --> SMTP : Envía invitaciones\ny verificaciones
+S1 --> BD : Lee y escribe\ndatos del taller
+S2 --> BD : Lee y escribe\nusuarios y auditoría
+S3 --> BD : Consulta\nreportes
+@enduml

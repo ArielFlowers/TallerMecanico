@@ -1,0 +1,42 @@
+@startuml Secuencia_AnularOrden
+!pragma layout smetana
+title Secuencia - Anular una orden y reponer stock
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+
+actor Administrador
+participant "Página de Órdenes" as UI
+participant "OrdenesApi" as API
+participant "OrdenesController" as C
+participant "OrdenServicioFacade" as F
+participant "AnularOrdenCasoUso" as CU
+participant "MySqlUnidadTrabajoOrden" as UoW
+participant "Repositorios MySQL" as Repo
+database "MySQL" as BD
+
+Administrador -> UI : Solicita anular
+UI -> API : POST api/ordenes/{id}/anular
+API -> C : Anular(id)
+C -> F : AnularOrden(id)
+F -> CU : Ejecutar(id)
+CU -> CU : Verificar rol Administrador
+CU -> UoW : Iniciar()
+UoW -> BD : BEGIN (ReadCommitted)
+CU -> Repo : ObtenerParaAnular(id)
+alt Orden inexistente o ya anulada
+  CU --> F : ResultadoOrden.Fallo
+else Orden activa
+  CU -> Repo : ObtenerPorOrden(id)
+  CU -> Repo : Bloquear productos
+  CU -> CU : orden.Anular(usuario, fechaUtc)
+  CU -> Repo : MarcarAnulada(...)
+  CU -> Repo : Restituir stock de cada detalle
+  CU -> UoW : Confirmar()
+  UoW -> BD : COMMIT
+  CU --> F : ResultadoOrden.Correcto
+end
+F --> C : ResultadoOrden
+C --> API : ResultadoOrdenDto
+API --> UI : ResultadoOrdenDto
+UI --> Administrador : Confirmación
+@enduml

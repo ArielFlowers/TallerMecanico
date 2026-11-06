@@ -1,0 +1,80 @@
+@startuml Clases_CasosUso_Contratos
+!pragma layout smetana
+title Diagrama de clases - Casos de uso y contratos de órdenes
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+
+class OrdenesController {
+  + Obtener(...): OrdenResumenDto[]
+  + Sugerir(...): Task<SugerenciaOrden[]>
+  + FechaActual(): DateTime
+  + ObtenerPorId(id): OrdenDetalleDto
+  + Comprobante(id): FileResult
+  + Crear(dto): ResultadoOrdenDto
+  + Anular(id): ResultadoOrdenDto
+}
+
+class OrdenServicioFacade {
+  + FechaActual: DateTime
+  + CrearOrden(solicitud): ResultadoOrden
+  + AnularOrden(ordenId): ResultadoOrden
+}
+
+class ConsultaOrdenesFacade {
+  + Obtener(...): IReadOnlyList<OrdenResumen>
+  + SugerirAsync(...): Task<IReadOnlyList<SugerenciaOrden>>
+  + ObtenerDetalle(id): OrdenDetalle?
+  + GenerarComprobante(id): byte[]?
+}
+
+class CrearOrdenCasoUso {
+  + PuedeCrear: bool
+  + Ejecutar(solicitud): ResultadoOrden
+}
+
+class AnularOrdenCasoUso {
+  + Ejecutar(ordenId): ResultadoOrden
+}
+
+class ConsultarOrdenesCasoUso
+class GenerarComprobanteCasoUso
+
+interface IUnidadTrabajoOrden {
+  + Iniciar(): ITransaccionOrden
+}
+
+interface ITransaccionOrden {
+  + Ordenes: IOrdenRepository
+  + Detalles: IDetalleOrdenRepository
+  + Productos: IProductoStockRepository
+  + Cabecera: ICabeceraOrdenRepository
+  + Confirmar(): void
+  + Revertir(): void
+}
+
+interface IOrdenRepository
+interface IDetalleOrdenRepository
+interface IProductoStockRepository
+interface ICabeceraOrdenRepository
+interface IComprobantePdf
+interface ICurrentUser
+interface ILogger
+
+OrdenesController --> OrdenServicioFacade
+OrdenesController --> ConsultaOrdenesFacade
+OrdenServicioFacade --> CrearOrdenCasoUso
+OrdenServicioFacade --> AnularOrdenCasoUso
+ConsultaOrdenesFacade --> ConsultarOrdenesCasoUso
+ConsultaOrdenesFacade --> GenerarComprobanteCasoUso
+CrearOrdenCasoUso ..> IUnidadTrabajoOrden
+AnularOrdenCasoUso ..> IUnidadTrabajoOrden
+GenerarComprobanteCasoUso ..> IComprobantePdf
+CrearOrdenCasoUso ..> ICurrentUser
+AnularOrdenCasoUso ..> ICurrentUser
+IUnidadTrabajoOrden --> ITransaccionOrden
+ITransaccionOrden --> IOrdenRepository
+ITransaccionOrden --> IDetalleOrdenRepository
+ITransaccionOrden --> IProductoStockRepository
+ITransaccionOrden --> ICabeceraOrdenRepository
+@enduml

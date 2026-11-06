@@ -1,0 +1,30 @@
+@startuml C4_Nivel2_Contenedores
+!pragma layout smetana
+title C4 - Nivel 2: Contenedores de AutoTaller Pro
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 12
+skinparam ArrowColor #4A5568
+skinparam BorderColor #4A5568
+
+actor "Usuario del taller" as Usuario
+
+node "Host Docker" {
+  component "Frontend\nRazor Pages .NET 10\nSesión en memoria" as FE #7C3AED
+  component "Servicio 1\nÓrdenes y catálogos\nClean Architecture" as S1 #9F7AEA
+  component "Servicio 2\nUsuarios y autenticación\nHexagonal" as S2 #F6AD55
+  component "Servicio 3\nReportes PDF/Excel\nHexagonal" as S3 #F687B3
+}
+
+database "MySQL 8.4\nAiven" as BD #4299E1
+cloud "SMTP Gmail" as SMTP #F6AD55
+
+Usuario --> FE : HTTPS
+FE --> S1 : HTTP/JSON\nX-Clave-Interna
+FE --> S2 : HTTP/JSON\nX-Clave-Interna
+FE --> S3 : HTTP/JSON\nX-Clave-Interna
+S1 --> BD : ADO.NET / MySqlConnector\ncrea el esquema
+S2 --> BD : ADO.NET / MySqlConnector
+S3 --> BD : ADO.NET / MySqlConnector
+S2 --> SMTP : MailKit
+@enduml
