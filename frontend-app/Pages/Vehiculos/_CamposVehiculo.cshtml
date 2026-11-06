@@ -1,6 +1,5 @@
 @model TallerMecanico.Pages.Vehiculos.IndexModel
-@using TallerMecanico.Dominio.Entidades
-@using TallerMecanico.Aplicacion.Validaciones
+@using TallerMecanico.Contratos.Catalogos
 @{
     string prefijo = ViewData["Prefijo"]?.ToString() ?? "crear";
     bool extranjera = Model.Formulario.EsPlacaExtranjera;
@@ -42,14 +41,14 @@
     </label>
     <input asp-for="Formulario.Placa" id="@(prefijo)-placa" class="service-input" required
            maxlength="@(extranjera ? 15 : 7)"
-           pattern="@(extranjera ? ValidacionVehiculos.PatronPlacaExtranjera : ValidacionVehiculos.PatronPlaca)"
+           pattern="@(extranjera ? ReglasVehiculo.PatronPlacaExtranjera : ReglasVehiculo.PatronPlaca)"
            placeholder="@(extranjera ? "Ej. AB123CD" : "Ej. 123ABC o 1234ABC")"
-           data-patron-nacional="@ValidacionVehiculos.PatronPlaca"
-           data-patron-extranjero="@ValidacionVehiculos.PatronPlacaExtranjera"
-           data-mensaje-nacional="@ValidacionVehiculos.MensajeFormatoPlaca"
-           data-mensaje-extranjero="@ValidacionVehiculos.MensajeFormatoPlacaExtranjera"
+           data-patron-nacional="@ReglasVehiculo.PatronPlaca"
+           data-patron-extranjero="@ReglasVehiculo.PatronPlacaExtranjera"
+           data-mensaje-nacional="@ReglasVehiculo.MensajeFormatoPlaca"
+           data-mensaje-extranjero="@ReglasVehiculo.MensajeFormatoPlacaExtranjera"
            data-placa-input />
-    <small data-placa-ayuda>@(extranjera ? ValidacionVehiculos.MensajeFormatoPlacaExtranjera : ValidacionVehiculos.MensajeFormatoPlaca)</small>
+    <small data-placa-ayuda>@(extranjera ? ReglasVehiculo.MensajeFormatoPlacaExtranjera : ReglasVehiculo.MensajeFormatoPlaca)</small>
     <span class="field-warning" data-placa-aviso></span>
     <span asp-validation-for="Formulario.Placa" class="service-validation"></span>
 </div>
@@ -58,7 +57,7 @@
     <label for="@(prefijo)-marca">Marca <span class="campo-obligatorio">*</span></label>
     <select asp-for="Formulario.Marca" id="@(prefijo)-marca" class="service-input" required data-marca-input>
         <option value="">Selecciona una marca</option>
-        @foreach (string marca in CatalogoVehiculos.MarcasOrdenadas)
+        @foreach (string marca in Model.MarcasOrdenadas)
         {
             <option value="@marca">@marca</option>
         }
@@ -70,7 +69,7 @@
     <label for="@(prefijo)-modelo">Modelo <span class="campo-obligatorio">*</span></label>
     <select asp-for="Formulario.Modelo" id="@(prefijo)-modelo" class="service-input" required data-modelo-input>
         <option value="">Selecciona un modelo</option>
-        @foreach (string modelo in CatalogoVehiculos.ObtenerModelosOrdenados(Model.Formulario.Marca ?? string.Empty))
+        @foreach (string modelo in Model.ObtenerModelosOrdenados(Model.Formulario.Marca ?? string.Empty))
         {
             <option value="@modelo">@modelo</option>
         }
@@ -94,7 +93,7 @@
 <div class="service-form-group">
     <label for="@(prefijo)-observaciones">Observaciones</label>
     <textarea asp-for="Formulario.Observaciones" id="@(prefijo)-observaciones" class="service-input service-textarea"
-              rows="3" maxlength="@ValidacionVehiculos.LongitudMaximaObservaciones"
+              rows="3" maxlength="@ReglasVehiculo.LongitudMaximaObservaciones"
               placeholder="Detalles adicionales del estado del vehículo..."></textarea>
     <span asp-validation-for="Formulario.Observaciones" class="service-validation"></span>
 </div>

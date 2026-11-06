@@ -1,3 +1,4 @@
+using TallerMecanico.Api;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -41,22 +42,22 @@ public sealed class ClientesAutocompletadoTests
 
     [Trait("Area", "Backend")]
     [Fact]
-    public void CrearClienteDesdeOrden_ConservaElRetornoYElIdGenerado()
+    public async Task CrearClienteDesdeOrden_ConservaElRetornoYElIdGenerado()
     {
         var (pagina, clientes, borradoresVehiculo, borradoresOrden) = CrearPagina();
         Guid orden = borradoresOrden.Guardar(new OrdenFormViewModel { MecanicoId = 12 });
         pagina.OrdenBorradorId = orden;
         pagina.ClienteInput = Formulario();
-        var resultado = Assert.IsType<RedirectToPageResult>(pagina.OnPostCrear());
+        var resultado = Assert.IsType<RedirectToPageResult>(await pagina.OnPostCrearAsync());
         Assert.Equal("/Ordenes/Crear", resultado.PageName);
         Assert.Equal(orden, resultado.RouteValues!["BorradorId"]);
-        Assert.Equal(clientes.Datos.Single().Id, resultado.RouteValues["ClienteNuevoId"]);
+        Assert.Equal(7, resultado.RouteValues["ClienteNuevoId"]);
         Assert.Equal(12, borradoresOrden.Obtener(orden)!.MecanicoId);
     }
 
     [Trait("Area", "Backend")]
     [Fact]
-    public void CrearClienteDesdeVehiculo_PriorizaRetornoExistenteInclusoConFiltros()
+    public async Task CrearClienteDesdeVehiculo_PriorizaRetornoExistenteInclusoConFiltros()
     {
         var (pagina, clientes, vehiculos, ordenes) = CrearPagina();
         Guid orden = ordenes.Guardar(new OrdenFormViewModel());
@@ -66,29 +67,27 @@ public sealed class ClientesAutocompletadoTests
         pagina.ClienteSeleccionadoId = 10;
         pagina.TerminoBusqueda = "María";
         pagina.ClienteInput = Formulario();
-        var resultado = Assert.IsType<RedirectToPageResult>(pagina.OnPostCrear());
+        var resultado = Assert.IsType<RedirectToPageResult>(await pagina.OnPostCrearAsync());
         Assert.Equal("/Vehiculos/Index", resultado.PageName);
         Assert.Equal("Retomar", resultado.PageHandler);
         Assert.Equal(vehiculo, resultado.RouteValues!["borradorId"]);
-        Assert.Equal(clientes.Datos.Single().Id, vehiculos.Obtener(vehiculo)!.Formulario.ClienteId);
+        Assert.Equal(7, vehiculos.Obtener(vehiculo)!.Formulario.ClienteId);
         Assert.Equal(orden, vehiculos.Obtener(vehiculo)!.OrdenBorradorId);
     }
 
     [Trait("Area", "Backend")]
     [Fact]
-    public void ActualizarYEliminar_ConservanFiltrosYContextos()
+    public async Task ActualizarYEliminar_ConservanFiltrosYContextos()
     {
         var (pagina, clientes, _, _) = CrearPagina();
-        var servicio = new ClienteService(clientes, new VehiculosPrueba(), new ValidacionClientes(), new UsuarioPrueba());
-        var creado = servicio.Crear(Formulario());
-        Assert.Empty(creado.Errores);
-        pagina.ClienteInput = creado.Formulario;
-        pagina.ClienteId = creado.Formulario.Id;
-        pagina.ClienteSeleccionadoId = creado.Formulario.Id;
+        var creado = Formulario(); creado.Id = 7;
+        pagina.ClienteInput = creado;
+        pagina.ClienteId = creado.Id;
+        pagina.ClienteSeleccionadoId = creado.Id;
         pagina.TerminoBusqueda = "María Pérez";
         pagina.BorradorVehiculoId = Guid.NewGuid();
         pagina.OrdenBorradorId = Guid.NewGuid();
-        foreach (var resultado in new[] { pagina.OnPostActualizar(), pagina.OnPostEliminar() })
+        foreach (var resultado in new[] { await pagina.OnPostActualizarAsync(), await pagina.OnPostEliminarAsync() })
         {
             var redireccion = Assert.IsType<RedirectToPageResult>(resultado);
             Assert.Equal(pagina.TerminoBusqueda, redireccion.RouteValues![nameof(pagina.TerminoBusqueda)]);
@@ -182,17 +181,22 @@ public sealed class ClientesAutocompletadoTests
         return resultado.Formulario.Id;
     }
 
-    private static (PaginaClientes Pagina, ClientesPrueba Clientes, BorradorVehiculoSesion Vehiculos, BorradorOrdenSesion Ordenes) CrearPagina()
+    private static (PaginaClientes Pagina, ApiFalsa Api, BorradorVehiculoSesion Vehiculos, BorradorOrdenSesion Ordenes) CrearPagina()
     {
         var contexto = new DefaultHttpContext { Session = new SesionPrueba() };
         var acceso = new HttpContextAccessor { HttpContext = contexto };
         var usuario = new UsuarioPrueba();
         var vehiculos = new BorradorVehiculoSesion(acceso, usuario);
         var ordenes = new BorradorOrdenSesion(acceso, usuario);
-        var clientes = new ClientesPrueba();
-        var servicio = new ClienteService(clientes, new VehiculosPrueba(), new ValidacionClientes(), usuario);
-        var pagina = new PaginaClientes(servicio, vehiculos, ordenes)
+        var clientes = new ApiFalsa();
+        var formulario = Formulario(); formulario.Id = 7;
+        clientes.Json("GET api/clientes", new[] { new ClienteDto { Id = 7, Nombres = "María", PrimerApellido = "Pérez" } });
+        clientes.Json("POST api/clientes", new ResultadoFormulario<ClienteFormViewModel>(formulario, new Dictionary<string, string>()));
+        clientes.Json("PUT api/clientes/7", new ResultadoFormulario<ClienteFormViewModel>(formulario, new Dictionary<string, string>()));
+        clientes.Json("DELETE api/clientes/7", new { });
+        var pagina = new PaginaClientes(new ClientesApi(clientes.Cliente()), vehiculos, ordenes)
         {
+            PageContext = new Microsoft.AspNetCore.Mvc.RazorPages.PageContext { HttpContext = contexto },
             TempData = new TempDataDictionary(contexto, new TemporalesPrueba())
         };
         return (pagina, clientes, vehiculos, ordenes);

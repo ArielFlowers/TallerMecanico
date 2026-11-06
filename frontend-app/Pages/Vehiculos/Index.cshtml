@@ -1,7 +1,5 @@
 @page
 @model TallerMecanico.Pages.Vehiculos.IndexModel
-@using TallerMecanico.Dominio.Entidades
-@using TallerMecanico.Aplicacion.Validaciones
 @using TallerMecanico.Pages.Shared
 
 @{
@@ -443,7 +441,7 @@
             type="application/json">
         @Html.Raw(
             System.Text.Json.JsonSerializer.Serialize(
-                CatalogoVehiculos.CatalogoOrdenado))
+                Model.Catalogo))
     </script>
 
     <script src="~/js/vehiculos.js"

@@ -1,252 +1,124 @@
+using System.ComponentModel.DataAnnotations;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Api;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Pages.Clientes;
 
-public class IndexModel : PageModel
+public class IndexModel(
+    ClientesApi clientesApi,
+    IBorradorVehiculoPort borradores,
+    IBorradorOrden borradoresOrden) : PageModel
 {
-    private readonly ClienteService _clienteService;
-    private readonly IBorradorVehiculoPort _borradores;
-    private readonly IBorradorOrden _borradoresOrden;
-
-    public IndexModel(
-        ClienteService clienteService,
-        IBorradorVehiculoPort borradores,
-        IBorradorOrden borradoresOrden)
-    {
-        _clienteService =
-            clienteService;
-        _borradores = borradores;
-        _borradoresOrden = borradoresOrden;
-    }
-
-    [BindProperty]
-    public ClienteFormViewModel ClienteInput { get; set; } =
-        new();
-
-    [BindProperty]
-    public int ClienteId { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public string? TerminoBusqueda { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public int? ClienteSeleccionadoId { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public Guid? BorradorVehiculoId { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public Guid? OrdenBorradorId { get; set; }
-
-    public IReadOnlyList<Cliente> Clientes { get; private set; } =
-        [];
-
+    [BindProperty] public ClienteFormViewModel ClienteInput { get; set; } = new();
+    [BindProperty] public int ClienteId { get; set; }
+    [BindProperty(SupportsGet = true)] public string? TerminoBusqueda { get; set; }
+    [BindProperty(SupportsGet = true)] public int? ClienteSeleccionadoId { get; set; }
+    [BindProperty(SupportsGet = true)] public Guid? BorradorVehiculoId { get; set; }
+    [BindProperty(SupportsGet = true)] public Guid? OrdenBorradorId { get; set; }
+    public IReadOnlyList<ClienteDto> Clientes { get; private set; } = [];
     public string? FormularioActivo { get; private set; }
-
     public string? MensajeExito { get; private set; }
-
     public string? MensajeError { get; private set; }
 
-    public void OnGet()
+    public Task<IActionResult> OnGetAsync() => AtenderAsync(async () =>
     {
-        CargarMensajes();
-        CargarClientes();
-        if (BorradorVehiculoId.HasValue && _borradores.Obtener(BorradorVehiculoId.Value) is not null)
+        MensajeExito = TempData["ClienteExito"] as string;
+        MensajeError = TempData["ClienteError"] as string;
+        await CargarClientesAsync();
+        if (BorradorVehiculoId.HasValue && borradores.Obtener(BorradorVehiculoId.Value) is not null
+            || OrdenBorradorId.HasValue && borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
             FormularioActivo = "crear";
-        else if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
-            FormularioActivo = "crear";
-    }
+        return Page();
+    });
 
-    public async Task<JsonResult> OnGetSugerenciasAsync(string? termino)
+    public Task<IActionResult> OnGetSugerenciasAsync(string? termino) => AtenderAsync(async () =>
     {
         Response.Headers.CacheControl = "no-store";
-        var sugerencias = await _clienteService.SugerirAsync(termino, HttpContext.RequestAborted);
-        return new JsonResult(sugerencias);
-    }
+        return new JsonResult(await clientesApi.SugerirAsync(termino, HttpContext.RequestAborted));
+    });
 
-    public IActionResult OnPostCrear()
+    public Task<IActionResult> OnPostCrearAsync() => AtenderAsync(() => GuardarFormularioAsync(actualizar: false));
+    public Task<IActionResult> OnPostActualizarAsync() => AtenderAsync(() => GuardarFormularioAsync(actualizar: true));
+
+    public Task<IActionResult> OnPostEliminarAsync() => AtenderAsync(async () =>
     {
-        if (BorradorVehiculoId.HasValue && _borradores.Obtener(BorradorVehiculoId.Value) is null)
-        {
+        var resultado = await clientesApi.EliminarAsync(ClienteId, HttpContext.RequestAborted);
+        if (resultado.Exito) TempData["ClienteExito"] = "Cliente eliminado correctamente.";
+        else TempData["ClienteError"] = resultado.Mensaje;
+        return RedirigirAlListado();
+    });
+
+    private async Task<IActionResult> GuardarFormularioAsync(bool actualizar)
+    {
+        FormularioActivo = actualizar ? "editar" : "crear";
+        if (actualizar) ClienteInput.Id = ClienteId;
+        else if (BorradorVehiculoId.HasValue && borradores.Obtener(BorradorVehiculoId.Value) is null)
             ModelState.AddModelError(string.Empty, "El borrador del vehículo venció. Regresa a Vehículos para continuar.");
-        }
-        if (!ModelState.IsValid)
+
+        if (!ModelState.IsValid) return await MostrarFormularioAsync();
+        try
         {
-            FormularioActivo =
-                "crear";
-
-            CargarClientes();
-
-            return Page();
+            var resultado = actualizar
+                ? await clientesApi.ActualizarAsync(ClienteInput)
+                : await clientesApi.CrearAsync(ClienteInput);
+            ClienteInput = resultado.Formulario;
+            ModelState.Clear();
+            foreach (var error in resultado.Errores)
+                ModelState.AddModelError(string.IsNullOrWhiteSpace(error.Key) ? string.Empty : $"ClienteInput.{error.Key}", error.Value);
         }
-
-        var resultado =
-            _clienteService.Crear(
-                ClienteInput);
-
-        ClienteInput =
-            resultado.Formulario;
-
-        ModelState.Clear();
-
-        AgregarErrores(
-            resultado.Errores);
+        catch (ValidationException error)
+        {
+            ModelState.AddModelError(string.Empty, error.Message);
+        }
 
         if (!ModelState.IsValid)
         {
-            FormularioActivo =
-                "crear";
-
-            CargarClientes();
-
-            return Page();
+            if (actualizar) ClienteId = ClienteInput.Id;
+            return await MostrarFormularioAsync();
         }
 
-        TempData["ClienteExito"] =
-            "Cliente registrado correctamente.";
-
-        if (BorradorVehiculoId.HasValue &&
-            _borradores.AsignarCliente(BorradorVehiculoId.Value, ClienteInput.Id))
+        TempData["ClienteExito"] = actualizar ? "Cliente actualizado correctamente." : "Cliente registrado correctamente.";
+        if (!actualizar)
         {
-            return RedirectToPage("/Vehiculos/Index", "Retomar", new { borradorId = BorradorVehiculoId.Value });
+            if (BorradorVehiculoId.HasValue && borradores.AsignarCliente(BorradorVehiculoId.Value, ClienteInput.Id))
+                return RedirectToPage("/Vehiculos/Index", "Retomar", new { borradorId = BorradorVehiculoId.Value });
+            if (OrdenBorradorId.HasValue && borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
+                return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId.Value, ClienteNuevoId = ClienteInput.Id });
         }
-
-        if (OrdenBorradorId.HasValue && _borradoresOrden.Obtener(OrdenBorradorId.Value) is not null)
-            return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId.Value, ClienteNuevoId = ClienteInput.Id });
-
         return RedirigirAlListado();
     }
 
-    public IActionResult OnPostActualizar()
+    private async Task<IActionResult> MostrarFormularioAsync()
     {
-        ClienteInput.Id =
-            ClienteId;
-
-        if (!ModelState.IsValid)
-        {
-            FormularioActivo =
-                "editar";
-
-            CargarClientes();
-
-            return Page();
-        }
-
-        var resultado =
-            _clienteService.Actualizar(
-                ClienteInput);
-
-        ClienteInput =
-            resultado.Formulario;
-
-        ModelState.Clear();
-
-        AgregarErrores(
-            resultado.Errores);
-
-        if (!ModelState.IsValid)
-        {
-            FormularioActivo =
-                "editar";
-
-            ClienteId =
-                ClienteInput.Id;
-
-            CargarClientes();
-
-            return Page();
-        }
-
-        TempData["ClienteExito"] =
-            "Cliente actualizado correctamente.";
-
-        return RedirigirAlListado();
+        await CargarClientesAsync();
+        return Page();
     }
 
-    public IActionResult OnPostEliminar()
-    {
-        string? error =
-            _clienteService.Eliminar(
-                ClienteId);
-
-        if (!string.IsNullOrWhiteSpace(
-                error))
-        {
-            TempData["ClienteError"] =
-                error;
-
-            return RedirigirAlListado();
-        }
-
-        TempData["ClienteExito"] =
-            "Cliente eliminado correctamente.";
-
-        return RedirigirAlListado();
-    }
-
-    private void CargarClientes()
+    private async Task CargarClientesAsync()
     {
         if (ClienteSeleccionadoId.HasValue)
         {
-            var cliente = _clienteService.ObtenerPorId(ClienteSeleccionadoId.Value);
+            var cliente = await clientesApi.ObtenerPorIdAsync(ClienteSeleccionadoId.Value, HttpContext.RequestAborted);
             Clientes = cliente is null ? [] : [cliente];
-            return;
         }
-
-        if (string.IsNullOrWhiteSpace(
-                TerminoBusqueda))
-        {
-            Clientes =
-                _clienteService.Obtener();
-
-            return;
-        }
-
-        Clientes =
-            _clienteService.Buscar(
-                TerminoBusqueda);
+        else
+            Clientes = await clientesApi.ObtenerAsync(string.IsNullOrWhiteSpace(TerminoBusqueda) ? null : TerminoBusqueda.Trim(), HttpContext.RequestAborted);
     }
 
-    private void AgregarErrores(
-        IReadOnlyDictionary<string, string> errores)
+    private IActionResult RedirigirAlListado() =>
+        RedirectToPage(new { TerminoBusqueda, ClienteSeleccionadoId, BorradorVehiculoId, OrdenBorradorId });
+
+    private async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
     {
-        foreach (var error in errores)
-        {
-            string campo =
-                string.IsNullOrWhiteSpace(
-                    error.Key)
-                    ? string.Empty
-                    : $"ClienteInput.{error.Key}";
-
-            ModelState.AddModelError(
-                campo,
-                error.Value);
-        }
-    }
-
-    private IActionResult RedirigirAlListado()
-    {
-        return RedirectToPage(new
-        {
-            TerminoBusqueda,
-            ClienteSeleccionadoId,
-            BorradorVehiculoId,
-            OrdenBorradorId
-        });
-    }
-
-    private void CargarMensajes()
-    {
-        MensajeExito =
-            TempData["ClienteExito"] as string;
-
-        MensajeError =
-            TempData["ClienteError"] as string;
+        try { return await accion(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized) { return Challenge(); }
+        catch (HttpRequestException) { return StatusCode(StatusCodes.Status503ServiceUnavailable, "El servicio de clientes no está disponible. Intenta nuevamente."); }
+        catch (TaskCanceledException) when (!HttpContext.RequestAborted.IsCancellationRequested)
+        { return StatusCode(StatusCodes.Status503ServiceUnavailable, "El servicio de clientes no está disponible. Intenta nuevamente."); }
     }
 }
