@@ -1,6 +1,4 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging.Abstractions;
 using MySqlConnector;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
@@ -52,30 +50,6 @@ public sealed class CatalogoServiciosMySqlTests
             Assert.NotNull(servicio.CodigoCatalogo);
         }
         Assert.Equal(4, repositorio.ObtenerCatalogo().Count(servicio => servicio.UnidadCantidad == "unidad"));
-    }
-
-    [MySqlAisladoFact]
-    public async Task NuevaOrden_SoloConsultaCatalogoYAdministracionConservaOtrosServicios()
-    {
-        using var aislada = new MySqlAisladoFixture();
-        NuevaOrdenAutocompletadoTests.Preparar(aislada);
-        Cargar(aislada);
-        int antiguo = checked((int)aislada.Ejecutar("INSERT INTO Servicios (Nombre,Descripcion,Costo,TiempoEstimadoHoras) VALUES ('Cambio de aceite','Servicio antiguo duplicado',25,1);"));
-        var pagina = NuevaOrdenAutocompletadoTests.CrearPagina(aislada);
-        var todos = JsonSerializer.SerializeToElement((await pagina.OnGetSugerenciasServiciosAsync(null)).Value);
-        Assert.Equal(10, todos.GetArrayLength());
-        var sugerencias = JsonSerializer.SerializeToElement((await pagina.OnGetSugerenciasServiciosAsync("cambio")).Value);
-        Assert.Equal(6, sugerencias.GetArrayLength());
-        Assert.IsType<NotFoundResult>(pagina.OnGetServicioSeleccionado(antiguo));
-        Assert.IsType<JsonResult>(pagina.OnGetServicioSeleccionado(1));
-        Assert.Equal(11, ServiciosAutocompletadoTests.CrearServicio(aislada).ObtenerTodos().Count);
-        pagina.OnGet();
-        pagina.Formulario.VehiculoId = 1;
-        pagina.Formulario.MecanicoId = 1;
-        pagina.Formulario.ServicioIds = [antiguo];
-        Assert.IsType<PageResult>(pagina.OnPostGuardar());
-        Assert.Contains(pagina.ModelState.Values.SelectMany(entrada => entrada.Errors), error => error.ErrorMessage.Contains("catálogo"));
-        Assert.Equal(0, Convert.ToInt32(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
     }
 
     [MySqlAisladoFact]

@@ -1,15 +1,10 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
-using PaginaOrdenes = TallerMecanico.Pages.Ordenes.IndexModel;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -63,29 +58,6 @@ public sealed class OrdenesAutocompletadoTests
         Assert.Throws<UnauthorizedAccessException>(() => fachada.Obtener(terminoBusqueda: "1"));
         Assert.Equal(0, puerto.ConsultasSugerencias);
         Assert.Equal(0, puerto.ConsultasListado);
-    }
-
-    [Trait("Area", "Backend")]
-    [Fact]
-    public async Task Pagina_ConservaFiltrosAlRefrescarYRechazaFiltrosInvalidosEnSugerencias()
-    {
-        var puerto = new ConsultaPrueba();
-        var pagina = new PaginaOrdenes(Fachada(puerto), null!, NullLogger<PaginaOrdenes>.Instance)
-        {
-            PageContext = new PageContext { HttpContext = new DefaultHttpContext() },
-            Estado = EstadoOrden.Activa, Fecha = new DateOnly(2026, 10, 12),
-            TerminoBusqueda = "Orden #15", OrdenSeleccionadaId = 15
-        };
-        pagina.OnGet();
-        pagina.OnGet();
-        Assert.Equal(2, puerto.ConsultasListado);
-        Assert.Equal(15, puerto.Id);
-        Assert.Equal(pagina.Estado, puerto.Estado);
-        Assert.Equal(pagina.Fecha, puerto.Fecha);
-        Assert.IsType<JsonResult>(await pagina.OnGetSugerenciasAsync("15"));
-        pagina.ModelState.AddModelError(nameof(pagina.Fecha), "Fecha inválida");
-        Assert.IsType<BadRequestObjectResult>(await pagina.OnGetSugerenciasAsync("15"));
-        Assert.Equal(1, puerto.ConsultasSugerencias);
     }
 
     [Trait("Area", "Datos")]

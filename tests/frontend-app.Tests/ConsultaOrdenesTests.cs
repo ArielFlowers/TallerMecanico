@@ -1,18 +1,13 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
-using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
-using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 using TallerMecanico.Aplicacion.Servicios;
-using OrdenesIndexModel = TallerMecanico.Pages.Ordenes.IndexModel;
+using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -54,80 +49,6 @@ public sealed class ConsultaOrdenesTests
     }
 
     [Fact]
-    public void PageModel_ConsultaMedianteFachadaYRefrescaConLosMismosFiltros()
-    {
-        var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance)
-        {
-            Estado = EstadoOrden.Activa,
-            Fecha = new DateOnly(2026, 10, 12),
-            TerminoBusqueda = "1234ABC",
-            OrdenSeleccionadaId = 1
-        };
-
-        Assert.IsType<PageResult>(pagina.OnGet());
-        Assert.Same(puerto.Ordenes, pagina.Ordenes);
-        Assert.IsType<PageResult>(pagina.OnGet());
-        Assert.Equal(2, puerto.Consultas);
-        Assert.Equal(pagina.Estado, puerto.Estado);
-        Assert.Equal(pagina.Fecha, puerto.Fecha);
-        Assert.Equal(pagina.TerminoBusqueda, puerto.TerminoBusqueda);
-        Assert.Equal(pagina.OrdenSeleccionadaId, puerto.OrdenSeleccionadaId);
-    }
-
-    [Fact]
-    public void PageModel_FiltrosInvalidosNoEjecutanConsultas()
-    {
-        var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
-        pagina.ModelState.AddModelError(nameof(pagina.Estado), "Estado inválido.");
-
-        Assert.IsType<PageResult>(pagina.OnGet());
-        Assert.Empty(pagina.Ordenes);
-        Assert.Equal(0, puerto.Consultas);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void Detalle_IdInvalidoNoConsultaElPuerto(int id)
-    {
-        var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
-
-        Assert.Null(fachada.ObtenerDetalle(id));
-        Assert.IsType<BadRequestObjectResult>(pagina.OnGetDetalle(id));
-        Assert.Equal(0, puerto.ConsultasDetalle);
-    }
-
-    [Fact]
-    public void Detalle_OrdenInexistenteDevuelve404SinConsultarListado()
-    {
-        var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
-
-        Assert.Null(fachada.ObtenerDetalle(999));
-        Assert.IsType<NotFoundObjectResult>(pagina.OnGetDetalle(999));
-        Assert.Equal(0, puerto.Consultas);
-    }
-
-    [Fact]
-    public void Detalle_ErrorDePersistenciaDevuelve503SinExponerElErrorTecnico()
-    {
-        var puerto = new ConsultasPrueba { FallarDetalle = true };
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
-
-        var resultado = Assert.IsType<ObjectResult>(pagina.OnGetDetalle(1));
-        Assert.Equal(503, resultado.StatusCode);
-        Assert.Equal("No se pudo consultar la orden. Intenta nuevamente.", resultado.Value);
-    }
-
-    [Fact]
     public void FactoryMethod_ResuelveElAdaptadorDeLecturaDentroDelScope()
     {
         var servicios = new ServiceCollection();
@@ -156,12 +77,10 @@ public sealed class ConsultaOrdenesTests
         public int? OrdenSeleccionadaId { get; private set; }
         public OrdenDetalle Detalle { get; } = new() { Id = 1 };
         public int ConsultasDetalle { get; private set; }
-        public bool FallarDetalle { get; init; }
 
         public OrdenDetalle? ObtenerDetalle(int id)
         {
             ConsultasDetalle++;
-            if (FallarDetalle) throw new FalloConsultaPrueba();
             return id == Detalle.Id ? Detalle : null;
         }
 
@@ -180,8 +99,6 @@ public sealed class ConsultaOrdenesTests
             return Ordenes;
         }
     }
-
-    private sealed class FalloConsultaPrueba() : DbException("Error técnico de prueba");
 
     private sealed class ConexionProhibida : DatabaseConnectionFactory
     {

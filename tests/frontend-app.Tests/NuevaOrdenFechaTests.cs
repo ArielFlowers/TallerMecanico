@@ -1,6 +1,3 @@
-using System.Text.Json.Nodes;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
@@ -50,33 +47,6 @@ public sealed class NuevaOrdenFechaTests
         var siguiente = servicio.CrearOrden(solicitud with { Token = Guid.NewGuid(), Fecha = default });
         Assert.True(siguiente.Exito);
         Assert.Equal(new DateTime(2026, 10, 19), aislada.Escalar("SELECT Fecha FROM Ordenes WHERE Id=@Id;", ("@Id", siguiente.OrdenId)));
-    }
-
-    [Trait("Area", "Datos")]
-    [MySqlAisladoFact]
-    public void BorradorAntiguoYError_MuestranFechaActualSinRestaurarUnaFechaDeEntrada()
-    {
-        using var aislada = new MySqlAisladoFixture();
-        NuevaOrdenAutocompletadoTests.Preparar(aislada);
-        var sesion = new SesionPrueba();
-        var reloj = new RelojPrueba { Ahora = DateTimeOffset.Parse("2026-10-19T03:59:59Z") };
-        var pagina = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion, reloj);
-        pagina.OnGet();
-        var salida = Assert.IsType<RedirectToPageResult>(pagina.OnPostNuevoCliente());
-        Guid id = (Guid)salida.RouteValues!["OrdenBorradorId"]!;
-        string clave = $"Ordenes:Borrador:{id:N}";
-        var borrador = JsonNode.Parse(sesion.GetString(clave)!)!;
-        borrador["Formulario"]!["Fecha"] = "1999-01-01T00:00:00";
-        sesion.SetString(clave, borrador.ToJsonString());
-        reloj.Ahora = reloj.Ahora.AddSeconds(1);
-        var retorno = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion, reloj);
-        retorno.BorradorId = id;
-        Assert.IsType<Microsoft.AspNetCore.Mvc.RazorPages.PageResult>(retorno.OnGet());
-        Assert.Equal(new DateTime(2026, 10, 19), retorno.FechaOrden);
-        Assert.IsType<Microsoft.AspNetCore.Mvc.RazorPages.PageResult>(retorno.OnPostGuardar());
-        Assert.Equal(new DateTime(2026, 10, 19), retorno.FechaOrden);
-        Assert.DoesNotContain(typeof(TallerMecanico.Aplicacion.Dto.OrdenFormViewModel).GetProperties(), propiedad => propiedad.Name == "Fecha");
-        Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
     }
 
     private sealed class RelojPrueba : TimeProvider

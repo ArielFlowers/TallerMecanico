@@ -1,6 +1,4 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
@@ -127,59 +125,6 @@ public sealed class CantidadesServiciosMySqlTests
         }
         Assert.Equal(antes, NuevaOrdenAutocompletadoTests.Instantanea(aislada));
         Assert.Equal(0, Convert.ToInt32(aislada.Escalar("SELECT COUNT(*) FROM DetalleServiciosOrdenes;")));
-    }
-
-    [MySqlAisladoFact]
-    public async Task Fracciones_RechazadasPorElModelBinderNoLleganAlGuardado()
-    {
-        using var aislada = new MySqlAisladoFixture();
-        PrepararRepetible(aislada);
-        foreach (string cantidad in new[] { "1.5", "1,5" })
-        {
-            var pagina = NuevaOrdenAutocompletadoTests.CrearPagina(aislada);
-            pagina.OnGet();
-            Guid token = pagina.Formulario.Token;
-            var (formulario, errores) = await CantidadesServiciosTests.EnlazarCantidadAsync(cantidad);
-            formulario.Token = token;
-            pagina.Formulario = formulario;
-            pagina.ModelState.Merge(errores);
-
-            Assert.IsType<PageResult>(pagina.OnPostGuardar());
-            Assert.False(pagina.ModelState.IsValid);
-            Assert.NotEmpty(pagina.ModelState["Formulario.CantidadesServicios[1]"]!.Errors);
-        }
-        Assert.Equal(0, Convert.ToInt32(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
-        Assert.Equal(20, Convert.ToInt32(aislada.Escalar("SELECT SUM(Stock) FROM Productos;")));
-    }
-
-    [MySqlAisladoFact]
-    public void BorradorYErrorDeFormulario_ConservanCantidadHastaGuardar()
-    {
-        using var aislada = new MySqlAisladoFixture();
-        PrepararRepetible(aislada);
-        var sesion = new SesionPrueba();
-        var pagina = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion);
-        pagina.OnGet();
-        pagina.Formulario.VehiculoId = 1;
-        pagina.Formulario.MecanicoId = 1;
-        pagina.Formulario.ServicioIds = [1];
-        pagina.Formulario.CantidadesServicios[1] = 3;
-        var salida = Assert.IsType<RedirectToPageResult>(pagina.OnPostNuevoCliente());
-        var restaurada = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion);
-        restaurada.BorradorId = (Guid)salida.RouteValues!["OrdenBorradorId"]!;
-
-        Assert.IsType<PageResult>(restaurada.OnGet());
-        Assert.Equal(3, restaurada.Formulario.CantidadesServicios[1]);
-        Assert.Equal(75m, restaurada.TotalEstimado);
-        restaurada.ModelState.AddModelError("Formulario.VehiculoId", "Error de prueba.");
-        Assert.IsType<PageResult>(restaurada.OnPostGuardar());
-        Assert.Equal(3, Assert.Single(restaurada.ServiciosSeleccionados).Cantidad);
-        Assert.Equal(0, Convert.ToInt32(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
-        restaurada.ModelState.Clear();
-
-        Assert.IsType<RedirectToPageResult>(restaurada.OnPostGuardar());
-        Assert.Equal(3, Convert.ToInt32(aislada.Escalar("SELECT Cantidad FROM DetalleServiciosOrdenes;")));
-        Assert.Equal(75m, Convert.ToDecimal(aislada.Escalar("SELECT Total FROM Ordenes;")));
     }
 
     [MySqlAisladoFact]

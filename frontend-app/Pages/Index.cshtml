@@ -47,11 +47,12 @@
                 <strong>@DateTime.Now.ToString(configuracion.FormatoFecha)</strong>
             </div>
 
-            <div class="dashboard-date" title="Identificador real del contenedor que atendió esta solicitud">
-                <span>Réplica activa</span>
-                <strong>@System.Environment.MachineName</strong>
-            </div>
         </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Error))
+        {
+            <div class="services-empty" role="alert">@Model.Error</div>
+        }
 
         <div class="metrics-grid">
             <div class="metric-card">

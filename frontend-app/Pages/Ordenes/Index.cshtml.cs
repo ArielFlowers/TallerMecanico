@@ -1,14 +1,13 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Data.Common;
-using TallerMecanico.Aplicacion.Fachadas;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes;
-using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Api;
+using TallerMecanico.Contratos.Ordenes;
 
 namespace TallerMecanico.Pages.Ordenes;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ordenes, ILogger<IndexModel> logger) : PageModel
+public class IndexModel(OrdenesApi ordenes, ILogger<IndexModel> logger) : PageModel
 {
     [BindProperty(SupportsGet = true)]
     public EstadoOrden? Estado { get; set; }
@@ -22,17 +21,28 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
     [BindProperty(SupportsGet = true)]
     public int? OrdenSeleccionadaId { get; set; }
 
-    public IReadOnlyList<OrdenResumen> Ordenes { get; private set; } = [];
+    public IReadOnlyList<OrdenResumenDto> Ordenes { get; private set; } = [];
 
     public string? MensajeExito { get; private set; }
 
     public int? OrdenCreadaId { get; private set; }
 
-    public IActionResult OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
         if (ModelState.IsValid)
         {
-            CargarOrdenes();
+            try
+            {
+                await CargarOrdenesAsync();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (HttpRequestException error)
+            {
+                AgregarErrorServicio(error);
+            }
         }
 
         MensajeExito = TempData?.ContainsKey("OrdenMensaje") == true
@@ -47,11 +57,11 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
     {
         if (!ModelState.IsValid) return BadRequest("Revisa los filtros de estado y fecha.");
 
-        var sugerencias = await consultas.SugerirAsync(termino, Estado, Fecha, HttpContext.RequestAborted);
+        var sugerencias = await ordenes.SugerirAsync(termino, Estado, Fecha, HttpContext.RequestAborted);
         return new JsonResult(sugerencias);
     }
 
-    public IActionResult OnGetDetalle(int id)
+    public async Task<IActionResult> OnGetDetalleAsync(int id)
     {
         if (!ModelState.IsValid || id <= 0)
         {
@@ -60,7 +70,7 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
 
         try
         {
-            var detalle = consultas.ObtenerDetalle(id);
+            var detalle = await ordenes.ObtenerPorIdAsync(id);
             return detalle is null
                 ? NotFound("La orden seleccionada no existe.")
                 : Partial("_DetalleOrden", detalle);
@@ -69,7 +79,7 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
         {
             return Forbid();
         }
-        catch (DbException error)
+        catch (HttpRequestException error)
         {
             logger.LogError(error, "No se pudo consultar el detalle de la orden {OrdenId}.", id);
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
@@ -77,7 +87,7 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
         }
     }
 
-    public IActionResult OnPostAnular(int id)
+    public async Task<IActionResult> OnPostAnularAsync(int id)
     {
         if (id <= 0)
         {
@@ -86,12 +96,25 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
             return Page();
         }
 
-        ResultadoOrden resultado = ordenes.AnularOrden(id);
-        if (!resultado.Exito)
+        try
         {
-            foreach (var error in resultado.Errores)
-                ModelState.AddModelError(string.Empty, error.Value);
-            CargarOrdenes();
+            ResultadoOrdenDto resultado = await ordenes.AnularAsync(id);
+            if (!resultado.Exito)
+            {
+                foreach (var error in resultado.Errores)
+                    ModelState.AddModelError(string.Empty, error.Value);
+                await CargarOrdenesAsync();
+                return Page();
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (HttpRequestException error)
+        {
+            AgregarErrorServicio(error);
+            await CargarOrdenesSeguroAsync();
             return Page();
         }
 
@@ -99,9 +122,27 @@ public class IndexModel(ConsultaOrdenesFacade consultas, OrdenServicioFacade ord
         return RedirectToPage(new { Estado, Fecha = Fecha?.ToString("yyyy-MM-dd"), TerminoBusqueda, OrdenSeleccionadaId });
     }
 
-    private void CargarOrdenes()
+    private async Task CargarOrdenesAsync()
     {
         TerminoBusqueda = TerminoBusqueda?.Trim();
-        Ordenes = consultas.Obtener(Estado, Fecha, TerminoBusqueda, OrdenSeleccionadaId);
+        Ordenes = await ordenes.ObtenerAsync(Estado, Fecha, TerminoBusqueda, OrdenSeleccionadaId);
+    }
+
+    private async Task CargarOrdenesSeguroAsync()
+    {
+        try
+        {
+            await CargarOrdenesAsync();
+        }
+        catch (HttpRequestException error)
+        {
+            AgregarErrorServicio(error);
+        }
+    }
+
+    private void AgregarErrorServicio(HttpRequestException error)
+    {
+        logger.LogError(error, "No se pudo consultar el listado de órdenes.");
+        ModelState.AddModelError(string.Empty, "No se pudo consultar las órdenes. Intenta nuevamente.");
     }
 }

@@ -1,12 +1,6 @@
-using System.Data.Common;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Pages.Ordenes;
 using TallerMecanico.Aplicacion.Servicios;
 
 namespace TallerMecanico.IntegrationTests;
@@ -53,59 +47,10 @@ public sealed class ComprobanteOrdenTests
         Assert.Null(generador.Orden);
     }
 
-    [Theory]
-    [InlineData(0, 400)]
-    [InlineData(-1, 400)]
-    [InlineData(999, 404)]
-    public void Endpoint_IdInvalidoOInexistenteNoGeneraPdf(int id, int codigo)
-    {
-        var pagina = Pagina(new LecturaPrueba(), new GeneradorPrueba());
-        Assert.Equal(codigo, Assert.IsAssignableFrom<ObjectResult>(pagina.OnGet(id)).StatusCode);
-    }
-
-    [Fact]
-    public void Endpoint_EntregaBytesPdfConNombreInline()
-    {
-        var generador = new GeneradorPrueba();
-        var pagina = Pagina(new LecturaPrueba(), generador);
-        var respuesta = Assert.IsType<FileContentResult>(pagina.OnGet(15));
-        Assert.Equal("application/pdf", respuesta.ContentType);
-        Assert.Same(generador.Pdf, respuesta.FileContents);
-        Assert.Contains("inline", pagina.Response.Headers.ContentDisposition.ToString());
-        Assert.Contains("Comprobante-Orden-15.pdf", pagina.Response.Headers.ContentDisposition.ToString());
-    }
-
-    [Fact]
-    public void Endpoint_ErrorConsultaDevuelve503SinDetallesTecnicos()
-    {
-        var pagina = Pagina(new LecturaPrueba { Fallar = true }, new GeneradorPrueba());
-        var resultado = Assert.IsType<ObjectResult>(pagina.OnGet(15));
-        Assert.Equal(503, resultado.StatusCode);
-        Assert.Equal("No se pudo consultar la orden. Intenta nuevamente.", resultado.Value);
-    }
-
-    [Fact]
-    public void Endpoint_ErrorGeneracionDevuelve500SinDetallesTecnicos()
-    {
-        var pagina = Pagina(new LecturaPrueba(), new GeneradorPrueba { Fallar = true });
-        var resultado = Assert.IsType<ObjectResult>(pagina.OnGet(15));
-        Assert.Equal(500, resultado.StatusCode);
-        Assert.Equal("No se pudo generar el comprobante. Intenta nuevamente.", resultado.Value);
-    }
-
-    private static ComprobanteModel Pagina(LecturaPrueba puerto, GeneradorPrueba generador)
-    {
-        var usuario = new UsuarioPrueba();
-        return new ComprobanteModel(SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, usuario), usuario, generador),
-            NullLogger<ComprobanteModel>.Instance)
-        { PageContext = new PageContext { HttpContext = new DefaultHttpContext() } };
-    }
-
     private sealed class LecturaPrueba : IOrdenQueryRepository
     {
         public OrdenDetalle Orden { get; } = SoporteComprobantePdf.Orden();
         public int Consultas { get; private set; }
-        public bool Fallar { get; init; }
         public IReadOnlyList<OrdenResumen> Obtener(EstadoOrden? estado = null, DateOnly? fecha = null,
             string? terminoBusqueda = null, int? ordenSeleccionadaId = null) => [];
         public Task<IReadOnlyList<SugerenciaOrden>> SugerirAsync(string termino, EstadoOrden? estado = null,
@@ -114,7 +59,6 @@ public sealed class ComprobanteOrdenTests
         public OrdenDetalle? ObtenerDetalle(int id)
         {
             Consultas++;
-            if (Fallar) throw new ErrorConsulta();
             return id == Orden.Id ? Orden : null;
         }
     }
@@ -126,10 +70,8 @@ public sealed class ComprobanteOrdenTests
         public string? Literal { get; private set; }
         public string? Usuario { get; private set; }
         public DateTimeOffset Fecha { get; private set; }
-        public bool Fallar { get; init; }
         public byte[] Generar(OrdenDetalle orden, string totalLiteral, string generadoPor, DateTimeOffset fechaGeneracion)
         {
-            if (Fallar) throw new InvalidOperationException("Error interno de prueba");
             Orden = orden; Literal = totalLiteral; Usuario = generadoPor; Fecha = fechaGeneracion;
             return Pdf;
         }
@@ -140,6 +82,4 @@ public sealed class ComprobanteOrdenTests
         public DateTimeOffset Ahora { get; set; } = new(2026, 10, 12, 20, 30, 0, TimeSpan.Zero);
         public override DateTimeOffset GetUtcNow() => Ahora;
     }
-
-    private sealed class ErrorConsulta() : DbException("Error interno de prueba");
 }

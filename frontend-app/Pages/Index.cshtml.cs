@@ -1,23 +1,32 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class IndexModel : PageModel
+public class IndexModel(OrdenesApi ordenes, ILogger<IndexModel> logger) : PageModel
 {
-    private readonly DashboardService _dashboardService;
-
     public DashboardViewModel Dashboard { get; private set; } = new();
 
-    public IndexModel(DashboardService dashboardService)
-    {
-        _dashboardService = dashboardService;
-    }
+    public string? Error { get; private set; }
 
-    public void OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
-        Dashboard = _dashboardService.GetDashboardData();
+        try
+        {
+            Dashboard = await ordenes.ObtenerDashboardAsync(HttpContext.RequestAborted);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (HttpRequestException error)
+        {
+            logger.LogError(error, "No se pudo consultar el dashboard.");
+            Error = "No se pudo consultar el resumen del taller. Intenta nuevamente.";
+        }
+
+        return Page();
     }
 }
