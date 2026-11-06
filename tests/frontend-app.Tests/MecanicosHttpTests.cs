@@ -76,6 +76,13 @@ public sealed class MecanicosHttpTests
                     "<input[^>]+id=\"MecanicoInput_PrimerApellido\"[^>]*>").Value;
                 Assert.Matches(@"\brequired(?:\s|=|/?>)", primerApellido);
 
+                using (var complementoConEspacios = await EnviarFormulario(cliente, formulario, "Crear", "", 0, complementoCi: " "))
+                {
+                    Assert.Equal(HttpStatusCode.OK, complementoConEspacios.StatusCode);
+                    Assert.Contains("El complemento del CI no debe contener espacios.",
+                        WebUtility.HtmlDecode(await complementoConEspacios.Content.ReadAsStringAsync()));
+                    Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Mecanicos;")));
+                }
                 using var creado = await EnviarFormulario(cliente, formulario, "Crear", "", 0);
                 Assert.Equal(HttpStatusCode.Redirect, creado.StatusCode);
                 int id = Convert.ToInt32(aislada.Escalar("SELECT Id FROM Mecanicos;"));
@@ -131,6 +138,7 @@ public sealed class MecanicosHttpTests
         inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
+        aislada.ConfigurarFrontend(inicio);
         return inicio;
     }
 
@@ -175,13 +183,13 @@ public sealed class MecanicosHttpTests
 
     private static async Task<HttpResponseMessage> EnviarFormulario(
         HttpClient cliente, string html, string handler, string segundoApellido, int id,
-        string? termino = null, int? seleccionado = null)
+        string? termino = null, int? seleccionado = null, string complementoCi = "")
     {
         var campos = new Dictionary<string, string>
         {
             ["__RequestVerificationToken"] = ObtenerToken(html),
             ["MecanicoId"] = id.ToString(), ["MecanicoInput.Ci"] = "1234567",
-            ["MecanicoInput.ComplementoCi"] = "", ["MecanicoInput.Nombres"] = "Juan Carlos",
+            ["MecanicoInput.ComplementoCi"] = complementoCi, ["MecanicoInput.Nombres"] = "Juan Carlos",
             ["MecanicoInput.PrimerApellido"] = "Pérez", ["MecanicoInput.SegundoApellido"] = segundoApellido,
             ["MecanicoInput.Genero"] = "Masculino", ["MecanicoInput.Especialidad"] = "Motores",
             ["MecanicoInput.Celular"] = "71234567"
@@ -236,11 +244,17 @@ public sealed class MecanicosHttpTests
         using (var recepcionista = NuevoCliente(url))
         {
             await IniciarSesion(recepcionista, password, "recepcion_prueba");
-            using var denegada = await recepcionista.GetAsync("/Mecanicos?handler=Sugerencias&termino=Juan");
-            Assert.True(denegada.StatusCode is HttpStatusCode.Redirect or HttpStatusCode.Forbidden);
-            Assert.DoesNotContain("textoPrincipal", await denegada.Content.ReadAsStringAsync());
-            if (denegada.StatusCode == HttpStatusCode.Redirect)
-                Assert.Contains("AccessDenied", denegada.Headers.Location?.ToString());
+            recepcionista.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+            using var permitida = await recepcionista.GetAsync("/Mecanicos?handler=Sugerencias&termino=Juan");
+            Assert.Equal(HttpStatusCode.OK, permitida.StatusCode);
+            Assert.Contains("textoPrincipal", await permitida.Content.ReadAsStringAsync());
+            string listadoRecepcionista = await recepcionista.GetStringAsync("/Mecanicos");
+            Assert.DoesNotContain("data-editar-mecanico", listadoRecepcionista);
+            foreach (string handler in new[] { "Crear", "Actualizar", "Eliminar" })
+            {
+                using var prohibida = await EnviarFormulario(recepcionista, listadoRecepcionista, handler, "", id);
+                Assert.Equal(HttpStatusCode.Forbidden, prohibida.StatusCode);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")))

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using TallerMecanico.Api;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
@@ -19,26 +21,32 @@ namespace TallerMecanico.IntegrationTests;
 public sealed class MecanicoServiceTests
 {
     [Fact]
-    public void AltaDesdeOrden_AbreElFormularioYVuelveConElBorrador()
+    public async Task AltaDesdeOrden_AbreElFormularioYVuelveConElBorrador()
     {
-        var repositorio = new RepositorioPrueba();
+        var api = new ApiFalsa();
+        api.Json("GET api/mecanicos", Array.Empty<MecanicoDto>());
+        api.Json("POST api/mecanicos", new Dictionary<string, string>());
         var borradores = new BorradoresPrueba();
         Guid orden = borradores.Guardar(new OrdenFormViewModel());
-        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos(), new UsuarioPrueba());
-        var pagina = new TallerMecanico.Pages.Mecanicos.IndexModel(servicio, borradores)
+        var contexto = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Role, "Administrador")], "Prueba"))
+        };
+        var pagina = new TallerMecanico.Pages.Mecanicos.IndexModel(new MecanicosApi(api.Cliente()), borradores)
         {
             OrdenBorradorId = orden,
             MecanicoInput = MecanicosTests.FormularioValido(),
-            TempData = new TempDataDictionary(new DefaultHttpContext(), new TemporalesPrueba())
+            PageContext = new Microsoft.AspNetCore.Mvc.RazorPages.PageContext { HttpContext = contexto },
+            TempData = new TempDataDictionary(contexto, new TemporalesPrueba())
         };
 
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         Assert.Equal("crear", pagina.FormularioActivo);
 
-        var redireccion = Assert.IsType<RedirectToPageResult>(pagina.OnPostCrear());
+        var redireccion = Assert.IsType<RedirectToPageResult>(await pagina.OnPostCrearAsync());
         Assert.Equal("/Ordenes/Crear", redireccion.PageName);
         Assert.Equal(orden, redireccion.RouteValues!["BorradorId"]);
-        Assert.Single(repositorio.Registros);
+        Assert.Single(api.Llamadas, llamada => llamada == "POST api/mecanicos");
         Assert.NotNull(borradores.Obtener(orden));
     }
 

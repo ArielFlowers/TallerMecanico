@@ -1,29 +1,17 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Servicios;
+using Microsoft.AspNetCore.Mvc;
+using TallerMecanico.Api;
+using TallerMecanico.Pages.Servicios;
 
 namespace TallerMecanico.Pages.Historial;
 
-public class IndexModel : PageModel
+public class IndexModel(ServiciosApi serviciosApi) : ServiciosPageModel
 {
-    private readonly IHistorialCostoServicioService _historialService;
-
-    public IndexModel(
-        IHistorialCostoServicioService historialService)
-    {
-        _historialService = historialService;
-    }
-
-    public IReadOnlyList<HistorialCostoServicio> Historial
-    {
-        get;
-        private set;
-    } = [];
-
+    public IReadOnlyList<HistorialCostoServicioDto> Historial { get; private set; } = [];
     public bool TieneRegistros => Historial.Count > 0;
 
-    public void OnGet()
+    public Task<IActionResult> OnGetAsync() => AtenderAsync(async () =>
     {
-        Historial = _historialService.ObtenerHistorial();
-    }
+        Historial = await serviciosApi.ObtenerHistorialAsync(HttpContext.RequestAborted);
+        return Page();
+    });
 }

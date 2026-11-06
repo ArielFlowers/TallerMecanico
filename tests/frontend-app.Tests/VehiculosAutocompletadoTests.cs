@@ -1,3 +1,4 @@
+using TallerMecanico.Api;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -44,12 +45,12 @@ public sealed class VehiculosAutocompletadoTests
 
     [Trait("Area", "Backend")]
     [Fact]
-    public void RegistrarClienteYRetomar_ConservanSeleccionExactaFormularioYOrden()
+    public async Task RegistrarClienteYRetomar_ConservanSeleccionExactaFormularioYOrden()
     {
-        var (pagina, vehiculos, clientes, borradores, _) = CrearPagina();
-        vehiculos.Datos.Add(new Vehiculo { Id = 7, Placa = "123ABC", ClienteId = 1 });
-        vehiculos.Datos.Add(new Vehiculo { Id = 8, Placa = "123DEF", ClienteId = 1 });
-        clientes.Datos.Add(new Cliente { Id = 1, Nombres = "Ana", PrimerApellido = "Arce" });
+        var (pagina, _, vehiculos, clientes, borradores, _) = CrearPagina();
+        vehiculos.Add(new VehiculoDto { Id = 7, Placa = "123ABC", ClienteId = 1 });
+        vehiculos.Add(new VehiculoDto { Id = 8, Placa = "123DEF", ClienteId = 1 });
+        clientes.Add(new ClienteDto { Id = 1, Nombres = "Ana", PrimerApellido = "Arce" });
         pagina.Formulario = Formulario(1);
         pagina.Formulario.Observaciones = "Conservar datos";
         pagina.Formulario.EsPlacaExtranjera = true;
@@ -65,7 +66,7 @@ public sealed class VehiculosAutocompletadoTests
         pagina.Formulario = new();
         pagina.Buscar = null;
         pagina.VehiculoSeleccionadoId = null;
-        Assert.IsType<PageResult>(pagina.OnGetRetomar(id));
+        Assert.IsType<PageResult>(await pagina.OnGetRetomarAsync(id));
         Assert.Equal(7, pagina.VehiculoSeleccionadoId);
         Assert.Equal("123ABC", pagina.Buscar);
         Assert.Equal("Conservar datos", pagina.Formulario.Observaciones);
@@ -77,18 +78,18 @@ public sealed class VehiculosAutocompletadoTests
 
     [Trait("Area", "Backend")]
     [Fact]
-    public void GuardarDesdeOrden_ConservaRetornoYAsociacionConCliente()
+    public async Task GuardarDesdeOrden_ConservaRetornoYAsociacionConCliente()
     {
-        var (pagina, vehiculos, clientes, _, ordenes) = CrearPagina();
-        clientes.Datos.Add(new Cliente { Id = 1 });
+        var (pagina, api, _, clientes, _, ordenes) = CrearPagina();
+        clientes.Add(new ClienteDto { Id = 1 });
         Guid orden = ordenes.Guardar(new OrdenFormViewModel { MecanicoId = 12 });
         pagina.OrdenBorradorId = orden;
         pagina.Formulario = Formulario(1);
-        var redireccion = Assert.IsType<RedirectToPageResult>(pagina.OnPostCreate());
+        var redireccion = Assert.IsType<RedirectToPageResult>(await pagina.OnPostCreateAsync());
         Assert.Equal("/Ordenes/Crear", redireccion.PageName);
         Assert.Equal(orden, redireccion.RouteValues!["BorradorId"]);
-        Assert.Equal(vehiculos.Datos.Single().Id, redireccion.RouteValues["VehiculoNuevoId"]);
-        Assert.Equal(1, vehiculos.Datos.Single().ClienteId);
+        Assert.Equal(9, redireccion.RouteValues["VehiculoNuevoId"]);
+        Assert.Equal(1, JsonSerializer.Deserialize<VehiculoFormViewModel>(Assert.Single(api.Cuerpos), new JsonSerializerOptions(JsonSerializerDefaults.Web))!.ClienteId);
         Assert.Equal(12, ordenes.Obtener(orden)!.MecanicoId);
     }
 
@@ -176,21 +177,26 @@ public sealed class VehiculosAutocompletadoTests
         return servicio.Search(placa).Single(vehiculo => vehiculo.Placa == placa).Id;
     }
 
-    private static (PaginaVehiculos Pagina, VehiculosPrueba Vehiculos, ClientesPrueba Clientes, BorradorVehiculoSesion Borradores, BorradorOrdenSesion Ordenes) CrearPagina()
+    private static (PaginaVehiculos Pagina, ApiFalsa Api, List<VehiculoDto> Vehiculos, List<ClienteDto> Clientes, BorradorVehiculoSesion Borradores, BorradorOrdenSesion Ordenes) CrearPagina()
     {
         var contexto = new DefaultHttpContext { Session = new SesionPrueba() };
         var acceso = new HttpContextAccessor { HttpContext = contexto };
         var usuario = new UsuarioPrueba();
-        var vehiculos = new VehiculosPrueba();
-        var clientes = new ClientesPrueba();
-        var servicio = new VehiculoService(vehiculos, clientes, new ValidacionVehiculos(), usuario);
-        var clienteServicio = new ClienteService(clientes, vehiculos, new ValidacionClientes(), usuario);
+        var vehiculos = new List<VehiculoDto>();
+        var clientes = new List<ClienteDto>();
+        var api = new ApiFalsa();
+        api.Json("GET api/clientes", clientes);
+        api.Json("GET api/vehiculos", vehiculos);
+        api.Json("GET api/vehiculos/7", new VehiculoDto { Id = 7, Placa = "123ABC", ClienteId = 1 });
+        api.Json("GET api/vehiculos/catalogo", new Dictionary<string, string[]> { ["Toyota"] = ["Corolla"] });
+        var formulario = Formulario(1); formulario.Id = 9;
+        api.Json("POST api/vehiculos", new ResultadoFormulario<VehiculoFormViewModel>(formulario, new Dictionary<string, string>()));
         var borradores = new BorradorVehiculoSesion(acceso, usuario);
-        var pagina = new PaginaVehiculos(servicio, clienteServicio, borradores)
+        var pagina = new PaginaVehiculos(new VehiculosApi(api.Cliente()), new ClientesApi(api.Cliente()), borradores)
         {
             PageContext = new PageContext { HttpContext = contexto }, TempData = new TempDataDictionary(contexto, new TemporalesPrueba())
         };
-        return (pagina, vehiculos, clientes, borradores, new BorradorOrdenSesion(acceso, usuario));
+        return (pagina, api, vehiculos, clientes, borradores, new BorradorOrdenSesion(acceso, usuario));
     }
 
     private sealed class TemporalesPrueba : ITempDataProvider

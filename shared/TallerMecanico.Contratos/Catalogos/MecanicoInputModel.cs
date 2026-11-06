@@ -1,9 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace TallerMecanico.Contratos.Catalogos;
 
 public class MecanicoInputModel
 {
     public string Ci { get; set; } = string.Empty;
 
+    [DisplayFormat(ConvertEmptyStringToNull = false)]
     public string ComplementoCi { get; set; } = string.Empty;
 
     public string Nombres { get; set; } = string.Empty;

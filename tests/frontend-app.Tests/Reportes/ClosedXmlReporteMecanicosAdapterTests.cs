@@ -12,6 +12,11 @@ namespace TallerMecanico.IntegrationTests.Reportes;
 [Trait("Area", "Backend")]
 public class ClosedXmlReporteMecanicosAdapterTests
 {
+    static ClosedXmlReporteMecanicosAdapterTests()
+    {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Evaluation;
+    }
+
     [Fact]
     public void Generar_ProduceXlsxGenuinoConDatos()
     {

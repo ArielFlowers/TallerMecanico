@@ -68,6 +68,7 @@ public sealed class VehiculosNavegadorTests
         inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificadoRuta;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = certificadoPassword;
+        aislada.ConfigurarFrontend(inicio);
         using Process servidor = Process.Start(inicio)!;
         Task<string> salidaServidor = servidor.StandardOutput.ReadToEndAsync();
         Task<string> errorServidor = servidor.StandardError.ReadToEndAsync();

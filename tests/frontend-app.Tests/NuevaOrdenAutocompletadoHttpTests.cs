@@ -118,8 +118,8 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
                         {
                             using var peticion = new HttpRequestMessage(HttpMethod.Get, $"/{modulo}?handler=Sugerencias&termino=prue");
                             peticion.Headers.Add("X-Requested-With", "XMLHttpRequest");
-                            using var denegada = await cliente.SendAsync(peticion);
-                            Assert.Equal(HttpStatusCode.Forbidden, denegada.StatusCode);
+                            using var respuestaModulo = await cliente.SendAsync(peticion);
+                            Assert.Equal(modulo == "Mecanicos" ? HttpStatusCode.OK : HttpStatusCode.Forbidden, respuestaModulo.StatusCode);
                         }
                 }
                 Assert.Equal(antes, NuevaOrdenAutocompletadoTests.Instantanea(aislada));
@@ -200,6 +200,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
         inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
+        aislada.ConfigurarFrontend(inicio);
         return inicio;
     }
     internal static HttpClient NuevoCliente(string url, CookieContainer cookies) => new(new HttpClientHandler

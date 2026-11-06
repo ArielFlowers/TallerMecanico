@@ -1,92 +1,58 @@
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Api;
 using TallerMecanico.Aplicacion.Puertos;
 
 namespace TallerMecanico.Pages.Vehiculos;
 
-public class IndexModel : PageModel
+public class IndexModel(
+    VehiculosApi vehiculosApi,
+    ClientesApi clientesApi,
+    IBorradorVehiculoPort borradores) : PageModel
 {
-    private readonly VehiculoService _vehiculoService;
-    private readonly ClienteService _clienteService;
-    private readonly IBorradorVehiculoPort _borradores;
+    private static readonly StringComparer ComparadorAlfabetico =
+        StringComparer.Create(CultureInfo.GetCultureInfo("es-BO"), ignoreCase: true);
 
-    public IndexModel(
-        VehiculoService vehiculoService,
-        ClienteService clienteService,
-        IBorradorVehiculoPort borradores)
-    {
-        _vehiculoService =
-            vehiculoService;
-
-        _clienteService =
-            clienteService;
-        _borradores = borradores;
-    }
-
-    [BindProperty]
-    public VehiculoFormViewModel Formulario { get; set; } =
-        new();
-
-    [BindProperty(SupportsGet = true)]
-    public string? Buscar { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public int? VehiculoSeleccionadoId { get; set; }
-
-    public List<Vehiculo> Vehiculos { get; private set; } =
-        [];
-
-    public IReadOnlyList<Cliente> Clientes { get; private set; } =
-        [];
-
+    [BindProperty] public VehiculoFormViewModel Formulario { get; set; } = new();
+    [BindProperty(SupportsGet = true)] public string? Buscar { get; set; }
+    [BindProperty(SupportsGet = true)] public int? VehiculoSeleccionadoId { get; set; }
+    [BindProperty] public Guid? BorradorId { get; set; }
+    [BindProperty(SupportsGet = true)] public Guid? OrdenBorradorId { get; set; }
+    [BindProperty(SupportsGet = true)] public int? ClientePreseleccionadoId { get; set; }
+    public IReadOnlyList<VehiculoDto> Vehiculos { get; private set; } = [];
+    public IReadOnlyList<ClienteDto> Clientes { get; private set; } = [];
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Catalogo { get; private set; } =
+        new Dictionary<string, IReadOnlyList<string>>();
+    public IEnumerable<string> MarcasOrdenadas => Catalogo.Keys.OrderBy(marca => marca, ComparadorAlfabetico);
     public string? ModalAbierto { get; private set; }
-
     public string? ModeloAnterior { get; private set; }
-
-    [BindProperty]
-    public Guid? BorradorId { get; set; }
-    [BindProperty(SupportsGet = true)]
-    public Guid? OrdenBorradorId { get; set; }
-    [BindProperty(SupportsGet = true)]
-    public int? ClientePreseleccionadoId { get; set; }
-
     public string? MensajeError => TempData["VehiculoError"] as string;
 
-    public void OnGet()
+    public Task<IActionResult> OnGetAsync() => AtenderAsync(async () =>
     {
-        CargarDatos();
+        await CargarDatosAsync();
         if (OrdenBorradorId.HasValue) ModalAbierto = "crear";
         if (ClientePreseleccionadoId.HasValue) Formulario.ClienteId = ClientePreseleccionadoId;
-    }
-
-    public IActionResult OnGetBuscar()
-    {
-        CargarDatos();
-
         return Page();
-    }
+    });
 
-    public async Task<JsonResult> OnGetSugerenciasAsync(string? termino)
+    public Task<IActionResult> OnGetBuscarAsync() => AtenderAsync(async () =>
+    {
+        await CargarDatosAsync();
+        return Page();
+    });
+
+    public Task<IActionResult> OnGetSugerenciasAsync(string? termino) => AtenderAsync(async () =>
     {
         Response.Headers.CacheControl = "no-store";
-        var sugerencias = await _vehiculoService.SugerirAsync(termino, HttpContext.RequestAborted);
-        return new JsonResult(sugerencias);
-    }
+        return new JsonResult(await vehiculosApi.SugerirAsync(termino, HttpContext.RequestAborted));
+    });
 
-    public IActionResult OnPostCreate()
-    {
-        return GuardarFormulario(
-            actualizar: false);
-    }
-
-    public IActionResult OnPostUpdate()
-    {
-        return GuardarFormulario(
-            actualizar: true);
-    }
+    public Task<IActionResult> OnPostCreateAsync() => AtenderAsync(() => GuardarFormularioAsync(actualizar: false));
+    public Task<IActionResult> OnPostUpdateAsync() => AtenderAsync(() => GuardarFormularioAsync(actualizar: true));
 
     public IActionResult OnPostRegistrarCliente(string modal)
     {
@@ -94,213 +60,127 @@ public class IndexModel : PageModel
         Guid? ordenBorradorId = OrdenBorradorId;
         if (BorradorId.HasValue)
         {
-            ordenBorradorId = _borradores.Obtener(BorradorId.Value)?.OrdenBorradorId ?? ordenBorradorId;
-            _borradores.Eliminar(BorradorId.Value);
+            ordenBorradorId = borradores.Obtener(BorradorId.Value)?.OrdenBorradorId ?? ordenBorradorId;
+            borradores.Eliminar(BorradorId.Value);
         }
-        Guid borradorId = _borradores.Guardar(Formulario, modal, Buscar, ordenBorradorId, VehiculoSeleccionadoId);
+        Guid borradorId = borradores.Guardar(Formulario, modal, Buscar, ordenBorradorId, VehiculoSeleccionadoId);
         return RedirectToPage("/Clientes/Index", new { BorradorVehiculoId = borradorId, OrdenBorradorId = ordenBorradorId });
     }
 
-    public IActionResult OnGetRetomar(Guid borradorId)
+    public Task<IActionResult> OnGetRetomarAsync(Guid borradorId) => AtenderAsync(async () =>
     {
-        BorradorVehiculo? borrador = _borradores.Obtener(borradorId);
+        var borrador = borradores.Obtener(borradorId);
         if (borrador is null)
         {
             TempData["VehiculoError"] = "El borrador del vehículo venció. Abre un formulario nuevo para continuar.";
             return RedirectToPage();
         }
-
         Formulario = borrador.Formulario;
         Buscar = borrador.Buscar;
         VehiculoSeleccionadoId = borrador.VehiculoSeleccionadoId;
         BorradorId = borradorId;
         OrdenBorradorId = borrador.OrdenBorradorId;
-        return MostrarModal(borrador.Modal);
+        return await MostrarModalAsync(borrador.Modal);
+    });
+
+    public Task<IActionResult> OnPostDeleteAsync(int id) => AtenderAsync(async () =>
+    {
+        var resultado = await vehiculosApi.EliminarAsync(id, HttpContext.RequestAborted);
+        if (!resultado.Exito) TempData["VehiculoError"] = resultado.Mensaje;
+        return RedirigirAlListado();
+    });
+
+    public string ObtenerNombreCliente(int? clienteId)
+    {
+        if (!clienteId.HasValue) return "Sin cliente";
+        var cliente = Clientes.FirstOrDefault(cliente => cliente.Id == clienteId.Value);
+        return cliente is null ? "Cliente no disponible" : $"{cliente.PrimerApellido} {cliente.SegundoApellido} {cliente.Nombres}".Trim();
     }
 
-    public IActionResult OnPostDelete(
-        int id)
+    public string ObtenerCiCliente(int clienteId)
     {
-        string? error = _vehiculoService.Delete(id);
-        if (error is not null) TempData["VehiculoError"] = error;
+        var cliente = Clientes.FirstOrDefault(cliente => cliente.Id == clienteId);
+        if (cliente is null) return string.Empty;
+        return string.IsNullOrWhiteSpace(cliente.ComplementoCi) ? cliente.Ci : $"{cliente.Ci}-{cliente.ComplementoCi}";
+    }
 
+    public IReadOnlyList<string> ObtenerModelosOrdenados(string marca) =>
+        Catalogo.TryGetValue(marca, out var modelos) ? modelos.OrderBy(modelo => modelo, ComparadorAlfabetico).ToArray() : [];
+
+    private async Task<IActionResult> GuardarFormularioAsync(bool actualizar)
+    {
+        string modal = actualizar ? "editar" : "crear";
+        if (!ModelState.IsValid) return await MostrarModalAsync(modal);
+        try
+        {
+            var resultado = actualizar
+                ? await vehiculosApi.ActualizarAsync(Formulario)
+                : await vehiculosApi.CrearAsync(Formulario);
+            Formulario = resultado.Formulario;
+            ModelState.Clear();
+            foreach (var error in resultado.Errores)
+                ModelState.AddModelError(string.IsNullOrEmpty(error.Key) ? string.Empty : $"Formulario.{error.Key}", error.Value);
+        }
+        catch (ValidationException error)
+        {
+            ModelState.AddModelError(string.Empty, error.Message);
+        }
+
+        if (!ModelState.IsValid) return await MostrarModalAsync(modal);
+        if (BorradorId.HasValue) borradores.Eliminar(BorradorId.Value);
+        if (OrdenBorradorId.HasValue)
+        {
+            int id = Formulario.Id;
+            if (id <= 0)
+                id = (await vehiculosApi.ObtenerAsync(Formulario.Placa ?? string.Empty, HttpContext.RequestAborted))
+                    .FirstOrDefault(vehiculo => vehiculo.Placa == Formulario.Placa)?.Id ?? 0;
+            if (id > 0) return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId, VehiculoNuevoId = id });
+        }
         return RedirigirAlListado();
     }
 
-    public string ObtenerNombreCliente(
-        int? clienteId)
+    private async Task<IActionResult> MostrarModalAsync(string modal)
     {
-        if (!clienteId.HasValue)
-        {
-            return "Sin cliente";
-        }
-
-        Cliente? cliente =
-            Clientes.FirstOrDefault(
-                cliente =>
-                    cliente.Id ==
-                    clienteId.Value);
-
-        if (cliente is null)
-        {
-            return "Cliente no disponible";
-        }
-
-        return $"{cliente.PrimerApellido} {cliente.SegundoApellido} {cliente.Nombres}".Trim();
-    }
-
-    public string ObtenerCiCliente(
-        int clienteId)
-    {
-        Cliente? cliente =
-            Clientes.FirstOrDefault(
-                cliente =>
-                    cliente.Id ==
-                    clienteId);
-
-        if (cliente is null)
-        {
-            return string.Empty;
-        }
-
-        if (string.IsNullOrWhiteSpace(
-                cliente.ComplementoCi))
-        {
-            return cliente.Ci;
-        }
-
-        return
-            $"{cliente.Ci}-{cliente.ComplementoCi}";
-    }
-
-    private IActionResult GuardarFormulario(
-        bool actualizar)
-    {
-        string modal =
-            actualizar
-                ? "editar"
-                : "crear";
-
-        // Los errores de conversión del Model Binder,
-        // por ejemplo kilometraje inválido,
-        // impiden guardar.
-        if (!ModelState.IsValid)
-        {
-            return MostrarModal(
-                modal);
-        }
-
-        var resultado =
-            actualizar
-                ? _vehiculoService.Update(
-                    Formulario)
-                : _vehiculoService.Create(
-                    Formulario);
-
-        Formulario =
-            resultado.Formulario;
-
-        ModelState.Clear();
-
-        foreach (var error in
-                 resultado.Errores)
-        {
-            string campo =
-                string.IsNullOrEmpty(
-                    error.Key)
-                    ? string.Empty
-                    : $"Formulario.{error.Key}";
-
-            ModelState.AddModelError(
-                campo,
-                error.Value);
-        }
-
-        if (ModelState.IsValid)
-        {
-            if (BorradorId.HasValue) _borradores.Eliminar(BorradorId.Value);
-            if (OrdenBorradorId.HasValue)
-            {
-                Vehiculo? creado = _vehiculoService.Search(Formulario.Placa ?? string.Empty).FirstOrDefault(x => x.Placa == Formulario.Placa);
-                if (creado is not null) return RedirectToPage("/Ordenes/Crear", new { BorradorId = OrdenBorradorId, VehiculoNuevoId = creado.Id });
-            }
-            return RedirigirAlListado();
-        }
-
-        return MostrarModal(
-            modal);
-    }
-
-    private IActionResult MostrarModal(
-        string modal)
-    {
-        ModalAbierto =
-            modal;
-
+        ModalAbierto = modal;
         if (modal == "editar")
         {
-            Vehiculo? anterior =
-                _vehiculoService.GetById(
-                    Formulario.Id);
-
-            ModeloAnterior =
-                string.IsNullOrWhiteSpace(
-                    anterior?.Marca)
-                    ? anterior?.Modelo
-                    : null;
+            var anterior = await vehiculosApi.ObtenerPorIdAsync(Formulario.Id, HttpContext.RequestAborted);
+            ModeloAnterior = string.IsNullOrWhiteSpace(anterior?.Marca) ? anterior?.Modelo : null;
         }
-
-        CargarDatos();
-
+        await CargarDatosAsync();
         return Page();
     }
 
-    private void CargarDatos()
+    private async Task CargarDatosAsync()
     {
-        CargarClientes();
-        CargarVehiculos();
-    }
-
-    private void CargarClientes()
-    {
-        Clientes =
-            _clienteService.Obtener()
-                .OrderBy(cliente => cliente.PrimerApellido, CatalogoVehiculos.ComparadorAlfabetico)
-                .ThenBy(cliente => cliente.SegundoApellido, CatalogoVehiculos.ComparadorAlfabetico)
-                .ThenBy(cliente => cliente.Nombres, CatalogoVehiculos.ComparadorAlfabetico)
-                .ThenBy(cliente => cliente.Ci)
-                .ThenBy(cliente => cliente.ComplementoCi)
-                .ThenBy(cliente => cliente.Id)
-                .ToArray();
-    }
-
-    private void CargarVehiculos()
-    {
+        Clientes = (await clientesApi.ObtenerAsync(cancelacion: HttpContext.RequestAborted))
+            .OrderBy(cliente => cliente.PrimerApellido, ComparadorAlfabetico)
+            .ThenBy(cliente => cliente.SegundoApellido, ComparadorAlfabetico)
+            .ThenBy(cliente => cliente.Nombres, ComparadorAlfabetico)
+            .ThenBy(cliente => cliente.Ci).ThenBy(cliente => cliente.ComplementoCi).ThenBy(cliente => cliente.Id).ToArray();
         if (VehiculoSeleccionadoId.HasValue)
         {
-            var vehiculo = _vehiculoService.GetById(VehiculoSeleccionadoId.Value);
+            var vehiculo = await vehiculosApi.ObtenerPorIdAsync(VehiculoSeleccionadoId.Value, HttpContext.RequestAborted);
             Vehiculos = vehiculo is null ? [] : [vehiculo];
-            return;
         }
-
-        if (string.IsNullOrWhiteSpace(
-                Buscar))
-        {
-            Vehiculos =
-                _vehiculoService.GetAll();
-
-            return;
-        }
-
-        Vehiculos =
-            _vehiculoService.Search(
-                Buscar.Trim());
+        else
+            Vehiculos = await vehiculosApi.ObtenerAsync(string.IsNullOrWhiteSpace(Buscar) ? null : Buscar.Trim(), HttpContext.RequestAborted);
+        Catalogo = (await vehiculosApi.ObtenerCatalogoAsync(HttpContext.RequestAborted))
+            .OrderBy(marca => marca.Key, ComparadorAlfabetico)
+            .ToDictionary(marca => marca.Key, marca => (IReadOnlyList<string>)marca.Value.OrderBy(modelo => modelo, ComparadorAlfabetico).ToArray());
     }
 
-    private IActionResult RedirigirAlListado()
-    {
-        return RedirectToPage(pageName: null,
-            pageHandler: OrdenBorradorId.HasValue ? "Buscar" : null,
+    private IActionResult RedirigirAlListado() =>
+        RedirectToPage(pageName: null, pageHandler: OrdenBorradorId.HasValue ? "Buscar" : null,
             routeValues: new { Buscar, VehiculoSeleccionadoId, OrdenBorradorId, ClientePreseleccionadoId });
+
+    private async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
+    {
+        try { return await accion(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized) { return Challenge(); }
+        catch (HttpRequestException) { return StatusCode(StatusCodes.Status503ServiceUnavailable, "El servicio de vehículos no está disponible. Intenta nuevamente."); }
+        catch (TaskCanceledException) when (!HttpContext.RequestAborted.IsCancellationRequested)
+        { return StatusCode(StatusCodes.Status503ServiceUnavailable, "El servicio de vehículos no está disponible. Intenta nuevamente."); }
     }
 }

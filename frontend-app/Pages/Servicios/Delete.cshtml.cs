@@ -1,53 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Servicios;
 
-public class DeleteModel : PageModel
+public class DeleteModel(ServiciosApi serviciosApi) : ServiciosPageModel
 {
-    private readonly IServicioService _servicioService;
+    public ServicioDto Servicio { get; private set; } = new();
+    [TempData] public string? MensajeError { get; set; }
+    [TempData] public string? MensajeExito { get; set; }
 
-    public DeleteModel(IServicioService servicioService)
+    public Task<IActionResult> OnGetAsync(int id) => AtenderAsync(async () =>
     {
-        _servicioService = servicioService;
-    }
-
-    public Servicio Servicio { get; private set; } = new();
-
-    [TempData]
-    public string? MensajeError { get; set; }
-
-    [TempData]
-    public string? MensajeExito { get; set; }
-
-    public IActionResult OnGet(int id)
-    {
-        Servicio? servicio = _servicioService.ObtenerPorId(id);
-
-        if (servicio is null)
-        {
-            return NotFound();
-        }
-
+        var servicio = await serviciosApi.ObtenerPorIdAsync(id, HttpContext.RequestAborted);
+        if (servicio is null) return NotFound();
         Servicio = servicio;
-
         return Page();
-    }
+    });
 
-    public IActionResult OnPost(int id)
+    public Task<IActionResult> OnPostAsync(int id) => AtenderAsync(async () =>
     {
-        try
-        {
-            _servicioService.Eliminar(id);
-            MensajeExito = "Servicio eliminado correctamente.";
-        }
-        catch (InvalidOperationException ex)
-        {
-            MensajeError = ex.Message;
-        }
-
+        var resultado = await serviciosApi.EliminarAsync(id, HttpContext.RequestAborted);
+        if (resultado.Exito) MensajeExito = "Servicio eliminado correctamente.";
+        else MensajeError = resultado.Mensaje;
         return RedirectToPage("./Index");
-    }
+    });
 }

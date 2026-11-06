@@ -1,3 +1,4 @@
+using TallerMecanico.Api;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -150,17 +151,17 @@ public class VehiculosTests
     }
 
     [Fact]
-    public void RegistrarCliente_RetornaAlBorradorConIdGenerado()
+    public async Task RegistrarCliente_RetornaAlBorradorConIdGenerado()
     {
         var sesion = new SesionPrueba();
         var usuario = new UsuarioPrueba();
         var contexto = new HttpContextAccessor { HttpContext = new DefaultHttpContext { Session = sesion } };
         var borradores = new BorradorVehiculoSesion(contexto, usuario);
-        var clientes = new ClientesPrueba();
-        var vehiculos = new VehiculosPrueba();
-        var servicio = new ClienteService(clientes, vehiculos, new ValidacionClientes(), usuario);
+        var api = new ApiFalsa();
+        api.Json("POST api/clientes", new ResultadoFormulario<ClienteFormViewModel>(
+            new ClienteFormViewModel { Id = 1 }, new Dictionary<string, string>()));
         Guid id = borradores.Guardar(Formulario("123ABC"), "crear", null);
-        var pagina = new TallerMecanico.Pages.Clientes.IndexModel(servicio, borradores, new BorradorOrdenSesion(contexto, usuario))
+        var pagina = new TallerMecanico.Pages.Clientes.IndexModel(new ClientesApi(api.Cliente()), borradores, new BorradorOrdenSesion(contexto, usuario))
         {
             BorradorVehiculoId = id,
             ClienteInput = new ClienteFormViewModel
@@ -169,10 +170,10 @@ public class VehiculosTests
             },
             TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(contexto.HttpContext!, new TempDataPrueba())
         };
-        var resultado = Assert.IsType<RedirectToPageResult>(pagina.OnPostCrear());
+        var resultado = Assert.IsType<RedirectToPageResult>(await pagina.OnPostCrearAsync());
         Assert.Equal("/Vehiculos/Index", resultado.PageName);
         Assert.Equal("Retomar", resultado.PageHandler);
-        Assert.Equal(clientes.Datos.Single().Id, borradores.Obtener(id)!.Formulario.ClienteId);
+        Assert.Equal(1, borradores.Obtener(id)!.Formulario.ClienteId);
     }
 
     private sealed class TempDataPrueba : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
