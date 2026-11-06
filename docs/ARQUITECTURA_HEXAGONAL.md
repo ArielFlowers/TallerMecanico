@@ -10,10 +10,10 @@
 |---|---|---|
 | Entrada | `IGestionUsuariosPort` | Lo usan las páginas de Usuarios y lo implementa `UsuarioAdministracionService` |
 | Entrada | `ICambioContrasenaPort` | Lo usa `Pages/Auth/CambiarContrasena` y lo implementa `CambioContrasenaService` |
-| Entrada | `IReporteOrdenesPort`, `IReporteMecanicosPort` | Los usan las páginas de Reportes y los implementan `ReporteOrdenesService` y `ReporteMecanicosService` |
+| Entrada | `IReporteOrdenesPort`, `IReporteMecanicosPort` | Los consume `ReportesController` del Servicio 3 y los implementan `ReporteOrdenesService` y `ReporteMecanicosService` |
 | Salida | `IUsuarioAdministracionPort`, `IActivacionInvitacionPort`, `ISolicitudRegistroPort`, `IAuditoriaPort` | Adaptadores MySQL de `Infraestructura/Persistencia/MySql` |
-| Salida | `IConsultaReportesPort` | `ConsultaReportesMySqlAdapter` |
-| Salida | `IGeneradorReporte*PdfPort`, `IGeneradorReporte*ExcelPort` | Adaptadores QuestPDF y ClosedXML |
+| Salida | `IConsultaReportesPort` | `ConsultaReportesMySqlAdapter` del Servicio 3 |
+| Salida | `IGeneradorReporte*PdfPort`, `IGeneradorReporte*ExcelPort` | Adaptadores QuestPDF y ClosedXML del Servicio 3 |
 | Salida | `IEmailService`, `IPasswordHasher` | `GmailEmailService`, `Argon2idPasswordHasher` |
 
 `IGeneradorNombreUsuarioPort` es la excepción: `GeneradorNombreUsuarioService` lo implementa dentro de `Aplicacion`, porque el protocolo es una regla de negocio y no depende de tecnología externa.
@@ -77,12 +77,49 @@ Regla de dependencias: `Presentacion -> Aplicacion -> Dominio`; `Infraestructura
 
 ## Reportes
 
+El Servicio 3 es independiente en `backend-services/servicio-reportes` (puerto 5203) y aplica
+arquitectura hexagonal. La presentación Razor (`frontend-app/Pages/Reportes`) ya no accede a
+MySQL ni genera archivos: consume `ReportesApi` por HTTP.
+
 | Reporte | Tablas | Filtros | Salidas |
 |---|---|---|---|
 | 1: lista ordenada de órdenes | Ordenes, Vehiculos, Clientes, Mecanicos, Servicios y DetalleServiciosOrdenes | Fecha desde, fecha hasta y estado | Pantalla, PDF y Excel |
 | 2: información sumariada por mecánico, con gráfico de barras | Mecanicos y Ordenes | Nombre, fecha desde y fecha hasta | Pantalla, PDF y Excel |
 
 Ambos usan el logo en el encabezado y los datos sumariados al pie.
+
+### Puertos y adaptadores
+
+- Entrada: `IReporteOrdenesPort` e `IReporteMecanicosPort`, implementados por
+  `ReporteOrdenesService` y `ReporteMecanicosService`; los invoca `ReportesController`.
+- Salida: `IConsultaReportesPort`, implementado por `ConsultaReportesMySqlAdapter`
+  (consultas con filtros, agregados y escape de comodines `%`/`_`).
+- Salida: `IGeneradorReporte*PdfPort`, implementados por `QuestPdfReporte*Adapter`
+  con `GraficoEstadosOrdenes` y `GraficoMecanicos`.
+- Salida: `IGeneradorReporte*ExcelPort`, implementados por `ClosedXmlReporte*Adapter`
+  con `XlsxBuilder`.
+- Composición: `Infraestructura/RegistroDependencias.AddInfraestructuraReportes()`
+  registra la fábrica de conexiones, los adaptadores y los servicios.
+
+### Contrato HTTP
+
+| Método y ruta | Filtros (`query`) | Respuesta |
+|---|---|---|
+| `GET /api/reportes/ordenes` | `fechaDesde`, `fechaHasta`, `estado` | JSON `DocumentoReporteOrdenes` |
+| `GET /api/reportes/ordenes/pdf` | `fechaDesde`, `fechaHasta`, `estado` | `application/pdf` |
+| `GET /api/reportes/ordenes/excel` | `fechaDesde`, `fechaHasta`, `estado` | XLSX |
+| `GET /api/reportes/mecanicos` | `nombreMecanico`, `fechaDesde`, `fechaHasta`, `mecanicoId` | JSON `DocumentoReporteMecanicos` |
+| `GET /api/reportes/mecanicos/pdf` | `nombreMecanico`, `fechaDesde`, `fechaHasta`, `mecanicoId` | `application/pdf` |
+| `GET /api/reportes/mecanicos/excel` | `nombreMecanico`, `fechaDesde`, `fechaHasta`, `mecanicoId` | XLSX |
+
+El frontend envía la clave interna; el controlador exige rol Administrador y toma
+`GeneradoPor` del usuario del token (`sistema` si no viene). Los filtros inválidos
+responden 400, la falta de sesión 401/403 y una base caída 503 mediante
+`ErroresApiFilter`. Las páginas Razor conservan sus rutas y ahora son asíncronas.
+
+Pruebas: `tests/servicio-reportes.Tests` cubre servicios, adaptadores (QuestPDF y
+ClosedXML) e integración MySQL aislada; el contrato HTTP y el flujo navegador
+permanecen en `tests/frontend-app.Tests`.
 
 ## Dashboard por rol
 

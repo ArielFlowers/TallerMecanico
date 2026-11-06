@@ -10,10 +10,7 @@ using TallerMecanico.Infraestructura;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
-using TallerMecanico.Infraestructura.Documentos;
-using TallerMecanico.Infraestructura.Exportacion;
 using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Servicios.Reportes;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Seguridad;
 using Microsoft.AspNetCore.RateLimiting;
@@ -415,16 +412,6 @@ builder.Services.AddScoped<
 // =====================================================
 builder.Services.AddScoped<
     DashboardService>();
-// =====================================================
-// REPORTES (HU3 - Servicio 3)
-// =====================================================
-builder.Services.AddScoped<IConsultaReportesPort, ConsultaReportesMySqlAdapter>();
-builder.Services.AddScoped<IGeneradorReporteOrdenesPdfPort, QuestPdfReporteOrdenesAdapter>();
-builder.Services.AddScoped<IGeneradorReporteOrdenesExcelPort, ClosedXmlReporteOrdenesAdapter>();
-builder.Services.AddScoped<IGeneradorReporteMecanicosPdfPort, QuestPdfReporteMecanicosAdapter>();
-builder.Services.AddScoped<IGeneradorReporteMecanicosExcelPort, ClosedXmlReporteMecanicosAdapter>();
-builder.Services.AddScoped<IReporteOrdenesPort, ReporteOrdenesService>();
-builder.Services.AddScoped<IReporteMecanicosPort, ReporteMecanicosService>();
 // =====================================================
 // CLIENTES HTTP DE LOS SERVICIOS BACKEND
 // =====================================================
