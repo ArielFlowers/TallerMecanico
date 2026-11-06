@@ -1,5 +1,3 @@
-using StackExchange.Redis;
-
 namespace TallerMecanico.Infraestructura.Sesion;
 
 public static class SesionDisponible
@@ -24,7 +22,7 @@ public static class SesionDisponible
     }
 
     internal static bool EsFalloAlmacenamiento(Exception error, HttpContext contexto) =>
-        error is RedisException or TimeoutException or ObjectDisposedException
+        error is TimeoutException or ObjectDisposedException
         || error is OperationCanceledException && !contexto.RequestAborted.IsCancellationRequested;
 }
 

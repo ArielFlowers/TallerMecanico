@@ -12,17 +12,17 @@ internal static class AppsPrueba
         MySqlAisladoFixture.RaizProyecto, carpeta, "bin", Configuracion, "net10.0", ensamblado + ".dll");
 
     public static string DllFrontend => Dll("frontend-app", "TallerMecanico.Frontend");
+    public static string DllOrdenes => Dll("backend-services/servicio-ordenes", "TallerMecanico.ServicioOrdenes");
 
     public static void CrearEsquema(string cadenaConexion)
     {
         var inicio = new ProcessStartInfo("dotnet")
         {
-            // A3: cuando DatabaseInitializer pase a servicio-ordenes, usar ese proyecto aquí.
-            WorkingDirectory = MySqlAisladoFixture.RaizFrontend,
+            WorkingDirectory = Path.Combine(MySqlAisladoFixture.RaizProyecto, "backend-services", "servicio-ordenes"),
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(DllFrontend);
+        inicio.ArgumentList.Add(DllOrdenes);
         inicio.ArgumentList.Add("--inicializar-esquema");
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         inicio.Environment["ConnectionStrings__MySqlConnection"] = cadenaConexion;

@@ -34,7 +34,7 @@ case "$1" in
         printf '%s\n' \
             'activo|app1|taller-app1|running|taller:local' \
             'pausado|app2|taller-app2|paused|taller:local' \
-            'reiniciando|redis|taller-redis|restarting|redis:alpine' \
+            'reiniciando|app3|taller-app3|restarting|taller:local' \
             'apagado|nginx|taller-nginx|exited|nginx:alpine' \
             'ajeno|mysql|base-historica|running|mysql:8.4'
         ;;

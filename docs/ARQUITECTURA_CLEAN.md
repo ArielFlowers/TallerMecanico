@@ -97,10 +97,14 @@ Los setters siguen públicos porque los usa el mapeo ADO al leer de MySQL. Es un
 ## Pruebas
 
 ```powershell
-dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj --filter "Area=Backend"
+dotnet test tests/servicio-ordenes.Tests/servicio-ordenes.Tests.csproj
 ```
 
 - `OrdenDominioTests`: reglas del dominio, sin base de datos.
 - `OrdenesTests`: casos de uso con dobles en memoria.
 - `OrdenesMySqlTests`: transacción real sobre el MySQL aislado. Requiere `TALLER_TEST_MYSQL`; ver el README.
-- `ArquitecturaTests`: regla de dependencias.
+- `ArquitecturaTests`: regla de dependencias de `backend-services/servicio-ordenes`.
+
+El código de órdenes y catálogos se copió a `backend-services/servicio-ordenes`. Mientras las páginas
+del Frontend no lo consuman por HTTP, el Frontend conserva su copia y sus pruebas de páginas siguen en
+`tests/frontend-app.Tests`. Cuando ya no la use, se borra.

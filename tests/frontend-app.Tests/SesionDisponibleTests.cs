@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using StackExchange.Redis;
 using TallerMecanico.Infraestructura.Sesion;
 
 namespace TallerMecanico.IntegrationTests;
@@ -43,9 +42,9 @@ public sealed class SesionDisponibleTests
     [InlineData(false)]
     public async Task FalloCarga_NoSeConfundeConSesionVencidaYNuncaConfirma(bool timeout)
     {
-        var sesion = new SesionControlada { FalloCarga = ErrorRedis(timeout) };
+        var sesion = new SesionControlada { FalloCarga = ErrorAlmacenamiento(timeout) };
         var (entrada, salida) = Contextos(sesion);
-        var logger = new RegistradorCachePrueba<ConfirmarSesionFilter>();
+        var logger = new RegistradorPrueba<ConfirmarSesionFilter>();
         await new ConfirmarSesionFilter(logger).OnPageHandlerExecutionAsync(entrada, () =>
         {
             salida.Exception = Record.Exception(() => SesionDisponible.Obtener(entrada.HttpContext));
@@ -60,9 +59,9 @@ public sealed class SesionDisponibleTests
     [InlineData(false)]
     public async Task FalloCommit_NoDevuelveRedireccionExitosaNiExponeExcepcion(bool timeout)
     {
-        var sesion = new SesionControlada { FalloCommit = ErrorRedis(timeout) };
+        var sesion = new SesionControlada { FalloCommit = ErrorAlmacenamiento(timeout) };
         var (entrada, salida) = Contextos(sesion);
-        var logger = new RegistradorCachePrueba<ConfirmarSesionFilter>();
+        var logger = new RegistradorPrueba<ConfirmarSesionFilter>();
         await new ConfirmarSesionFilter(logger).OnPageHandlerExecutionAsync(entrada, () =>
         {
             SesionDisponible.Obtener(entrada.HttpContext).SetString("prueba", "contenido");
@@ -75,7 +74,7 @@ public sealed class SesionDisponibleTests
     }
 
     [Fact]
-    public async Task ErrorAjenoASesion_NoSeEnmascaraComoFalloRedis()
+    public async Task ErrorAjenoASesion_NoSeEnmascaraComoFalloDeAlmacenamiento()
     {
         var sesion = new SesionControlada();
         var (entrada, salida) = Contextos(sesion);
@@ -99,12 +98,13 @@ public sealed class SesionDisponibleTests
         Assert.Throws<OperationCanceledException>(() => SesionDisponible.Obtener(contexto));
     }
 
-    private static Exception ErrorRedis(bool timeout) => timeout ? new TimeoutException("Password=secreto-no-registrar")
-        : new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Password=secreto-no-registrar");
+    private static Exception ErrorAlmacenamiento(bool timeout) => timeout
+        ? new TimeoutException("Password=no-publicar")
+        : new ObjectDisposedException("Password=no-publicar");
 
-    private static ConfirmarSesionFilter Filtro() => new(new RegistradorCachePrueba<ConfirmarSesionFilter>());
+    private static ConfirmarSesionFilter Filtro() => new(new RegistradorPrueba<ConfirmarSesionFilter>());
 
-    private static void Comprobar503(PageHandlerExecutedContext contexto, RegistradorCachePrueba<ConfirmarSesionFilter> logger, string operacion)
+    private static void Comprobar503(PageHandlerExecutedContext contexto, RegistradorPrueba<ConfirmarSesionFilter> logger, string operacion)
     {
         var resultado = Assert.IsType<ContentResult>(contexto.Result);
         Assert.Equal(503, resultado.StatusCode);

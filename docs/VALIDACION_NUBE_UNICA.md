@@ -1,5 +1,7 @@
 # Aiven como única base de trabajo
 
+> Registro histórico del 30/10/2026. Redis se retiró después; ver [H1](H1-HTTPS.md).
+
 Implementación y verificación del **30/10/2026**. El único arranque diario es
 `dotnet msbuild -t:NubeUp`. Se mantienen tres réplicas, Nginx, HTTPS, Redis,
 MySQL 8.4 en Aiven y las pruebas automáticas en servidores temporales aislados.

@@ -249,8 +249,6 @@ public sealed class AdministracionReportesHttpTests
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
         inicio.Environment["DataProtection__KeysPath"] = Path.Combine(temporal, "keys");
-        inicio.Environment["REDIS_HOST"] = "";
-        inicio.Environment["Redis__Host"] = "";
         return inicio;
     }
 
