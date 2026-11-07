@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\frontend-app\TallerMecanico.Frontend.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="TallerMecanico.Contratos" />
+    <Using Include="TallerMecanico.Contratos.Catalogos" />
+    <Using Include="TallerMecanico.Contratos.Dashboard" />
+    <Using Include="TallerMecanico.Contratos.Reportes" />
+    <Using Include="TallerMecanico.Contratos.Usuarios" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+  </ItemGroup>
+  <Import Project="..\Comun.props" />
+</Project>

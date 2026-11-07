@@ -1,0 +1,53 @@
+@startuml Clases_Persistencia_Transaccion
+title Diagrama de clases - Persistencia y unidad de trabajo
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+interface IUnidadTrabajoOrden
+interface ITransaccionOrden
+interface IOrdenRepository
+interface IDetalleOrdenRepository
+interface IProductoStockRepository
+interface ICabeceraOrdenRepository
+
+class MySqlUnidadTrabajoOrden {
+  + Iniciar(): ITransaccionOrden
+}
+
+class Transaccion {
+  + Ordenes: IOrdenRepository
+  + Detalles: IDetalleOrdenRepository
+  + Productos: IProductoStockRepository
+  + Cabecera: ICabeceraOrdenRepository
+  + Confirmar(): void
+  + Revertir(): void
+  + Dispose(): void
+}
+
+class OrdenRepository
+class DetalleOrdenRepository
+class ProductoStockOrdenRepository
+class CabeceraOrdenRepository
+class ConsultaOrdenesRepository
+
+class CreadorOrden {
+  + CrearRepositorio(): IOrdenRepository
+}
+class CreadorDetalle {
+  + CrearRepositorio(): IDetalleOrdenRepository
+}
+class CreadorConsultaOrdenes {
+  + CrearRepositorio(): IOrdenQueryRepository
+}
+
+MySqlUnidadTrabajoOrden ..|> IUnidadTrabajoOrden
+MySqlUnidadTrabajoOrden *-- Transaccion
+Transaccion ..|> ITransaccionOrden
+OrdenRepository ..|> IOrdenRepository
+DetalleOrdenRepository ..|> IDetalleOrdenRepository
+ProductoStockOrdenRepository ..|> IProductoStockRepository
+CabeceraOrdenRepository ..|> ICabeceraOrdenRepository
+CreadorOrden ..> OrdenRepository : crea
+CreadorDetalle ..> DetalleOrdenRepository : crea
+CreadorConsultaOrdenes ..> ConsultaOrdenesRepository : crea
+@enduml

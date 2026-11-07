@@ -1,0 +1,452 @@
+@page
+@model TallerMecanico.Pages.Vehiculos.IndexModel
+@using TallerMecanico.Pages.Shared
+
+@{
+    ViewData["Title"] = "Vehículos";
+    var datosCrear = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["Prefijo"] = "crear" };
+    var datosEditar = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary(ViewData) { ["Prefijo"] = "editar" };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/autocompletado.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/vehiculos.css" asp-append-version="true" />
+}
+
+<div class="dashboard">
+
+    <div class="dashboard-header">
+
+        <div>
+            <h1>Gestión de Vehículos</h1>
+            <p>
+                Administra y registra los vehículos del taller.
+            </p>
+        </div>
+
+        <button type="button"
+                class="services-btn services-btn-primary"
+                data-modal-abrir="modal-crear">
+            + Nuevo Registro
+        </button>
+
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.MensajeError))
+    {
+        <div class="service-validation" role="alert">@Model.MensajeError</div>
+    }
+
+    <div class="services-actions vehiculos-toolbar">
+        <form method="get" asp-page-handler="Buscar"
+              class="buscador services-actions vehiculos-search" id="vehiculos-busqueda"
+              role="search">
+            <input type="hidden" name="handler" value="Buscar" />
+            <input type="hidden" name="OrdenBorradorId" value="@Model.OrdenBorradorId" />
+            <input type="hidden" name="ClientePreseleccionadoId" value="@Model.ClientePreseleccionadoId" />
+            <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+            {
+                Id = "vehiculos-autocompletado",
+                UrlSugerencias = Url.Page("./Index", "Sugerencias")!,
+                Modo = BuscadorAutocompletadoModel.ModoFiltrar,
+                Etiqueta = "Buscar vehículos",
+                Placeholder = "Buscar por placa, marca o modelo...",
+                NombreCampoTexto = nameof(Model.Buscar),
+                NombreCampoId = nameof(Model.VehiculoSeleccionadoId),
+                Texto = Model.Buscar ?? string.Empty,
+                IdSeleccionado = Model.VehiculoSeleccionadoId
+            }' />
+            <button type="submit" class="services-btn services-btn-secondary">Buscar</button>
+            @if (!string.IsNullOrWhiteSpace(Model.Buscar) || Model.VehiculoSeleccionadoId.HasValue)
+            {
+                <a asp-page="./Index" asp-page-handler="Buscar"
+                   asp-route-ordenBorradorId="@Model.OrdenBorradorId"
+                   asp-route-clientePreseleccionadoId="@Model.ClientePreseleccionadoId"
+                   class="services-btn services-btn-secondary">Limpiar</a>
+            }
+        </form>
+
+        <a asp-page="./Index"
+           asp-page-handler="Buscar"
+           asp-route-ordenBorradorId="@Model.OrdenBorradorId"
+           asp-route-clientePreseleccionadoId="@Model.ClientePreseleccionadoId"
+           class="services-btn services-btn-secondary">
+            Refrescar
+        </a>
+    </div>
+
+    <section class="recent-orders">
+
+        <div class="section-header">
+            <div>
+                <h2>
+                    Vehículos Registrados
+                    (@Model.Vehiculos.Count)
+                </h2>
+            </div>
+        </div>
+
+
+        @if (Model.Vehiculos.Count == 0)
+        {
+            <div class="services-empty">
+
+                <div class="services-empty-icon">
+                    🚗
+                </div>
+
+                <strong>
+                    No existen vehículos registrados
+                </strong>
+
+                <span>
+                    Registra un nuevo vehículo para comenzar a llevar el control.
+                </span>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+
+                <table class="orders-table services-table vehiculos-table">
+
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Cliente</th>
+                            <th>Kilometraje</th>
+                            <th>Observaciones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var vehiculo in Model.Vehiculos)
+                        {
+                            <tr>
+
+                                <td class="service-name">
+                                    @vehiculo.Placa
+                                    @if (vehiculo.EsPlacaExtranjera)
+                                    {
+                                        <small>Extranjera</small>
+                                    }
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(vehiculo.Marca)
+                                        ? "Pendiente"
+                                        : vehiculo.Marca)
+                                </td>
+
+                                <td>
+                                    @vehiculo.Modelo
+                                </td>
+
+                                <td>
+                                    @if (vehiculo.ClienteId.HasValue)
+                                    {
+                                        <strong>
+                                            @Model.ObtenerNombreCliente(
+                                                vehiculo.ClienteId)
+                                        </strong>
+
+                                        <div style="
+                                            font-size: 12px;
+                                            opacity: .7;
+                                            margin-top: 3px;">
+                                            CI:
+                                            @Model.ObtenerCiCliente(
+                                                vehiculo.ClienteId.Value)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="opacity: .65;">
+                                            Sin cliente asignado
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @vehiculo.Kilometraje km
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(
+                                        vehiculo.Observaciones)
+                                        ? "-"
+                                        : vehiculo.Observaciones)
+                                </td>
+
+                                <td>
+
+                                    <div class="services-row-actions">
+
+                                        <button type="button"
+                                                class="service-action service-action-icon service-action-edit"
+                                                title="Editar vehículo"
+                                                data-modal-abrir="modal-editar"
+                                                data-id="@vehiculo.Id"
+                                                data-placa="@vehiculo.Placa" data-extranjera="@vehiculo.EsPlacaExtranjera.ToString().ToLowerInvariant()"
+                                                data-marca="@vehiculo.Marca"
+                                                data-modelo="@vehiculo.Modelo"
+                                                data-kilometraje="@vehiculo.Kilometraje"
+                                                data-observaciones="@vehiculo.Observaciones"
+                                                data-cliente-id="@(vehiculo.ClienteId?.ToString() ?? string.Empty)">
+                                            ✎
+                                        </button>
+
+                                        <button type="button"
+                                                class="service-action service-action-icon service-action-delete"
+                                                title="Eliminar vehículo"
+                                                data-modal-abrir="modal-eliminar"
+                                                data-id="@vehiculo.Id"
+                                                data-placa="@vehiculo.Placa" data-extranjera="@vehiculo.EsPlacaExtranjera.ToString().ToLowerInvariant()">
+                                            🗑
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </section>
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- MODAL: REGISTRAR NUEVO VEHÍCULO                  -->
+<!-- ================================================= -->
+
+<div id="modal-crear"
+     class="modal-overlay @(Model.ModalAbierto == "crear" ? "is-open" : "")">
+
+    <div class="app-modal-dialog">
+
+        <div class="service-form-header">
+
+            <div>
+                <h2>
+                    Registrar Nuevo Vehículo
+                </h2>
+
+                <p>
+                    Completa los datos para registrar un nuevo vehículo.
+                </p>
+            </div>
+
+            <button type="button"
+                    class="modal-close"
+                    data-modal-cerrar>
+                &times;
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              asp-page-handler="Create"
+              class="service-form">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="service-validation">
+            </div>
+
+
+            <partial name="_CamposVehiculo" model="Model" view-data="datosCrear" />
+
+            <div class="service-form-actions">
+
+                <button type="button"
+                        class="services-btn services-btn-secondary"
+                        data-modal-cerrar>
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="services-btn services-btn-primary">
+                    Guardar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- MODAL: EDITAR VEHÍCULO                           -->
+<!-- ================================================= -->
+
+<div id="modal-editar"
+     class="modal-overlay @(Model.ModalAbierto == "editar" ? "is-open" : "")">
+
+    <div class="app-modal-dialog">
+
+        <div class="service-form-header">
+
+            <div>
+                <h2>
+                    Editar Vehículo
+                </h2>
+
+                <p>
+                    Modifica los datos del vehículo y guarda los cambios.
+                </p>
+            </div>
+
+            <button type="button"
+                    class="modal-close"
+                    data-modal-cerrar>
+                &times;
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              asp-page-handler="Update"
+              class="service-form">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="service-validation">
+            </div>
+
+
+
+
+            <partial name="_CamposVehiculo" model="Model" view-data="datosEditar" />
+
+            <div class="service-form-actions">
+
+                <button type="button"
+                        class="services-btn services-btn-secondary"
+                        data-modal-cerrar>
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="services-btn services-btn-primary">
+                    Guardar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- MODAL: ELIMINAR VEHÍCULO                         -->
+<!-- ================================================= -->
+
+<div id="modal-eliminar"
+     class="modal-overlay">
+
+    <div class="app-modal-dialog">
+
+        <div class="service-form-header">
+
+            <div>
+                <h2>
+                    Eliminar Vehículo
+                </h2>
+
+                <p>
+                    Confirma la eliminación del vehículo seleccionado.
+                </p>
+            </div>
+
+            <button type="button"
+                    class="modal-close"
+                    data-modal-cerrar>
+                &times;
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              asp-page-handler="Delete"
+              class="service-form">
+
+            <input type="hidden"
+                   name="id"
+                   id="eliminar-id" />
+            <input type="hidden" name="Buscar" value="@Model.Buscar" />
+            <input type="hidden" name="VehiculoSeleccionadoId" value="@Model.VehiculoSeleccionadoId" />
+            <input type="hidden" name="OrdenBorradorId" value="@Model.OrdenBorradorId" />
+            <input type="hidden" name="ClientePreseleccionadoId" value="@Model.ClientePreseleccionadoId" />
+
+            <div class="service-delete-warning">
+
+                <strong id="eliminar-placa">
+                </strong>
+
+                <span>
+                    Se eliminará este vehículo del taller y no se podrá deshacer.
+                </span>
+
+            </div>
+
+
+            <div class="service-form-actions">
+
+                <button type="button"
+                        class="services-btn services-btn-secondary"
+                        data-modal-cerrar>
+                    Cancelar
+                </button>
+
+                <button type="submit"
+                        class="services-btn services-btn-danger">
+                    Eliminar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script src="~/js/autocompletado.js" asp-append-version="true"></script>
+
+    <script id="catalogo-vehiculos"
+            type="application/json">
+        @Html.Raw(
+            System.Text.Json.JsonSerializer.Serialize(
+                Model.Catalogo))
+    </script>
+
+    <script src="~/js/vehiculos.js"
+            asp-append-version="true">
+    </script>
+
+
+}

@@ -1,0 +1,69 @@
+@startuml C4_Nivel3_Componentes
+!pragma layout smetana
+title C4 - Nivel 3: Componentes de las cuatro aplicaciones
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 12
+skinparam ArrowColor #4A5568
+skinparam BorderColor #4A5568
+
+package "Frontend" as FE #EEF2FF {
+  [Pages de órdenes,\ncatálogos y reportes] as UI
+  [Clientes HTTP\n(OrdenesApi, CatálogosApi,\nUsuariosApi, ReportesApi)] as API
+  [Sesión y token] as SES
+}
+
+package "Servicio 1 — Clean Architecture" as S1 #ECFDF5 {
+  [Controllers HTTP\nOrdenes, catálogos y dashboard] as C1
+  [Módulo Órdenes\nFachadas y casos de uso] as MOD1
+  [Módulo Inventario\nProductoService y stock] as MOD2
+  [Módulo Catálogo\nServicios y repositorios] as MOD3
+  [Dominio y contratos] as NUC
+  [Infraestructura\nMySQL, unidad de trabajo y PDF] as INF
+}
+
+package "Servicio 2 — Hexagonal" as S2 #FEF3C7 {
+  [API de usuarios\ny autenticación] as S2API
+}
+
+package "Servicio 3 — Hexagonal" as S3 #FCE7F3 {
+  [API de reportes\nPDF y Excel] as S3API
+}
+
+package "Contratos compartidos" as DTO #F3F4F6 {
+  [DTO de órdenes, catálogos,\nusuarios y reportes] as Contratos
+}
+
+database "MySQL 8.4\nAiven" as BD #DBEAFE
+cloud "SMTP Gmail" as SMTP #FFEDD5
+
+UI --> API
+API --> SES
+API --> C1 : HTTP
+API --> S2API : HTTP
+API --> S3API : HTTP
+API ..> Contratos
+
+C1 --> MOD1
+C1 --> MOD2
+C1 --> MOD3
+MOD1 --> NUC
+MOD2 --> INF
+MOD3 --> INF
+MOD1 --> INF
+INF --> NUC
+INF --> BD
+S2API --> BD
+S2API --> SMTP
+S3API --> BD
+C1 ..> Contratos
+S2API ..> Contratos
+S3API ..> Contratos
+
+note bottom of MOD1
+  Una creación toca Órdenes,
+  Inventario y Catálogo en una
+  sola transacción.
+end note
+@enduml

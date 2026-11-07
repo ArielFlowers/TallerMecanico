@@ -1,0 +1,13 @@
+<Project>
+  <!-- Soporte de pruebas compartido por todos los proyectos de tests/. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)comun\**\*.cs" LinkBase="Comun" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Solo aseguran que estén compilados: las pruebas los ejecutan como procesos. -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\frontend-app\TallerMecanico.Frontend.csproj" ReferenceOutputAssembly="false" Condition="'$(MSBuildProjectName)' != 'frontend-app.Tests'" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\backend-services\servicio-ordenes\TallerMecanico.ServicioOrdenes.csproj" ReferenceOutputAssembly="false" Condition="'$(MSBuildProjectName)' != 'servicio-ordenes.Tests'" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\backend-services\servicio-usuarios\TallerMecanico.ServicioUsuarios.csproj" ReferenceOutputAssembly="false" Condition="'$(MSBuildProjectName)' != 'servicio-usuarios.Tests'" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\backend-services\servicio-reportes\TallerMecanico.ServicioReportes.csproj" ReferenceOutputAssembly="false" Condition="'$(MSBuildProjectName)' != 'servicio-reportes.Tests'" />
+  </ItemGroup>
+</Project>

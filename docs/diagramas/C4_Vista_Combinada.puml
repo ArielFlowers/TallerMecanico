@@ -1,0 +1,37 @@
+@startuml C4_Vista_Combinada
+!pragma layout smetana
+title C4 - Vista combinada: contexto, contenedores y despliegue
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 11
+skinparam ArrowColor #4A5568
+skinparam BorderColor #4A5568
+
+actor "Administrador /\nRecepcionista" as Admin
+actor "Mecánico" as Mec
+
+node "Host Docker" {
+  component "Frontend\n.NET 10 :8080\nHTTPS" as FE #7C3AED
+  component "servicio-ordenes\n.NET 10 :5201\nClean" as S1 #9F7AEA
+  component "servicio-usuarios\n.NET 10 :5202\nHexagonal" as S2 #F6AD55
+  component "servicio-reportes\n.NET 10 :5203\nHexagonal" as S3 #F687B3
+}
+
+cloud "Aiven" {
+  database "MySQL 8.4" as BD #4299E1
+}
+
+cloud "Gmail" {
+  node "SMTP" as SMTP #F6AD55
+}
+
+Admin --> FE
+Mec --> FE
+FE --> S1
+FE --> S2
+FE --> S3
+S1 --> BD
+S2 --> BD
+S3 --> BD
+S2 --> SMTP
+@enduml

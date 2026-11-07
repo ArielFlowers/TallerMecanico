@@ -1,0 +1,46 @@
+@startuml Secuencia_CrearOrden
+!pragma layout smetana
+title Secuencia - Crear una orden con descuento de stock
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+
+actor Recepcionista
+participant "Página Nueva Orden" as UI
+participant "OrdenesApi" as API
+participant "OrdenesController" as C
+participant "OrdenServicioFacade" as F
+participant "CrearOrdenCasoUso" as CU
+participant "MySqlUnidadTrabajoOrden" as UoW
+participant "Repositorios MySQL" as Repo
+database "MySQL" as BD
+
+Recepcionista -> UI : Completa el formulario
+UI -> UI : Validar token de sesión
+UI -> API : POST api/ordenes
+API -> C : Crear(CrearOrdenDto)
+C -> C : Convertir DTO a solicitud
+C -> F : CrearOrden(solicitud)
+F -> CU : Ejecutar(solicitud)
+CU -> UoW : Iniciar()
+UoW -> BD : BEGIN (ReadCommitted)
+CU -> Repo : ObtenerPorToken(token)
+alt Token ya confirmado
+  Repo --> CU : Orden existente
+  CU --> F : Resultado idempotente
+else Token nuevo
+  CU -> Repo : Validar vehículo, mecánico y servicios
+  CU -> Repo : Bloquear productos (FOR UPDATE)
+  Repo -> BD : SELECT ... FOR UPDATE
+  CU -> CU : Validar stock y calcular total
+  CU -> Repo : Insertar orden, servicios y detalles
+  CU -> Repo : Descontar stock
+  CU -> Repo : Actualizar total
+  CU -> UoW : Confirmar()
+  UoW -> BD : COMMIT
+  CU --> F : ResultadoOrden.Correcto
+end
+F --> C : ResultadoOrden
+C --> API : ResultadoOrdenDto
+API --> UI : ResultadoOrdenDto
+UI --> Recepcionista : Orden creada
+@enduml

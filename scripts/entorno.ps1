@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $raiz = Split-Path $PSScriptRoot -Parent
 $proyecto = 'tallermecanico'
-$servicios = @('redis', 'app1', 'app2', 'app3', 'nginx')
+$servicios = @('app1', 'app2', 'app3', 'nginx')
 
 function Mostrar-Ayuda {
     Write-Host @'
@@ -160,7 +160,7 @@ try {
         }
         'usuarios' {
             Comprobar-Configuracion
-            Invocar-Compose @('exec', 'app1', 'dotnet', 'TallerMecanico.dll', '--inicializar-usuarios')
+            Invocar-Compose @('exec', 'app1', 'dotnet', 'TallerMecanico.Frontend.dll', '--inicializar-usuarios')
         }
     }
 } finally {

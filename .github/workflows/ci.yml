@@ -15,7 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PROYECTO_PRUEBAS: tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj
+  # Toda la solución: así también corren las pruebas de los servicios.
+  # El CI por aplicación reemplazará este paso.
+  PROYECTO_PRUEBAS: TallerMecanico.sln
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_NOLOGO: 'true'
 
@@ -30,10 +32,10 @@ jobs:
         uses: ./.github/actions/preparar-pruebas
       - name: Preparar lectura de PDF
         uses: ./.github/actions/preparar-pdf
-      - name: Probar logica, servicios, validaciones, cache y PDF
+      - name: Probar logica, servicios, validaciones y PDF
         run: >-
           dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
-          --filter "Area=Backend" --logger "trx;LogFileName=backend.trx"
+          --filter "Area=Backend" --logger trx
           --results-directory TestResults/backend -- xUnit.ParallelizeTestCollections=false
       - name: Guardar resultados de backend
         if: always()
@@ -105,7 +107,7 @@ jobs:
       - name: Ejecutar las pruebas del area
         run: >-
           dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
-          --filter "$FILTRO_PRUEBAS" --logger "trx;LogFileName=resultados.trx"
+          --filter "$FILTRO_PRUEBAS" --logger trx
           --results-directory "TestResults/$AREA_PRUEBAS" -- xUnit.ParallelizeTestCollections=false
       - name: Guardar resultados del area
         if: always()
@@ -136,7 +138,7 @@ jobs:
       - name: Preparar .NET y compilar
         uses: ./.github/actions/preparar-pruebas
       - name: Publicar para el sistema actual
-        run: dotnet publish TallerMecanico.csproj --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado"
+        run: dotnet publish frontend-app/TallerMecanico.Frontend.csproj --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado"
       - name: Validar lanzadores y rutas con espacios
         run: |
           bash -n scripts/entorno.sh
@@ -151,7 +153,7 @@ jobs:
       - name: Comprobar la generacion nativa de PDF
         run: >-
           dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
-          --filter "Tipo=Portabilidad" --logger "trx;LogFileName=compatibilidad.trx"
+          --filter "Tipo=Portabilidad" --logger trx
           --results-directory TestResults/compatibilidad
       - name: Guardar resultados de compatibilidad
         if: always()

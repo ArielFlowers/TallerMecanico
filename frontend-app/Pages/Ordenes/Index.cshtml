@@ -1,0 +1,227 @@
+@page
+@model TallerMecanico.Pages.Ordenes.IndexModel
+@using System.Globalization
+@using TallerMecanico.Contratos.Ordenes
+@using TallerMecanico.Pages.Shared
+@inject TallerMecanico.Aplicacion.Configuracion.ConfiguracionTaller configuracion
+
+@{
+    ViewData["Title"] = "Gestión de Órdenes";
+    var culturaBoliviana = CultureInfo.GetCultureInfo("es-BO");
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/autocompletado.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ordenes.css" asp-append-version="true" />
+}
+
+<div class="dashboard ordenes-page">
+    <div class="dashboard-header">
+        <div>
+            <p class="ordenes-kicker">AUTOTALLER PRO</p>
+            <h1>Gestión de Órdenes</h1>
+            <p>Busca, revisa y administra las órdenes de trabajo del taller.</p>
+        </div>
+        <a asp-page="./Crear" class="services-btn services-btn-primary">+ Nueva orden</a>
+    </div>
+
+    <form method="get" asp-page="./Index" id="ordenes-busqueda" aria-label="Filtros de órdenes">
+        <div class="services-actions ordenes-buscador-toolbar" role="search">
+            <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+            {
+                Id = "ordenes-autocompletado",
+                UrlSugerencias = Url.Page("./Index", "Sugerencias", new { Model.Estado, Fecha = Model.Fecha?.ToString("yyyy-MM-dd") })!,
+                Modo = BuscadorAutocompletadoModel.ModoFiltrar,
+                Etiqueta = "Buscar órdenes",
+                Placeholder = "Buscar por número de orden o placa...",
+                NombreCampoTexto = nameof(Model.TerminoBusqueda),
+                NombreCampoId = nameof(Model.OrdenSeleccionadaId),
+                Texto = Model.TerminoBusqueda ?? string.Empty,
+                IdSeleccionado = Model.OrdenSeleccionadaId,
+                MensajeInicial = "Escribe al menos 2 caracteres para ver sugerencias. Para un número de un dígito, pulsa Buscar."
+            }' />
+            <button type="submit" class="services-btn services-btn-secondary">Buscar</button>
+        </div>
+
+        <div class="ordenes-filtros" aria-label="Filtros adicionales">
+            <div class="ordenes-campo">
+                <label asp-for="Estado">Estado</label>
+                <select asp-for="Estado" class="ordenes-control">
+                    <option value="">Todos</option>
+                    <option value="Activa">Activa</option>
+                    <option value="Anulada">Anulada</option>
+                </select>
+            </div>
+            <div class="ordenes-campo">
+                <label asp-for="Fecha">Fecha del trabajo</label>
+                <input asp-for="Fecha" type="date" asp-format="{0:yyyy-MM-dd}" class="ordenes-control" />
+            </div>
+            <div class="ordenes-acciones">
+                <button type="submit" class="services-btn services-btn-primary">Aplicar filtros</button>
+                <button type="submit" class="services-btn services-btn-secondary">Refrescar</button>
+                <a asp-page="./Index" class="services-btn services-btn-secondary">Limpiar filtros</a>
+            </div>
+        </div>
+    </form>
+
+    <div asp-validation-summary="All" class="ordenes-validacion" role="alert"></div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.MensajeExito) || Model.OrdenCreadaId.HasValue)
+    {
+        <div class="orden-comprobante-aviso" role="status">
+            @if (!string.IsNullOrWhiteSpace(Model.MensajeExito)) { <span>@Model.MensajeExito</span> }
+            else { <span>Orden #@Model.OrdenCreadaId guardada.</span> }
+            @if (Model.OrdenCreadaId.HasValue)
+            {
+                <span>El comprobante se abrirá en una pestaña nueva. Si no se abre, utiliza este enlace:</span>
+                <a asp-page="./Comprobante" asp-route-id="@Model.OrdenCreadaId.Value"
+                   target="_blank" rel="noopener" data-comprobante-creado>Abrir comprobante en otra pestaña</a>
+            }
+        </div>
+    }
+
+    <section class="recent-orders" aria-labelledby="ordenes-listado-titulo">
+        <div class="section-header">
+            <div>
+                <h2 id="ordenes-listado-titulo">Órdenes registradas</h2>
+                <p class="ordenes-resultado">@Model.Ordenes.Count @(Model.Ordenes.Count == 1 ? "orden encontrada" : "órdenes encontradas")</p>
+            </div>
+        </div>
+
+        @if (ViewData.ModelState.IsValid && Model.Ordenes.Count == 0)
+        {
+            <div class="services-empty">
+                <strong>
+                    @(Model.Estado.HasValue || Model.Fecha.HasValue ||
+                        !string.IsNullOrWhiteSpace(Model.TerminoBusqueda) || Model.OrdenSeleccionadaId.HasValue
+                        ? "No se encontraron órdenes con los filtros seleccionados."
+                        : "No existen órdenes registradas.")
+                </strong>
+                <span>Actualiza el listado o limpia los filtros para volver a consultar.</span>
+            </div>
+        }
+        else if (ViewData.ModelState.IsValid)
+        {
+            <div class="table-container">
+                <table class="orders-table ordenes-table">
+                    <caption class="ordenes-solo-lectores">Listado de órdenes de trabajo</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Fecha del trabajo</th>
+                            <th scope="col">Placa</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Mecánico</th>
+                            <th scope="col">Servicios</th>
+                            <th scope="col">Total</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Creado por</th>
+                            <th scope="col">Consulta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var orden in Model.Ordenes)
+                        {
+                            <tr>
+                                <td><span class="ordenes-id">#@orden.Id</span></td>
+                                <td><time>@orden.Fecha.ToString(configuracion.FormatoFecha)</time></td>
+                                <td><span class="ordenes-placa">@orden.Placa</span></td>
+                                <td>@(orden.NombreCliente ?? "Sin cliente asignado")</td>
+                                <td>@orden.NombreMecanico</td>
+                                <td>@(orden.NombreServicio ?? "—")</td>
+                                <td class="ordenes-total">@configuracion.Moneda @orden.Total.ToString("N2", culturaBoliviana)</td>
+                                <td>
+                                    <span class="ordenes-estado @(orden.Estado == EstadoOrden.Activa ? "ordenes-estado-activa" : "ordenes-estado-anulada")">
+                                        @orden.Estado
+                                    </span>
+                                </td>
+                                <td>@orden.CreadoPor</td>
+                                <td>
+                                    <div class="ordenes-acciones-fila">
+                                        <button type="button" class="services-btn services-btn-secondary"
+                                                data-ver-orden
+                                                data-detalle-url="@Url.Page("./Index", "Detalle", new { id = orden.Id })"
+                                                aria-label="Ver orden @orden.Id"
+                                                aria-haspopup="dialog" aria-controls="orden-detalle-dialog">
+                                            Ver
+                                        </button>
+                                        <a asp-page="./Comprobante" asp-route-id="@orden.Id"
+                                           class="services-btn services-btn-secondary"
+                                           data-comprobante-url="@Url.Page("./Comprobante", new { id = orden.Id })"
+                                           aria-label="Ver comprobante de orden @orden.Id"
+                                           aria-haspopup="dialog" aria-controls="comprobante-orden-dialog">Comprobante</a>
+                                        @if (orden.Estado == EstadoOrden.Activa && User.IsInRole("Administrador"))
+                                        {
+                                            <form method="post" asp-page-handler="Anular" asp-route-id="@orden.Id"
+                                                  data-confirmar-anulacion data-orden-id="@orden.Id"
+                                                  style="display:inline;">
+                                                <input type="hidden" name="Estado" value="@Model.Estado" />
+                                                <input type="hidden" name="Fecha" value="@Model.Fecha?.ToString("yyyy-MM-dd")" />
+                                                <input type="hidden" name="TerminoBusqueda" value="@Model.TerminoBusqueda" />
+                                                <input type="hidden" name="OrdenSeleccionadaId" value="@Model.OrdenSeleccionadaId" />
+                                                <button type="submit" class="services-btn services-btn-secondary ordenes-anular-btn"
+                                                        aria-label="Anular orden @orden.Id">Anular</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+<dialog id="comprobante-orden-dialog" class="ordenes-dialog ordenes-comprobante-dialog"
+        aria-labelledby="comprobante-orden-titulo">
+    <div class="ordenes-dialog-header">
+        <div>
+            <h2 id="comprobante-orden-titulo">Comprobante de la orden</h2>
+            <p>Vista previa del comprobante PDF.</p>
+        </div>
+        <button type="button" class="services-btn services-btn-secondary" data-cerrar-comprobante>Cerrar</button>
+    </div>
+    <div class="ordenes-comprobante-contenido">
+        <iframe title="Comprobante PDF de la orden" data-comprobante-frame></iframe>
+    </div>
+</dialog>
+
+<dialog id="anular-orden-dialog" class="orden-confirmacion-dialog"
+        aria-labelledby="anular-orden-titulo" aria-describedby="anular-orden-descripcion">
+    <div class="orden-confirmacion-cabecera">
+        <span class="orden-confirmacion-icono orden-confirmacion-icono-alerta" aria-hidden="true">!</span>
+        <div>
+            <h2 id="anular-orden-titulo">Anular orden</h2>
+            <p id="anular-orden-descripcion">Confirma la acción antes de continuar.</p>
+        </div>
+    </div>
+    <p class="orden-confirmacion-mensaje">La orden dejará de estar activa y se restituirá el stock de sus productos.</p>
+    <div class="orden-confirmacion-acciones">
+        <button type="button" class="services-btn services-btn-secondary" data-cancelar-anulacion>Conservar orden</button>
+        <button type="button" class="services-btn services-btn-danger" data-confirmar-anulacion>Confirmar anulación</button>
+    </div>
+</dialog>
+
+<dialog id="orden-detalle-dialog" class="ordenes-dialog"
+        aria-labelledby="orden-detalle-titulo" aria-describedby="orden-detalle-descripcion">
+    <div class="ordenes-dialog-header">
+        <div>
+            <h2 id="orden-detalle-titulo">Detalle de la orden</h2>
+            <p id="orden-detalle-descripcion">Consulta de solo lectura.</p>
+        </div>
+        <button type="button" class="services-btn services-btn-secondary" data-cerrar-detalle autofocus>Cerrar</button>
+    </div>
+    <div class="ordenes-dialog-body">
+        <p id="orden-detalle-estado" role="status" aria-live="polite"></p>
+        <div id="orden-detalle-contenido" aria-busy="false"></div>
+    </div>
+</dialog>
+
+@section Scripts {
+    <script src="~/js/autocompletado.js" asp-append-version="true"></script>
+    <script src="~/js/ordenes-buscador.js" asp-append-version="true"></script>
+    <script src="~/js/ordenes.js" asp-append-version="true"></script>
+    <script src="~/js/orden-comprobante.js" asp-append-version="true"></script>
+}

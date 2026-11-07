@@ -1,0 +1,92 @@
+@startuml Clases_Dominio_Ordenes
+title Diagrama de clases - Dominio de órdenes
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+class Orden {
+  - Id: int
+  - VehiculoId: int
+  - MecanicoId: int
+  - ServicioId: int?
+  - CostoServicio: decimal?
+  - Fecha: DateTime
+  - Estado: EstadoOrden
+  - Total: decimal
+  - Token: Guid
+  - CreadoPor: string
+  - FechaCreacion: DateTime
+  - AnuladoPor: string?
+  - FechaAnulacion: DateTime?
+  + EstaAnulada: bool
+  + PuedeAnularse(): bool
+  + Anular(usuario, fechaUtc): void
+  + CalcularTotal(repuestos): decimal
+}
+
+class DetalleOrden {
+  - Id: int
+  - OrdenId: int
+  - ProductoId: int
+  - Cantidad: int
+  - PrecioUnitario: decimal
+  - Subtotal: decimal
+  + CalcularSubtotal(): decimal
+  + EsValido(): bool
+}
+
+class DetalleServicioOrden {
+  - OrdenId: int
+  - ServicioId: int
+  - Nombre: string
+  - Descripcion: string
+  - Costo: decimal
+  - TiempoEstimadoHoras: decimal
+  - Cantidad: int
+  - UnidadCantidad: string?
+}
+
+class Producto {
+  - Id: int
+  - Codigo: string
+  - Nombre: string
+  - Precio: decimal
+  - Stock: int
+  - StockMinimo: int
+}
+
+class Servicio {
+  - Id: int
+  - Nombre: string
+  - Descripcion: string
+  - Costo: decimal
+  - TiempoEstimadoHoras: decimal
+  - UnidadCantidad: string?
+}
+
+class Vehiculo {
+  - Id: int
+  - Placa: string
+  - Marca: string
+  - Modelo: string
+  - ClienteId: int?
+}
+
+class Mecanico {
+  - Id: int
+  - Nombres: string
+  - Especialidad: string
+}
+
+enum EstadoOrden {
+  Activa
+  Anulada
+}
+
+Orden "1" *-- "0..*" DetalleOrden : repuestos
+Orden "1" *-- "1..*" DetalleServicioOrden : servicios
+Orden --> EstadoOrden
+DetalleOrden --> Producto
+DetalleServicioOrden --> Servicio
+Orden --> Vehiculo
+Orden --> Mecanico
+@enduml

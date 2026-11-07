@@ -1,0 +1,68 @@
+@startuml Estilo_Arquitectonico_Combinado
+!pragma layout smetana
+title Arquitectura de cuatro aplicaciones
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+skinparam defaultFontSize 12
+skinparam ArrowColor #4A5568
+skinparam BorderColor #4A5568
+
+package "Frontend" as FE #EEF2FF {
+  [Razor Pages] as UI
+  [Api/ clientes HTTP] as API
+  [Sesión y token] as SES
+}
+
+package "Servicio 1 — Órdenes y catálogos\nClean Architecture" as S1 #ECFDF5 {
+  [Controllers HTTP] as S1C
+  [Fachadas] as S1F
+  [Casos de uso] as S1CU
+  [Dominio] as S1D
+  [Infraestructura MySQL / PDF] as S1I
+}
+
+package "Servicio 2 — Usuarios\nHexagonal" as S2 #FEF3C7 {
+  [Controllers HTTP] as S2C
+  [Servicios de aplicación] as S2S
+  [Puertos] as S2P
+  [Adaptadores MySQL / SMTP / Argon2id] as S2A
+}
+
+package "Servicio 3 — Reportes\nHexagonal" as S3 #FCE7F3 {
+  [Controllers HTTP] as S3C
+  [Servicios de aplicación] as S3S
+  [Puertos] as S3P
+  [Adaptadores MySQL / PDF / Excel] as S3A
+}
+
+database "MySQL 8.4\nAiven (compartida)" as BD #DBEAFE
+cloud "SMTP Gmail" as SMTP #FFEDD5
+
+UI --> API
+API --> SES
+API --> S1C : HTTP/JSON
+API --> S2C : HTTP/JSON
+API --> S3C : HTTP/JSON
+
+S1C --> S1F
+S1F --> S1CU
+S1CU --> S1D
+S1CU ..> S1I : contratos
+S1I --> BD
+
+S2C --> S2S
+S2S ..> S2P
+S2A ..|> S2P
+S2A --> BD
+S2A --> SMTP
+
+S3C --> S3S
+S3S ..> S3P
+S3A ..|> S3P
+S3A --> BD
+
+FE -[hidden]right- S1
+S1 -[hidden]right- S2
+S2 -[hidden]right- S3
+@enduml

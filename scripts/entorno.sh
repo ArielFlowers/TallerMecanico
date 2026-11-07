@@ -69,7 +69,7 @@ obtener_contenedores() {
     filas="$(invocar_docker ps --all --filter "label=com.docker.compose.project=$proyecto" --format '{{.ID}}|{{.Label "com.docker.compose.service"}}|{{.Names}}|{{.State}}|{{.Image}}')" || return $?
     while IFS='|' read -r id servicio nombre estado imagen; do
         case "$servicio" in
-            redis|app1|app2|app3|nginx)
+            app1|app2|app3|nginx)
                 printf '%s|%s|%s|%s|%s\n' "$id" "$servicio" "$nombre" "$estado" "$imagen"
                 ;;
         esac
@@ -158,6 +158,6 @@ case "$accion" in
         ;;
     usuarios)
         comprobar_configuracion
-        invocar_compose exec app1 dotnet TallerMecanico.dll --inicializar-usuarios
+        invocar_compose exec app1 dotnet TallerMecanico.Frontend.dll --inicializar-usuarios
         ;;
 esac

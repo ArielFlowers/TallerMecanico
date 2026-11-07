@@ -34,7 +34,6 @@ Infraestructura/
   Persistencia/Fabricas/ Creador* (Factory Method)
   Seguridad/             CurrentUser, Argon2idPasswordHasher
   Correo/                GmailEmailService
-  Cache/                 RedisCacheAdapter
 Presentacion/     Pages/**/*.cshtml(.cs) + wwwroot (no movida, ver nota)
 ```
 

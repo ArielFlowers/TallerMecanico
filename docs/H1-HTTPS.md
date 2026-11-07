@@ -76,7 +76,8 @@ Las tres réplicas comparten claves de ASP.NET Core Data Protection.
 Esto permite que las cookies de autenticación sean validadas
 por diferentes réplicas.
 
-HttpContext.Session usa Redis compartido entre las tres réplicas; ver [H2](H2-REDIS.md).
+HttpContext.Session se guarda en la memoria de cada réplica. Los borradores de una orden en curso
+solo los conoce la réplica que los creó.
 
 ## 8. Consideraciones de seguridad
 
