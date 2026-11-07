@@ -2,14 +2,25 @@
 # Ejecutar desde la raiz con Docker Compose v2.
 name: tallermecanico
 
+# Las APIs solo atienden HTTPS (8443) con el certificado interno de mkcert.
+# Ese certificado lleva los nombres servicio-ordenes, servicio-usuarios y servicio-reportes.
 x-api-environment: &api-environment
   ASPNETCORE_ENVIRONMENT: Development
-  ASPNETCORE_URLS: http://+:8080
+  ASPNETCORE_URLS: https://+:8443
+  Kestrel__Certificates__Default__Path: /https/servicios.pem
+  Kestrel__Certificates__Default__KeyPath: /https/servicios-key.pem
   ConnectionStrings__MySqlConnection: ${MYSQL_CONNECTION:?Configura MYSQL_CONNECTION en .env}
   ClaveInterna: ${CLAVE_INTERNA:?Configura CLAVE_INTERNA en .env}
 
 x-healthcheck: &healthcheck
   test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/salud"]
+  interval: 5s
+  timeout: 3s
+  retries: 24
+  start_period: 15s
+
+x-healthcheck-api: &healthcheck-api
+  test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--cacert", "/https/ca-interna.pem", "https://localhost:8443/salud"]
   interval: 5s
   timeout: 3s
   retries: 24
@@ -24,8 +35,10 @@ services:
     environment:
       <<: *api-environment
     expose:
-      - "8080"
-    healthcheck: *healthcheck
+      - "8443"
+    volumes:
+      - ./certs:/https:ro
+    healthcheck: *healthcheck-api
     restart: unless-stopped
 
   servicio-usuarios:
@@ -44,11 +57,13 @@ services:
       App__PublicBaseUrl: ${APP_PUBLIC_BASE_URL:-http://127.0.0.1:8088}
       App__PermitirHttpNoSeguro: ${APP_PERMITIR_HTTP_NO_SEGURO:-false}
     expose:
-      - "8080"
+      - "8443"
+    volumes:
+      - ./certs:/https:ro
     depends_on:
       servicio-ordenes:
         condition: service_healthy
-    healthcheck: *healthcheck
+    healthcheck: *healthcheck-api
     restart: unless-stopped
 
   servicio-reportes:
@@ -59,11 +74,13 @@ services:
     environment:
       <<: *api-environment
     expose:
-      - "8080"
+      - "8443"
+    volumes:
+      - ./certs:/https:ro
     depends_on:
       servicio-ordenes:
         condition: service_healthy
-    healthcheck: *healthcheck
+    healthcheck: *healthcheck-api
     restart: unless-stopped
 
   frontend:
@@ -78,9 +95,11 @@ services:
       Kestrel__Certificates__Default__KeyPath: /https/localhost-key.pem
       DataProtection__KeysPath: /app/shared-keys
       ClaveInterna: ${CLAVE_INTERNA:?Configura CLAVE_INTERNA en .env}
-      Servicios__OrdenesUrl: http://servicio-ordenes:8080
-      Servicios__UsuariosUrl: http://servicio-usuarios:8080
-      Servicios__ReportesUrl: http://servicio-reportes:8080
+      Servicios__OrdenesUrl: https://servicio-ordenes:8443
+      Servicios__UsuariosUrl: https://servicio-usuarios:8443
+      Servicios__ReportesUrl: https://servicio-reportes:8443
+      # El Frontend solo confía en la CA de mkcert para hablar con las APIs.
+      Servicios__CertificadoCa: /https/ca-interna.pem
     ports:
       - "${APP_BIND_ADDRESS:-127.0.0.1}:80:8080"
       - "${APP_BIND_ADDRESS:-127.0.0.1}:8088:8080"

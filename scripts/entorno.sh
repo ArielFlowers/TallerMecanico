@@ -51,7 +51,7 @@ comprobar_configuracion() {
     [[ -f "$raiz/.env" ]] || fallar 'Copia .env.example como .env y completa la conexion de Aiven; consulta README.md.'
     if [[ "${1:-}" == 'certificados' ]]; then
         local certificado
-        for certificado in localhost.pem localhost-key.pem; do
+        for certificado in localhost.pem localhost-key.pem servicios.pem servicios-key.pem ca-interna.pem; do
             [[ -f "$raiz/certs/$certificado" ]] || fallar 'Faltan certificados en certs/. Generalos con mkcert siguiendo README.md.'
         done
     fi
