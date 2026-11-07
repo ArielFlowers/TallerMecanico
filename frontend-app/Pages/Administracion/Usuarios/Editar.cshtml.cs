@@ -1,78 +1,63 @@
+using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Pages.Administracion.Usuarios;
+using TallerMecanico.Api;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Pages.Administracion.Usuarios;
 
 [Authorize(Policy = "SoloAdministrador")]
-public sealed class EditarModel : PageModel
+public sealed class EditarModel(UsuariosApi usuarios) : PageModel
 {
-    private readonly IUsuarioAdministracionPort _usuarioPort;
-    private readonly IGestionUsuariosPort _usuarioAdministracion;
-
-    public EditarModel(
-        IUsuarioAdministracionPort usuarioPort,
-        IGestionUsuariosPort usuarioAdministracion)
-    {
-        _usuarioPort = usuarioPort;
-        _usuarioAdministracion = usuarioAdministracion;
-    }
-
-    public Usuario? Usuario { get; private set; }
+    public UsuarioDto? Usuario { get; private set; }
 
     [BindProperty]
     public UsuarioEditInput Input { get; set; } = new();
 
-    public async Task<IActionResult> OnGetAsync(int id)
+    public Task<IActionResult> OnGetAsync(int id) => AtenderAsync(async () =>
     {
-        Usuario = _usuarioPort.ObtenerPorId(id);
-
-        if (Usuario is null)
-        {
-            return NotFound();
-        }
-
+        Usuario = await usuarios.ObtenerPorIdAsync(id, HttpContext.RequestAborted);
+        if (Usuario is null) return NotFound();
         Input = new UsuarioEditInput
         {
             Email = Usuario.Email ?? string.Empty,
             Rol = Usuario.Rol,
             Activo = Usuario.Activo
         };
-
         return Page();
-    }
+    });
 
-    public async Task<IActionResult> OnPostAsync(int id, CancellationToken cancellationToken = default)
+    public Task<IActionResult> OnPostAsync(int id, CancellationToken cancellationToken = default) => AtenderAsync(async () =>
     {
-        Usuario = _usuarioPort.ObtenerPorId(id);
-
-        if (Usuario is null)
+        Usuario = await usuarios.ObtenerPorIdAsync(id, cancellationToken);
+        if (Usuario is null) return NotFound();
+        if (!ModelState.IsValid) return Page();
+        var resultado = await usuarios.ActualizarAsync(id,
+            new ActualizarUsuarioSolicitud(Input.Email, Input.Rol, Input.Activo), cancellationToken);
+        if (!resultado.Exito)
         {
-            return NotFound();
-        }
-
-        if (!ModelState.IsValid)
-        {
+            if (resultado.Codigo == HttpStatusCode.NotFound) return NotFound();
+            ModelState.AddModelError(string.Empty, resultado.Mensaje ?? "Error al actualizar el usuario.");
             return Page();
         }
-
-        bool resultado = _usuarioAdministracion.ActualizarUsuario(
-            id,
-            Input.Email,
-            Input.Rol,
-            Input.Activo,
-            out string? errorMessage);
-
-        if (!resultado)
-        {
-            ModelState.AddModelError(string.Empty, errorMessage ?? "Error al actualizar el usuario.");
-            return Page();
-        }
-
         TempData["MensajeExito"] = "Usuario actualizado correctamente.";
         return RedirectToPage("./Index");
+    });
+
+    private async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
+    {
+        try { return await accion(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized) { return Challenge(); }
+        catch (Exception error) when (error is HttpRequestException ||
+            error is TaskCanceledException && !HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            if (Usuario is null)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    "El servicio de usuarios no está disponible. Intenta nuevamente.");
+            ModelState.AddModelError(string.Empty, "El servicio de usuarios no está disponible. Intenta nuevamente.");
+            return Page();
+        }
     }
 }

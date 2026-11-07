@@ -1,3 +1,5 @@
+extern alias Ordenes;
+
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
@@ -6,7 +8,7 @@ using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Dominio.Servicios;
 using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Configuracion;
+using ConfiguracionTaller = Ordenes::TallerMecanico.Aplicacion.Configuracion.ConfiguracionTaller;
 
 namespace TallerMecanico.IntegrationTests;
 

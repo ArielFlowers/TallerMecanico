@@ -1,3 +1,6 @@
+extern alias Usuarios;
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -78,8 +81,7 @@ public sealed class UsuarioSesionRevocadaHttpTests
             };
 
             inicio.ArgumentList.Add(
-                typeof(TallerMecanico.Aplicacion.Servicios.ClienteService)
-                    .Assembly.Location);
+                AppsPrueba.DllFrontend);
 
             inicio.ArgumentList.Add("--urls");
             inicio.ArgumentList.Add(url);

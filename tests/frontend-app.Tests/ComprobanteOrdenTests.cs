@@ -1,4 +1,6 @@
 using System.Data.Common;
+using System.Net;
+using TallerMecanico.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -57,48 +59,62 @@ public sealed class ComprobanteOrdenTests
     [InlineData(0, 400)]
     [InlineData(-1, 400)]
     [InlineData(999, 404)]
-    public void Endpoint_IdInvalidoOInexistenteNoGeneraPdf(int id, int codigo)
+    public async Task Endpoint_IdInvalidoOInexistenteNoGeneraPdf(int id, int codigo)
     {
-        var pagina = Pagina(new LecturaPrueba(), new GeneradorPrueba());
-        Assert.Equal(codigo, Assert.IsAssignableFrom<ObjectResult>(pagina.OnGet(id)).StatusCode);
+        var api = new ApiFalsa();
+        var pagina = Pagina(api);
+        Assert.Equal(codigo, Assert.IsAssignableFrom<ObjectResult>(await pagina.OnGetAsync(id)).StatusCode);
+        if (id <= 0) Assert.Empty(api.Llamadas);
     }
 
     [Fact]
-    public void Endpoint_EntregaBytesPdfConNombreInline()
+    public async Task Endpoint_EntregaBytesPdfRecibidosDeApiConNombreInline()
     {
-        var generador = new GeneradorPrueba();
-        var pagina = Pagina(new LecturaPrueba(), generador);
-        var respuesta = Assert.IsType<FileContentResult>(pagina.OnGet(15));
+        var api = new ApiFalsa(); byte[] pdf = "%PDF-prueba"u8.ToArray();
+        api.Archivo("GET api/ordenes/15/comprobante", pdf);
+        var pagina = Pagina(api);
+        var respuesta = Assert.IsType<FileContentResult>(await pagina.OnGetAsync(15));
         Assert.Equal("application/pdf", respuesta.ContentType);
-        Assert.Same(generador.Pdf, respuesta.FileContents);
+        Assert.Equal(pdf, respuesta.FileContents);
         Assert.Contains("inline", pagina.Response.Headers.ContentDisposition.ToString());
         Assert.Contains("Comprobante-Orden-15.pdf", pagina.Response.Headers.ContentDisposition.ToString());
+        Assert.Equal(["GET api/ordenes/15/comprobante"], api.Llamadas);
     }
 
     [Fact]
-    public void Endpoint_ErrorConsultaDevuelve503SinDetallesTecnicos()
+    public async Task Endpoint_ErrorApiDevuelve503SinDetallesTecnicos()
     {
-        var pagina = Pagina(new LecturaPrueba { Fallar = true }, new GeneradorPrueba());
-        var resultado = Assert.IsType<ObjectResult>(pagina.OnGet(15));
+        var api = new ApiFalsa();
+        api.Error("GET api/ordenes/15/comprobante", HttpStatusCode.InternalServerError, "Error interno de prueba");
+        var resultado = Assert.IsType<ObjectResult>(await Pagina(api).OnGetAsync(15));
         Assert.Equal(503, resultado.StatusCode);
         Assert.Equal("No se pudo consultar la orden. Intenta nuevamente.", resultado.Value);
     }
 
     [Fact]
-    public void Endpoint_ErrorGeneracionDevuelve500SinDetallesTecnicos()
+    public async Task Endpoint_ErrorInesperadoDevuelve500SinDetallesTecnicos()
     {
-        var pagina = Pagina(new LecturaPrueba(), new GeneradorPrueba { Fallar = true });
-        var resultado = Assert.IsType<ObjectResult>(pagina.OnGet(15));
+        var resultado = Assert.IsType<ObjectResult>(await Pagina(new ErrorTransporte()).OnGetAsync(15));
         Assert.Equal(500, resultado.StatusCode);
         Assert.Equal("No se pudo generar el comprobante. Intenta nuevamente.", resultado.Value);
     }
 
-    private static ComprobanteModel Pagina(LecturaPrueba puerto, GeneradorPrueba generador)
+    [Fact]
+    public async Task Endpoint_ApiRechazaRolDevuelveForbid()
     {
-        var usuario = new UsuarioPrueba();
-        return new ComprobanteModel(SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, usuario), usuario, generador),
+        var api = new ApiFalsa(); api.Error("GET api/ordenes/15/comprobante", HttpStatusCode.Forbidden);
+        Assert.IsType<ForbidResult>(await Pagina(api).OnGetAsync(15));
+    }
+
+    private static ComprobanteModel Pagina(HttpMessageHandler handler) =>
+        new(new OrdenesApi(new HttpClient(handler) { BaseAddress = new Uri("http://ordenes.prueba/") }),
             NullLogger<ComprobanteModel>.Instance)
         { PageContext = new PageContext { HttpContext = new DefaultHttpContext() } };
+
+    private sealed class ErrorTransporte : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Error interno de prueba");
     }
 
     private sealed class LecturaPrueba : IOrdenQueryRepository

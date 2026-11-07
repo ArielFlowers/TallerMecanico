@@ -7,7 +7,10 @@ El proyecto combina dos arquitecturas internas, como pide la rúbrica del 3er En
 | Servicio 1 | Órdenes: transacción principal | Clean Architecture | Este documento |
 | Servicios 2 y 3 | Usuarios y Reportes | Hexagonal | [ARQUITECTURA_HEXAGONAL.md](ARQUITECTURA_HEXAGONAL.md) |
 
-Los servicios están separados de forma lógica dentro de un solo proyecto.
+Cada servicio tiene su propia aplicación en `backend-services/`. El Frontend
+Razor es la cuarta aplicación y consume las APIs por HTTP. Ver [SBA](SBA.md).
+Las rutas de dominio, aplicación e infraestructura de esta guía son relativas a
+`backend-services/servicio-ordenes/`.
 
 ## Capas
 
@@ -16,20 +19,24 @@ Los servicios están separados de forma lógica dentro de un solo proyecto.
 | Dominio | `Dominio/Entidades/` | Reglas de `Orden` y `DetalleOrden`. No depende de nadie |
 | Casos de uso | `Aplicacion/CasosUso/Ordenes/` | Una clase por acción del negocio |
 | Contratos | `Aplicacion/CasosUso/Ordenes/Contratos/` | Lo que los casos de uso necesitan de afuera |
-| Fachadas | `Aplicacion/Fachadas/` | Punto de entrada para las páginas |
-| Infraestructura | `Infraestructura/` | MySQL, QuestPDF y sesión; implementa los contratos |
-| Presentación | `Pages/Ordenes/` | Pantallas Razor. No se mueve porque rompería sus rutas |
+| Fachadas | `Aplicacion/Fachadas/` | Punto de entrada para los adaptadores HTTP |
+| Infraestructura | `Infraestructura/` | MySQL y QuestPDF; implementa los contratos |
+| API | `Controllers/` | Adapta solicitudes HTTP a los casos de uso |
+| Presentación web | `frontend-app/Pages/Ordenes/` | Pantallas Razor que consumen `OrdenesApi`; sesión y borradores quedan en el Frontend |
 | Composición | `Program.cs` e `Infraestructura/RegistroDependencias.cs` | Conecta cada contrato con su implementación |
 
 ## Regla de dependencias
 
 ```text
-Pages  ──►  Fachadas  ──►  Casos de uso  ──►  Dominio
-                                 ▲
-Infraestructura ── implementa ── Contratos
+Frontend ── HTTP ──► Controllers ──► Fachadas / Casos de uso ──► Dominio
+                                                    ▲
+Infraestructura ────────── implementa ────────── Contratos
 ```
 
-Las dependencias apuntan hacia el núcleo. Como todo está en un solo proyecto, el compilador no lo impide, y por eso `tests/frontend-app.Tests/ArquitecturaTests.cs` falla si `Dominio`, `Aplicacion` o `Pages` mencionan `TallerMecanico.Infraestructura` o `MySqlConnector`. Los archivos con deuda pendiente están en una lista dentro de esa prueba.
+Las dependencias apuntan hacia el núcleo. Cada aplicación es un proyecto
+independiente; dentro del Servicio 1 las capas siguen organizadas por carpetas.
+Las pruebas de arquitectura complementan esa separación. El Frontend comparte
+DTO, pero no referencia los proyectos de los servicios.
 
 ## Casos de uso
 
@@ -53,7 +60,7 @@ Los setters siguen públicos porque los usa el mapeo ADO al leer de MySQL. Es un
 
 ## Flujo: crear una orden
 
-1. `Pages/Ordenes/Crear` llama a `OrdenServicioFacade.CrearOrden`, que comprueba el permiso y el token del formulario.
+1. `Pages/Ordenes/Crear` llama a `OrdenesApi` por HTTP. El adaptador del Servicio 1 valida el permiso y delega en el caso de uso; el Frontend conserva el borrador y el token del formulario.
 2. `CrearOrdenCasoUso` valida la solicitud y abre la transacción con `IUnidadTrabajoOrden`.
 3. Comprueba si el token ya se usó, valida vehículo, mecánico y servicios, y bloquea los productos.
 4. Valida el stock con los precios de la base, y calcula subtotales y total con el dominio.
@@ -62,7 +69,7 @@ Los setters siguen públicos porque los usa el mapeo ADO al leer de MySQL. Es un
 
 ## Flujo: anular una orden
 
-1. `Pages/Ordenes/Index` llama a `OrdenServicioFacade.AnularOrden`.
+1. `Pages/Ordenes/Index` llama a `OrdenesApi` por HTTP para solicitar la anulación.
 2. `AnularOrdenCasoUso` comprueba que el usuario sea Administrador y bloquea la orden.
 3. Si `orden.PuedeAnularse()` es falso, responde con error sin tocar el stock.
 4. Bloquea los productos y aplica `orden.Anular(usuario, fecha)`.
@@ -73,7 +80,7 @@ Los setters siguen públicos porque los usa el mapeo ADO al leer de MySQL. Es un
 
 | Patrón | Dónde | Para qué |
 |---|---|---|
-| Facade | `OrdenServicioFacade`, `ConsultaOrdenesFacade` | Las páginas no conocen los casos de uso |
+| Facade | `OrdenServicioFacade`, `ConsultaOrdenesFacade` | Agrupa operaciones de entrada del Servicio 1 sin exponer sus repositorios |
 | Factory Method | `Infraestructura/Persistencia/Fabricas/Creador*` | Centraliza la creación de repositorios |
 | Singleton | `Aplicacion/Configuracion/ConfiguracionTaller` | Una sola configuración del taller |
 | Repository | `IOrdenRepository` y `OrdenRepository` | Separa el SQL de los casos de uso |
@@ -91,7 +98,7 @@ Los setters siguen públicos porque los usa el mapeo ADO al leer de MySQL. Es un
 
 ## Límites conocidos
 
-- **Separación lógica:** es un solo `.csproj`, así que las capas se protegen con `ArquitecturaTests`, que busca texto en los archivos. No es un análisis del compilador.
+- **Capas internas:** las capas del Servicio 1 comparten un `.csproj`; las comprobaciones de arquitectura complementan la revisión de dependencias.
 - **Piezas compartidas:** los casos de uso usan `ICurrentUser`, que sigue en `Aplicacion/Puertos`, y `ValidacionOrdenes`, en `Aplicacion/Validaciones`. También usan `ILogger` de .NET.
 
 ## Pruebas
@@ -105,6 +112,7 @@ dotnet test tests/servicio-ordenes.Tests/servicio-ordenes.Tests.csproj
 - `OrdenesMySqlTests`: transacción real sobre el MySQL aislado. Requiere `TALLER_TEST_MYSQL`; ver el README.
 - `ArquitecturaTests`: regla de dependencias de `backend-services/servicio-ordenes`.
 
-El código de órdenes y catálogos se copió a `backend-services/servicio-ordenes`. Mientras las páginas
-del Frontend no lo consuman por HTTP, el Frontend conserva su copia y sus pruebas de páginas siguen en
-`tests/frontend-app.Tests`. Cuando ya no la use, se borra.
+Las pruebas de páginas y de comunicación HTTP pertenecen a `tests/frontend-app.Tests`;
+las pruebas de dominio, casos de uso y persistencia de Órdenes pertenecen a
+`tests/servicio-ordenes.Tests`. Consultar [README](../README.md) para preparar el
+MySQL temporal y comprobar el resultado real de cada suite.

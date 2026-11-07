@@ -6,7 +6,7 @@ const assert = require("node:assert/strict");
     const base = process.env.TALLER_UI_URL;
     const activa = process.env.TALLER_UI_ACTIVA;
     const anulada = process.env.TALLER_UI_ANULADA;
-    const browser = await chromium.launch({ channel: "msedge", headless: true });
+    const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "msedge", headless: true });
     try {
         const context = await browser.newContext({ ignoreHTTPSErrors: true });
         await context.addCookies(JSON.parse(process.env.TALLER_UI_COOKIES));

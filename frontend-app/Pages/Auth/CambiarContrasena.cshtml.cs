@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Api;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Pages.Auth;
 
 [Authorize]
 public sealed class CambiarContrasenaModel(
-    ICambioContrasenaPort servicio) : PageModel
+    UsuariosApi usuarios) : PageModel
 {
     [BindProperty]
     public Entrada Input { get; set; } = new();
@@ -24,13 +25,22 @@ public sealed class CambiarContrasenaModel(
         if (!ModelState.IsValid)
             return Page();
 
-        if (!servicio.Cambiar(
-                Input.Actual,
-                Input.Nueva,
-                Input.Confirmacion,
-                out string error))
+        try
         {
-            ModelState.AddModelError(string.Empty, error);
+            var resultado = await usuarios.CambiarContrasenaAsync(
+                new CambiarContrasenaSolicitud(Input.Actual, Input.Nueva, Input.Confirmacion),
+                HttpContext.RequestAborted);
+            if (!resultado.Exito)
+            {
+                ModelState.AddModelError(string.Empty, resultado.Mensaje ?? "No se pudo cambiar la contraseña.");
+                return Page();
+            }
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (Exception error) when (error is HttpRequestException ||
+            error is TaskCanceledException && !HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            ModelState.AddModelError(string.Empty, "El servicio de usuarios no está disponible. Intenta nuevamente.");
             return Page();
         }
 

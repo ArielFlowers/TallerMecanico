@@ -66,14 +66,14 @@ public sealed class CatalogoServiciosMySqlTests
         Assert.Equal(10, todos.GetArrayLength());
         var sugerencias = JsonSerializer.SerializeToElement((await pagina.OnGetSugerenciasServiciosAsync("cambio")).Value);
         Assert.Equal(6, sugerencias.GetArrayLength());
-        Assert.IsType<NotFoundResult>(pagina.OnGetServicioSeleccionado(antiguo));
-        Assert.IsType<JsonResult>(pagina.OnGetServicioSeleccionado(1));
+        Assert.IsType<NotFoundResult>(await pagina.OnGetServicioSeleccionadoAsync(antiguo));
+        Assert.IsType<JsonResult>(await pagina.OnGetServicioSeleccionadoAsync(1));
         Assert.Equal(11, ServiciosAutocompletadoTests.CrearServicio(aislada).ObtenerTodos().Count);
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         pagina.Formulario.VehiculoId = 1;
         pagina.Formulario.MecanicoId = 1;
         pagina.Formulario.ServicioIds = [antiguo];
-        Assert.IsType<PageResult>(pagina.OnPostGuardar());
+        Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
         Assert.Contains(pagina.ModelState.Values.SelectMany(entrada => entrada.Errors), error => error.ErrorMessage.Contains("catálogo"));
         Assert.Equal(0, Convert.ToInt32(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
     }

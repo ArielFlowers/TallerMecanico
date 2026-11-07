@@ -1,23 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public class IndexModel : PageModel
 {
-    private readonly DashboardService _dashboardService;
+    private readonly OrdenesApi _ordenes;
 
     public DashboardViewModel Dashboard { get; private set; } = new();
 
-    public IndexModel(DashboardService dashboardService)
+    public IndexModel(OrdenesApi ordenes)
     {
-        _dashboardService = dashboardService;
+        _ordenes = ordenes;
     }
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
-        Dashboard = _dashboardService.GetDashboardData();
+        Dashboard = await _ordenes.ObtenerDashboardAsync(HttpContext.RequestAborted);
     }
 }

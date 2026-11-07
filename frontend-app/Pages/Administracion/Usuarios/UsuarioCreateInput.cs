@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Pages.Auth;
 
 namespace TallerMecanico.Pages.Administracion.Usuarios;
 
@@ -27,14 +27,14 @@ public sealed class UsuarioCreateInput : IValidatableObject
     public string ConfirmarPassword { get; set; } = string.Empty;
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!ValidadorSolicitudRegistro.PasswordValido(Password))
+        if (!ValidacionCuentaInput.PasswordValido(Password))
         {
             yield return new ValidationResult(
                 "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
                 new[] { nameof(Password) });
         }
 
-        if (!ValidadorSolicitudRegistro.EmailValido(Email))
+        if (!ValidacionCuentaInput.EmailValido(Email))
         {
             yield return new ValidationResult(
                 "Ingrese un correo electrónico válido.",

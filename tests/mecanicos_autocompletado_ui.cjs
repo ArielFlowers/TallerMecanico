@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
 
 (async () => {
-    const browser = await chromium.launch({ channel: 'msedge', headless: true });
+    const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge', headless: true });
     try {
         const context = await browser.newContext({ ignoreHTTPSErrors: true });
         // Reutilizar la sesión aislada evita consumir intentos adicionales del límite de login real.

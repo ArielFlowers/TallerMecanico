@@ -3,6 +3,17 @@ namespace TallerMecanico.IntegrationTests;
 [Trait("Area", "Backend")]
 public sealed class ArquitecturaTests
 {
+    [Fact]
+    public void Frontend_NoReferenciaPersistenciaNiImplementacionesDeLosServicios()
+    {
+        string[] referencias = typeof(TallerMecanico.Api.UsuariosApi).Assembly.GetReferencedAssemblies()
+            .Select(referencia => referencia.Name!).ToArray();
+        string[] dependenciasBackend = ["MySqlConnector", "MailKit", "QuestPDF", "ClosedXML",
+            "TallerMecanico.ServicioUsuarios", "TallerMecanico.ServicioOrdenes", "TallerMecanico.ServicioReportes"];
+        Assert.Empty(referencias.Intersect(dependenciasBackend));
+        Assert.Contains("TallerMecanico.Contratos", referencias);
+    }
+
     private static readonly string[] Prohibidos = ["TallerMecanico.Infraestructura", "MySqlConnector", "QuestPDF", "ClosedXML"];
 
     // Deuda ya asignada en el plan del entregable. Quitar cada archivo al corregirlo.
@@ -43,6 +54,7 @@ public sealed class ArquitecturaTests
     {
         foreach (string capa in new[] { "Dominio", "Aplicacion", "Pages" })
         {
+            if (!Directory.Exists(Path.Combine(raiz, capa))) continue;
             foreach (string ruta in Directory.EnumerateFiles(Path.Combine(raiz, capa), "*", SearchOption.AllDirectories))
             {
                 if (ruta.EndsWith(".cs") || ruta.EndsWith(".cshtml"))

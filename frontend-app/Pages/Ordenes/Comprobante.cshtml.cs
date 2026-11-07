@@ -1,21 +1,20 @@
-using System.Data.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Net.Http.Headers;
-using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Ordenes;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class ComprobanteModel(ConsultaOrdenesFacade consultas, ILogger<ComprobanteModel> logger) : PageModel
+public class ComprobanteModel(OrdenesApi consultas, ILogger<ComprobanteModel> logger) : PageModel
 {
-    public IActionResult OnGet(int id)
+    public async Task<IActionResult> OnGetAsync(int id)
     {
         if (!ModelState.IsValid || id <= 0) return BadRequest("Selecciona una orden válida.");
 
         try
         {
-            byte[]? pdf = consultas.GenerarComprobante(id);
+            byte[]? pdf = await consultas.GenerarComprobanteAsync(id);
             if (pdf is null) return NotFound("La orden seleccionada no existe.");
 
             Response.GetTypedHeaders().ContentDisposition = new ContentDispositionHeaderValue("inline")
@@ -28,7 +27,7 @@ public class ComprobanteModel(ConsultaOrdenesFacade consultas, ILogger<Comproban
         {
             return Forbid();
         }
-        catch (DbException error)
+        catch (HttpRequestException error)
         {
             logger.LogError(error, "No se pudo consultar la orden {OrdenId} para generar el comprobante.", id);
             return StatusCode(StatusCodes.Status503ServiceUnavailable, "No se pudo consultar la orden. Intenta nuevamente.");

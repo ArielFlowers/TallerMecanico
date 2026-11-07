@@ -4,7 +4,7 @@ const path = require('node:path');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
 
 (async () => {
-    const browser = await chromium.launch({ channel: 'msedge', headless: true });
+    const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge', headless: true });
     const base = process.env.TALLER_NUEVA_ORDEN_URL;
     const evidencias = process.env.TALLER_SERVICIOS_EVIDENCIAS;
     const contexto = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });

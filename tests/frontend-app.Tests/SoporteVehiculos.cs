@@ -1,11 +1,16 @@
+extern alias Frontend;
+extern alias Ordenes;
+
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.IntegrationTests;
 
-internal sealed class UsuarioPrueba : ICurrentUser
+internal sealed class UsuarioPrueba : Ordenes::TallerMecanico.Aplicacion.Puertos.ICurrentUser,
+    Frontend::TallerMecanico.Aplicacion.Puertos.ICurrentUser
 {
     public bool EstaAutenticado { get; set; } = true;
     public int? UsuarioId { get; set; } = 1;
@@ -25,6 +30,12 @@ internal sealed class SesionPrueba : ISession
     public bool TryGetValue(string key, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out byte[]? value) => _datos.TryGetValue(key, out value);
     public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task CommitAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
+internal sealed class TemporalesPrueba : ITempDataProvider
+{
+    public IDictionary<string, object> LoadTempData(HttpContext context) => new Dictionary<string, object>();
+    public void SaveTempData(HttpContext context, IDictionary<string, object> values) { }
 }
 
 internal sealed class ClientesPrueba : IClientePort

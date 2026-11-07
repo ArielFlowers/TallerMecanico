@@ -2,22 +2,21 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Aplicacion.Errores;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Auth;
 
 [EnableRateLimiting("ReenvioRateLimit")]
 public sealed class ReenviarVerificacionModel : PageModel
 {
-    private readonly ReenvioVerificacionService _reenvio;
+    private readonly UsuariosApi _usuarios;
     private readonly ILogger<ReenviarVerificacionModel> _logger;
 
     public ReenviarVerificacionModel(
-        ReenvioVerificacionService reenvio,
+        UsuariosApi usuarios,
         ILogger<ReenviarVerificacionModel> logger)
     {
-        _reenvio = reenvio;
+        _usuarios = usuarios;
         _logger = logger;
     }
 
@@ -44,30 +43,14 @@ public sealed class ReenviarVerificacionModel : PageModel
 
         try
         {
-            await _reenvio.SolicitarReenvioAsync(
-                Email,
-                cancellationToken);
+            await _usuarios.ReenviarVerificacionAsync(Email, cancellationToken);
         }
-        catch (ConfiguracionRegistroException ex)
+        catch (Exception error) when (
+            error is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(
-                "Configuración de reenvío inválida. Clave: {Clave}; Solicitud HTTP: {Id}",
-                ex.Clave, HttpContext.TraceIdentifier);
-        }
-        catch (EnvioVerificacionException ex)
-        {
-            _logger.LogWarning(
-                "Aceptación SMTP del reenvío no confirmada. Etapa: {Etapa}; " +
-                "Tipo: {Tipo}; Código: {Codigo}; Solicitud HTTP: {Id}",
-                ex.Etapa, ex.TipoError, ex.CodigoSmtp, HttpContext.TraceIdentifier);
-        }
-        catch (Exception ex) when (
-            ex is not OperationCanceledException ||
-            !cancellationToken.IsCancellationRequested)
-        {
-            _logger.LogError(
-                "Fallo del reenvío. Tipo: {Tipo}; Pila: {Pila}; Solicitud HTTP: {Id}",
-                ex.GetType().FullName, ex.StackTrace, HttpContext.TraceIdentifier);
+            // Se conserva la misma respuesta pública sin revelar si el correo existe.
+            _logger.LogWarning("No se pudo solicitar el reenvío al servicio de usuarios. Tipo: {Tipo}; Solicitud HTTP: {Id}",
+                error.GetType().Name, HttpContext.TraceIdentifier);
         }
 
         SolicitudRecibida = true;

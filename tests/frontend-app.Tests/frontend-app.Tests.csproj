@@ -15,7 +15,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\frontend-app\TallerMecanico.Frontend.csproj" />
+    <ProjectReference Include="..\..\frontend-app\TallerMecanico.Frontend.csproj" Aliases="global,Frontend" />
+    <!-- Solo las pruebas de integración usan repositorios para preparar datos.
+         El Frontend de producción depende exclusivamente de los contratos HTTP. -->
+    <ProjectReference Include="..\..\backend-services\servicio-ordenes\TallerMecanico.ServicioOrdenes.csproj" Aliases="global,Ordenes" />
+    <ProjectReference Include="..\..\backend-services\servicio-usuarios\TallerMecanico.ServicioUsuarios.csproj" Aliases="Usuarios" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="TallerMecanico.Contratos" />

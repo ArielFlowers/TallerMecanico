@@ -9,6 +9,15 @@
     <UserSecretsId>dc3ea966-c2b1-4a21-afd4-d81695b9ec71</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
+    <PackageReference Include="MailKit" Version="4.18.1" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="TallerMecanico.Contratos.Usuarios" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\shared\TallerMecanico.Contratos\TallerMecanico.Contratos.csproj" />
   </ItemGroup>
 </Project>

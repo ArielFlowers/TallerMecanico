@@ -29,9 +29,14 @@ FROM ${DOTNET_RUNTIME_IMAGE} AS runtime
 
 WORKDIR /app
 
-# Puerto interno compartido por todas las replicas
+# curl permite comprobar /salud sin depender del SDK dentro de la imagen.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Compose configura el certificado PEM y habilita HTTPS en 8443.
 ENV ASPNETCORE_URLS=http://+:8080
-EXPOSE 8080
+EXPOSE 8080 8443
 
 # Copiar la aplicacion compilada
 COPY --from=build /app/publish .
