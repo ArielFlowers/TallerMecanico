@@ -8,7 +8,8 @@ public sealed class AnularOrdenCasoUso(
     IUnidadTrabajoOrden unidadTrabajo,
     ICurrentUser currentUser,
     TimeProvider reloj,
-    ILogger<AnularOrdenCasoUso> logger)
+    ILogger<AnularOrdenCasoUso> logger,
+    IAuditoriaPort? auditoria = null)
 {
     private bool PuedeAnular => currentUser.EstaAutenticado
         && !string.IsNullOrWhiteSpace(currentUser.Username)
@@ -38,12 +39,36 @@ public sealed class AnularOrdenCasoUso(
                     throw new PersistenciaOrdenException("No se pudo restituir el stock de un producto.");
 
             transaccion.Confirmar();
+            RegistrarEnBitacora(orden, detalles.Count);
             return ResultadoOrden.Correcto(orden);
         }
         catch (PersistenciaOrdenException error)
         {
             logger.LogError(error, "Falló la anulación de la orden {OrdenId}.", ordenId);
             return ResultadoOrden.Fallo(string.Empty, "No se pudo confirmar la anulación. Consulta el estado de la orden antes de reintentar.");
+        }
+    }
+
+    // La anulación es la baja lógica de la orden: queda en la bitácora como las bajas de los catálogos.
+    // Se registra después de confirmar; si la bitácora falla, la anulación ya está hecha y solo se avisa.
+    private void RegistrarEnBitacora(Orden orden, int repuestos)
+    {
+        try
+        {
+            auditoria?.Registrar(new RegistroAuditoria
+            {
+                UsuarioId = currentUser.UsuarioId,
+                Username = currentUser.Username,
+                Accion = "ORDEN_ANULADA",
+                Entidad = "Orden",
+                EntidadId = orden.Id.ToString(),
+                Fecha = orden.FechaAnulacion!.Value,
+                Detalle = $"Total: {orden.Total:0.00}. Repuestos restituidos: {repuestos}."
+            });
+        }
+        catch (Exception error)
+        {
+            logger.LogWarning(error, "La orden {OrdenId} se anuló, pero no se pudo registrar en la bitácora.", orden.Id);
         }
     }
 }
