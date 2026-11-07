@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
 using TallerMecanico.Api;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Infraestructura.Exportacion;
 using TallerMecanico.Aplicacion.Servicios;
@@ -109,10 +109,14 @@ builder.Services.AddRazorPages(options =>
 }).AddMvcOptions(options => options.Filters.Add<ConfirmarSesionFilter>());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+// Borradores y token de la orden: viven en la sesión del Frontend.
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
+builder.Services.AddScoped<IBorradorOrden, BorradorOrdenSesion>();
+builder.Services.AddScoped<ITokenOrden, TokenOrdenSesion>();
+// Los reportes PDF todavía se generan aquí hasta integrar el Servicio 3.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(ConfiguracionTaller.Instancia);
-builder.Services.AddInfraestructuraOrdenes();
 builder.Services.Configure<Argon2idOptions>(
     builder.Configuration.GetSection(
         Argon2idOptions.SectionName));
@@ -168,8 +172,6 @@ builder.Services.AddScoped<
     InicializacionUsuariosConsola>();
 builder.Services.AddScoped<
     RestablecimientoAdminConsola>();
-builder.Services.AddScoped<
-    DatabaseInitializer>();
 // =====================================================
 // AUTENTICACIÓN POR COOKIES
 // =====================================================
@@ -311,111 +313,6 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // =====================================================
-// FACTORY METHOD
-// =====================================================
-builder.Services.AddScoped<CreadorMecanico>();
-builder.Services.AddScoped<CreadorVehiculo>();
-builder.Services.AddScoped<CreadorServicio>();
-builder.Services.AddScoped<CreadorCliente>();
-builder.Services.AddScoped<CreadorProducto>();
-builder.Services.AddScoped<IRepository<Mecanico>>(
-    serviceProvider =>
-        serviceProvider
-            .GetRequiredService<CreadorMecanico>()
-            .CrearRepositorio());
-builder.Services.AddScoped<IRepository<Servicio>>(
-    serviceProvider =>
-        serviceProvider
-            .GetRequiredService<CreadorServicio>()
-            .CrearRepositorio());
-builder.Services.AddScoped<IRepository<Vehiculo>>(
-    serviceProvider =>
-        serviceProvider
-            .GetRequiredService<CreadorVehiculo>()
-            .CrearRepositorio());
-builder.Services.AddScoped<IRepository<Cliente>>(
-    serviceProvider =>
-        serviceProvider
-            .GetRequiredService<CreadorCliente>()
-            .CrearRepositorio());
-builder.Services.AddScoped<IRepository<Producto>>(
-    serviceProvider =>
-        serviceProvider
-            .GetRequiredService<CreadorProducto>()
-            .CrearRepositorio());
-// =====================================================
-// PUERTOS HEXAGONALES
-// =====================================================
-builder.Services.AddScoped<IConsultaMecanicosPort>(
-    serviceProvider =>
-        (IConsultaMecanicosPort)serviceProvider.GetRequiredService<IRepository<Mecanico>>());
-builder.Services.AddScoped<IConsultaServiciosPort>(
-    serviceProvider =>
-        (IConsultaServiciosPort)serviceProvider.GetRequiredService<IRepository<Servicio>>());
-builder.Services.AddScoped<IClientePort>(
-    serviceProvider =>
-        (IClientePort)
-        serviceProvider
-            .GetRequiredService<IRepository<Cliente>>());
-builder.Services.AddScoped<IVehiculoPort>(
-    serviceProvider =>
-        (IVehiculoPort)
-        serviceProvider
-            .GetRequiredService<IRepository<Vehiculo>>());
-builder.Services.AddScoped<IProductoPort>(
-    serviceProvider =>
-        (IProductoPort)
-        serviceProvider
-            .GetRequiredService<IRepository<Producto>>());
-// =====================================================
-// MECÁNICOS
-// =====================================================
-builder.Services.AddScoped<ValidacionMecanicos>();
-builder.Services.AddScoped<MecanicoService>();
-// =====================================================
-// SERVICIOS
-// =====================================================
-builder.Services.AddScoped<
-    IServicioService,
-    ServicioService>();
-builder.Services.AddScoped<
-    ValidacionServicios>();
-// =====================================================
-// HISTORIAL
-// =====================================================
-builder.Services.AddScoped<
-    IHistorialCostoServicioRepository,
-    HistorialCostoServicioRepository>();
-builder.Services.AddScoped<
-    IHistorialCostoServicioService,
-    HistorialCostoServicioService>();
-// =====================================================
-// VEHÍCULOS
-// =====================================================
-builder.Services.AddScoped<
-    ValidacionVehiculos>();
-builder.Services.AddScoped<
-    VehiculoService>();
-// =====================================================
-// CLIENTES
-// =====================================================
-builder.Services.AddScoped<
-    ValidacionClientes>();
-builder.Services.AddScoped<
-    ClienteService>();
-// =====================================================
-// PRODUCTOS
-// =====================================================
-builder.Services.AddScoped<
-    ValidacionProductos>();
-builder.Services.AddScoped<
-    ProductoService>();
-// =====================================================
-// DASHBOARD
-// =====================================================
-builder.Services.AddScoped<
-    DashboardService>();
-// =====================================================
 // REPORTES (HU3 - Servicio 3)
 // =====================================================
 builder.Services.AddScoped<IConsultaReportesPort, ConsultaReportesMySqlAdapter>();
@@ -486,70 +383,6 @@ if (args.Contains(
         inicializacion.Ejecutar();
     }
     return;
-}
-
-// =====================================================
-// CREACIÓN DEL ESQUEMA SIN LEVANTAR EL SERVIDOR
-// =====================================================
-// Lo usan las pruebas. En A3 pasa a servicio-ordenes junto con DatabaseInitializer.
-if (args.Contains("--inicializar-esquema", StringComparer.OrdinalIgnoreCase))
-{
-    using IServiceScope scope = app.Services.CreateScope();
-    scope.ServiceProvider.GetRequiredService<DatabaseInitializer>().Initialize();
-    return;
-}
-
-// =====================================================
-// INICIALIZACION NORMAL DE BASE DE DATOS
-// =====================================================
-int intentosInicio = 10;
-if (int.TryParse(
-        app.Configuration["Database:IntentosInicio"],
-        out int intentosConfigurados) &&
-    intentosConfigurados > 0)
-{
-    intentosInicio = intentosConfigurados;
-}
-
-int esperaEntreIntentosSegundos = 5;
-if (int.TryParse(
-        app.Configuration["Database:EsperaEntreIntentosSegundos"],
-        out int esperaConfigurada) &&
-    esperaConfigurada >= 0)
-{
-    esperaEntreIntentosSegundos = esperaConfigurada;
-}
-
-for (int intento = 1; ; intento++)
-{
-    try
-    {
-        using IServiceScope scope =
-            app.Services.CreateScope();
-        DatabaseInitializer databaseInitializer =
-            scope.ServiceProvider
-                .GetRequiredService<DatabaseInitializer>();
-        databaseInitializer.Initialize();
-        break;
-    }
-    catch (Exception ex) when (
-        intento < intentosInicio &&
-        ex is System.Data.Common.DbException or TimeoutException)
-    {
-        app.Logger.LogWarning(
-            "Base de datos no disponible (intento {Intento}/{Intentos}). " +
-            "Se reintentara en {EsperaSegundos} segundos.",
-            intento,
-            intentosInicio,
-            esperaEntreIntentosSegundos);
-
-        if (esperaEntreIntentosSegundos > 0)
-        {
-            Thread.Sleep(
-                TimeSpan.FromSeconds(
-                    esperaEntreIntentosSegundos));
-        }
-    }
 }
 
 // Debe ejecutarse antes de HSTS, redirecciones y autenticación,
