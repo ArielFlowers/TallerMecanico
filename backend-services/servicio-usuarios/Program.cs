@@ -1,10 +1,15 @@
-using Microsoft.AspNetCore.Authentication;
+using AuthenticationSchemeOptions = Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Contratos;
 using TallerMecanico.Controllers;
-using TallerMecanico.Infraestructura;
 using TallerMecanico.Infraestructura.Arranque;
+using TallerMecanico.Infraestructura.Correo;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Infraestructura.Seguridad;
 
 // Servicio 2: usuarios y autenticación (Hexagonal).
@@ -18,7 +23,7 @@ builder.Services.AddControllers(opciones =>
 }).ConfigureApiBehaviorOptions(opciones =>
 {
     opciones.InvalidModelStateResponseFactory = _ =>
-        new BadRequestObjectResult(new TallerMecanico.Contratos.ErrorApi("Los datos de la solicitud no son válidos."));
+        new BadRequestObjectResult(new ErrorApi("Los datos de la solicitud no son válidos."));
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -32,10 +37,45 @@ builder.Services.AddAuthorization(opciones =>
     opciones.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<DatabaseConnectionFactory, MySqlConnectionFactory>();
+builder.Services.AddScoped<IAuditoriaPort, AuditoriaRepository>();
+
 // =====================================================
-// DEPENDENCIAS DEL SERVICIO
+// ADAPTADORES DE SALIDA: MYSQL, CORREO Y CONTRASEÑAS
 // =====================================================
-builder.Services.AddInfraestructuraUsuarios(builder.Configuration);
+builder.Services.AddScoped<UsuarioRepository>();
+builder.Services.AddScoped<IUsuarioPort>(proveedor => proveedor.GetRequiredService<UsuarioRepository>());
+builder.Services.AddScoped<IUsuarioConsultaPort>(proveedor => proveedor.GetRequiredService<UsuarioRepository>());
+builder.Services.AddScoped<IUsuarioAdministracionPort>(proveedor => proveedor.GetRequiredService<UsuarioRepository>());
+builder.Services.AddScoped<ISolicitudRegistroPort, SolicitudRegistroRepository>();
+builder.Services.AddScoped<IActivacionInvitacionPort, ActivacionInvitacionMySqlAdapter>();
+builder.Services.AddScoped<IRevisionSolicitudesPort, RevisionSolicitudesRepository>();
+builder.Services.AddScoped<IEmailService, GmailEmailService>();
+builder.Services.Configure<Argon2idOptions>(builder.Configuration.GetSection(Argon2idOptions.SectionName));
+builder.Services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
+builder.Services.AddSingleton<IFallbackHash, AuthenticationFallbackHash>();
+
+// =====================================================
+// PUERTOS DE ENTRADA: CASOS DE USO
+// =====================================================
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IGeneradorNombreUsuarioPort, GeneradorNombreUsuarioService>();
+builder.Services.AddScoped<IGestionUsuariosPort, UsuarioAdministracionService>();
+builder.Services.AddScoped<ICambioContrasenaPort, CambioContrasenaService>();
+builder.Services.AddScoped<RegistroUsuarioService>();
+builder.Services.AddScoped<RegistroFacade>();
+builder.Services.AddScoped<VerificacionEmailService>();
+builder.Services.AddScoped<ReenvioVerificacionService>();
+builder.Services.AddScoped<RevisionSolicitudesService>();
+
+// =====================================================
+// COMANDOS DE CONSOLA
+// =====================================================
+builder.Services.AddScoped<InicializadorUsuarios>();
+builder.Services.AddScoped<InicializacionUsuariosConsola>();
+builder.Services.AddScoped<RestablecimientoAdminConsola>();
+
 var app = builder.Build();
 
 // El esquema lo administra Servicio 1; estos comandos solo gestionan cuentas.

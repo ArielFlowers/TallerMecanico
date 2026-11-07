@@ -15,21 +15,21 @@ public sealed class ErroresApiFilter(ILogger<ErroresApiFilter> logger) : IExcept
         switch (contexto.Exception)
         {
             case SolicitudRegistroDuplicadaException error:
-                contexto.Result = new ConflictObjectResult(new ErrorUsuarioApi(
+                contexto.Result = new ConflictObjectResult(new ErrorApi(
                     "Ya existe un usuario o solicitud pendiente con ese valor.", error.Campo, "SolicitudDuplicada"));
                 break;
             case SolicitudGuardadaCorreoPendienteException:
-                contexto.Result = new ObjectResult(new ErrorUsuarioApi(
+                contexto.Result = new ObjectResult(new ErrorApi(
                     "La invitación se guardó pero no se pudo enviar el correo. Intente reenviar la verificación más tarde.",
                     Codigo: "CorreoPendiente")) { StatusCode = StatusCodes.Status503ServiceUnavailable };
                 break;
             case ConfiguracionRegistroException:
-                contexto.Result = new ObjectResult(new ErrorUsuarioApi(
+                contexto.Result = new ObjectResult(new ErrorApi(
                     "Error de configuración del servidor de correo. Contacte al administrador del sistema.",
                     Codigo: "ConfiguracionCorreo")) { StatusCode = StatusCodes.Status503ServiceUnavailable };
                 break;
             case EnvioVerificacionException:
-                contexto.Result = new ObjectResult(new ErrorUsuarioApi(
+                contexto.Result = new ObjectResult(new ErrorApi(
                     "No se pudo enviar el correo de verificación. Intente nuevamente más tarde.",
                     Codigo: "EnvioCorreo")) { StatusCode = StatusCodes.Status503ServiceUnavailable };
                 break;

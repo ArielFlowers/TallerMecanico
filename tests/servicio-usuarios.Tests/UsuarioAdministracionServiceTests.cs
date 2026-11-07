@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
-using TallerMecanico.Aplicacion.DTOs;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Dominio.Entidades;

@@ -1,4 +1,4 @@
-using TallerMecanico.Aplicacion.DTOs;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Aplicacion.Puertos;
