@@ -20,5 +20,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\backend-services\servicio-ordenes\TallerMecanico.ServicioOrdenes.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Las pruebas web guardan usuarios con el mismo hash de la aplicación.
+         Al integrar el Servicio 2, estos archivos se toman de servicio-usuarios. -->
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
+    <Compile Include="..\..\frontend-app\Aplicacion\Puertos\IPasswordHasher.cs" Link="Comun\IPasswordHasher.cs" />
+    <Compile Include="..\..\frontend-app\Infraestructura\Seguridad\Argon2id*.cs" LinkBase="Comun" />
+  </ItemGroup>
   <Import Project="..\Comun.props" />
 </Project>

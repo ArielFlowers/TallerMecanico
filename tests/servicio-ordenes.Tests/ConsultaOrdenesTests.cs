@@ -1,13 +1,17 @@
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
+using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
+using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -77,10 +81,12 @@ public sealed class ConsultaOrdenesTests
         public int? OrdenSeleccionadaId { get; private set; }
         public OrdenDetalle Detalle { get; } = new() { Id = 1 };
         public int ConsultasDetalle { get; private set; }
+        public bool FallarDetalle { get; init; }
 
         public OrdenDetalle? ObtenerDetalle(int id)
         {
             ConsultasDetalle++;
+            if (FallarDetalle) throw new FalloConsultaPrueba();
             return id == Detalle.Id ? Detalle : null;
         }
 
@@ -99,6 +105,8 @@ public sealed class ConsultaOrdenesTests
             return Ordenes;
         }
     }
+
+    private sealed class FalloConsultaPrueba() : DbException("Error técnico de prueba");
 
     private sealed class ConexionProhibida : DatabaseConnectionFactory
     {

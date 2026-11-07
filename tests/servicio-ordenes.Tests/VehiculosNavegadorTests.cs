@@ -31,7 +31,7 @@ public sealed class VehiculosNavegadorTests
         string raiz = MySqlAisladoFixture.RaizProyecto;
         string password = $"Ec2_{Guid.NewGuid():N}";
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
-        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "ec2_ui", PasswordHash = hasher.GenerarHash(password), Rol = "Recepcionista", EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
@@ -61,7 +61,7 @@ public sealed class VehiculosNavegadorTests
             WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

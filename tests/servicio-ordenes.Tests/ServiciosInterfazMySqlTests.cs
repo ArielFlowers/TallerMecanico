@@ -28,7 +28,7 @@ public sealed class ServiciosInterfazMySqlTests
         administracion.Actualizar(filtros);
         string password = Guid.NewGuid().ToString("N") + "_Prueba";
         string hash = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions())).GenerarHash(password);
-        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "recepcion_servicios", Rol = "Recepcionista", PasswordHash = hash, EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow

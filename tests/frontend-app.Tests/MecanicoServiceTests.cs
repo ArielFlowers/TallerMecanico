@@ -6,14 +6,8 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using Microsoft.Extensions.DependencyInjection;
-using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura.Persistencia;
-using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -35,7 +29,7 @@ public sealed class MecanicoServiceTests
         var pagina = new TallerMecanico.Pages.Mecanicos.IndexModel(new MecanicosApi(api.Cliente()), borradores)
         {
             OrdenBorradorId = orden,
-            MecanicoInput = MecanicosTests.FormularioValido(),
+            MecanicoInput = FormularioValido(),
             PageContext = new Microsoft.AspNetCore.Mvc.RazorPages.PageContext { HttpContext = contexto },
             TempData = new TempDataDictionary(contexto, new TemporalesPrueba())
         };
@@ -73,117 +67,9 @@ public sealed class MecanicoServiceTests
         public void SaveTempData(HttpContext context, IDictionary<string, object> values) { }
     }
 
-    [Fact]
-    public void Contratos_ConservanValidacionDuplicadosAuditoriaYCache()
+    private static MecanicoInputModel FormularioValido() => new()
     {
-        var repositorio = new RepositorioPrueba();
-        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos(), new UsuarioPrueba());
-        var invalido = MecanicosTests.FormularioValido("1");
-        Assert.NotEmpty(servicio.Crear(invalido));
-        Assert.Empty(repositorio.Registros);
-
-        var entrada = MecanicosTests.FormularioValido();
-        Assert.Empty(servicio.Crear(entrada));
-        var creado = Assert.Single(servicio.Obtener());
-        Assert.False(string.IsNullOrWhiteSpace(creado.CreadoPor));
-        Assert.Single(servicio.Crear(entrada));
-        entrada.Celular = "71234568";
-        var actualizado = servicio.Actualizar(creado.Id, entrada);
-        Assert.True(actualizado.Actualizado);
-        Assert.Empty(actualizado.Errores);
-        var editado = Assert.Single(servicio.Obtener());
-        Assert.Equal(creado.CreadoPor, editado.CreadoPor);
-        Assert.Equal(creado.FechaCreacion, editado.FechaCreacion);
-        Assert.NotNull(editado.FechaModificacion);
-        Assert.Null(servicio.Eliminar(editado.Id));
-        Assert.Empty(repositorio.Registros);
-        Assert.Equal("El mecánico seleccionado ya no existe.", servicio.Eliminar(editado.Id));
-    }
-
-    [Fact]
-    public void Eliminar_RelacionadoConservaMensajeY()
-    {
-        var repositorio = new RepositorioPrueba();
-        var servicio = new MecanicoService(repositorio, repositorio, new ValidacionMecanicos());
-        repositorio.Add(new Mecanico { Ci = "1234567" });
-        repositorio.ErrorEliminar = new RegistroRelacionadoException(new InvalidOperationException("Conflicto de prueba"));
-
-        Assert.Equal("No se puede eliminar el mecánico porque tiene órdenes asociadas.", servicio.Eliminar(1));
-        Assert.Single(repositorio.Registros);
-        var otroError = new InvalidOperationException("Fallo no relacionado");
-        repositorio.ErrorEliminar = otroError;
-        Assert.Same(otroError, Assert.Throws<InvalidOperationException>(() => servicio.Eliminar(1)));
-    }
-
-    [Fact]
-    public async Task Consultas_UtilizanElContratoInyectadoSinConversiones()
-    {
-        var repositorio = new RepositorioPrueba();
-        var consultas = new RepositorioPrueba();
-        var servicio = new MecanicoService(repositorio, consultas, new ValidacionMecanicos());
-        consultas.Add(new Mecanico { Nombres = "Juan", Ci = "1234567" });
-
-        Assert.Empty(servicio.Obtener());
-        Assert.Single(servicio.Obtener("Juan"));
-        await servicio.SugerirAsync("  Juan   Pérez  ", incluirEspecialidad: false);
-        Assert.Equal("Juan Pérez", consultas.TerminoSugerencia);
-        Assert.False(consultas.IncluirEspecialidad);
-        Assert.Null(repositorio.TerminoSugerencia);
-        Assert.Single(servicio.Crear(MecanicosTests.FormularioValido()));
-        Assert.Empty(repositorio.Registros);
-    }
-
-    [Fact]
-    public void FactoryMethod_DiComparteAmbosContratosPorScope()
-    {
-        var servicios = new ServiceCollection();
-        servicios.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(
-            new Dictionary<string, string?> { ["ConnectionStrings:MySqlConnection"] = "Server=127.0.0.1;Port=1;Database=no_utilizada;" }).Build());
-        servicios.AddScoped<DatabaseConnectionFactory, MySqlConnectionFactory>();
-        servicios.AddScoped<CreadorMecanico>();
-        int creaciones = 0;
-        servicios.AddScoped<IRepository<Mecanico>>(provider =>
-        {
-            creaciones++;
-            return provider.GetRequiredService<CreadorMecanico>().CrearRepositorio();
-        });
-        servicios.AddScoped<IConsultaMecanicosPort>(provider =>
-            (IConsultaMecanicosPort)provider.GetRequiredService<IRepository<Mecanico>>());
-        servicios.AddScoped<ValidacionMecanicos>();
-        servicios.AddScoped<MecanicoService>();
-        using var provider = servicios.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
-        using var scope = provider.CreateScope();
-        using var otroScope = provider.CreateScope();
-        var repositorio = scope.ServiceProvider.GetRequiredService<IRepository<Mecanico>>();
-        Assert.IsType<MecanicoRepository>(repositorio);
-        Assert.Same(repositorio, scope.ServiceProvider.GetRequiredService<IConsultaMecanicosPort>());
-        Assert.Same(scope.ServiceProvider.GetRequiredService<MecanicoService>(), scope.ServiceProvider.GetRequiredService<MecanicoService>());
-        Assert.Equal(1, creaciones);
-        Assert.NotSame(repositorio, otroScope.ServiceProvider.GetRequiredService<IRepository<Mecanico>>());
-        Assert.Equal(2, creaciones);
-    }
-
-    private sealed class RepositorioPrueba : IRepository<Mecanico>, IConsultaMecanicosPort
-    {
-        public List<Mecanico> Registros { get; } = [];
-        public Exception? ErrorEliminar { get; set; }
-        public string? TerminoSugerencia { get; private set; }
-        public bool IncluirEspecialidad { get; private set; }
-        public List<Mecanico> GetAll() => Registros;
-        public Mecanico? GetById(int id) => Registros.SingleOrDefault(mecanico => mecanico.Id == id);
-        public void Add(Mecanico mecanico) { mecanico.Id = Registros.Count + 1; Registros.Add(mecanico); }
-        public void Update(Mecanico mecanico) { Registros.RemoveAll(existente => existente.Id == mecanico.Id); Registros.Add(mecanico); }
-        public void Delete(int id) { if (ErrorEliminar is not null) throw ErrorEliminar; Registros.RemoveAll(mecanico => mecanico.Id == id); }
-        public int Count() => Registros.Count;
-        public List<Mecanico> Search(string terminoBusqueda) => Registros.Where(mecanico => mecanico.Nombres.Contains(terminoBusqueda)).ToList();
-        public bool ExistsByCi(string ci, string complementoCi, int idExcluido = 0) =>
-            Registros.Any(mecanico => mecanico.Ci == ci && mecanico.ComplementoCi == complementoCi && mecanico.Id != idExcluido);
-        public Task<IReadOnlyList<SugerenciaMecanico>> SugerirAsync(string termino, CancellationToken cancellationToken = default, bool incluirEspecialidad = true)
-        {
-            TerminoSugerencia = termino;
-            IncluirEspecialidad = incluirEspecialidad;
-            return Task.FromResult<IReadOnlyList<SugerenciaMecanico>>([]);
-        }
-    }
-
+        Ci = "1234567", Nombres = "Juan Carlos", PrimerApellido = "Pérez", SegundoApellido = "Mercado",
+        Genero = "Masculino", Especialidad = "Motores", Celular = "71234567"
+    };
 }

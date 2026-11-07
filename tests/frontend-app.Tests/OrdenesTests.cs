@@ -1,68 +1,13 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
-using TallerMecanico.Aplicacion.Fachadas;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Infraestructura.Sesion;
-using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Validaciones;
 
 namespace TallerMecanico.IntegrationTests;
 
 [Trait("Area", "Backend")]
 public sealed class OrdenesTests
 {
-    private static CrearOrdenSolicitud Solicitud() => new(1, 1, DateTime.Today, Guid.NewGuid(), [new(1, 1)], 1);
-
-    [Fact]
-    public void Validacion_RechazaSinServicio()
-    {
-        var errores = new ValidacionOrdenes().Validar(Solicitud() with { ServicioId = null });
-        Assert.Contains("ServicioIds", errores);
-    }
-
-    [Fact]
-    public void Validacion_AceptaServicioSinProductos()
-    {
-        Assert.Empty(new ValidacionOrdenes().Validar(Solicitud() with { Lineas = [] }));
-    }
-
-    [Fact]
-    public void Validacion_AgrupaProductosYOrdenaIds()
-    {
-        var validador = new ValidacionOrdenes();
-        Assert.Empty(validador.Validar(Solicitud()));
-        Assert.Equal(new[] { new LineaOrdenSolicitud(2, 5), new LineaOrdenSolicitud(9, 3) },
-            validador.AgruparLineas([new(9, 1), new(2, 2), new(9, 2), new(2, 3)]));
-    }
-
-    [Fact]
-    public void Validacion_RechazaCabeceraTokenYDetallesVacios()
-    {
-        var errores = new ValidacionOrdenes().Validar(new(0, 0, default, Guid.Empty, []));
-        Assert.Contains("VehiculoId", errores);
-        Assert.Contains("MecanicoId", errores);
-        Assert.Contains("Fecha", errores);
-        Assert.Contains("Token", errores);
-        Assert.Contains("Lineas", errores);
-    }
-
-    [Theory]
-    [InlineData(0, 1)]
-    [InlineData(-1, 1)]
-    [InlineData(1, 0)]
-    [InlineData(1, -1)]
-    public void Validacion_RechazaProductoOCantidadInvalida(int producto, int cantidad)
-    {
-        Assert.NotEmpty(new ValidacionOrdenes().Validar(Solicitud() with { Lineas = [new(producto, cantidad)] }));
-    }
-
-    [Fact]
-    public void Validacion_ImpideDesbordamientoAlAgrupar()
-    {
-        Assert.Throws<OverflowException>(() => new ValidacionOrdenes().AgruparLineas([new(1, int.MaxValue), new(1, 1)]));
-    }
-
     [Fact]
     public void Token_SeMantieneParaReenviosYPerteneceAlUsuario()
     {
@@ -94,48 +39,6 @@ public sealed class OrdenesTests
         Assert.False(tokens.EsValido(token));
         usuario.EstaAutenticado = false;
         Assert.Throws<UnauthorizedAccessException>(() => tokens.Generar());
-    }
-
-    [Theory]
-    [InlineData(false, "Administrador")]
-    [InlineData(true, "Invitado")]
-    public void Seguridad_NoIniciaTransaccionSinPermiso(bool autenticado, string rol)
-    {
-        var usuario = new UsuarioPrueba { EstaAutenticado = autenticado, Rol = rol };
-        var servicio = Servicio(new UnidadProhibida(), usuario);
-        Assert.False(servicio.CrearOrden(Solicitud()).Exito);
-        Assert.False(servicio.AnularOrden(1).Exito);
-    }
-
-    [Fact]
-    public void Recepcionista_NoPuedeAnularYNingunUsuarioAceptaTokenAjeno()
-    {
-        var servicio = Servicio(new UnidadProhibida(), new UsuarioPrueba());
-        Assert.False(servicio.AnularOrden(1).Exito);
-        var facade = servicio.CrearFacade(new TokensInvalidos());
-        Assert.Contains("Token", facade.CrearOrden(Solicitud()).Errores);
-    }
-
-    [Fact]
-    public void CantidadAgrupadaExcesiva_NoAbreTransaccion()
-    {
-        var servicio = Servicio(new UnidadProhibida(), new UsuarioPrueba());
-        var solicitud = Solicitud() with { Lineas = [new(1, int.MaxValue), new(1, 1)] };
-        Assert.Contains("Lineas", servicio.CrearOrden(solicitud).Errores);
-    }
-
-    private static OrdenServicioPrueba Servicio(IUnidadTrabajoOrden unidad, UsuarioPrueba usuario) =>
-        new(unidad, usuario, new ValidacionOrdenes(), TimeProvider.System);
-
-    private sealed class UnidadProhibida : IUnidadTrabajoOrden
-    {
-        public ITransaccionOrden Iniciar() => throw new InvalidOperationException("No se debe abrir una transacción.");
-    }
-
-    private sealed class TokensInvalidos : ITokenOrden
-    {
-        public Guid Generar() => Guid.NewGuid();
-        public bool EsValido(Guid token) => false;
     }
 
     private sealed class RelojPrueba : TimeProvider

@@ -11,7 +11,6 @@ using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Infraestructura.Seguridad;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
-using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -25,7 +24,7 @@ public sealed class MecanicosHttpTests
         using var aislada = new MySqlAisladoFixture();
         string password = $"Prueba_{Guid.NewGuid():N}";
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
-        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "admin_prueba", Rol = "Administrador",
             PasswordHash = hasher.GenerarHash(password), EmailVerificado = true,
@@ -131,7 +130,7 @@ public sealed class MecanicosHttpTests
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
@@ -236,7 +235,7 @@ public sealed class MecanicosHttpTests
             Assert.DoesNotContain("textoPrincipal", await denegada.Content.ReadAsStringAsync());
         }
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
-        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "recepcion_prueba", Rol = "Recepcionista", PasswordHash = hasher.GenerarHash(password),
             EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow

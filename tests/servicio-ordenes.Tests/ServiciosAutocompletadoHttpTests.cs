@@ -31,7 +31,7 @@ public sealed class ServiciosAutocompletadoHttpTests
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         string hash = hasher.GenerarHash(password);
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
-            new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+            aislada.AgregarUsuario(new UsuarioSemilla
             {
                 Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });
@@ -146,7 +146,7 @@ public sealed class ServiciosAutocompletadoHttpTests
             WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(ServicioService).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

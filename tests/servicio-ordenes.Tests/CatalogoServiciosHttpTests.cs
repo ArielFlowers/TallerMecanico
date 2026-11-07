@@ -25,7 +25,7 @@ public sealed class CatalogoServiciosHttpTests
         string password = Guid.NewGuid().ToString("N") + "_Prueba";
         string hash = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions())).GenerarHash(password);
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
-            new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+            aislada.AgregarUsuario(new UsuarioSemilla
             {
                 Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });

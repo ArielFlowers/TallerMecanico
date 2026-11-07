@@ -1,3 +1,8 @@
+using System.Data.Common;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Dominio.Entidades;
@@ -51,6 +56,7 @@ public sealed class ComprobanteOrdenTests
     {
         public OrdenDetalle Orden { get; } = SoporteComprobantePdf.Orden();
         public int Consultas { get; private set; }
+        public bool Fallar { get; init; }
         public IReadOnlyList<OrdenResumen> Obtener(EstadoOrden? estado = null, DateOnly? fecha = null,
             string? terminoBusqueda = null, int? ordenSeleccionadaId = null) => [];
         public Task<IReadOnlyList<SugerenciaOrden>> SugerirAsync(string termino, EstadoOrden? estado = null,
@@ -59,6 +65,7 @@ public sealed class ComprobanteOrdenTests
         public OrdenDetalle? ObtenerDetalle(int id)
         {
             Consultas++;
+            if (Fallar) throw new ErrorConsulta();
             return id == Orden.Id ? Orden : null;
         }
     }
@@ -70,8 +77,10 @@ public sealed class ComprobanteOrdenTests
         public string? Literal { get; private set; }
         public string? Usuario { get; private set; }
         public DateTimeOffset Fecha { get; private set; }
+        public bool Fallar { get; init; }
         public byte[] Generar(OrdenDetalle orden, string totalLiteral, string generadoPor, DateTimeOffset fechaGeneracion)
         {
+            if (Fallar) throw new InvalidOperationException("Error interno de prueba");
             Orden = orden; Literal = totalLiteral; Usuario = generadoPor; Fecha = fechaGeneracion;
             return Pdf;
         }
@@ -82,4 +91,6 @@ public sealed class ComprobanteOrdenTests
         public DateTimeOffset Ahora { get; set; } = new(2026, 10, 12, 20, 30, 0, TimeSpan.Zero);
         public override DateTimeOffset GetUtcNow() => Ahora;
     }
+
+    private sealed class ErrorConsulta() : DbException("Error interno de prueba");
 }

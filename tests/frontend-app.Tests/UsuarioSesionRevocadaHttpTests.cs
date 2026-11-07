@@ -78,8 +78,7 @@ public sealed class UsuarioSesionRevocadaHttpTests
             };
 
             inicio.ArgumentList.Add(
-                typeof(TallerMecanico.Aplicacion.Servicios.ClienteService)
-                    .Assembly.Location);
+                AppsPrueba.DllFrontend);
 
             inicio.ArgumentList.Add("--urls");
             inicio.ArgumentList.Add(url);

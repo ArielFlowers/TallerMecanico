@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.IntegrationTests;
@@ -25,43 +24,4 @@ internal sealed class SesionPrueba : ISession
     public bool TryGetValue(string key, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out byte[]? value) => _datos.TryGetValue(key, out value);
     public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task CommitAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-}
-
-internal sealed class ClientesPrueba : IClientePort
-{
-    public string? UltimoTerminoSugerencias { get; private set; }
-    public List<Cliente> Datos { get; } = [];
-    public IReadOnlyList<Cliente> GetAll() => Datos;
-    public Cliente? GetById(int id) => Datos.Find(cliente => cliente.Id == id);
-    public IReadOnlyList<Cliente> Search(string terminoBusqueda) => Datos;
-    public Task<IReadOnlyList<SugerenciaCliente>> SugerirAsync(string termino, CancellationToken cancellationToken = default)
-    {
-        UltimoTerminoSugerencias = termino;
-        return Task.FromResult<IReadOnlyList<SugerenciaCliente>>([]);
-    }
-    public bool ExistsByCi(string ci, string complementoCi, int idExcluido = 0) =>
-        Datos.Any(cliente => cliente.Ci == ci && cliente.ComplementoCi == complementoCi && cliente.Id != idExcluido);
-    public void Add(Cliente cliente) { cliente.Id = Datos.Count + 1; Datos.Add(cliente); }
-    public void Update(Cliente cliente) { Datos.RemoveAll(actual => actual.Id == cliente.Id); Datos.Add(cliente); }
-    public void Delete(int id) => Datos.RemoveAll(cliente => cliente.Id == id);
-}
-
-internal sealed class VehiculosPrueba : IVehiculoPort
-{
-    public string? UltimoTerminoSugerencias { get; private set; }
-    public List<Vehiculo> Datos { get; } = [];
-    public IReadOnlyList<Vehiculo> GetAll() => Datos;
-    public Vehiculo? GetById(int id) => Datos.Find(vehiculo => vehiculo.Id == id);
-    public IReadOnlyList<Vehiculo> Search(string filtro) => Datos;
-    public Task<IReadOnlyList<SugerenciaVehiculo>> SugerirAsync(string termino, CancellationToken cancellationToken = default)
-    {
-        UltimoTerminoSugerencias = termino;
-        return Task.FromResult<IReadOnlyList<SugerenciaVehiculo>>([]);
-    }
-    public bool ExistsByPlaca(string placa, int idExcluido = 0) =>
-        Datos.Any(vehiculo => vehiculo.Placa == placa && vehiculo.Id != idExcluido);
-    public bool ExistsPorCliente(int clienteId) => Datos.Any(vehiculo => vehiculo.ClienteId == clienteId);
-    public void Add(Vehiculo vehiculo) { vehiculo.Id = Datos.Count + 1; Datos.Add(vehiculo); }
-    public void Update(Vehiculo vehiculo) { Datos.RemoveAll(actual => actual.Id == vehiculo.Id); Datos.Add(vehiculo); }
-    public void Delete(int id) => Datos.RemoveAll(vehiculo => vehiculo.Id == id);
 }
