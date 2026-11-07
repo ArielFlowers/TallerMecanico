@@ -1,8 +1,8 @@
 # Cumplimiento de la rúbrica: 3er Entregable
 
-Estado al 05/11/2026, en la rama `fix/grupo-funcionalidades-rubrica` (basada en `main` `778466f`). Cubre los 60 puntos de código y arquitectura de cada grupo interno. El documento y el repositorio se revisan aparte.
+Estado documental al 06/11/2026 durante la integración de cuatro aplicaciones SBA. Cubre los requisitos de código y arquitectura de cada grupo interno. La evidencia de implementación se distingue de la ejecución de pruebas y de la defensa; no representa un puntaje confirmado.
 
-**Estados:** ✅ comprobado | 🔶 cumple, con una decisión pendiente
+**Estados:** ✅ implementación localizada y comprobada | 🔶 decisión de presentación o revisión manual pendiente. Ver [resultados reales de la integración](VALIDACION_SBA.md).
 
 ## Arquitectura y patrones
 
@@ -11,8 +11,8 @@ Estado al 05/11/2026, en la rama `fix/grupo-funcionalidades-rubrica` (basada en 
 | Servicio 1 en Clean Architecture | ✅ | `Aplicacion/CasosUso/Ordenes/` y [ARQUITECTURA_CLEAN.md](ARQUITECTURA_CLEAN.md) |
 | Servicios 2 y 3 en Hexagonal | ✅ | Puertos de entrada y de salida en `Aplicacion/Puertos`; ver [ARQUITECTURA_HEXAGONAL.md](ARQUITECTURA_HEXAGONAL.md) |
 | Al menos 3 patrones de diseño | ✅ | Facade, Factory Method y Singleton, además de Repository y Unit of Work |
-| Regla de dependencias | ✅ | `ArquitecturaTests` sin excepciones pendientes |
-| 4 aplicaciones (SBA) | 🔶 | Un solo proyecto con servicios lógicos, según lo informado por el equipo; falta la confirmación del docente |
+| Regla de dependencias | ✅ | Pruebas de arquitectura aprobadas y Frontend sin referencias a persistencia ni implementaciones de los servicios |
+| 4 aplicaciones (SBA) | ✅ | Cuatro imágenes construidas y cuatro procesos saludables con MySQL temporal; HTTPS, permisos y exportaciones comprobados. Ver [validación](VALIDACION_SBA.md) |
 
 ## Grupo 1: Servicio 1, Órdenes (60)
 
@@ -44,15 +44,18 @@ Estado al 05/11/2026, en la rama `fix/grupo-funcionalidades-rubrica` (basada en 
 | Reporte 1: lista, 2 tablas o más, 2 filtros o más, PDF y Excel | 10 | ✅ | Fecha desde, fecha hasta y estado |
 | Reporte 2: sumariado con gráfico, 2 tablas o más, 2 filtros o más, PDF y Excel | 10 | ✅ | Nombre, fecha desde y fecha hasta; gráfico de barras en pantalla, PDF y Excel |
 
-## Cómo se verificó
+## Verificación de la integración SBA
 
 ```powershell
-dotnet build
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj -- xUnit.ParallelizeTestCollections=false
+dotnet build TallerMecanico.sln
+dotnet test TallerMecanico.sln -- xUnit.ParallelizeTestCollections=false
 ```
 
+Resultado de la integración: **974 pruebas aprobadas, 0 fallidas y 0 omitidas**, con MySQL temporal, Chromium y lectura de PDF habilitados. Las cuatro aplicaciones también pasaron 19 comprobaciones dentro de Docker. Ver [Validación SBA](VALIDACION_SBA.md) y [material de entrega del grupo 2](ENTREGA_SBA_USUARIOS_REPORTES.md).
+
 - La suite completa requiere `TALLER_TEST_MYSQL`, y las pruebas de navegador y de PDF requieren además `PLAYWRIGHT_MODULE` y `TALLER_PDF_PYTHON`; ver el README.
-- Recorrido con cada rol en Edge sobre una base temporal aislada: menú, filtros del Reporte 2, exportaciones de ambos reportes y alta de mecánico desde la orden.
-- Flujo de cuenta completo con Mailpit: invitación, correo con nombre de usuario, activación, enlace de un solo uso, cambio de contraseña y baja.
-- Envío por Gmail aceptado por SMTP; la llegada al buzón se confirma manualmente.
-- Reportes abiertos en Excel sin reparación, con logo, datos sumariados y gráfico.
+- Recorridos de roles, formularios y exportaciones ejecutados con Chromium sobre bases temporales. Edge continúa como predeterminado de CI.
+- Flujo de cuenta comprobado con SMTP simulado: invitación, activación de un solo uso, cambio de contraseña y baja.
+- Correo real: confirmar manualmente la llegada al buzón del destinatario durante la prueba del equipo.
+- Reportes: generación, estructura y contenido comprobados automáticamente; abrir también las salidas en los lectores que se usarán para la defensa.
+- Despliegue: cuatro aplicaciones saludables, HTTPS directo en Kestrel y APIs sin puertos públicos comprobados en el proyecto Docker temporal. `NubeUp` realiza la transición del entorno habitual con la configuración privada del equipo.

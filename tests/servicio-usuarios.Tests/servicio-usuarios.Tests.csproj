@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="TallerMecanico.Contratos.Usuarios" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\backend-services\servicio-usuarios\TallerMecanico.ServicioUsuarios.csproj" />

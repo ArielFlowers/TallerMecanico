@@ -1,3 +1,6 @@
+extern alias Usuarios;
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
@@ -26,11 +29,10 @@ public sealed class AdministracionReportesHttpTests
         using var aislada = new MySqlAisladoFixture();
         const string password = "ClavePruebas123!";
         string hash = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions())).GenerarHash(password);
-        var usuarios = new UsuarioRepository(aislada.Factory);
         foreach (string nombre in new[] { "admin_prueba", "ana_foco", "bruno_otro", "usuario_inactivo" }
             .Concat(Enumerable.Range(0, 11).Select(i => $"equipo{i:00}")))
         {
-            usuarios.Agregar(new Usuario
+            aislada.AgregarUsuario(new UsuarioSemilla
             {
                 Username = nombre, Email = $"{nombre}@example.test", PasswordHash = hash,
                 Rol = nombre == "admin_prueba" ? "Administrador" : "Recepcionista",
@@ -82,7 +84,7 @@ public sealed class AdministracionReportesHttpTests
                 Assert.DoesNotContain("/Administracion/Solicitudes", pagina);
                 Assert.DoesNotContain("PasswordHash", pagina);
                 Assert.DoesNotContain(hash, pagina);
-                await VerificarRechazosAutoedicion(admin, usuarios);
+                await VerificarRechazosAutoedicion(admin, aislada);
 
                 using var filtrada = await admin.GetAsync("/Administracion/Usuarios?handler=Resultados&Busqueda=ana_foco");
                 Assert.True(filtrada.Headers.CacheControl?.NoStore);
@@ -116,10 +118,10 @@ public sealed class AdministracionReportesHttpTests
                 if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")))
                 {
                     await VerificarNavegador(url, cookies);
-                    Assert.False(usuarios.ObtenerPorUsername("ana_foco")!.Activo);
+                    Assert.False(Convert.ToBoolean(aislada.Escalar("SELECT Activo FROM Usuarios WHERE Username='ana_foco';")));
                 }
-                Assert.Equal(15, usuarios.ContarTotal());
-                Assert.Equal(hash, usuarios.ObtenerPorUsername("admin_prueba")!.PasswordHash);
+                Assert.Equal(15L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Usuarios;")));
+                Assert.Equal(hash, Convert.ToString(aislada.Escalar("SELECT PasswordHash FROM Usuarios WHERE Username='admin_prueba';")));
             }
             finally
             {
@@ -132,11 +134,17 @@ public sealed class AdministracionReportesHttpTests
         finally { temporal.Delete(recursive: true); }
     }
 
-    private static async Task VerificarRechazosAutoedicion(HttpClient admin, UsuarioRepository usuarios)
+    private static async Task VerificarRechazosAutoedicion(HttpClient admin, MySqlAisladoFixture db)
     {
-        Usuario original = usuarios.ObtenerPorUsername("admin_prueba")!;
-        string estadoOriginal = JsonSerializer.Serialize(original);
-        string ruta = $"/Administracion/Usuarios/Editar/{original.Id}";
+        int id = Convert.ToInt32(db.Escalar("SELECT Id FROM Usuarios WHERE Username='admin_prueba';"));
+        string Instantanea() => Convert.ToString(db.Escalar("""
+            SELECT JSON_OBJECT('id', Id, 'username', Username, 'email', Email, 'rol', Rol,
+                'activo', Activo, 'hash', PasswordHash, 'modificadoPor', ModificadoPor,
+                'fechaModificacion', FechaModificacion)
+            FROM Usuarios WHERE Id=@Id;
+            """, ("@Id", id)))!;
+        string estadoOriginal = Instantanea();
+        string ruta = $"/Administracion/Usuarios/Editar/{id}";
         foreach (var (rol, activo, mensaje) in new[]
         {
             ("Administrador", false, "No puede desactivar su propia cuenta."),
@@ -147,7 +155,7 @@ public sealed class AdministracionReportesHttpTests
             using var contenido = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["__RequestVerificationToken"] = Token(formulario),
-                ["Usuario.Id"] = original.Id.ToString(),
+                ["Usuario.Id"] = id.ToString(),
                 ["Input.Email"] = "correo_modificado@example.test",
                 ["Input.Rol"] = rol,
                 ["Input.Activo"] = activo.ToString()
@@ -159,7 +167,7 @@ public sealed class AdministracionReportesHttpTests
                 @"<div\b[^>]*class=""[^""]*\bvalidation-summary-errors\b[^""]*""[^>]*>[\s\S]*?</div>").Value;
             Assert.Contains("role=\"alert\"", resumen);
             Assert.Contains(mensaje, resumen);
-            Assert.Equal(estadoOriginal, JsonSerializer.Serialize(usuarios.ObtenerPorUsername("admin_prueba")));
+            Assert.Equal(estadoOriginal, Instantanea());
         }
     }
 
@@ -241,7 +249,7 @@ public sealed class AdministracionReportesHttpTests
             WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(AuthenticationService).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

@@ -1,7 +1,9 @@
+using TallerMecanico.Api;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using TallerMecanico.Aplicacion.Fachadas;
@@ -69,23 +71,28 @@ public sealed class OrdenesAutocompletadoTests
     [Fact]
     public async Task Pagina_ConservaFiltrosAlRefrescarYRechazaFiltrosInvalidosEnSugerencias()
     {
-        var puerto = new ConsultaPrueba();
-        var pagina = new PaginaOrdenes(Fachada(puerto), null!, NullLogger<PaginaOrdenes>.Instance)
+        var api = new ApiFalsa();
+        api.Json("GET api/ordenes", Array.Empty<TallerMecanico.Contratos.Ordenes.OrdenResumenDto>());
+        api.Json("GET api/ordenes/sugerencias", Array.Empty<SugerenciaOrden>());
+        var pagina = new PaginaOrdenes(new OrdenesApi(api.Cliente()), NullLogger<PaginaOrdenes>.Instance)
         {
             PageContext = new PageContext { HttpContext = new DefaultHttpContext() },
-            Estado = EstadoOrden.Activa, Fecha = new DateOnly(2026, 10, 12),
+            Estado = TallerMecanico.Contratos.Ordenes.EstadoOrden.Activa,
+            Fecha = new DateOnly(2026, 10, 12),
             TerminoBusqueda = "Orden #15", OrdenSeleccionadaId = 15
         };
-        pagina.OnGet();
-        pagina.OnGet();
-        Assert.Equal(2, puerto.ConsultasListado);
-        Assert.Equal(15, puerto.Id);
-        Assert.Equal(pagina.Estado, puerto.Estado);
-        Assert.Equal(pagina.Fecha, puerto.Fecha);
+        pagina.TempData = new TempDataDictionary(pagina.HttpContext, new TemporalesPrueba());
+        await pagina.OnGetAsync();
+        await pagina.OnGetAsync();
+        Assert.Equal(2, api.Llamadas.Count);
+        Assert.Equal(api.Llamadas[0], api.Llamadas[1]);
+        Assert.Contains("ordenSeleccionadaId=15", api.Llamadas[0]);
+        Assert.Contains("estado=Activa", api.Llamadas[0]);
+        Assert.Contains("fecha=2026-10-12", api.Llamadas[0]);
         Assert.IsType<JsonResult>(await pagina.OnGetSugerenciasAsync("15"));
         pagina.ModelState.AddModelError(nameof(pagina.Fecha), "Fecha inválida");
         Assert.IsType<BadRequestObjectResult>(await pagina.OnGetSugerenciasAsync("15"));
-        Assert.Equal(1, puerto.ConsultasSugerencias);
+        Assert.Single(api.Llamadas, llamada => llamada.StartsWith("GET api/ordenes/sugerencias"));
     }
 
     [Trait("Area", "Datos")]

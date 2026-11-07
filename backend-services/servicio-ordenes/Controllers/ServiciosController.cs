@@ -27,8 +27,10 @@ public sealed class ServiciosController(
     }
 
     [HttpGet("sugerencias")]
-    public Task<IReadOnlyList<SugerenciaServicio>> Sugerir([FromQuery] string? termino, CancellationToken cancelacion) =>
-        servicios.SugerirAsync(termino, cancelacion);
+    public Task<IReadOnlyList<SugerenciaServicio>> Sugerir([FromQuery] string? termino, CancellationToken cancelacion,
+        [FromQuery] bool soloCatalogo = false) => soloCatalogo
+        ? servicios.SugerirCatalogoAsync(termino, cancelacion)
+        : servicios.SugerirAsync(termino, cancelacion);
 
     [HttpGet("catalogo")]
     public IReadOnlyList<ServicioDto> ObtenerCatalogo() => servicios.ObtenerCatalogo().Select(servicio => servicio.ADto()).ToArray();

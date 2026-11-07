@@ -1,3 +1,6 @@
+extern alias Usuarios;
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -30,7 +33,7 @@ public sealed class ConsultaOrdenesHttpTests
         string passwordHash = hasher.GenerarHash(password);
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
         {
-            new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+            aislada.AgregarUsuario(new UsuarioSemilla
             {
                 Username = rol, PasswordHash = passwordHash, Rol = rol,
                 EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
@@ -59,7 +62,7 @@ public sealed class ConsultaOrdenesHttpTests
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

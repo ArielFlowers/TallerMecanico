@@ -54,14 +54,14 @@ public sealed class NuevaOrdenFechaTests
 
     [Trait("Area", "Datos")]
     [MySqlAisladoFact]
-    public void BorradorAntiguoYError_MuestranFechaActualSinRestaurarUnaFechaDeEntrada()
+    public async Task BorradorAntiguoYError_MuestranFechaActualSinRestaurarUnaFechaDeEntrada()
     {
         using var aislada = new MySqlAisladoFixture();
         NuevaOrdenAutocompletadoTests.Preparar(aislada);
         var sesion = new SesionPrueba();
         var reloj = new RelojPrueba { Ahora = DateTimeOffset.Parse("2026-10-19T03:59:59Z") };
         var pagina = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion, reloj);
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         var salida = Assert.IsType<RedirectToPageResult>(pagina.OnPostNuevoCliente());
         Guid id = (Guid)salida.RouteValues!["OrdenBorradorId"]!;
         string clave = $"Ordenes:Borrador:{id:N}";
@@ -71,9 +71,9 @@ public sealed class NuevaOrdenFechaTests
         reloj.Ahora = reloj.Ahora.AddSeconds(1);
         var retorno = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion, reloj);
         retorno.BorradorId = id;
-        Assert.IsType<Microsoft.AspNetCore.Mvc.RazorPages.PageResult>(retorno.OnGet());
+        Assert.IsType<Microsoft.AspNetCore.Mvc.RazorPages.PageResult>(await retorno.OnGetAsync());
         Assert.Equal(new DateTime(2026, 10, 19), retorno.FechaOrden);
-        Assert.IsType<Microsoft.AspNetCore.Mvc.RazorPages.PageResult>(retorno.OnPostGuardar());
+        Assert.IsType<Microsoft.AspNetCore.Mvc.RazorPages.PageResult>(await retorno.OnPostGuardarAsync());
         Assert.Equal(new DateTime(2026, 10, 19), retorno.FechaOrden);
         Assert.DoesNotContain(typeof(TallerMecanico.Aplicacion.Dto.OrdenFormViewModel).GetProperties(), propiedad => propiedad.Name == "Fecha");
         Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));

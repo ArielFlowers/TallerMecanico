@@ -20,6 +20,10 @@ public sealed class ServiciosApi(HttpClient http) : ApiBase(http)
     public Task<IReadOnlyList<ServicioDto>> ObtenerCatalogoAsync(CancellationToken cancelacion = default) =>
         LeerAsync<IReadOnlyList<ServicioDto>>("api/servicios/catalogo", cancelacion);
 
+    public Task<IReadOnlyList<SugerenciaServicio>> SugerirCatalogoAsync(string? termino, CancellationToken cancelacion = default) =>
+        LeerAsync<IReadOnlyList<SugerenciaServicio>>(ConFiltros("api/servicios/sugerencias",
+            ("termino", termino), ("soloCatalogo", true)), cancelacion);
+
     public Task<IReadOnlyList<HistorialCostoServicioDto>> ObtenerHistorialAsync(CancellationToken cancelacion = default) =>
         LeerAsync<IReadOnlyList<HistorialCostoServicioDto>>("api/servicios/historial", cancelacion);
 

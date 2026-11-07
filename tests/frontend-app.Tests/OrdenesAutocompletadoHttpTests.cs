@@ -1,3 +1,6 @@
+extern alias Usuarios;
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
 using System.Diagnostics;
 using System.Net;
@@ -28,7 +31,7 @@ public sealed class OrdenesAutocompletadoHttpTests
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         string hash = hasher.GenerarHash(password);
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
-            new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+            aislada.AgregarUsuario(new UsuarioSemilla
             {
                 Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });
@@ -124,8 +127,8 @@ public sealed class OrdenesAutocompletadoHttpTests
                             ["OrdenSeleccionadaId"] = "1", ["TerminoBusqueda"] = "Orden #1"
                         });
                         using var anulacion = await cliente.PostAsync("/Ordenes?handler=Anular&id=1", contenido);
-                        Assert.Equal(HttpStatusCode.OK, anulacion.StatusCode);
-                        Assert.Contains("Solo un administrador", await anulacion.Content.ReadAsStringAsync());
+                        Assert.Equal(HttpStatusCode.Redirect, anulacion.StatusCode);
+                        Assert.Contains("/Auth/AccessDenied", anulacion.Headers.Location!.ToString());
                         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PLAYWRIGHT_MODULE")))
                             await VerificarNavegador(url, cookies);
                     }
@@ -170,7 +173,7 @@ public sealed class OrdenesAutocompletadoHttpTests
             WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(ConsultarOrdenesCasoUso).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";

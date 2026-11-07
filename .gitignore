@@ -432,6 +432,7 @@ FodyWeavers.xsd
 *.db-shm
 *.db-wal
 /nginx/certs/
+/certs/
 
 .env
 .env.test

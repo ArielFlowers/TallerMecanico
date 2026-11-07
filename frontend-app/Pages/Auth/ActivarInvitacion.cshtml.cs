@@ -2,19 +2,18 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Auth;
 
 [EnableRateLimiting("EmailVerificationRateLimit")]
 public sealed class ActivarInvitacionModel : PageModel
 {
-    private readonly IGestionUsuariosPort _usuarioAdministracion;
+    private readonly UsuariosApi _usuarios;
 
-    public ActivarInvitacionModel(IGestionUsuariosPort usuarioAdministracion)
+    public ActivarInvitacionModel(UsuariosApi usuarios)
     {
-        _usuarioAdministracion = usuarioAdministracion;
+        _usuarios = usuarios;
     }
 
     [BindProperty]
@@ -45,7 +44,7 @@ public sealed class ActivarInvitacionModel : PageModel
         }
     }
 
-    public IActionResult OnPost()
+    public async Task<IActionResult> OnPostAsync()
     {
         ConfigurarSeguridad();
 
@@ -62,13 +61,20 @@ public sealed class ActivarInvitacionModel : PageModel
             return Page();
         }
 
-        bool resultado = _usuarioAdministracion.ActivarUsuarioDesdeInvitacion(
-            Input.Token,
-            out string? errorMessage);
-
-        if (!resultado)
+        try
         {
-            Mensaje = errorMessage ?? "Error al activar la cuenta.";
+            var resultado = await _usuarios.ActivarInvitacionAsync(Input.Token, HttpContext.RequestAborted);
+            if (!resultado.Exito)
+            {
+                Mensaje = resultado.Mensaje ?? "Error al activar la cuenta.";
+                TokenValido = false;
+                return Page();
+            }
+        }
+        catch (Exception error) when (error is HttpRequestException ||
+            error is TaskCanceledException && !HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            Mensaje = "El servicio de usuarios no está disponible. Intenta nuevamente.";
             TokenValido = false;
             return Page();
         }

@@ -46,7 +46,7 @@ const servidor = http.createServer((peticion, respuesta) => {
 (async () => {
     await new Promise(resolve => servidor.listen(0, '127.0.0.1', resolve));
     const base = `http://127.0.0.1:${servidor.address().port}`;
-    const navegador = await chromium.launch({ channel: 'msedge', headless: true });
+    const navegador = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge', headless: true });
     let verificadas = 0;
     try {
         for (const escenario of ['ok', 'bloqueado', 'excepcion', 'validacion', 'error']) {

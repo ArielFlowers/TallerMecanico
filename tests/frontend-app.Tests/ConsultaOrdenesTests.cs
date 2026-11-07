@@ -1,3 +1,7 @@
+using System.Net;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using TallerMecanico.Api;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -54,77 +58,81 @@ public sealed class ConsultaOrdenesTests
     }
 
     [Fact]
-    public void PageModel_ConsultaMedianteFachadaYRefrescaConLosMismosFiltros()
+    public async Task PageModel_ConsultaMedianteApiYRefrescaConLosMismosFiltros()
     {
         var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance)
-        {
-            Estado = EstadoOrden.Activa,
-            Fecha = new DateOnly(2026, 10, 12),
-            TerminoBusqueda = "1234ABC",
-            OrdenSeleccionadaId = 1
-        };
+        var api = new ApiFalsa();
+        api.Json("GET api/ordenes", puerto.Ordenes);
+        var pagina = Pagina(api);
+        pagina.Estado = TallerMecanico.Contratos.Ordenes.EstadoOrden.Activa;
+        pagina.Fecha = new DateOnly(2026, 10, 12);
+        pagina.TerminoBusqueda = "1234ABC";
+        pagina.OrdenSeleccionadaId = 1;
 
-        Assert.IsType<PageResult>(pagina.OnGet());
-        Assert.Same(puerto.Ordenes, pagina.Ordenes);
-        Assert.IsType<PageResult>(pagina.OnGet());
-        Assert.Equal(2, puerto.Consultas);
-        Assert.Equal(pagina.Estado, puerto.Estado);
-        Assert.Equal(pagina.Fecha, puerto.Fecha);
-        Assert.Equal(pagina.TerminoBusqueda, puerto.TerminoBusqueda);
-        Assert.Equal(pagina.OrdenSeleccionadaId, puerto.OrdenSeleccionadaId);
+        Assert.IsType<PageResult>(await pagina.OnGetAsync());
+        Assert.Equal(puerto.Ordenes.Select(orden => orden.Id), pagina.Ordenes.Select(orden => orden.Id));
+        Assert.IsType<PageResult>(await pagina.OnGetAsync());
+        Assert.Equal(2, api.Llamadas.Count);
+        Assert.Equal(api.Llamadas[0], api.Llamadas[1]);
+        Assert.Contains("estado=Activa", api.Llamadas[0]);
+        Assert.Contains("fecha=2026-10-12", api.Llamadas[0]);
+        Assert.Contains("terminoBusqueda=1234ABC", api.Llamadas[0]);
+        Assert.Contains("ordenSeleccionadaId=1", api.Llamadas[0]);
     }
 
     [Fact]
-    public void PageModel_FiltrosInvalidosNoEjecutanConsultas()
+    public async Task PageModel_FiltrosInvalidosNoEjecutanConsultas()
     {
-        var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
+        var api = new ApiFalsa();
+        var pagina = Pagina(api);
         pagina.ModelState.AddModelError(nameof(pagina.Estado), "Estado inválido.");
 
-        Assert.IsType<PageResult>(pagina.OnGet());
+        Assert.IsType<PageResult>(await pagina.OnGetAsync());
         Assert.Empty(pagina.Ordenes);
-        Assert.Equal(0, puerto.Consultas);
+        Assert.Empty(api.Llamadas);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void Detalle_IdInvalidoNoConsultaElPuerto(int id)
+    public async Task Detalle_IdInvalidoNoConsultaElPuerto(int id)
     {
         var puerto = new ConsultasPrueba();
         var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
-
+        var api = new ApiFalsa();
         Assert.Null(fachada.ObtenerDetalle(id));
-        Assert.IsType<BadRequestObjectResult>(pagina.OnGetDetalle(id));
+        Assert.IsType<BadRequestObjectResult>(await Pagina(api).OnGetDetalleAsync(id));
+        Assert.Empty(api.Llamadas);
         Assert.Equal(0, puerto.ConsultasDetalle);
     }
 
     [Fact]
-    public void Detalle_OrdenInexistenteDevuelve404SinConsultarListado()
+    public async Task Detalle_OrdenInexistenteDevuelve404SinConsultarListado()
     {
-        var puerto = new ConsultasPrueba();
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
-
-        Assert.Null(fachada.ObtenerDetalle(999));
-        Assert.IsType<NotFoundObjectResult>(pagina.OnGetDetalle(999));
-        Assert.Equal(0, puerto.Consultas);
+        var api = new ApiFalsa();
+        api.Error("GET api/ordenes/999", HttpStatusCode.NotFound);
+        Assert.IsType<NotFoundObjectResult>(await Pagina(api).OnGetDetalleAsync(999));
+        Assert.Equal(new[] { "GET api/ordenes/999" }, api.Llamadas);
     }
 
     [Fact]
-    public void Detalle_ErrorDePersistenciaDevuelve503SinExponerElErrorTecnico()
+    public async Task Detalle_ErrorDePersistenciaDevuelve503SinExponerElErrorTecnico()
     {
-        var puerto = new ConsultasPrueba { FallarDetalle = true };
-        var fachada = SoporteComprobantePdf.CrearFachada(new ConsultarOrdenesCasoUso(puerto, new UsuarioPrueba()));
-        var pagina = new OrdenesIndexModel(fachada, null!, NullLogger<OrdenesIndexModel>.Instance);
-
-        var resultado = Assert.IsType<ObjectResult>(pagina.OnGetDetalle(1));
+        var api = new ApiFalsa();
+        api.Error("GET api/ordenes/1", HttpStatusCode.ServiceUnavailable, "Error técnico de prueba");
+        var resultado = Assert.IsType<ObjectResult>(await Pagina(api).OnGetDetalleAsync(1));
         Assert.Equal(503, resultado.StatusCode);
         Assert.Equal("No se pudo consultar la orden. Intenta nuevamente.", resultado.Value);
+    }
+
+    private static OrdenesIndexModel Pagina(ApiFalsa api)
+    {
+        var contexto = new DefaultHttpContext();
+        return new(new OrdenesApi(api.Cliente()), NullLogger<OrdenesIndexModel>.Instance)
+        {
+            PageContext = new PageContext { HttpContext = contexto },
+            TempData = new TempDataDictionary(contexto, new TemporalesPrueba())
+        };
     }
 
     [Fact]

@@ -25,5 +25,13 @@ internal sealed class OrdenServicioPrueba(
 
     public ResultadoOrden AnularOrden(int ordenId) => _anular.Ejecutar(ordenId);
 
-    public OrdenServicioFacade CrearFacade(ITokenOrden tokens) => new(_crear, _anular, tokens);
+    public FachadaConTokenPrueba CrearFacade(ITokenOrden tokens) => new(this, tokens);
+}
+
+// La pertenencia del token se prueba en el PageModel del Frontend; el backend
+// conserva la transacción y la idempotencia. Este adaptador solo prepara su solicitud.
+internal sealed class FachadaConTokenPrueba(OrdenServicioPrueba servicio, ITokenOrden tokens)
+{
+    public Guid GenerarTokenFormulario() => tokens.Generar();
+    public ResultadoOrden CrearOrden(CrearOrdenSolicitud solicitud) => servicio.CrearOrden(solicitud);
 }
