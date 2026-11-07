@@ -155,9 +155,9 @@ La separación en cuatro aplicaciones se integra por partes. En esta rama:
 - El Frontend ya consume órdenes, catálogos y dashboard mediante `Api/`.
 - Los Servicios 2 y 3 tienen sus proyectos, contratos y clientes HTTP preparados;
   su implementación se integra desde las ramas de usuarios y reportes.
-- El Frontend conserva temporalmente código heredado de los servicios mientras se
-  completa esa integración. No se elimina en esta rama para no romper pruebas ni
-  rutas de emergencia.
+- El Frontend ya no tiene la copia de órdenes y catálogos. Solo conserva, de forma
+  temporal, el código de usuarios y reportes, que se retira al integrar las ramas
+  de los Servicios 2 y 3.
 
 La documentación de este archivo se concentra en el Servicio 1. Los detalles de
 usuarios y reportes están en `docs/ARQUITECTURA_HEXAGONAL.md`.
@@ -190,6 +190,12 @@ dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj
 - `ArquitecturaTests`: regla de dependencias del Servicio 1.
 - `frontend-app.Tests`: clientes HTTP, DTOs, fachadas y páginas del Frontend.
 
-El resultado local de la suite completa fue 714 pruebas aprobadas, 0 fallidas y
-210 omitidas. Las omisiones corresponden a pruebas MySQL, de navegador o de
-extracción de texto PDF que requieren herramientas opcionales.
+- `servicio-ordenes.Tests` también tiene las pruebas web de catálogos y órdenes:
+  levantan el Frontend y el Servicio 1 como procesos y preparan los datos con los
+  servicios de este proyecto.
+- `OrdenesPaginasTests`: páginas de órdenes con el Servicio 1 simulado (token,
+  servicio no disponible, fecha, borrador y comprobante).
+
+Con `TALLER_TEST_MYSQL` configurado, la solución completa dio 806 pruebas aprobadas,
+0 fallidas y 9 omitidas. Las omitidas son de navegador o de extracción de texto PDF,
+que requieren herramientas opcionales.
