@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -30,19 +30,19 @@ public sealed class RegistroUsuarioService
         string email,
         string password)
     {
-        if (!ValidadorSolicitudRegistro.UsuarioValido(username))
+        if (!ReglasCuenta.UsuarioValido(username))
         {
             throw new ArgumentException(
                 "El nombre de usuario no es válido.", nameof(username));
         }
 
-        if (!ValidadorSolicitudRegistro.EmailValido(email))
+        if (!ReglasCuenta.EmailValido(email))
         {
             throw new ArgumentException(
                 "El correo electrónico no es válido.", nameof(email));
         }
 
-        if (!ValidadorSolicitudRegistro.PasswordValido(password))
+        if (!ReglasCuenta.ContrasenaValida(password))
         {
             throw new ArgumentException(
                 "La contraseña no cumple los requisitos.", nameof(password));

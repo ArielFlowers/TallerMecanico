@@ -25,24 +25,24 @@ public sealed class RegistroInput : IValidatableObject
     public IEnumerable<ValidationResult> Validate(
         ValidationContext validationContext)
     {
-        if (!ValidacionCuentaInput.UsuarioValido(Username))
+        if (!ReglasCuenta.UsuarioValido(Username))
         {
             yield return new ValidationResult(
                 "Use entre 3 y 50 caracteres: letras, números, punto, guion o guion bajo.",
                 new[] { nameof(Username) });
         }
 
-        if (!ValidacionCuentaInput.EmailValido(Email))
+        if (!ReglasCuenta.EmailValido(Email))
         {
             yield return new ValidationResult(
                 "Ingrese un correo electrónico válido.",
                 new[] { nameof(Email) });
         }
 
-        if (!ValidacionCuentaInput.PasswordValido(Password))
+        if (!ReglasCuenta.ContrasenaValida(Password))
         {
             yield return new ValidationResult(
-                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
+                ReglasCuenta.MensajeContrasena,
                 new[] { nameof(Password) });
         }
     }

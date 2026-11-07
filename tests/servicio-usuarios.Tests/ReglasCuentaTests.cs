@@ -1,10 +1,10 @@
-using TallerMecanico.Aplicacion.Validaciones;
 using Xunit;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.IntegrationTests;
 
 [Trait("Area", "Backend")]
-public class ValidadorSolicitudRegistroTests
+public class ReglasCuentaTests
 {
     [Theory]
     [InlineData("empleado123")]
@@ -13,7 +13,7 @@ public class ValidadorSolicitudRegistroTests
     [InlineData("usuario-01")]
     public void UsuarioValido_AceptaUsuariosCorrectos(string username)
     {
-        Assert.True(ValidadorSolicitudRegistro.UsuarioValido(username));
+        Assert.True(ReglasCuenta.UsuarioValido(username));
     }
 
     [Theory]
@@ -23,7 +23,7 @@ public class ValidadorSolicitudRegistroTests
     [InlineData("usuario@correo")]
     public void UsuarioValido_RechazaUsuariosIncorrectos(string username)
     {
-        Assert.False(ValidadorSolicitudRegistro.UsuarioValido(username));
+        Assert.False(ReglasCuenta.UsuarioValido(username));
     }
 
     [Theory]
@@ -33,7 +33,7 @@ public class ValidadorSolicitudRegistroTests
     [InlineData("empleado@empresa.com.bo")]
     public void EmailValido_AceptaDistintosProveedores(string email)
     {
-        Assert.True(ValidadorSolicitudRegistro.EmailValido(email));
+        Assert.True(ReglasCuenta.EmailValido(email));
     }
 
     [Theory]
@@ -43,15 +43,15 @@ public class ValidadorSolicitudRegistroTests
     [InlineData(" persona@gmail.com")]
     public void EmailValido_RechazaCorreosIncorrectos(string email)
     {
-        Assert.False(ValidadorSolicitudRegistro.EmailValido(email));
+        Assert.False(ReglasCuenta.EmailValido(email));
     }
 
     [Theory]
     [InlineData("Clave12!")]
     [InlineData("ClaveSegura12!")]
-    public void PasswordValido_AceptaPasswordConComplejidad(string password)
+    public void ContrasenaValida_AceptaPasswordConComplejidad(string password)
     {
-        Assert.True(ValidadorSolicitudRegistro.PasswordValido(password));
+        Assert.True(ReglasCuenta.ContrasenaValida(password));
     }
 
     [Theory]
@@ -63,16 +63,16 @@ public class ValidadorSolicitudRegistroTests
     [InlineData("SinEspecial1")]
     [InlineData(" ClaveSeg12!")]
     [InlineData("ClaveSeg12! ")]
-    public void PasswordValido_RechazaPasswordsIncorrectas(string password)
+    public void ContrasenaValida_RechazaPasswordsIncorrectas(string password)
     {
-        Assert.False(ValidadorSolicitudRegistro.PasswordValido(password));
+        Assert.False(ReglasCuenta.ContrasenaValida(password));
     }
 
     [Fact]
-    public void PasswordValido_RechazaMasDe128Caracteres()
+    public void ContrasenaValida_RechazaMasDe128Caracteres()
     {
         Assert.False(
-            ValidadorSolicitudRegistro.PasswordValido(
+            ReglasCuenta.ContrasenaValida(
                 "Aa1!" + new string('a', 125)));
     }
 }

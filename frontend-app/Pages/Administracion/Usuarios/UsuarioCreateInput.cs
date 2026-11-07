@@ -27,14 +27,14 @@ public sealed class UsuarioCreateInput : IValidatableObject
     public string ConfirmarPassword { get; set; } = string.Empty;
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!ValidacionCuentaInput.PasswordValido(Password))
+        if (!ReglasCuenta.ContrasenaValida(Password))
         {
             yield return new ValidationResult(
-                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
+                ReglasCuenta.MensajeContrasena,
                 new[] { nameof(Password) });
         }
 
-        if (!ValidacionCuentaInput.EmailValido(Email))
+        if (!ReglasCuenta.EmailValido(Email))
         {
             yield return new ValidationResult(
                 "Ingrese un correo electrónico válido.",

@@ -9,7 +9,6 @@ using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Infraestructura.Seguridad;
-using TallerMecanico.Aplicacion.Validaciones;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

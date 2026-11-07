@@ -10,7 +10,6 @@ using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Infraestructura.Seguridad;
-using TallerMecanico.Aplicacion.Validaciones;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
