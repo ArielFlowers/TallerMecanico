@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Pages.Auth;
 
 namespace TallerMecanico.Pages.Administracion.Usuarios;
 
@@ -20,7 +20,7 @@ public sealed class UsuarioEditInput : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!ValidadorSolicitudRegistro.EmailValido(Email))
+        if (!ValidacionCuentaInput.EmailValido(Email))
         {
             yield return new ValidationResult(
                 "Ingrese un correo electrónico válido.",

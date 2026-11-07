@@ -137,14 +137,14 @@ public sealed class CantidadesServiciosMySqlTests
         foreach (string cantidad in new[] { "1.5", "1,5" })
         {
             var pagina = NuevaOrdenAutocompletadoTests.CrearPagina(aislada);
-            pagina.OnGet();
+            await pagina.OnGetAsync();
             Guid token = pagina.Formulario.Token;
             var (formulario, errores) = await CantidadesServiciosTests.EnlazarCantidadAsync(cantidad);
             formulario.Token = token;
             pagina.Formulario = formulario;
             pagina.ModelState.Merge(errores);
 
-            Assert.IsType<PageResult>(pagina.OnPostGuardar());
+            Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
             Assert.False(pagina.ModelState.IsValid);
             Assert.NotEmpty(pagina.ModelState["Formulario.CantidadesServicios[1]"]!.Errors);
         }
@@ -153,13 +153,13 @@ public sealed class CantidadesServiciosMySqlTests
     }
 
     [MySqlAisladoFact]
-    public void BorradorYErrorDeFormulario_ConservanCantidadHastaGuardar()
+    public async Task BorradorYErrorDeFormulario_ConservanCantidadHastaGuardar()
     {
         using var aislada = new MySqlAisladoFixture();
         PrepararRepetible(aislada);
         var sesion = new SesionPrueba();
         var pagina = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion);
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         pagina.Formulario.VehiculoId = 1;
         pagina.Formulario.MecanicoId = 1;
         pagina.Formulario.ServicioIds = [1];
@@ -168,16 +168,16 @@ public sealed class CantidadesServiciosMySqlTests
         var restaurada = NuevaOrdenAutocompletadoTests.CrearPagina(aislada, sesion);
         restaurada.BorradorId = (Guid)salida.RouteValues!["OrdenBorradorId"]!;
 
-        Assert.IsType<PageResult>(restaurada.OnGet());
+        Assert.IsType<PageResult>(await restaurada.OnGetAsync());
         Assert.Equal(3, restaurada.Formulario.CantidadesServicios[1]);
         Assert.Equal(75m, restaurada.TotalEstimado);
         restaurada.ModelState.AddModelError("Formulario.VehiculoId", "Error de prueba.");
-        Assert.IsType<PageResult>(restaurada.OnPostGuardar());
+        Assert.IsType<PageResult>(await restaurada.OnPostGuardarAsync());
         Assert.Equal(3, Assert.Single(restaurada.ServiciosSeleccionados).Cantidad);
         Assert.Equal(0, Convert.ToInt32(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
         restaurada.ModelState.Clear();
 
-        Assert.IsType<RedirectToPageResult>(restaurada.OnPostGuardar());
+        Assert.IsType<RedirectToPageResult>(await restaurada.OnPostGuardarAsync());
         Assert.Equal(3, Convert.ToInt32(aislada.Escalar("SELECT Cantidad FROM DetalleServiciosOrdenes;")));
         Assert.Equal(75m, Convert.ToDecimal(aislada.Escalar("SELECT Total FROM Ordenes;")));
     }

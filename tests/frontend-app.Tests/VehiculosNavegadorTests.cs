@@ -1,3 +1,7 @@
+extern alias Usuarios;
+
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -6,7 +10,6 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
-using TallerMecanico.Infraestructura.Seguridad;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.IntegrationTests;
@@ -31,9 +34,9 @@ public sealed class VehiculosNavegadorTests
         string raiz = MySqlAisladoFixture.RaizProyecto;
         string password = $"Ec2_{Guid.NewGuid():N}";
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
-        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        aislada.AgregarUsuario(new UsuarioSemilla
         {
-            Username = "ec2_ui", PasswordHash = hasher.GenerarHash(password), Rol = "Recepcionista", EmailVerificado = true,
+            Username = "ec2_ui", PasswordHash = hasher.GenerarHash(password), Rol = "Recepcionista", Activo = true, EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
         var clientes = new ClienteRepository(aislada.Factory);
@@ -61,11 +64,10 @@ public sealed class VehiculosNavegadorTests
             WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificadoRuta;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = certificadoPassword;
         aislada.ConfigurarFrontend(inicio);

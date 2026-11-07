@@ -21,8 +21,8 @@ Uso principal en Windows y macOS: dotnet msbuild -t:COMANDO
 Atajos: bash ./taller.sh nube <comando>
 
   status     Mostrar los contenedores de la aplicacion.
-  logs       Seguir los logs de app1; Ctrl+C para salir.
-  build      Reconstruir la imagen sin detener la aplicacion.
+  logs       Seguir los logs de las cuatro apps; Ctrl+C para salir.
+  build      Reconstruir las cuatro imagenes sin detener la aplicacion.
   usuarios   Crear cuentas interactivamente desde tu propia terminal.
 
 up construye primero y actualiza la aplicacion conectada a Aiven.
@@ -52,16 +52,22 @@ comprobar_configuracion() {
     if [[ "${1:-}" == 'certificados' ]]; then
         local certificado
         for certificado in localhost.pem localhost-key.pem; do
-            [[ -f "$raiz/nginx/certs/$certificado" ]] || fallar 'Faltan certificados locales. Generalos con mkcert siguiendo README.md.'
+            [[ -f "$raiz/certs/$certificado" ]] || fallar 'Faltan certificados en certs/. Generalos con mkcert siguiendo README.md.'
         done
     fi
     invocar_compose config --quiet
-    local nombre_proyecto
-    # Compose necesita interpolar la IP antes de analizar los puertos.
-    # El filtro solo captura el nombre; la configuración y sus secretos no se imprimen.
-    nombre_proyecto="$(invocar_compose config | sed -n 's/^name: //p')" ||
-        fallar 'No se pudo comprobar el nombre del proyecto Compose.'
+    local configuracion nombre_proyecto clave_interna
+    # Capturar la configuracion sin imprimir conexiones ni claves.
+    configuracion="$(invocar_compose config)" || fallar 'No se pudo comprobar la configuracion Compose.'
+    nombre_proyecto="$(printf '%s\n' "$configuracion" | sed -n 's/^name: //p')"
     [[ "$nombre_proyecto" == "$proyecto" ]] || fallar 'El nombre del proyecto Compose fue cambiado. Quita COMPOSE_PROJECT_NAME de .env y de esta terminal.'
+    clave_interna="$(printf '%s\n' "$configuracion" | sed -n 's/^[[:space:]]*ClaveInterna: *//p' | head -n 1)"
+    clave_interna="${clave_interna#\"}"
+    clave_interna="${clave_interna%\"}"
+    clave_interna="${clave_interna#\'}"
+    clave_interna="${clave_interna%\'}"
+    [[ ${#clave_interna} -ge 32 && "$clave_interna" != *CAMBIAR* && "$clave_interna" != *cambiar* ]] ||
+        fallar 'Configura CLAVE_INTERNA con una clave aleatoria de al menos 32 caracteres; consulta README.md.'
 }
 
 obtener_contenedores() {
@@ -69,7 +75,7 @@ obtener_contenedores() {
     filas="$(invocar_docker ps --all --filter "label=com.docker.compose.project=$proyecto" --format '{{.ID}}|{{.Label "com.docker.compose.service"}}|{{.Names}}|{{.State}}|{{.Image}}')" || return $?
     while IFS='|' read -r id servicio nombre estado imagen; do
         case "$servicio" in
-            app1|app2|app3|nginx)
+            frontend|servicio-ordenes|servicio-usuarios|servicio-reportes)
                 printf '%s|%s|%s|%s|%s\n' "$id" "$servicio" "$nombre" "$estado" "$imagen"
                 ;;
         esac
@@ -134,14 +140,14 @@ case "$accion" in
     up)
         comprobar_configuracion certificados
         command -v curl >/dev/null 2>&1 || fallar 'Se requiere curl para comprobar que la aplicacion este lista.'
-        printf '%s\n' 'Construyendo la imagen...'
-        invocar_compose build app1
-        invocar_compose up -d --no-build --pull missing
-        printf '%s\n' 'Esperando a que la aplicacion este lista...'
-        for puerto in 5000 5001 5002 8088; do
-            esperar_web "http://127.0.0.1:$puerto/Auth/Login"
-        done
-        printf '%s\n' 'Entorno nube listo: http://127.0.0.1:8088'
+        printf '%s\n' 'Construyendo las cuatro aplicaciones...'
+        invocar_compose build
+        # Reemplaza los contenedores del despliegue anterior sin borrar volumenes.
+        # --wait comprueba /salud en las cuatro apps y el orden de dependencias.
+        invocar_compose up -d --no-build --pull never --remove-orphans --wait --wait-timeout 180
+        printf '%s\n' 'Comprobando el acceso al Frontend...'
+        esperar_web 'http://127.0.0.1:8088/salud'
+        printf '%s\n' 'Entorno SBA listo: http://127.0.0.1:8088 o https://127.0.0.1'
         ;;
     down)
         detener_entorno
@@ -150,14 +156,14 @@ case "$accion" in
     status) mostrar_estado ;;
     logs)
         comprobar_configuracion
-        invocar_compose logs --follow --tail 80 app1
+        invocar_compose logs --follow --tail 80
         ;;
     build)
         comprobar_configuracion
-        invocar_compose build app1
+        invocar_compose build
         ;;
     usuarios)
         comprobar_configuracion
-        invocar_compose exec app1 dotnet TallerMecanico.Frontend.dll --inicializar-usuarios
+        invocar_compose exec servicio-usuarios dotnet TallerMecanico.ServicioUsuarios.dll --inicializar-usuarios
         ;;
 esac

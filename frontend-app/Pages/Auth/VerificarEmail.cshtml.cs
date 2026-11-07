@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Auth;
 
 [EnableRateLimiting("EmailVerificationRateLimit")]
 public sealed class VerificarEmailModel : PageModel
 {
-    private readonly VerificacionEmailService _verificacion;
+    private readonly UsuariosApi _usuarios;
 
     public VerificarEmailModel(
-        VerificacionEmailService verificacion)
+        UsuariosApi usuarios)
     {
-        _verificacion = verificacion;
+        _usuarios = usuarios;
     }
 
     [BindProperty]
@@ -40,7 +40,7 @@ public sealed class VerificarEmailModel : PageModel
         }
     }
 
-    public IActionResult OnPost()
+    public async Task<IActionResult> OnPostAsync()
     {
         ConfigurarSeguridad();
 
@@ -50,7 +50,22 @@ public sealed class VerificarEmailModel : PageModel
             return Page();
         }
 
-        Confirmado = _verificacion.ConfirmarEmail(Token);
+        try
+        {
+            var resultado = await _usuarios.VerificarEmailAsync(Token, HttpContext.RequestAborted);
+            if (resultado.Codigo == System.Net.HttpStatusCode.ServiceUnavailable)
+            {
+                Mensaje = "El servicio de usuarios no está disponible. Intenta nuevamente.";
+                return Page();
+            }
+            Confirmado = resultado.Exito;
+        }
+        catch (Exception error) when (error is HttpRequestException ||
+            error is TaskCanceledException && !HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            Mensaje = "El servicio de usuarios no está disponible. Intenta nuevamente.";
+            return Page();
+        }
 
         Mensaje = Confirmado
             ? "Correo verificado correctamente. " +

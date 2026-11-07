@@ -1,18 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Fachadas;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Api;
+using TallerMecanico.Contratos.Ordenes;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Dto;
 
 namespace TallerMecanico.Pages.Ordenes;
 
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borradores,
-    VehiculoService vehiculos, MecanicoService mecanicos, ProductoService productos, ClienteService clientes,
-    IServicioService servicios) : PageModel
+public sealed class CrearModel(OrdenesApi ordenes, IBorradorOrden borradores, ITokenOrden tokens,
+    VehiculosApi vehiculos, MecanicosApi mecanicos, ProductosApi productos, ClientesApi clientes,
+    ServiciosApi servicios) : PageModel
 {
     [BindProperty] public OrdenFormViewModel Formulario { get; set; } = new();
     [BindProperty(SupportsGet = true)] public Guid? BorradorId { get; set; }
@@ -27,10 +25,10 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
     [BindProperty] public string? TextoServicio { get; set; }
     [BindProperty] public string? TextoMecanico { get; set; }
 
-    public Vehiculo? VehiculoSeleccionado { get; private set; }
-    public Mecanico? MecanicoSeleccionado { get; private set; }
-    public Producto? ProductoSeleccionado { get; private set; }
-    public Servicio? ServicioSeleccionado { get; private set; }
+    public VehiculoDto? VehiculoSeleccionado { get; private set; }
+    public MecanicoDto? MecanicoSeleccionado { get; private set; }
+    public ProductoDto? ProductoSeleccionado { get; private set; }
+    public ServicioDto? ServicioSeleccionado { get; private set; }
     public IReadOnlyList<ServicioSeleccionadoOrdenViewModel> ServiciosSeleccionados { get; private set; } = [];
     public IReadOnlyList<LineaOrdenTemporalViewModel> Lineas { get; private set; } = [];
     public decimal Total => Lineas.Sum(x => x.Precio * x.Cantidad);
@@ -39,54 +37,54 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
     public decimal TotalEstimado => Total + CostoServiciosSeleccionados;
     public string? Mensaje { get; private set; }
     public int? OrdenCreadaId { get; private set; }
-    public DateTime FechaOrden => facade.FechaActual;
+    public DateTime FechaOrden { get; private set; }
 
     public async Task<JsonResult> OnGetSugerenciasVehiculosAsync(string? termino) =>
         string.IsNullOrWhiteSpace(termino)
-            ? new JsonResult(vehiculos.GetAll().Select(vehiculo => new SugerenciaVehiculo(
+            ? new JsonResult((await vehiculos.ObtenerAsync(cancelacion: HttpContext.RequestAborted)).Select(vehiculo => new SugerenciaVehiculo(
                 vehiculo.Id, vehiculo.Placa, $"{vehiculo.Marca} {vehiculo.Modelo}".Trim())))
             : new JsonResult(await vehiculos.SugerirAsync(termino, HttpContext.RequestAborted));
 
     public async Task<JsonResult> OnGetSugerenciasServiciosAsync(string? termino) =>
         string.IsNullOrWhiteSpace(termino)
-            ? new JsonResult(servicios.ObtenerCatalogo().Select(servicio => new SugerenciaServicio(
+            ? new JsonResult((await servicios.ObtenerCatalogoAsync(HttpContext.RequestAborted)).Select(servicio => new SugerenciaServicio(
                 servicio.Id, servicio.Nombre, servicio.Descripcion)))
             : new JsonResult(await servicios.SugerirCatalogoAsync(termino, HttpContext.RequestAborted));
 
     public async Task<JsonResult> OnGetSugerenciasMecanicosAsync(string? termino) =>
         string.IsNullOrWhiteSpace(termino)
-            ? new JsonResult(mecanicos.Obtener().Select(mecanico => new SugerenciaMecanico(
+            ? new JsonResult((await mecanicos.ObtenerAsync(cancelacion: HttpContext.RequestAborted)).Select(mecanico => new SugerenciaMecanico(
                 mecanico.Id, $"{mecanico.Nombres} {mecanico.PrimerApellido} {mecanico.SegundoApellido}".Trim(), mecanico.Ci)))
             : new JsonResult(await mecanicos.SugerirAsync(termino, HttpContext.RequestAborted, incluirEspecialidad: false));
 
     public async Task<JsonResult> OnGetSugerenciasProductosAsync(string? termino) =>
         new(await productos.SugerirAsync(termino, HttpContext.RequestAborted));
 
-    public IActionResult OnGetServicioSeleccionado(int id)
+    public async Task<IActionResult> OnGetServicioSeleccionadoAsync(int id)
     {
-        var servicio = id > 0 ? servicios.ObtenerDelCatalogo(id) : null;
+        var servicio = id > 0 ? await ObtenerServicioCatalogoAsync(id) : null;
         return servicio is null ? NotFound() : new JsonResult(new
         {
             servicio.Id, servicio.Nombre, servicio.Descripcion, servicio.Costo, servicio.TiempoEstimadoHoras, servicio.UnidadCantidad
         });
     }
 
-    public IActionResult OnGetVehiculoSeleccionado(int id)
+    public async Task<IActionResult> OnGetVehiculoSeleccionadoAsync(int id)
     {
-        var vehiculo = id > 0 ? vehiculos.GetById(id) : null;
+        var vehiculo = id > 0 ? await vehiculos.ObtenerPorIdAsync(id) : null;
         return vehiculo is null ? NotFound() : new JsonResult(new { vehiculo.Id, RequiereCliente = !vehiculo.ClienteId.HasValue });
     }
 
-    public IActionResult OnGetProductoSeleccionado(int id)
+    public async Task<IActionResult> OnGetProductoSeleccionadoAsync(int id)
     {
-        Producto? producto = id > 0 ? productos.ObtenerPorId(id) : null;
+        ProductoDto? producto = id > 0 ? await productos.ObtenerPorIdAsync(id) : null;
         return producto is null ? NotFound() : new JsonResult(new
         {
             producto.Id, producto.Nombre, producto.Codigo, producto.Stock
         });
     }
 
-    public IActionResult OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
         if (BorradorId.HasValue)
         {
@@ -101,7 +99,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
             TextoServicio = null;
         }
         Formulario.ServicioIds = Formulario.ServicioIds.Where(id => id > 0).Distinct().ToList();
-        if (Formulario.Token == Guid.Empty) Formulario.Token = facade.GenerarTokenFormulario();
+        if (Formulario.Token == Guid.Empty) Formulario.Token = tokens.Generar();
         if (VehiculoNuevoId.HasValue) Formulario.VehiculoId = VehiculoNuevoId.Value;
         if (ClienteNuevoId.HasValue)
         {
@@ -112,9 +110,9 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
                 BorradorId = borradores.Guardar(Formulario);
             }
         }
-        if (ProductoNuevoId.HasValue && productos.ObtenerPorId(ProductoNuevoId.Value) is { } nuevo)
+        if (ProductoNuevoId.HasValue && (await productos.ObtenerPorIdAsync(ProductoNuevoId.Value)) is { } nuevo)
             AgregarProducto(nuevo, 1);
-        Cargar();
+        await CargarAsync();
         Mensaje = TempData?["OrdenMensaje"] as string;
         if (ClienteNuevoId.HasValue)
             Mensaje = TempData?["ClienteExito"] as string ?? Mensaje;
@@ -127,7 +125,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
         return Page();
     }
 
-    public IActionResult OnPostAgregarLinea()
+    public async Task<IActionResult> OnPostAgregarLineaAsync()
     {
         RestaurarContextoCliente();
         bool datosValidos = true;
@@ -141,7 +139,7 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
             ModelState.AddModelError(nameof(Cantidad), "La cantidad debe ser mayor que cero.");
             datosValidos = false;
         }
-        Producto? producto = productos.ObtenerPorId(ProductoId);
+        ProductoDto? producto = await productos.ObtenerPorIdAsync(ProductoId);
         if (ProductoId > 0 && producto is null)
         {
             ModelState.AddModelError(nameof(ProductoId), "El producto seleccionado ya no existe. Vuelve a elegirlo.");
@@ -158,18 +156,18 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
             datosValidos = false;
         }
         // Esta operación valida el repuesto, no todos los campos aún incompletos de la orden.
-        if (!datosValidos) { Cargar(); return Page(); }
+        if (!datosValidos) { await CargarAsync(); return Page(); }
         Formulario.Lineas.RemoveAll(x => x.ProductoId == producto!.Id);
         Formulario.Lineas.Add(new() { ProductoId = producto!.Id, Cantidad = Cantidad, Precio = producto.Precio });
         TempData["OrdenMensaje"] = $"{producto.Nombre} se añadió a la orden.";
-        return PersistirYVolver();
+        return await PersistirYVolverAsync();
     }
 
-    public IActionResult OnPostActualizarCantidad(int productoId, int cantidad)
+    public async Task<IActionResult> OnPostActualizarCantidadAsync(int productoId, int cantidad)
     {
         RestaurarContextoCliente();
         var linea = Formulario.Lineas.FirstOrDefault(x => x.ProductoId == productoId);
-        Producto? producto = productos.ObtenerPorId(productoId);
+        ProductoDto? producto = await productos.ObtenerPorIdAsync(productoId);
         if (linea is null || producto is null) return BadRequest();
         bool cantidadValida = true;
         if (cantidad <= 0)
@@ -187,36 +185,38 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
             ModelState.AddModelError(nameof(Cantidad), $"Stock insuficiente: hay {producto.Stock} unidades disponibles.");
             cantidadValida = false;
         }
-        if (!cantidadValida) { Cargar(); return Page(); }
+        if (!cantidadValida) { await CargarAsync(); return Page(); }
         linea.Cantidad = cantidad;
         TempData["OrdenMensaje"] = "La cantidad del repuesto se actualizó.";
-        return PersistirYVolver();
+        return await PersistirYVolverAsync();
     }
 
-    public IActionResult OnPostQuitarLinea(int productoId)
+    public async Task<IActionResult> OnPostQuitarLineaAsync(int productoId)
     {
         RestaurarContextoCliente();
         Formulario.Lineas.RemoveAll(x => x.ProductoId == productoId);
         TempData["OrdenMensaje"] = "El repuesto se quitó de la orden.";
-        return PersistirYVolver();
+        return await PersistirYVolverAsync();
     }
 
-    public IActionResult OnPostGuardar()
+    public async Task<IActionResult> OnPostGuardarAsync()
     {
         RestaurarContextoCliente();
-        Cargar();
+        await CargarAsync();
         if (Formulario.ServicioIds.Count == 0)
             ModelState.AddModelError("Formulario.ServicioIds", "Agrega al menos un servicio a la orden.");
+        if (!tokens.EsValido(Formulario.Token))
+            ModelState.AddModelError(string.Empty, "El formulario venció o no pertenece a esta sesión. Revisa las órdenes antes de iniciar uno nuevo.");
         if (!ModelState.IsValid) return Page();
-        var solicitud = new CrearOrdenSolicitud(Formulario.VehiculoId, Formulario.MecanicoId, FechaOrden,
-            Formulario.Token, Formulario.Lineas.Select(x => new LineaOrdenSolicitud(x.ProductoId, x.Cantidad)).ToArray(),
+        var solicitud = new CrearOrdenDto(Formulario.VehiculoId, Formulario.MecanicoId, FechaOrden,
+            Formulario.Token, Formulario.Lineas.Select(x => new LineaOrdenDto(x.ProductoId, x.Cantidad)).ToArray(),
             Formulario.ServicioIds[0], Formulario.ServicioIds.ToArray(),
-            ServiciosSeleccionados.Select(servicio => new LineaServicioOrdenSolicitud(servicio.Id, servicio.Cantidad)).ToArray());
-        ResultadoOrden resultado = facade.CrearOrden(solicitud);
+            ServiciosSeleccionados.Select(servicio => new LineaServicioOrdenDto(servicio.Id, servicio.Cantidad)).ToArray());
+        ResultadoOrdenDto resultado = await ordenes.CrearAsync(solicitud);
         if (!resultado.Exito)
         {
             foreach (var error in resultado.Errores) ModelState.AddModelError(MapearError(error.Key), error.Value);
-            Cargar();
+            await CargarAsync();
             return Page();
         }
         borradores.Eliminar(BorradorId ?? Guid.Empty);
@@ -252,11 +252,11 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
         return RedirectToPage("/Mecanicos/Index", new { OrdenBorradorId = id });
     }
 
-    private IActionResult PersistirYVolver()
+    private async Task<IActionResult> PersistirYVolverAsync()
     {
-        if (Formulario.Token == Guid.Empty) Formulario.Token = facade.GenerarTokenFormulario();
+        if (Formulario.Token == Guid.Empty) Formulario.Token = tokens.Generar();
         foreach (var linea in Formulario.Lineas)
-            if (productos.ObtenerPorId(linea.ProductoId) is { } producto) linea.Precio = producto.Precio;
+            if ((await productos.ObtenerPorIdAsync(linea.ProductoId)) is { } producto) linea.Precio = producto.Precio;
         if (BorradorId.HasValue) borradores.Eliminar(BorradorId.Value);
         BorradorId = borradores.Guardar(Formulario);
         return RedirectToPage(new { BorradorId, ScrollY });
@@ -269,50 +269,51 @@ public sealed class CrearModel(OrdenServicioFacade facade, IBorradorOrden borrad
             Formulario.ClienteNuevoId = guardado.ClienteNuevoId;
     }
 
-    private void Cargar()
+    private async Task<ServicioDto?> ObtenerServicioCatalogoAsync(int id) =>
+        (await servicios.ObtenerCatalogoAsync(HttpContext.RequestAborted)).FirstOrDefault(servicio => servicio.Id == id);
+
+    private async Task CargarAsync()
     {
-        VehiculoSeleccionado = Formulario.VehiculoId > 0 ? vehiculos.GetById(Formulario.VehiculoId) : null;
+        FechaOrden = await ordenes.ObtenerFechaActualAsync(HttpContext.RequestAborted);
+        VehiculoSeleccionado = Formulario.VehiculoId > 0 ? await vehiculos.ObtenerPorIdAsync(Formulario.VehiculoId) : null;
         if (VehiculoSeleccionado is not null) BuscarVehiculo = VehiculoSeleccionado.Placa;
-        MecanicoSeleccionado = Formulario.MecanicoId > 0 ? mecanicos.ObtenerPorId(Formulario.MecanicoId).SingleOrDefault() : null;
+        MecanicoSeleccionado = Formulario.MecanicoId > 0 ? await mecanicos.ObtenerPorIdAsync(Formulario.MecanicoId) : null;
         if (MecanicoSeleccionado is not null)
             TextoMecanico = string.Join(" ", new[] { MecanicoSeleccionado.Nombres, MecanicoSeleccionado.PrimerApellido, MecanicoSeleccionado.SegundoApellido }
                 .Where(nombre => !string.IsNullOrWhiteSpace(nombre)));
-        ServicioSeleccionado = Formulario.ServicioId.HasValue ? servicios.ObtenerDelCatalogo(Formulario.ServicioId.Value) : null;
+        var catalogo = await servicios.ObtenerCatalogoAsync(HttpContext.RequestAborted);
+        ServicioSeleccionado = catalogo.FirstOrDefault(servicio => servicio.Id == Formulario.ServicioId);
         if (ServicioSeleccionado is not null && string.IsNullOrWhiteSpace(TextoServicio))
             TextoServicio = ServicioSeleccionado.Nombre;
-        ServiciosSeleccionados = Formulario.ServicioIds
-            .Distinct()
-            .Select(servicios.ObtenerDelCatalogo)
+        ServiciosSeleccionados = Formulario.ServicioIds.Distinct()
+            .Select(id => catalogo.FirstOrDefault(servicio => servicio.Id == id))
             .Where(servicio => servicio is not null)
             .Select(servicio => new ServicioSeleccionadoOrdenViewModel
             {
-                Id = servicio!.Id,
-                Nombre = servicio.Nombre,
-                Descripcion = servicio.Descripcion,
-                Costo = servicio.Costo,
-                TiempoEstimadoHoras = servicio.TiempoEstimadoHoras,
+                Id = servicio!.Id, Nombre = servicio.Nombre, Descripcion = servicio.Descripcion,
+                Costo = servicio.Costo, TiempoEstimadoHoras = servicio.TiempoEstimadoHoras,
                 UnidadCantidad = servicio.UnidadCantidad,
                 Cantidad = Formulario.CantidadesServicios.GetValueOrDefault(servicio.Id, 1)
-            })
-            .ToArray();
-        ProductoSeleccionado = ProductoId > 0 ? productos.ObtenerPorId(ProductoId) : null;
+            }).ToArray();
+        ProductoSeleccionado = ProductoId > 0 ? await productos.ObtenerPorIdAsync(ProductoId) : null;
         if (ProductoSeleccionado is not null) BuscarProducto = ProductoSeleccionado.Nombre;
-        Lineas = Formulario.Lineas.Select(x =>
+        var lineas = new List<LineaOrdenTemporalViewModel>();
+        foreach (var linea in Formulario.Lineas)
         {
-            Producto? p = productos.ObtenerPorId(x.ProductoId);
-            if (p is null) return null;
-            x.Precio = p.Precio;
-            return new LineaOrdenTemporalViewModel { ProductoId = p.Id, Codigo = p.Codigo, Nombre = p.Nombre, Cantidad = x.Cantidad, Stock = p.Stock, Precio = p.Precio };
-        }).Where(x => x is not null).Select(x => x!).ToArray();
+            if (await productos.ObtenerPorIdAsync(linea.ProductoId) is not { } producto) continue;
+            linea.Precio = producto.Precio;
+            lineas.Add(new() { ProductoId = producto.Id, Codigo = producto.Codigo, Nombre = producto.Nombre,
+                Cantidad = linea.Cantidad, Stock = producto.Stock, Precio = producto.Precio });
+        }
+        Lineas = lineas;
+        NombreClienteNuevo = Formulario.ClienteNuevoId.HasValue &&
+            await clientes.ObtenerPorIdAsync(Formulario.ClienteNuevoId.Value) is { } cliente
+                ? $"{cliente.PrimerApellido} {cliente.SegundoApellido} {cliente.Nombres}".Trim() : null;
     }
 
-    public string? NombreClienteNuevo => Formulario.ClienteNuevoId.HasValue
-        ? clientes.ObtenerPorId(Formulario.ClienteNuevoId.Value) is { } cliente
-            ? $"{cliente.PrimerApellido} {cliente.SegundoApellido} {cliente.Nombres}".Trim()
-            : null
-        : null;
+    public string? NombreClienteNuevo { get; private set; }
 
-    private void AgregarProducto(Producto producto, int cantidad)
+    private void AgregarProducto(ProductoDto producto, int cantidad)
     {
         Formulario.Lineas.RemoveAll(x => x.ProductoId == producto.Id);
         Formulario.Lineas.Add(new() { ProductoId = producto.Id, Cantidad = cantidad, Precio = producto.Precio });

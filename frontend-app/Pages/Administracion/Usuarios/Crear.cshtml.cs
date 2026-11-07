@@ -1,83 +1,46 @@
+using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.Errores;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Pages.Administracion.Usuarios;
+using TallerMecanico.Api;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Pages.Administracion.Usuarios;
 
 [Authorize(Policy = "SoloAdministrador")]
-public sealed class CrearModel : PageModel
+public sealed class CrearModel(UsuariosApi usuarios) : PageModel
 {
-    private readonly IGestionUsuariosPort _usuarioAdministracion;
-
-    public CrearModel(IGestionUsuariosPort usuarioAdministracion)
-    {
-        _usuarioAdministracion = usuarioAdministracion;
-    }
-
     [BindProperty]
     public UsuarioCreateInput Input { get; set; } = new();
 
-    public IActionResult OnGet()
-    {
-        return Page();
-    }
+    public IActionResult OnGet() => Page();
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
-
+        if (!ModelState.IsValid) return Page();
         try
         {
-            await Task.Run(() =>
-                _usuarioAdministracion.CrearInvitacion(
-                    string.Empty,
-                    Input.Email,
-                    Input.Rol,
-                    Input.Password,
-                    cancellationToken),
-                cancellationToken);
-
+            var resultado = await usuarios.CrearInvitacionAsync(
+                new CrearInvitacionSolicitud(Input.Email, Input.Rol, Input.Password), cancellationToken);
+            if (!resultado.Exito)
+            {
+                string campo = resultado.Campo == nameof(Input.Email) ? "Input.Email" : string.Empty;
+                ModelState.AddModelError(campo, resultado.Mensaje ?? "No se pudo crear la invitación.");
+                return Page();
+            }
             TempData["MensajeExito"] = $"Se ha enviado una invitación a {Input.Email} para verificar su correo y activar su cuenta.";
             return RedirectToPage("./Index");
         }
-        catch (SolicitudRegistroDuplicadaException ex)
-        {
-            string campo = ex.Campo == nameof(SolicitudRegistro.Email)
-                ? nameof(Input.Email)
-                : string.Empty;
-
-            ModelState.AddModelError(campo, "Ya existe un usuario o solicitud pendiente con ese valor.");
-            return Page();
-        }
-        catch (SolicitudGuardadaCorreoPendienteException)
-        {
-            ModelState.AddModelError(string.Empty,
-                "La invitación se guardó pero no se pudo enviar el correo. Intente reenviar la verificación más tarde.");
-            return Page();
-        }
-        catch (ConfiguracionRegistroException)
-        {
-            ModelState.AddModelError(string.Empty,
-                "Error de configuración del servidor de correo. Contacte al administrador del sistema.");
-            return Page();
-        }
-        catch (EnvioVerificacionException)
-        {
-            ModelState.AddModelError(string.Empty,
-                "No se pudo enviar el correo de invitación. La solicitud se guardó para reintento posterior.");
-            return Page();
-        }
-        catch (OperationCanceledException)
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized) { return Challenge(); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             ModelState.AddModelError(string.Empty, "La operación fue cancelada.");
-            return Page();
         }
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
+        {
+            ModelState.AddModelError(string.Empty, "El servicio de usuarios no está disponible. Intenta nuevamente.");
+        }
+        return Page();
     }
 }

@@ -1,4 +1,8 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using TallerMecanico.Api;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes;
@@ -108,12 +112,31 @@ public sealed class OrdenesTests
     }
 
     [Fact]
-    public void Recepcionista_NoPuedeAnularYNingunUsuarioAceptaTokenAjeno()
+    public async Task Recepcionista_NoPuedeAnularYFrontendRechazaTokenAjeno()
     {
         var servicio = Servicio(new UnidadProhibida(), new UsuarioPrueba());
         Assert.False(servicio.AnularOrden(1).Exito);
-        var facade = servicio.CrearFacade(new TokensInvalidos());
-        Assert.Contains("Token", facade.CrearOrden(Solicitud()).Errores);
+        var contexto = new DefaultHttpContext { Session = new SesionPrueba() };
+        var acceso = new HttpContextAccessor { HttpContext = contexto };
+        var api = new ApiFalsa();
+        api.Json("GET api/ordenes/fecha-actual", DateTime.Today);
+        api.Json("GET api/servicios/catalogo", new[] { new ServicioDto { Id = 1, Nombre = "Servicio de prueba", Costo = 25m } });
+        var cliente = api.Cliente();
+        var pagina = new TallerMecanico.Pages.Ordenes.CrearModel(new OrdenesApi(cliente),
+            new BorradorOrdenSesion(acceso, new UsuarioPrueba()), new TokensInvalidos(),
+            new VehiculosApi(cliente), new MecanicosApi(cliente), new ProductosApi(cliente),
+            new ClientesApi(cliente), new ServiciosApi(cliente))
+        {
+            PageContext = new PageContext { HttpContext = contexto },
+            TempData = new TempDataDictionary(contexto, new TemporalesPrueba())
+        };
+        pagina.Formulario.ServicioIds = [1];
+        pagina.Formulario.Token = Guid.NewGuid();
+
+        Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
+        Assert.Contains(pagina.ModelState[string.Empty]!.Errors,
+            error => error.ErrorMessage.Contains("no pertenece a esta sesión"));
+        Assert.DoesNotContain(api.Llamadas, llamada => llamada.StartsWith("POST api/ordenes"));
     }
 
     [Fact]

@@ -2,14 +2,15 @@
 
 > Órdenes (Servicio 1) usa Clean Architecture: ver [ARQUITECTURA_CLEAN.md](ARQUITECTURA_CLEAN.md).
 > Stack: Razor Pages .NET 10 + ADO.NET (`MySqlConnector`) + MySQL 8. Sin EF Core.
-> `Pages/` no se mueve físicamente (rompería rutas Razor): se declara como **Presentación**.
+> `frontend-app/Pages/` conserva sus rutas y consume las APIs por HTTP.
+> Usuarios y Reportes son procesos independientes: ver [SBA](SBA.md).
 
 ## Puertos y adaptadores
 
 | Lado | Puerto (`Aplicacion/Puertos`) | Quién lo usa o implementa |
 |---|---|---|
-| Entrada | `IGestionUsuariosPort` | Lo usan las páginas de Usuarios y lo implementa `UsuarioAdministracionService` |
-| Entrada | `ICambioContrasenaPort` | Lo usa `Pages/Auth/CambiarContrasena` y lo implementa `CambioContrasenaService` |
+| Entrada | `IGestionUsuariosPort` | Lo consume el controlador de Usuarios y lo implementa `UsuarioAdministracionService` |
+| Entrada | `ICambioContrasenaPort` | Lo consume el controlador de autenticación y lo implementa `CambioContrasenaService` |
 | Entrada | `IReporteOrdenesPort`, `IReporteMecanicosPort` | Los consume `ReportesController` del Servicio 3 y los implementan `ReporteOrdenesService` y `ReporteMecanicosService` |
 | Salida | `IUsuarioAdministracionPort`, `IActivacionInvitacionPort`, `ISolicitudRegistroPort`, `IAuditoriaPort` | Adaptadores MySQL de `Infraestructura/Persistencia/MySql` |
 | Salida | `IConsultaReportesPort` | `ConsultaReportesMySqlAdapter` del Servicio 3 |
@@ -21,31 +22,34 @@
 ## Estructura
 
 ```text
-Aplicacion/
-  Puertos/        Contratos I*Port de lo que no es Órdenes: IUsuarioPort,
-                  IUsuarioAdministracionPort, IAuditoriaPort, IEmailService,
-                  IPasswordHasher, IClientePort, IProductoPort, IVehiculoPort...
-  Fachadas/       RegistroFacade
-  Servicios/      Lógica por entidad y DashboardService
-  Validaciones/   Validacion* por entidad
-  Dto/            ViewModels de binding Razor
-Infraestructura/
-  Persistencia/MySql/    Adaptadores MySQL (Usuario, Auditoria, Cliente, Producto...)
-  Persistencia/Fabricas/ Creador* (Factory Method)
-  Seguridad/             CurrentUser, Argon2idPasswordHasher
-  Correo/                GmailEmailService
-Presentacion/     Pages/**/*.cshtml(.cs) + wwwroot (no movida, ver nota)
+backend-services/servicio-usuarios/
+  Aplicacion/       Puertos, servicios, fachadas y validaciones de cuentas
+  Dominio/          Usuario y SolicitudRegistro
+  Infraestructura/  MySQL, auditoría, correo y Argon2id
+  Controllers/      Adaptadores de entrada HTTP: autenticación y usuarios
+backend-services/servicio-reportes/
+  Aplicacion/       Puertos de entrada/salida y servicios de reportes
+  Infraestructura/  Consultas MySQL, PDF, Excel y gráficos
+  Controllers/      Adaptador HTTP ReportesController
+frontend-app/
+  Pages/            Presentación Razor y formularios
+  Api/              UsuariosApi, ReportesApi y propagación del usuario
+shared/TallerMecanico.Contratos/
+  Usuarios/         DTO de cuenta y sesión
+  Reportes/         Filtros y documentos de reporte
 ```
 
-Regla de dependencias: `Presentacion -> Aplicacion -> Dominio`; `Infraestructura` implementa `Aplicacion/Puertos`.
+Regla de dependencias dentro de cada API: `Controllers -> Aplicacion -> Dominio`
+(Reportes no necesita entidades propias). `Infraestructura` implementa
+`Aplicacion/Puertos`; el Frontend se comunica por HTTP y solo comparte DTO.
 
 ## Patrones
 
 | Patrón | Dónde |
 |---|---|
 | Facade | `Aplicacion/Fachadas/RegistroFacade` |
-| Factory Method | `Infraestructura/Persistencia/Fabricas/Creador*`, registrados en `Program.cs` |
-| Singleton | `Aplicacion/Configuracion/ConfiguracionTaller` (`Lazy<T>`), compartido con Órdenes |
+| Factory Method | `Creador*` en el Servicio 1; ver la guía Clean |
+| Singleton | `ConfiguracionTaller` (`Lazy<T>`), dentro de cada proceso que la utiliza |
 
 ## Auditoría (quién hizo qué)
 
@@ -77,7 +81,7 @@ Regla de dependencias: `Presentacion -> Aplicacion -> Dominio`; `Infraestructura
 
 ## Reportes
 
-El Servicio 3 es independiente en `backend-services/servicio-reportes` (puerto 5203) y aplica
+El Servicio 3 es independiente en `backend-services/servicio-reportes` y aplica
 arquitectura hexagonal. La presentación Razor (`frontend-app/Pages/Reportes`) ya no accede a
 MySQL ni genera archivos: consume `ReportesApi` por HTTP.
 
@@ -113,7 +117,7 @@ Ambos usan el logo en el encabezado y los datos sumariados al pie.
 | `GET /api/reportes/mecanicos/excel` | `nombreMecanico`, `fechaDesde`, `fechaHasta`, `mecanicoId` | XLSX |
 
 El frontend envía la clave interna; el controlador exige rol Administrador y toma
-`GeneradoPor` del usuario del token (`sistema` si no viene). Los filtros inválidos
+`GeneradoPor` de las cabeceras de usuario validadas (`sistema` si no viene). Los filtros inválidos
 responden 400, la falta de sesión 401/403 y una base caída 503 mediante
 `ErroresApiFilter`. Las páginas Razor conservan sus rutas y ahora son asíncronas.
 
@@ -123,4 +127,6 @@ permanecen en `tests/frontend-app.Tests`.
 
 ## Dashboard por rol
 
-`DashboardService` entrega conteos reales. `Pages/Index` muestra la vista de Administrador o Recepcionista, y el banner de auditoría solo es visible para Administrador.
+`DashboardService` pertenece al Servicio 1 y entrega conteos reales de MySQL.
+`Pages/Index` consume su API y muestra la vista de Administrador o Recepcionista;
+el banner de auditoría solo es visible para Administrador.

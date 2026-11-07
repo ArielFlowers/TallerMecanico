@@ -1,73 +1,67 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Infraestructura.Seguridad;
 
-public sealed class ValidarUsuarioActivoMiddleware
+public sealed class ValidarUsuarioActivoMiddleware(
+    RequestDelegate next, ILogger<ValidarUsuarioActivoMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ValidarUsuarioActivoMiddleware> _logger;
-
-    public ValidarUsuarioActivoMiddleware(
-        RequestDelegate next,
-        ILogger<ValidarUsuarioActivoMiddleware> logger)
+    public async Task InvokeAsync(HttpContext context, UsuariosApi usuarios)
     {
-        _next = next;
-        _logger = logger;
-    }
-
-    public async Task InvokeAsync(
-        HttpContext context,
-        IUsuarioPort usuarioPort)
-    {
-        if (context.User.Identity?.IsAuthenticated == true)
+        // El cierre local debe poder ejecutarse incluso si la API está fuera de servicio.
+        if (context.User.Identity?.IsAuthenticated != true ||
+            HttpMethods.IsPost(context.Request.Method) &&
+            context.Request.Path.Equals(new PathString("/Auth/Logout")))
         {
-            string[] identificadores = context.User.FindAll(ClaimTypes.NameIdentifier)
-                .Select(claim => claim.Value)
-                .ToArray();
+            await next(context);
+            return;
+        }
 
-            int userId = 0;
-            Usuario? usuario = identificadores.Length == 1 &&
-                int.TryParse(identificadores[0], out userId) && userId > 0
-                    ? usuarioPort.ObtenerPorId(userId)
-                    : null;
+        string[] identificadores = context.User.FindAll(ClaimTypes.NameIdentifier)
+            .Select(claim => claim.Value).ToArray();
+        string[] roles = context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value).ToArray();
+        int userId = 0;
+        bool identidadValida = identificadores.Length == 1 &&
+            int.TryParse(identificadores[0], out userId) && userId > 0 && roles.Length == 1 &&
+            roles[0] is "Administrador" or "Recepcionista";
 
-            string[] roles = context.User.FindAll(ClaimTypes.Role)
-                .Select(claim => claim.Value)
-                .ToArray();
-
-            bool rolVigente = usuario is not null && roles.Length == 1 &&
-                string.Equals(roles[0], usuario.Rol, StringComparison.Ordinal);
-
-            if (usuario is null || !usuario.Activo || !rolVigente)
+        if (identidadValida)
+        {
+            bool cuentaVigente;
+            try
             {
-                _logger.LogWarning(
-                    "Sesión revocada por cambios en la cuenta o identidad inválida: {UserId}",
-                    userId);
-
-                await context.SignOutAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme);
-
-                context.Session.Clear();
-                context.User = new ClaimsPrincipal(new ClaimsIdentity());
-
-                context.Response.Redirect("/Auth/Login?expired=1");
+                var estado = await usuarios.ObtenerEstadoAsync(userId, context.RequestAborted);
+                cuentaVigente = estado?.Activo == true &&
+                    string.Equals(roles[0], estado.Rol, StringComparison.Ordinal);
+            }
+            catch (Exception error) when (error is HttpRequestException ||
+                error is TaskCanceledException && !context.RequestAborted.IsCancellationRequested)
+            {
+                logger.LogWarning("No se pudo comprobar la cuenta en el servicio de usuarios. Tipo: {Tipo}",
+                    error.GetType().Name);
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                await context.Response.WriteAsync("El servicio de usuarios no está disponible. Intenta nuevamente.");
+                return;
+            }
+            if (cuentaVigente)
+            {
+                await next(context);
                 return;
             }
         }
 
-        await _next(context);
+        logger.LogWarning("Sesión revocada por cambios en la cuenta o identidad inválida: {UserId}", userId);
+        await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        context.Session.Clear();
+        context.User = new ClaimsPrincipal(new ClaimsIdentity());
+        context.Response.Redirect("/Auth/Login?expired=1");
     }
 }
 
 public static class ValidarUsuarioActivoMiddlewareExtensions
 {
-    public static IApplicationBuilder UseValidarUsuarioActivo(
-        this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<ValidarUsuarioActivoMiddleware>();
-    }
+    public static IApplicationBuilder UseValidarUsuarioActivo(this IApplicationBuilder builder) =>
+        builder.UseMiddleware<ValidarUsuarioActivoMiddleware>();
 }

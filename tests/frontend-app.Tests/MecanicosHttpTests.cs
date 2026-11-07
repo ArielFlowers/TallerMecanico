@@ -1,3 +1,7 @@
+extern alias Usuarios;
+
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -8,7 +12,6 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
-using TallerMecanico.Infraestructura.Seguridad;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
@@ -25,10 +28,10 @@ public sealed class MecanicosHttpTests
         using var aislada = new MySqlAisladoFixture();
         string password = $"Prueba_{Guid.NewGuid():N}";
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
-        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "admin_prueba", Rol = "Administrador",
-            PasswordHash = hasher.GenerarHash(password), EmailVerificado = true,
+            PasswordHash = hasher.GenerarHash(password), Activo = true, EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
 
@@ -131,11 +134,10 @@ public sealed class MecanicosHttpTests
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(UsuarioRepository).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
         aislada.ConfigurarFrontend(inicio);
@@ -236,10 +238,10 @@ public sealed class MecanicosHttpTests
             Assert.DoesNotContain("textoPrincipal", await denegada.Content.ReadAsStringAsync());
         }
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
-        new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+        aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "recepcion_prueba", Rol = "Recepcionista", PasswordHash = hasher.GenerarHash(password),
-            EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+            Activo = true, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
         using (var recepcionista = NuevoCliente(url))
         {

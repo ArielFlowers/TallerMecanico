@@ -1,3 +1,6 @@
+extern alias Usuarios;
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -23,7 +26,7 @@ public sealed class NuevaOrdenComprobanteHttpTests
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         string hash = hasher.GenerarHash(password);
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
-            new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+            aislada.AgregarUsuario(new UsuarioSemilla
             {
                 Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });

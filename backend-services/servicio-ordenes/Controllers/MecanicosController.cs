@@ -16,8 +16,9 @@ public sealed class MecanicosController(MecanicoService mecanicos) : ControllerB
         mecanicos.Obtener(terminoBusqueda).Select(mecanico => mecanico.ADto()).ToArray();
 
     [HttpGet("sugerencias")]
-    public Task<IReadOnlyList<SugerenciaMecanico>> Sugerir([FromQuery] string? termino, CancellationToken cancelacion) =>
-        mecanicos.SugerirAsync(termino, cancelacion);
+    public Task<IReadOnlyList<SugerenciaMecanico>> Sugerir([FromQuery] string? termino, CancellationToken cancelacion,
+        [FromQuery] bool incluirEspecialidad = true) =>
+        mecanicos.SugerirAsync(termino, cancelacion, incluirEspecialidad);
 
     [HttpGet("{id:int}")]
     public ActionResult<MecanicoDto> ObtenerPorId(int id)

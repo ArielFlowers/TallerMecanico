@@ -1,3 +1,7 @@
+using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Json;
+using TallerMecanico.Api;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -48,33 +52,33 @@ public sealed class NuevaOrdenAutocompletadoTests
             foreach (string termino in new[] { "a", "%%", "__", "' OR 1=1 --", new string('a', 101) })
                 Assert.Empty(Sugerencias(await consulta(termino)));
         }
-        Assert.IsType<JsonResult>(pagina.OnGetVehiculoSeleccionado(1));
-        Assert.IsType<JsonResult>(pagina.OnGetServicioSeleccionado(1));
-        Assert.IsType<NotFoundResult>(pagina.OnGetServicioSeleccionado(-1));
-        Assert.IsType<NotFoundResult>(pagina.OnGetVehiculoSeleccionado(int.MaxValue));
+        Assert.IsType<JsonResult>(await pagina.OnGetVehiculoSeleccionadoAsync(1));
+        Assert.IsType<JsonResult>(await pagina.OnGetServicioSeleccionadoAsync(1));
+        Assert.IsType<NotFoundResult>(await pagina.OnGetServicioSeleccionadoAsync(-1));
+        Assert.IsType<NotFoundResult>(await pagina.OnGetVehiculoSeleccionadoAsync(int.MaxValue));
         Assert.Equal(antes, Instantanea(aislada));
     }
 
     [MySqlAisladoFact]
-    public void Borradores_RestauranIdsTextosYDetalleAlSalirHaciaLosTresCrud()
+    public async Task Borradores_RestauranIdsTextosYDetalleAlSalirHaciaLosTresCrud()
     {
         using var aislada = new MySqlAisladoFixture();
         Preparar(aislada);
         int filtros = checked((int)aislada.Ejecutar("INSERT INTO Servicios (CodigoCatalogo,Nombre,Descripcion,Costo,TiempoEstimadoHoras,UnidadCantidad) VALUES ('CAMBIO_FILTROS','Cambio de filtros','Servicio ficticio por unidad',100,1,'unidad');"));
         var sesion = new SesionPrueba();
         var pagina = CrearPagina(aislada, sesion);
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         pagina.Formulario.VehiculoId = 1; pagina.Formulario.MecanicoId = 1;
         pagina.Formulario.ServicioIds = [1, filtros];
         pagina.Formulario.CantidadesServicios = new() { [1] = 1, [filtros] = 3 };
         pagina.ProductoId = 1; pagina.Cantidad = 2;
-        var agregado = Assert.IsType<RedirectToPageResult>(pagina.OnPostAgregarLinea());
+        var agregado = Assert.IsType<RedirectToPageResult>(await pagina.OnPostAgregarLineaAsync());
         Guid id = (Guid)agregado.RouteValues!["BorradorId"]!;
         foreach (string destino in new[] { "Cliente", "Vehiculo", "Producto" })
         {
             var restaurada = CrearPagina(aislada, sesion);
             restaurada.BorradorId = id;
-            restaurada.OnGet();
+            await restaurada.OnGetAsync();
             Assert.Equal("123ABC", restaurada.BuscarVehiculo);
             Assert.Equal("Cambio de Aceite", restaurada.ServiciosSeleccionados[0].Nombre);
             Assert.Equal(3, restaurada.ServiciosSeleccionados.Single(servicio => servicio.Id == filtros).Cantidad);
@@ -96,7 +100,7 @@ public sealed class NuevaOrdenAutocompletadoTests
             id = (Guid)retorno.RouteValues!["OrdenBorradorId"]!;
         }
         var trasCliente = CrearPagina(aislada, sesion);
-        trasCliente.BorradorId = id; trasCliente.ClienteNuevoId = 1; trasCliente.OnGet();
+        trasCliente.BorradorId = id; trasCliente.ClienteNuevoId = 1; await trasCliente.OnGetAsync();
         Assert.Equal(1, trasCliente.Formulario.ClienteNuevoId);
         Assert.Single(trasCliente.Lineas);
         Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
@@ -105,7 +109,7 @@ public sealed class NuevaOrdenAutocompletadoTests
     [MySqlAisladoTheory]
     [InlineData("ClienteNuevoId", "ClienteExito")]
     [InlineData("ProductoNuevoId", "ProductoExito")]
-    public void Mensajes_DeRetornoConsumenExitoYConservanErroresReales(string propiedad, string clave)
+    public async Task Mensajes_DeRetornoConsumenExitoYConservanErroresReales(string propiedad, string clave)
     {
         using var aislada = new MySqlAisladoFixture();
         Preparar(aislada);
@@ -113,7 +117,7 @@ public sealed class NuevaOrdenAutocompletadoTests
         typeof(PaginaOrden).GetProperty(propiedad)!.SetValue(pagina, 1);
         pagina.TempData[clave] = "Registro creado correctamente.";
         pagina.TempData["OrdenError"] = "Error real de prueba.";
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         Assert.Equal("Registro creado correctamente.", pagina.Mensaje);
         Assert.Equal("Error real de prueba.", Assert.Single(pagina.ModelState[string.Empty]!.Errors).ErrorMessage);
         pagina.TempData.Save();
@@ -122,22 +126,22 @@ public sealed class NuevaOrdenAutocompletadoTests
     }
 
     [MySqlAisladoFact]
-    public void Productos_AgregarRepetirActualizarQuitarYErroresNoDescuentanStock()
+    public async Task Productos_AgregarRepetirActualizarQuitarYErroresNoDescuentanStock()
     {
         using var aislada = new MySqlAisladoFixture();
         Preparar(aislada);
         var pagina = CrearPagina(aislada);
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         pagina.Formulario.VehiculoId = 1; pagina.Formulario.MecanicoId = 1; pagina.Formulario.ServicioIds = [1];
-        pagina.ProductoId = 1; pagina.Cantidad = 2; pagina.OnPostAgregarLinea();
-        pagina.ProductoId = 2; pagina.Cantidad = 3; pagina.OnPostAgregarLinea();
-        pagina.ProductoId = 1; pagina.Cantidad = 4; pagina.OnPostAgregarLinea();
+        pagina.ProductoId = 1; pagina.Cantidad = 2; await pagina.OnPostAgregarLineaAsync();
+        pagina.ProductoId = 2; pagina.Cantidad = 3; await pagina.OnPostAgregarLineaAsync();
+        pagina.ProductoId = 1; pagina.Cantidad = 4; await pagina.OnPostAgregarLineaAsync();
         Assert.Equal(2, pagina.Formulario.Lineas.Count);
         Assert.Equal(4, pagina.Formulario.Lineas.Single(linea => linea.ProductoId == 1).Cantidad);
-        pagina.OnPostActualizarCantidad(1, 2);
-        pagina.OnPostQuitarLinea(2);
+        await pagina.OnPostActualizarCantidadAsync(1, 2);
+        await pagina.OnPostQuitarLineaAsync(2);
         pagina.Cantidad = 0;
-        Assert.IsType<PageResult>(pagina.OnPostAgregarLinea());
+        Assert.IsType<PageResult>(await pagina.OnPostAgregarLineaAsync());
         Assert.NotNull(pagina.VehiculoSeleccionado);
         Assert.Equal("José Muñoz", pagina.TextoMecanico);
         Assert.Equal("Cambio de Aceite", Assert.Single(pagina.ServiciosSeleccionados).Nombre);
@@ -147,40 +151,40 @@ public sealed class NuevaOrdenAutocompletadoTests
     }
 
     [MySqlAisladoFact]
-    public void Guardar_ValidaIdsStockPreciosDelServidorYConservaIdempotencia()
+    public async Task Guardar_ValidaIdsStockPreciosDelServidorYConservaIdempotencia()
     {
         using var aislada = new MySqlAisladoFixture();
         Preparar(aislada);
         var sesion = new SesionPrueba();
         var pagina = CrearPagina(aislada, sesion);
-        pagina.OnGet();
+        await pagina.OnGetAsync();
         pagina.Formulario.Lineas.Add(new() { ProductoId = 1, Cantidad = 1, Precio = 0.01m });
-        Assert.IsType<PageResult>(pagina.OnPostGuardar());
+        Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
         Assert.Contains("Formulario.ServicioIds", pagina.ModelState.Keys);
         Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
         pagina.ModelState.Clear();
         pagina.Formulario.ServicioIds = [1];
-        Assert.IsType<PageResult>(pagina.OnPostGuardar());
+        Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
         Assert.Contains("Formulario.VehiculoId", pagina.ModelState.Keys);
         Assert.Contains("Formulario.MecanicoId", pagina.ModelState.Keys);
         pagina.ModelState.Clear();
         pagina.Formulario.VehiculoId = 2; pagina.Formulario.MecanicoId = 1;
-        Assert.IsType<PageResult>(pagina.OnPostGuardar());
+        Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
         Assert.Contains("cliente", pagina.ModelState["Formulario.VehiculoId"]!.Errors.Single().ErrorMessage);
         pagina.ModelState.Clear();
         pagina.Formulario.VehiculoId = int.MaxValue;
-        Assert.IsType<PageResult>(pagina.OnPostGuardar());
+        Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
         pagina.ModelState.Clear();
         pagina.Formulario.VehiculoId = 1;
         pagina.Formulario.Lineas = [new() { ProductoId = 1, Cantidad = 11, Precio = 0.01m }];
-        Assert.IsType<PageResult>(pagina.OnPostGuardar());
+        Assert.IsType<PageResult>(await pagina.OnPostGuardarAsync());
         Assert.Equal(0L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
         pagina.ModelState.Clear();
         pagina.Formulario.Lineas = [new() { ProductoId = 1, Cantidad = 2, Precio = 0.01m }, new() { ProductoId = 2, Cantidad = 3, Precio = 0.01m }];
-        Assert.IsType<RedirectToPageResult>(pagina.OnPostGuardar());
+        Assert.IsType<RedirectToPageResult>(await pagina.OnPostGuardarAsync());
         Assert.Equal(71.60m, Convert.ToDecimal(aislada.Escalar("SELECT Total FROM Ordenes;")));
         Assert.Equal(15L, Convert.ToInt64(aislada.Escalar("SELECT SUM(Stock) FROM Productos;")));
-        Assert.IsType<RedirectToPageResult>(pagina.OnPostGuardar());
+        Assert.IsType<RedirectToPageResult>(await pagina.OnPostGuardarAsync());
         Assert.Equal(1L, Convert.ToInt64(aislada.Escalar("SELECT COUNT(*) FROM Ordenes;")));
         Assert.Equal(15L, Convert.ToInt64(aislada.Escalar("SELECT SUM(Stock) FROM Productos;")));
     }
@@ -193,11 +197,20 @@ public sealed class NuevaOrdenAutocompletadoTests
         var usuario = new UsuarioPrueba();
         var ordenes = new OrdenServicioPrueba(new MySqlUnidadTrabajoOrden(aislada.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance),
             usuario, new ValidacionOrdenes(), reloj);
-        var pagina = new PaginaOrden(ordenes.CrearFacade(new TokenOrdenSesion(acceso, usuario, reloj)),
-            new BorradorOrdenSesion(acceso, usuario), VehiculosAutocompletadoTests.CrearServicio(aislada),
-            MecanicosAutocompletadoTests.CrearServicio(aislada, usuario),
-            ProductosAutocompletadoTests.CrearServicio(aislada), ClientesAutocompletadoTests.CrearServicio(aislada),
-            ServiciosAutocompletadoTests.CrearServicio(aislada))
+        var inicio = new ProcessStartInfo();
+        aislada.ConfigurarFrontend(inicio);
+        var cliente = new HttpClient(new FechaOrdenPruebaHandler(() => ordenes.FechaActual))
+        {
+            BaseAddress = new Uri(inicio.Environment["Servicios__OrdenesUrl"]!)
+        };
+        cliente.DefaultRequestHeaders.Add("X-Clave-Interna", inicio.Environment["ClaveInterna"]);
+        cliente.DefaultRequestHeaders.Add("X-Usuario-Id", usuario.UsuarioId.ToString());
+        cliente.DefaultRequestHeaders.Add("X-Usuario-Nombre", usuario.Username);
+        cliente.DefaultRequestHeaders.Add("X-Usuario-Rol", usuario.Rol);
+        var pagina = new PaginaOrden(new OrdenesApi(cliente),
+            new BorradorOrdenSesion(acceso, usuario), new TokenOrdenSesion(acceso, usuario, reloj),
+            new VehiculosApi(cliente), new MecanicosApi(cliente), new ProductosApi(cliente),
+            new ClientesApi(cliente), new ServiciosApi(cliente))
         {
             PageContext = new PageContext { HttpContext = contexto }, TempData = new TempDataDictionary(contexto, new Temporales())
         };
@@ -233,6 +246,16 @@ public sealed class NuevaOrdenAutocompletadoTests
 
     private static Func<string?, Task<JsonResult>>[] Consultas(PaginaOrden pagina) =>
         [pagina.OnGetSugerenciasVehiculosAsync, pagina.OnGetSugerenciasMecanicosAsync, pagina.OnGetSugerenciasProductosAsync];
+
+    // Solo el reloj se controla en estas pruebas de presentación. El resto cruza
+    // las APIs reales, configuradas exclusivamente con la base descartable de la fixture.
+    private sealed class FechaOrdenPruebaHandler(Func<DateTime> fecha) : DelegatingHandler(new HttpClientHandler { UseProxy = false })
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage solicitud, CancellationToken cancelacion) =>
+            solicitud.RequestUri!.AbsolutePath == "/api/ordenes/fecha-actual"
+                ? Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(fecha()) })
+                : base.SendAsync(solicitud, cancelacion);
+    }
 
     private sealed class Temporales : ITempDataProvider
     {

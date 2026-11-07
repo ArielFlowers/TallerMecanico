@@ -1,3 +1,7 @@
+extern alias Usuarios;
+
+using Argon2idPasswordHasher = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idPasswordHasher;
+using Argon2idOptions = Usuarios::TallerMecanico.Infraestructura.Seguridad.Argon2idOptions;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -9,7 +13,6 @@ using Microsoft.Extensions.Options;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
-using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -37,9 +40,9 @@ public sealed class ClientesHttpTests
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         string hash = hasher.GenerarHash(password);
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
-            new UsuarioRepository(aislada.Factory).Agregar(new Usuario
+            aislada.AgregarUsuario(new UsuarioSemilla
             {
-                Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+                Username = rol, Rol = rol, PasswordHash = hash, Activo = true, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });
 
         using var clave = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -155,11 +158,10 @@ public sealed class ClientesHttpTests
             WorkingDirectory = MySqlAisladoFixture.RaizFrontend, UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        inicio.ArgumentList.Add(typeof(ClienteService).Assembly.Location);
+        inicio.ArgumentList.Add(AppsPrueba.DllFrontend);
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
         aislada.ConfigurarFrontend(inicio);

@@ -6,7 +6,7 @@ const assert = require("node:assert/strict");
     assert(process.env.TALLER_UI_DATABASE?.startsWith("autotaller_test_"), "Se requiere una base aislada de pruebas.");
     const base = process.env.TALLER_UI_URL;
     assert(base && process.env.TALLER_UI_PASSWORD, "Falta la configuración del servidor de pruebas.");
-    const browser = await chromium.launch({ channel: "msedge", headless: true });
+    const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "msedge", headless: true });
     try {
         const page = await browser.newPage({ ignoreHTTPSErrors: true });
         const errors = [];
