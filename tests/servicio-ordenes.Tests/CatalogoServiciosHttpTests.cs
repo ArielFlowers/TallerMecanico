@@ -27,7 +27,7 @@ public sealed class CatalogoServiciosHttpTests
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
             aislada.AgregarUsuario(new UsuarioSemilla
             {
-                Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+                Username = rol, Rol = rol, PasswordHash = hash, Activo = true, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });
         using var clave = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var solicitud = new CertificateRequest("CN=localhost", clave, HashAlgorithmName.SHA256);

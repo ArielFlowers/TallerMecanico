@@ -1,5 +1,10 @@
 # Plan Entregable 3 — SBA
 
+> Documento histórico del diagnóstico del 04/11/2026. La decisión posterior es
+> ejecutar cuatro aplicaciones independientes, como describe [SBA.md](SBA.md).
+> Las alternativas de un solo proyecto y las referencias a réplicas de este plan
+> no describen el despliegue vigente.
+
 > Proyecto: TallerMecanico.
 > Fecha: 04/11/2026.
 > Línea base: `origin/main` (`6a3ce87`).

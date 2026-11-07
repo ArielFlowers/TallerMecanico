@@ -1,11 +1,13 @@
 # CI por areas
 
+Las cuatro suites se compilan y se ejecutan desde `TallerMecanico.sln`, manteniendo los filtros por área. Cada ensamblado guarda su propio TRX con nombre generado para evitar sobrescribir resultados.
+
 Todo se configura en un solo [workflow CI](../.github/workflows/ci.yml). En el PR
 cada check tiene un nombre que indica que esta comprobando:
 
 | Check | Que comprueba | Herramientas preparadas por CI |
 |---|---|---|
-| Backend | Reglas de negocio, servicios, validaciones, sesiones, cache simulada y comprobantes PDF, incluido su texto. | .NET 10, Python y pypdf. |
+| Backend | Reglas de negocio, servicios, validaciones, sesiones y comprobantes PDF, incluido su texto. | .NET 10, Python y pypdf. |
 | API / HTTP | Autenticacion, permisos, endpoints de autocompletado, formularios y respuestas HTTP/HTTPS de Razor Pages. | .NET 10 y MySQL 8.4 temporal. |
 | Base de datos / MySQL | Repositorios, esquema, migraciones, transacciones, concurrencia e integridad de datos. | .NET 10 y MySQL 8.4 temporal. |
 | Frontend / navegador | Interacciones reales en Edge: autocompletado, formularios, navegacion, borradores, modales y comprobantes. | .NET 10, MySQL 8.4 temporal, Node, Playwright, Python y pypdf. |
@@ -77,7 +79,9 @@ node tests/browser/node_modules/playwright/cli.js install msedge
 
 Definir `PLAYWRIGHT_MODULE` con la ruta absoluta de
 `tests/browser/node_modules/playwright`. En Linux, agregar `--with-deps` al
-comando de instalacion de Edge si faltan bibliotecas del sistema.
+comando de instalacion de Edge si faltan bibliotecas del sistema. También se puede
+instalar `chromium` y definir `PLAYWRIGHT_CHANNEL=chromium`; Edge sigue siendo el
+valor predeterminado y el navegador de CI.
 
 Para verificar tambien el texto de los PDF, instalar
 `python -m pip install -r tests/requirements-ci.txt` y definir `TALLER_PDF_PYTHON`
@@ -94,5 +98,5 @@ Backend y Frontend comparten la preparacion de Python y pypdf mediante
 [preparar-pdf](../.github/actions/preparar-pdf/action.yml).
 
 Los jobs de compatibilidad validan el software nativo y simulan Docker en los
-lanzadores. El stack completo con tres replicas, Nginx y Aiven se comprueba
-desde el entorno de desarrollo, no desde esos jobs.
+lanzadores. El arranque de las cuatro aplicaciones Docker, HTTPS de Kestrel y la conexión
+compartida se comprueban aparte; CI usa exclusivamente MySQL temporal, nunca Aiven.

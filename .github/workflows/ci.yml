@@ -17,6 +17,8 @@ concurrency:
 env:
   # Toda la solución: así también corren las pruebas de los servicios.
   # El CI por aplicación reemplazará este paso.
+  # Con -m:1 los proyectos de prueba corren uno tras otro: varias pruebas web
+  # levantan las cuatro aplicaciones como procesos.
   PROYECTO_PRUEBAS: TallerMecanico.sln
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_NOLOGO: 'true'
@@ -32,9 +34,9 @@ jobs:
         uses: ./.github/actions/preparar-pruebas
       - name: Preparar lectura de PDF
         uses: ./.github/actions/preparar-pdf
-      - name: Probar logica, servicios, validaciones y PDF
+      - name: Probar logica, servicios, validaciones, sesiones y PDF
         run: >-
-          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore -m:1
           --filter "Area=Backend" --logger trx
           --results-directory TestResults/backend -- xUnit.ParallelizeTestCollections=false
       - name: Guardar resultados de backend
@@ -106,7 +108,7 @@ jobs:
           echo "PLAYWRIGHT_CHANNEL=msedge" >> "$GITHUB_ENV"
       - name: Ejecutar las pruebas del area
         run: >-
-          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore -m:1
           --filter "$FILTRO_PRUEBAS" --logger trx
           --results-directory "TestResults/$AREA_PRUEBAS" -- xUnit.ParallelizeTestCollections=false
       - name: Guardar resultados del area
@@ -137,8 +139,12 @@ jobs:
       - uses: actions/checkout@v6
       - name: Preparar .NET y compilar
         uses: ./.github/actions/preparar-pruebas
-      - name: Publicar para el sistema actual
-        run: dotnet publish frontend-app/TallerMecanico.Frontend.csproj --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado"
+      - name: Publicar las cuatro aplicaciones para el sistema actual
+        run: |
+          for proyecto in frontend-app/TallerMecanico.Frontend.csproj backend-services/servicio-*/TallerMecanico.Servicio*.csproj; do
+            aplicacion="$(basename "$proyecto" .csproj)"
+            dotnet publish "$proyecto" --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado/$aplicacion"
+          done
       - name: Validar lanzadores y rutas con espacios
         run: |
           bash -n scripts/entorno.sh
@@ -150,9 +156,22 @@ jobs:
         if: matrix.sistema == 'Windows'
         shell: cmd
         run: taller.cmd ayuda
+      - name: Validar sintaxis del lanzador PowerShell
+        if: matrix.sistema == 'Windows'
+        shell: pwsh
+        run: |
+          $tokensLanzador = $null
+          $erroresLanzador = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'scripts/entorno.ps1'),
+            [ref]$tokensLanzador, [ref]$erroresLanzador) | Out-Null
+          if ($erroresLanzador.Count -gt 0) {
+            $erroresLanzador | Format-List
+            exit 1
+          }
       - name: Comprobar la generacion nativa de PDF
         run: >-
-          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore -m:1
           --filter "Tipo=Portabilidad" --logger trx
           --results-directory TestResults/compatibilidad
       - name: Guardar resultados de compatibilidad

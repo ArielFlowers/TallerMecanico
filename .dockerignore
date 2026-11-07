@@ -33,3 +33,4 @@ respaldos/
 *.pdf
 
 nginx/certs/
+certs/

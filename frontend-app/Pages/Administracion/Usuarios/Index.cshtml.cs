@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using TallerMecanico.Aplicacion.DTOs;
-using TallerMecanico.Aplicacion.Puertos;
+using System.Net;
+using TallerMecanico.Api;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Pages.Administracion.Usuarios;
 
@@ -13,16 +14,9 @@ public sealed class IndexModel : PageModel
     private const int TamanoPaginaPredeterminado = 10;
     private const int TamanoPaginaMaximo = 100;
 
-    private readonly IUsuarioConsultaPort _usuarioConsultaPort;
-    private readonly IGestionUsuariosPort _usuarioAdministracion;
+    private readonly UsuariosApi _usuarios;
 
-    public IndexModel(
-        IUsuarioConsultaPort usuarioConsultaPort,
-        IGestionUsuariosPort usuarioAdministracion)
-    {
-        _usuarioConsultaPort = usuarioConsultaPort;
-        _usuarioAdministracion = usuarioAdministracion;
-    }
+    public IndexModel(UsuariosApi usuarios) => _usuarios = usuarios;
 
     public IReadOnlyList<UsuarioListViewModel> Usuarios { get; private set; } = [];
 
@@ -55,84 +49,62 @@ public sealed class IndexModel : PageModel
 
     public bool HayPaginaSiguiente => Pagina < TotalPaginas;
 
-    public void OnGet()
+    public Task<IActionResult> OnGetAsync() => AtenderAsync(async () =>
     {
-        CargarResultados();
+        await CargarResultadosAsync();
+        var resumen = await _usuarios.ObtenerResumenAsync(HttpContext.RequestAborted);
+        TotalUsuarios = resumen.Total;
+        UsuariosActivos = resumen.Activos;
+        AdministradoresActivos = resumen.AdministradoresActivos;
+        return Page();
+    });
 
-        TotalUsuarios = _usuarioConsultaPort.ContarTotal();
-        UsuariosActivos = _usuarioConsultaPort.ContarUsuariosActivos();
-        AdministradoresActivos = _usuarioConsultaPort.ContarAdministradoresActivosListado();
-    }
-
-    public PartialViewResult OnGetResultados()
+    public Task<IActionResult> OnGetResultadosAsync() => AtenderAsync(async () =>
     {
-        CargarResultados();
+        await CargarResultadosAsync();
         return Partial("_ResultadosUsuarios", this);
-    }
+    });
 
-    private void CargarResultados()
+    private async Task CargarResultadosAsync()
     {
         ValidarPaginacion();
-
-        Busqueda = string.IsNullOrWhiteSpace(Busqueda)
-            ? null
-            : Busqueda.Trim();
-
-        RolFiltro = RolFiltro is "Administrador" or "Recepcionista"
-            ? RolFiltro
-            : null;
-
-        TotalRegistros = _usuarioConsultaPort.ContarFiltrados(
-            Busqueda, RolFiltro, ActivoFiltro);
-
-        TotalPaginas = (int)Math.Ceiling(
-            (double)TotalRegistros / TamanoPagina);
-
-        if (Pagina > TotalPaginas && TotalPaginas > 0)
-        {
-            Pagina = TotalPaginas;
-        }
-
+        Busqueda = string.IsNullOrWhiteSpace(Busqueda) ? null : Busqueda.Trim();
+        RolFiltro = RolFiltro is "Administrador" or "Recepcionista" ? RolFiltro : null;
+        TotalRegistros = await _usuarios.ContarAsync(Busqueda, RolFiltro, ActivoFiltro, HttpContext.RequestAborted);
+        TotalPaginas = (int)Math.Ceiling((double)TotalRegistros / TamanoPagina);
+        if (Pagina > TotalPaginas && TotalPaginas > 0) Pagina = TotalPaginas;
         if (TotalRegistros == 0) Pagina = 1;
-        Usuarios = [];
-
-        if (TotalRegistros > 0)
-        {
-            var dtos = _usuarioConsultaPort.ListarFiltrados(Busqueda, RolFiltro, ActivoFiltro, Pagina, TamanoPagina);
-            Usuarios = MapearAViewModel(dtos);
-        }
+        Usuarios = TotalRegistros == 0 ? [] : MapearAViewModel(await _usuarios.ListarAsync(
+            Busqueda, RolFiltro, ActivoFiltro, Pagina, TamanoPagina, HttpContext.RequestAborted));
     }
 
-    public IActionResult OnPostDesactivar(int id)
+    public Task<IActionResult> OnPostDesactivarAsync(int id) => CambiarEstadoAsync(id, false);
+
+    public Task<IActionResult> OnPostReactivarAsync(int id) => CambiarEstadoAsync(id, true);
+
+    private Task<IActionResult> CambiarEstadoAsync(int id, bool activo) => AtenderAsync(async () =>
     {
-        bool resultado = _usuarioAdministracion.DesactivarUsuario(id, out string? errorMessage);
-
-        if (!resultado)
-        {
-            TempData["MensajeError"] = errorMessage ?? "Error al desactivar el usuario.";
-        }
+        var resultado = activo
+            ? await _usuarios.ReactivarAsync(id, HttpContext.RequestAborted)
+            : await _usuarios.DesactivarAsync(id, HttpContext.RequestAborted);
+        if (resultado.Exito)
+            TempData["MensajeExito"] = activo ? "Usuario reactivado correctamente." : "Usuario desactivado correctamente.";
         else
-        {
-            TempData["MensajeExito"] = "Usuario desactivado correctamente.";
-        }
-
+            TempData["MensajeError"] = resultado.Mensaje ?? (activo ? "Error al reactivar el usuario." : "Error al desactivar el usuario.");
         return RedirectToPage(new { Pagina, TamanoPagina, Busqueda, RolFiltro, ActivoFiltro });
-    }
+    });
 
-    public IActionResult OnPostReactivar(int id)
+    private async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
     {
-        bool resultado = _usuarioAdministracion.ReactivarUsuario(id, out string? errorMessage);
-
-        if (!resultado)
+        try { return await accion(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized) { return Challenge(); }
+        catch (Exception error) when (error is HttpRequestException ||
+            error is TaskCanceledException && !HttpContext.RequestAborted.IsCancellationRequested)
         {
-            TempData["MensajeError"] = errorMessage ?? "Error al reactivar el usuario.";
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                "El servicio de usuarios no está disponible. Intenta nuevamente.");
         }
-        else
-        {
-            TempData["MensajeExito"] = "Usuario reactivado correctamente.";
-        }
-
-        return RedirectToPage(new { Pagina, TamanoPagina, Busqueda, RolFiltro, ActivoFiltro });
     }
 
     private void ValidarPaginacion()

@@ -2,7 +2,7 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
 
 (async () => {
-    const browser = await chromium.launch({ channel: 'msedge', headless: true });
+    const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge', headless: true });
     const base = process.env.TALLER_NUEVA_ORDEN_URL;
     const cookies = JSON.parse(process.env.TALLER_ORDEN_COOKIES_POR_ROL);
     try {

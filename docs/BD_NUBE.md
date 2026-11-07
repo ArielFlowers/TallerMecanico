@@ -31,10 +31,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bd/verificar-nube.ps
 ```
 
 Después del arranque se esperan las doce tablas de la aplicación y
-`TRG_Servicios_HistorialCosto`. El esquema se inicializa desde la aplicación,
-coordinado mediante un bloqueo MySQL entre réplicas; no se carga una seed.
+`TRG_Servicios_HistorialCosto`. El esquema lo inicializa solo `servicio-ordenes` al arrancar, con un bloqueo MySQL;
+no se carga una seed.
 
-Mantener `Maximum Pool Size=3` por réplica. Antes de aumentarlo, consultar el
+Mantener `Maximum Pool Size=3` en cada API. Antes de aumentarlo, consultar el
 límite y uso efectivos del servicio, considerando todas las PCs y administración.
 
 La prueba administrativa `probar-trigger-nube.ps1` crea y elimina una base
@@ -65,16 +65,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bd/importar-dump-nub
 
 Los dumps omiten triggers para evitar problemas con `DEFINER`. Después de una
 restauración, arrancar la aplicación para recrearlos y comprobar conteos y
-relaciones. Para revisar primero una réplica:
+relaciones. Para revisar primero el Servicio 1, que crea el esquema:
 
 ```powershell
-docker compose -f docker-compose.yml build app1
-docker compose -f docker-compose.yml up -d --no-build app1
-docker compose -f docker-compose.yml logs app1 --tail 80
+docker compose -f docker-compose.yml build servicio-ordenes
+docker compose -f docker-compose.yml up -d --no-build servicio-ordenes
+docker compose -f docker-compose.yml logs servicio-ordenes --tail 80
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bd/verificar-nube.ps1
 ```
 
-Después levantar las tres réplicas y Nginx con `dotnet msbuild -t:NubeUp`.
+Después levantar las cuatro aplicaciones con `dotnet msbuild -t:NubeUp`.
 Los compañeros no repiten importaciones al instalar el proyecto.
 
 ## Cuentas de acceso
@@ -94,7 +94,7 @@ La consola existente permite restablecer únicamente la cuenta activa llamada
 exactamente `admin`, con rol Administrador, en Development:
 
 ```powershell
-docker compose -f docker-compose.yml exec app1 dotnet TallerMecanico.dll --restablecer-admin
+docker compose -f docker-compose.yml exec servicio-usuarios dotnet TallerMecanico.ServicioUsuarios.dll --restablecer-admin
 ```
 
 Pide `CONFIRMAR` y una contraseña de 12 a 128 caracteres, que no se muestra.
@@ -143,7 +143,7 @@ levantar otro servidor de trabajo.
 | Error de trigger o privilegios | Revisar cuenta y permisos con el responsable; no continuar una restauración con el trigger fallido. |
 | Pool agotado | Consultar uso y límite del servidor antes de aumentar conexiones. |
 | Puerto ocupado | Identificar el proceso o contenedor y detener solo el recurso acordado. |
-| Certificados no encontrados | Revisar los dos PEM en nginx/certs y seguir la guía mkcert de README. |
+| Certificados no encontrados | Revisar los dos PEM en certs/ y seguir la guía mkcert de README. |
 
 Mantener `.env`, copias privadas antiguas, `respaldos/` y claves de certificados fuera de Git
 y del contexto de build. Las validaciones anteriores conservan sus fechas;

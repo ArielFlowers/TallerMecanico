@@ -6,8 +6,8 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
-using TallerMecanico.Infraestructura.Seguridad;
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -33,7 +33,7 @@ public sealed class VehiculosNavegadorTests
         var hasher = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions()));
         aislada.AgregarUsuario(new UsuarioSemilla
         {
-            Username = "ec2_ui", PasswordHash = hasher.GenerarHash(password), Rol = "Recepcionista", EmailVerificado = true,
+            Username = "ec2_ui", PasswordHash = hasher.GenerarHash(password), Rol = "Recepcionista", Activo = true, EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
         var clientes = new ClienteRepository(aislada.Factory);
@@ -65,7 +65,6 @@ public sealed class VehiculosNavegadorTests
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificadoRuta;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = certificadoPassword;
         aislada.ConfigurarFrontend(inicio);

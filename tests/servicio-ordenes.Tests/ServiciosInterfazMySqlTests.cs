@@ -30,7 +30,7 @@ public sealed class ServiciosInterfazMySqlTests
         string hash = new Argon2idPasswordHasher(Options.Create(new Argon2idOptions())).GenerarHash(password);
         aislada.AgregarUsuario(new UsuarioSemilla
         {
-            Username = "recepcion_servicios", Rol = "Recepcionista", PasswordHash = hash, EmailVerificado = true,
+            Username = "recepcion_servicios", Rol = "Recepcionista", PasswordHash = hash, Activo = true, EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
         using var clave = ECDsa.Create(ECCurve.NamedCurves.nistP256);

@@ -21,7 +21,7 @@ function Invocar-ClienteNube {
     try {
         $configuracion = ($json -join "`n") | ConvertFrom-Json
         # Usar el metodo: PowerShell trata las propiedades del builder como claves.
-        $conexion.set_ConnectionString([string]$configuracion.services.app1.environment.ConnectionStrings__MySqlConnection)
+        $conexion.set_ConnectionString([string]$configuracion.services.'servicio-ordenes'.environment.ConnectionStrings__MySqlConnection)
     } catch {
         throw 'MYSQL_CONNECTION de .env no es una cadena de conexion valida.'
     }

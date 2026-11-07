@@ -8,9 +8,9 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
-using TallerMecanico.Infraestructura.Seguridad;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -27,7 +27,7 @@ public sealed class MecanicosHttpTests
         aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "admin_prueba", Rol = "Administrador",
-            PasswordHash = hasher.GenerarHash(password), EmailVerificado = true,
+            PasswordHash = hasher.GenerarHash(password), Activo = true, EmailVerificado = true,
             CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
 
@@ -134,7 +134,6 @@ public sealed class MecanicosHttpTests
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
         aislada.ConfigurarFrontend(inicio);
@@ -238,7 +237,7 @@ public sealed class MecanicosHttpTests
         aislada.AgregarUsuario(new UsuarioSemilla
         {
             Username = "recepcion_prueba", Rol = "Recepcionista", PasswordHash = hasher.GenerarHash(password),
-            EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+            Activo = true, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
         });
         using (var recepcionista = NuevoCliente(url))
         {

@@ -1,115 +1,102 @@
-
-# ============================================
-# H1 - AUTO TALLER PRO
-# DOCKER + NGINX + 3 REPLICAS + HTTPS
-# ============================================
-
-# Mantener el mismo proyecto aunque cambie el nombre de la carpeta del clon.
+# SBA: un Frontend Razor y tres APIs con una base Aiven compartida.
+# Ejecutar desde la raiz con Docker Compose v2.
 name: tallermecanico
 
-x-app-common: &app-common
+x-api-environment: &api-environment
+  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_URLS: http://+:8080
+  ConnectionStrings__MySqlConnection: ${MYSQL_CONNECTION:?Configura MYSQL_CONNECTION en .env}
+  ClaveInterna: ${CLAVE_INTERNA:?Configura CLAVE_INTERNA en .env}
 
-  # Cada PC construye la imagen desde su codigo actual.
-  build:
-    context: .
-    dockerfile: frontend-app/Dockerfile
-
-  image: ${APP_IMAGE:-taller-mecanico:local}
-  pull_policy: build
-
-  environment:
-    ASPNETCORE_ENVIRONMENT: Development
-    ASPNETCORE_URLS: http://+:8080
-
-    # Base MySQL unica compartida por todo el equipo.
-    ConnectionStrings__MySqlConnection: ${MYSQL_CONNECTION:?Configura MYSQL_CONNECTION en .env}
-
-    DataProtection__KeysPath: /app/shared-keys
-
-
-    # Correo de verificacion para las 3 replicas
-    Email__Smtp__Host: ${SMTP_HOST:-smtp.gmail.com}
-    Email__Smtp__Port: "${SMTP_PORT:-465}"
-    Email__Smtp__Security: ${SMTP_SECURITY:-SslOnConnect}
-    Email__Smtp__Username: ${SMTP_USERNAME:-}
-    Email__Smtp__Password: ${SMTP_PASSWORD:-}
-    Email__Smtp__From: ${SMTP_FROM:-}
-
-    # URL utilizada para generar enlaces de verificacion
-    App__PublicBaseUrl: ${APP_PUBLIC_BASE_URL:-http://127.0.0.1:8088}
-    App__PermitirHttpNoSeguro: ${APP_PERMITIR_HTTP_NO_SEGURO:-false}
-
-  volumes:
-    - taller-dpkeys:/app/shared-keys
-
-  restart: unless-stopped
-
-# ============================================
-# SERVICIOS
-# ============================================
+x-healthcheck: &healthcheck
+  test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/salud"]
+  interval: 5s
+  timeout: 3s
+  retries: 24
+  start_period: 15s
 
 services:
-
-  # ------------------------------------------
-  # REPLICA 1
-  # ------------------------------------------
-  app1:
-    <<: *app-common
-
-    ports:
-      - "127.0.0.1:5000:8080"
-
-  # ------------------------------------------
-  # REPLICA 2
-  # ------------------------------------------
-  app2:
-    <<: *app-common
-
-    ports:
-      - "127.0.0.1:5001:8080"
-
-  # ------------------------------------------
-  # REPLICA 3
-  # ------------------------------------------
-  app3:
-    <<: *app-common
-
-    ports:
-      - "127.0.0.1:5002:8080"
-
-  # ------------------------------------------
-  # NGINX - BALANCEADOR HTTP / HTTPS
-  # ------------------------------------------
-  nginx:
-    image: nginx:1.27-alpine
-
-    ports:
-      # HTTP principal
-      - "${APP_BIND_ADDRESS:-127.0.0.1}:80:80"
-
-      # HTTP alternativo para pruebas
-      - "${APP_BIND_ADDRESS:-127.0.0.1}:8088:80"
-
-      # HTTPS
-      - "${APP_BIND_ADDRESS:-127.0.0.1}:443:443"
-
-    volumes:
-      # Configuracion de Nginx
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-
-      # Certificados HTTPS locales
-      - ./nginx/certs:/etc/nginx/certs:ro
-
-    depends_on:
-      - app1
-      - app2
-      - app3
-
+  servicio-ordenes:
+    build:
+      context: .
+      dockerfile: backend-services/servicio-ordenes/Dockerfile
+    image: taller-mecanico-ordenes:local
+    environment:
+      <<: *api-environment
+    expose:
+      - "8080"
+    healthcheck: *healthcheck
     restart: unless-stopped
 
-# ============================================
-# VOLUMENES PERSISTENTES
-# ============================================
+  servicio-usuarios:
+    build:
+      context: .
+      dockerfile: backend-services/servicio-usuarios/Dockerfile
+    image: taller-mecanico-usuarios:local
+    environment:
+      <<: *api-environment
+      Email__Smtp__Host: ${SMTP_HOST:-smtp.gmail.com}
+      Email__Smtp__Port: "${SMTP_PORT:-465}"
+      Email__Smtp__Security: ${SMTP_SECURITY:-SslOnConnect}
+      Email__Smtp__Username: ${SMTP_USERNAME:-}
+      Email__Smtp__Password: ${SMTP_PASSWORD:-}
+      Email__Smtp__From: ${SMTP_FROM:-}
+      App__PublicBaseUrl: ${APP_PUBLIC_BASE_URL:-http://127.0.0.1:8088}
+      App__PermitirHttpNoSeguro: ${APP_PERMITIR_HTTP_NO_SEGURO:-false}
+    expose:
+      - "8080"
+    depends_on:
+      servicio-ordenes:
+        condition: service_healthy
+    healthcheck: *healthcheck
+    restart: unless-stopped
+
+  servicio-reportes:
+    build:
+      context: .
+      dockerfile: backend-services/servicio-reportes/Dockerfile
+    image: taller-mecanico-reportes:local
+    environment:
+      <<: *api-environment
+    expose:
+      - "8080"
+    depends_on:
+      servicio-ordenes:
+        condition: service_healthy
+    healthcheck: *healthcheck
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend-app/Dockerfile
+    image: ${APP_IMAGE:-taller-mecanico-frontend:local}
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      Kestrel__Certificates__Default__Path: /https/localhost.pem
+      Kestrel__Certificates__Default__KeyPath: /https/localhost-key.pem
+      DataProtection__KeysPath: /app/shared-keys
+      ClaveInterna: ${CLAVE_INTERNA:?Configura CLAVE_INTERNA en .env}
+      Servicios__OrdenesUrl: http://servicio-ordenes:8080
+      Servicios__UsuariosUrl: http://servicio-usuarios:8080
+      Servicios__ReportesUrl: http://servicio-reportes:8080
+    ports:
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:80:8080"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:8088:8080"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:443:8443"
+    volumes:
+      - ./certs:/https:ro
+      - taller-dpkeys:/app/shared-keys
+    depends_on:
+      servicio-ordenes:
+        condition: service_healthy
+      servicio-usuarios:
+        condition: service_healthy
+      servicio-reportes:
+        condition: service_healthy
+    healthcheck: *healthcheck
+    restart: unless-stopped
 
 volumes:
   taller-dpkeys:

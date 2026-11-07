@@ -1,30 +1,17 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Dominio.Entidades;
-using ILoginAuthenticationService =
-    TallerMecanico.Aplicacion.Puertos.IAuthenticationService;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Auth;
 
 [EnableRateLimiting("LoginRateLimit")]
-public class LoginModel : PageModel
+public class LoginModel(UsuariosApi usuarios) : PageModel
 {
-    private readonly ILoginAuthenticationService _authenticationService;
-    private readonly IAuditoriaPort _auditoriaPort;
-
-    public LoginModel(
-    ILoginAuthenticationService authenticationService,
-    IAuditoriaPort auditoriaPort)
-    {
-        _authenticationService = authenticationService;
-        _auditoriaPort = auditoriaPort;
-    }
-
     [BindProperty]
     public LoginInput Input { get; set; } = new();
 
@@ -32,111 +19,45 @@ public class LoginModel : PageModel
 
     public IActionResult OnGet(string? expired)
     {
-        if (User.Identity?.IsAuthenticated == true)
-        {
-            return RedirectToPage("/Index");
-        }
-
+        if (User.Identity?.IsAuthenticated == true) return RedirectToPage("/Index");
         if (expired == "1")
-        {
             MensajeExpirado = "Su sesión ha expirado porque su cuenta cambió o fue desactivada. Inicie sesión nuevamente o contacte al administrador.";
-        }
-
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
-
-        var usuario = _authenticationService.ValidarCredenciales(
-            Input.Username,
-            Input.Password);
-
-        if (usuario is null ||
-            (usuario.Rol != "Administrador" &&
-             usuario.Rol != "Recepcionista"))
-        {
-            _auditoriaPort.Registrar(new RegistroAuditoria
-            {
-                UsuarioId = null,
-                Username = null,
-                Accion = "LOGIN_FALLIDO",
-                Entidad = "Usuario",
-                EntidadId = null,
-                Fecha = DateTime.UtcNow
-            });
-
-            ModelState.AddModelError(
-                string.Empty,
-                "Usuario o contraseña incorrectos.");
-
-            return Page();
-        }
-
-
-        var claims = new List<Claim>
-        {
-            new(
-                ClaimTypes.NameIdentifier,
-                usuario.Id.ToString()),
-
-            new(
-                ClaimTypes.Name,
-                usuario.Username),
-
-            new(
-                ClaimTypes.Role,
-                usuario.Rol)
-        };
-
-        var identity = new ClaimsIdentity(
-            claims,
-            CookieAuthenticationDefaults.AuthenticationScheme);
-
-        var principal = new ClaimsPrincipal(identity);
-
-        HttpContext.Session.Clear();
-
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            principal,
-            new AuthenticationProperties
-            {
-                IsPersistent = false,
-                AllowRefresh = true
-            });
-
-        HttpContext.Session.SetString(
-            "Username",
-            usuario.Username);
-
+        if (!ModelState.IsValid) return Page();
         try
         {
-            _auditoriaPort.Registrar(new RegistroAuditoria
+            var usuario = await usuarios.IniciarSesionAsync(Input.Username, Input.Password, HttpContext.RequestAborted);
+            if (usuario is null || usuario.Id <= 0 || string.IsNullOrWhiteSpace(usuario.Username) ||
+                usuario.Rol is not ("Administrador" or "Recepcionista"))
             {
-                UsuarioId = usuario.Id,
-                Username = usuario.Username,
-                Accion = "LOGIN_EXITOSO",
-                Entidad = "Usuario",
-                EntidadId = usuario.Id.ToString(),
-                Fecha = DateTime.UtcNow
-            });
-        }
-        catch
-        {
-            await HttpContext.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme);
-
+                ModelState.AddModelError(string.Empty, "Usuario o contraseña incorrectos.");
+                return Page();
+            }
+            var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                new Claim(ClaimTypes.Name, usuario.Username),
+                new Claim(ClaimTypes.Role, usuario.Rol)
+            ], CookieAuthenticationDefaults.AuthenticationScheme));
             HttpContext.Session.Clear();
-
-            throw;
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+                new AuthenticationProperties { IsPersistent = false, AllowRefresh = true });
+            HttpContext.Session.SetString("Username", usuario.Username);
+            return RedirectToPage("/Index");
         }
-
-        return RedirectToPage("/Index");
-
+        catch (ValidationException error)
+        {
+            ModelState.AddModelError(string.Empty, error.Message);
+        }
+        catch (Exception error) when (error is HttpRequestException ||
+            error is TaskCanceledException && !HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            ModelState.AddModelError(string.Empty, "El servicio de usuarios no está disponible. Intenta nuevamente.");
+        }
+        return Page();
     }
 }

@@ -1,5 +1,5 @@
 name: Preparar pruebas .NET
-description: Instalar el SDK, restaurar paquetes y compilar la aplicacion y las pruebas en Release.
+description: Instalar el SDK, restaurar paquetes y compilar las cuatro aplicaciones y sus pruebas en Release.
 runs:
   using: composite
   steps:

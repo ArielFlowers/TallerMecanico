@@ -149,15 +149,12 @@ concesión a propósito para mantener el código simple.
 
 ## Estado de la migración
 
-La separación en cuatro aplicaciones se integra por partes. En esta rama:
+Las cuatro aplicaciones están integradas:
 
-- El Servicio 1 ya expone órdenes y catálogos por HTTP.
-- El Frontend ya consume órdenes, catálogos y dashboard mediante `Api/`.
-- Los Servicios 2 y 3 tienen sus proyectos, contratos y clientes HTTP preparados;
-  su implementación se integra desde las ramas de usuarios y reportes.
-- El Frontend ya no tiene la copia de órdenes y catálogos. Solo conserva, de forma
-  temporal, el código de usuarios y reportes, que se retira al integrar las ramas
-  de los Servicios 2 y 3.
+- El Servicio 1 expone órdenes, catálogos y dashboard por HTTP.
+- Los Servicios 2 y 3 exponen usuarios y reportes por HTTP.
+- El Frontend no accede a la base: solo conserva la sesión (borradores y token de
+  la orden), la seguridad de la cookie y los formularios de sus páginas.
 
 La documentación de este archivo se concentra en el Servicio 1. Los detalles de
 usuarios y reportes están en `docs/ARQUITECTURA_HEXAGONAL.md`.
