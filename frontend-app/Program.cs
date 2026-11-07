@@ -1,53 +1,18 @@
-using TallerMecanico.Infraestructura.Correo;
-using TallerMecanico.Infraestructura.Persistencia.MySql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Http;
-using TallerMecanico.Api;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Infraestructura;
-using TallerMecanico.Infraestructura.Persistencia;
-using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura.Documentos;
-using TallerMecanico.Infraestructura.Exportacion;
-using TallerMecanico.Aplicacion.Servicios;
-using TallerMecanico.Aplicacion.Servicios.Reportes;
-using TallerMecanico.Aplicacion.Validaciones;
-using TallerMecanico.Infraestructura.Seguridad;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using TallerMecanico.Infraestructura.Arranque;
-using TallerMecanico.Infraestructura.Sesion;
-using TallerMecanico.Aplicacion.Fachadas;
+using TallerMecanico.Api;
 using TallerMecanico.Aplicacion.Configuracion;
+using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
+using TallerMecanico.Infraestructura.Seguridad;
+using TallerMecanico.Infraestructura.Sesion;
 
 var builder =
     WebApplication.CreateBuilder(args);
 
-// =====================================================
-// H1: CABECERAS DEL PROXY INVERSO NGINX
-// =====================================================
-// Nginx termina HTTPS y se comunica por HTTP con Kestrel.
-// Confiamos exclusivamente en la red Docker de desarrollo
-// detectada con: docker network inspect tallermecanico_default.
-// Si Docker cambia de subred, actualizar este valor.
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders =
-        ForwardedHeaders.XForwardedFor |
-        ForwardedHeaders.XForwardedProto;
-    options.ForwardLimit = 1;
-    options.KnownIPNetworks.Add(
-        System.Net.IPNetwork.Parse("172.19.0.0/16"));
-});
-
-// =====================================================
-// H1: DATA PROTECTION COMPARTIDA ENTRE RÉPLICAS
-// =====================================================
-// Se configura DataProtection__KeysPath en Docker Compose.
-// Las 3 réplicas usan el mismo volumen para sus claves.
+// Las claves persistidas conservan las cookies al reiniciar el Frontend.
 var dataProtection = builder.Services
     .AddDataProtection()
     .SetApplicationName("AutoTallerPro");
@@ -63,7 +28,7 @@ if (!string.IsNullOrWhiteSpace(directorioClaves))
 }
 
 // En Development solamente: permitir cookies sobre HTTP para
-// pruebas en localhost:80 y localhost:5000-5002.
+// pruebas en localhost:80 y localhost:8088.
 // En cualquier otro entorno las cookies exigen HTTPS.
 var politicaCookieSegura = builder.Environment.IsDevelopment()
     ? CookieSecurePolicy.SameAsRequest
@@ -109,69 +74,11 @@ builder.Services.AddRazorPages(options =>
 }).AddMvcOptions(options => options.Filters.Add<ConfirmarSesionFilter>());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-// Borradores y token de la orden: viven en la sesión del Frontend.
 builder.Services.AddScoped<IBorradorVehiculoPort, BorradorVehiculoSesion>();
 builder.Services.AddScoped<IBorradorOrden, BorradorOrdenSesion>();
 builder.Services.AddScoped<ITokenOrden, TokenOrdenSesion>();
-// Los reportes PDF todavía se generan aquí hasta integrar el Servicio 3.
-QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(ConfiguracionTaller.Instancia);
-builder.Services.Configure<Argon2idOptions>(
-    builder.Configuration.GetSection(
-        Argon2idOptions.SectionName));
-builder.Services.AddSingleton<
-    IPasswordHasher,
-    Argon2idPasswordHasher>();
-builder.Services.AddSingleton<IFallbackHash, AuthenticationFallbackHash>();
-// =====================================================
-// AUTENTICACIÓN DE USUARIOS
-// =====================================================
-builder.Services.AddScoped<
-    IUsuarioPort,
-    UsuarioRepository>();
-builder.Services.AddScoped<
-    IUsuarioConsultaPort,
-    UsuarioRepository>();
-builder.Services.AddScoped<
-    ISolicitudRegistroPort,
-    SolicitudRegistroRepository>();
-builder.Services.AddScoped<RegistroUsuarioService>();
-builder.Services.AddScoped<VerificacionEmailService>();
-builder.Services.AddScoped<IEmailService, GmailEmailService>();
-builder.Services.AddScoped<RegistroFacade>();
-builder.Services.AddScoped<IGeneradorNombreUsuarioPort, GeneradorNombreUsuarioService>();
-builder.Services.AddScoped<ReenvioVerificacionService>();
-builder.Services.AddScoped<
-    IRevisionSolicitudesPort,
-    RevisionSolicitudesRepository>();
-builder.Services.AddScoped<RevisionSolicitudesService>();
-builder.Services.AddScoped<
-    IUsuarioAdministracionPort,
-    UsuarioRepository>();
-
-// Activación de invitaciones (Servicio 2).
-builder.Services.AddScoped<
-    IActivacionInvitacionPort,
-    ActivacionInvitacionMySqlAdapter>();
-
-builder.Services.AddScoped<IGestionUsuariosPort, UsuarioAdministracionService>();
-builder.Services.AddScoped<ICambioContrasenaPort, CambioContrasenaService>();
-builder.Services.AddScoped<
-    IAuthenticationService,
-    AuthenticationService>();
-builder.Services.AddScoped<
-    IAuditoriaPort,
-    AuditoriaRepository>();
-builder.Services.AddScoped<
-    DatabaseConnectionFactory,
-    MySqlConnectionFactory>();
-builder.Services.AddScoped<
-    InicializadorUsuarios>();
-builder.Services.AddScoped<
-    InicializacionUsuariosConsola>();
-builder.Services.AddScoped<
-    RestablecimientoAdminConsola>();
 // =====================================================
 // AUTENTICACIÓN POR COOKIES
 // =====================================================
@@ -313,89 +220,18 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // =====================================================
-// REPORTES (HU3 - Servicio 3)
-// =====================================================
-builder.Services.AddScoped<IConsultaReportesPort, ConsultaReportesMySqlAdapter>();
-builder.Services.AddScoped<IGeneradorReporteOrdenesPdfPort, QuestPdfReporteOrdenesAdapter>();
-builder.Services.AddScoped<IGeneradorReporteOrdenesExcelPort, ClosedXmlReporteOrdenesAdapter>();
-builder.Services.AddScoped<IGeneradorReporteMecanicosPdfPort, QuestPdfReporteMecanicosAdapter>();
-builder.Services.AddScoped<IGeneradorReporteMecanicosExcelPort, ClosedXmlReporteMecanicosAdapter>();
-builder.Services.AddScoped<IReporteOrdenesPort, ReporteOrdenesService>();
-builder.Services.AddScoped<IReporteMecanicosPort, ReporteMecanicosService>();
-// =====================================================
 // CLIENTES HTTP DE LOS SERVICIOS BACKEND
 // =====================================================
 builder.Services.AddApisInternas(builder.Configuration);
 
-var app =
-    builder.Build();
-// =====================================================
-// RESTABLECIMIENTO ADMINISTRATIVO DE CONTRASEÑA
-// =====================================================
-if (args.Contains(
-        "--restablecer-admin",
-        StringComparer.OrdinalIgnoreCase))
-{
-    if (args.Length != 1)
-    {
-        throw new InvalidOperationException(
-            "El comando no admite argumentos adicionales.");
-    }
-    if (!app.Environment.IsDevelopment())
-    {
-        throw new InvalidOperationException(
-            "El restablecimiento solo está permitido en Development.");
-    }
-    using (IServiceScope scope =
-           app.Services.CreateScope())
-    {
-        RestablecimientoAdminConsola restablecimiento =
-            scope.ServiceProvider
-                .GetRequiredService<RestablecimientoAdminConsola>();
-        restablecimiento.Ejecutar();
-    }
-    return;
-}
-
-// =====================================================
-// INICIALIZACION ADMINISTRATIVA DE USUARIOS
-// =====================================================
-if (args.Contains(
-        "--inicializar-usuarios",
-        StringComparer.OrdinalIgnoreCase))
-{
-    if (args.Length != 1)
-    {
-        throw new InvalidOperationException(
-            "El comando administrativo no admite argumentos adicionales.");
-    }
-    if (!app.Environment.IsDevelopment())
-    {
-        throw new InvalidOperationException(
-            "La inicialización de usuarios solo está permitida en Development.");
-    }
-    using (IServiceScope scope =
-           app.Services.CreateScope())
-    {
-        InicializacionUsuariosConsola inicializacion =
-            scope.ServiceProvider
-                .GetRequiredService<InicializacionUsuariosConsola>();
-        inicializacion.Ejecutar();
-    }
-    return;
-}
-
-// Debe ejecutarse antes de HSTS, redirecciones y autenticación,
-// para que Request.Scheme refleje el HTTPS recibido por Nginx.
-app.UseForwardedHeaders();
+var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-// En Development mantenemos HTTP local para las pruebas de H1.
-// Nginx también acepta HTTPS con mkcert en el puerto 443.
+// Kestrel sirve HTTPS directamente. En desarrollo también se admite HTTP local.
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -407,15 +243,7 @@ app.UseSession();
 app.UseAuthentication();
 app.UseValidarUsuarioActivo();
 app.UseAuthorization();
-// H1: endpoint liviano para comprobar balanceo y réplica real.
-// No reemplaza la identificación visible que agregaremos en Index.
-if (app.Environment.IsDevelopment())
-{
-    app.MapGet("/h1/replica", () => Results.Ok(new
-    {
-        replica = Environment.MachineName
-    })).AllowAnonymous();
-}
+app.MapGet("/salud", () => Results.Ok()).AllowAnonymous();
 
 app.MapStaticAssets();
 app.MapRazorPages()

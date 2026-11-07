@@ -33,7 +33,7 @@ public sealed class ProductosHttpTests
         foreach (string rol in new[] { "Administrador", "Recepcionista" })
             aislada.AgregarUsuario(new UsuarioSemilla
             {
-                Username = rol, Rol = rol, PasswordHash = hash, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
+                Username = rol, Rol = rol, PasswordHash = hash, Activo = true, EmailVerificado = true, CreadoPor = "pruebas", FechaCreacion = DateTime.UtcNow
             });
 
         using var clave = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -160,7 +160,6 @@ public sealed class ProductosHttpTests
         inicio.ArgumentList.Add("--urls");
         inicio.ArgumentList.Add(url);
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        inicio.Environment["ConnectionStrings__MySqlConnection"] = aislada.CadenaConexion;
         inicio.Environment["Kestrel__Certificates__Default__Path"] = certificado;
         inicio.Environment["Kestrel__Certificates__Default__Password"] = password;
         aislada.ConfigurarFrontend(inicio);

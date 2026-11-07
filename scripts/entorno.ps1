@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $raiz = Split-Path $PSScriptRoot -Parent
 $proyecto = 'tallermecanico'
-$servicios = @('app1', 'app2', 'app3', 'nginx')
+$servicios = @('frontend', 'servicio-ordenes', 'servicio-usuarios', 'servicio-reportes')
 
 function Mostrar-Ayuda {
     Write-Host @'
@@ -22,8 +22,8 @@ Atajos: Windows: .\taller nube <comando>
         macOS:   bash ./taller.sh nube <comando>
 
   status     Mostrar los contenedores de la aplicacion.
-  logs       Seguir los logs de app1; Ctrl+C para salir.
-  build      Reconstruir la imagen sin detener la aplicacion.
+  logs       Seguir los logs de las cuatro apps; Ctrl+C para salir.
+  build      Reconstruir las cuatro imagenes sin detener la aplicacion.
   usuarios   Crear cuentas interactivamente desde tu propia terminal.
 
 up construye primero y actualiza la aplicacion conectada a Aiven.
@@ -62,8 +62,8 @@ function Comprobar-Configuracion([switch]$Certificados) {
     }
     if ($Certificados) {
         foreach ($certificado in @('localhost.pem', 'localhost-key.pem')) {
-            if (-not (Test-Path -LiteralPath (Join-Path $raiz ('nginx/certs/' + $certificado)))) {
-                throw 'Faltan certificados locales. Generalos con mkcert siguiendo docs/H1-HTTPS.md.'
+            if (-not (Test-Path -LiteralPath (Join-Path $raiz ('certs/' + $certificado)))) {
+                throw 'Faltan certificados en certs/. Generalos con mkcert siguiendo README.md.'
             }
         }
     }
@@ -72,12 +72,17 @@ function Comprobar-Configuracion([switch]$Certificados) {
     # sin imprimir ni guardar la configuración completa.
     $configuracion = @(Invocar-Compose @('config', '--format', 'json'))
     try {
-        $nombreProyecto = (($configuracion -join "`n") | ConvertFrom-Json).name
+        $configuracionCompose = ($configuracion -join "`n") | ConvertFrom-Json
+        $nombreProyecto = $configuracionCompose.name
     } catch {
         throw 'No se pudo comprobar el nombre del proyecto Compose.'
     }
     if ($nombreProyecto -ne $proyecto) {
         throw 'El nombre del proyecto Compose fue cambiado. Quita COMPOSE_PROJECT_NAME de .env y de esta terminal.'
+    }
+    $claveInterna = [string]$configuracionCompose.services.frontend.environment.ClaveInterna
+    if ($claveInterna.Length -lt 32 -or $claveInterna -match 'CAMBIAR') {
+        throw 'Configura CLAVE_INTERNA con una clave aleatoria de al menos 32 caracteres; consulta README.md.'
     }
 }
 
@@ -117,7 +122,7 @@ function Esperar-Web([string]$Direccion) {
             $respuesta = Invoke-WebRequest -Uri $Direccion -UseBasicParsing -DisableKeepAlive -TimeoutSec 5
             if ($respuesta.StatusCode -eq 200) { return }
         } catch {
-            # Durante el arranque el esquema y las replicas pueden seguir preparandose.
+            # El Frontend puede tardar en empezar a aceptar solicitudes.
         }
         Start-Sleep -Seconds 2
     } while ([DateTime]::UtcNow -lt $limite)
@@ -134,14 +139,13 @@ try {
     switch ($Accion) {
         'up' {
             Comprobar-Configuracion -Certificados
-            Write-Host 'Construyendo la imagen...'
-            Invocar-Compose @('build', 'app1')
-            Invocar-Compose @('up', '-d', '--no-build', '--pull', 'missing')
-            Write-Host 'Esperando a que la aplicacion este lista...'
-            foreach ($puerto in @(5000, 5001, 5002, 8088)) {
-                Esperar-Web ('http://127.0.0.1:' + $puerto + '/Auth/Login')
-            }
-            Write-Host 'Entorno nube listo: http://127.0.0.1:8088' -ForegroundColor Green
+            Write-Host 'Construyendo las cuatro aplicaciones...'
+            Invocar-Compose @('build')
+            # Reemplaza el despliegue anterior, conservando los volumenes.
+            Invocar-Compose @('up', '-d', '--no-build', '--pull', 'never', '--remove-orphans', '--wait', '--wait-timeout', '180')
+            Write-Host 'Comprobando el acceso al Frontend...'
+            Esperar-Web 'http://127.0.0.1:8088/salud'
+            Write-Host 'Entorno SBA listo: http://127.0.0.1:8088 o https://127.0.0.1' -ForegroundColor Green
         }
         'down' {
             Detener-Entorno
@@ -152,15 +156,15 @@ try {
         }
         'logs' {
             Comprobar-Configuracion
-            Invocar-Compose @('logs', '--follow', '--tail', '80', 'app1')
+            Invocar-Compose @('logs', '--follow', '--tail', '80')
         }
         'build' {
             Comprobar-Configuracion
-            Invocar-Compose @('build', 'app1')
+            Invocar-Compose @('build')
         }
         'usuarios' {
             Comprobar-Configuracion
-            Invocar-Compose @('exec', 'app1', 'dotnet', 'TallerMecanico.Frontend.dll', '--inicializar-usuarios')
+            Invocar-Compose @('exec', 'servicio-usuarios', 'dotnet', 'TallerMecanico.ServicioUsuarios.dll', '--inicializar-usuarios')
         }
     }
 } finally {

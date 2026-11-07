@@ -4,7 +4,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 (async () => {
     const base = process.env.TALLER_AUTOCOMPLETADO_URL;
     assert(base && new URL(base).hostname === "127.0.0.1", "Se requiere el host aislado de pruebas.");
-    const browser = await chromium.launch({ channel: "msedge", headless: true });
+    const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || "msedge", headless: true });
     let aprobadas = 0;
 
     async function probar(nombre, accion) {

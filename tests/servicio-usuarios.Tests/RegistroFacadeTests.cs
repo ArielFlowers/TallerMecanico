@@ -1,8 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Aplicacion.Errores;
-using TallerMecanico.Pages.Auth;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;
@@ -93,62 +89,6 @@ public sealed class RegistroFacadeTests
         Assert.Equal(0, fixture.Usuarios.Consultas);
     }
 
-    [Fact]
-    public void Pagina_RegistroPublicoGet_RedirigeAlLogin()
-    {
-        var fixture = new RegistroCorreoFixture();
-        var logger = new LoggerEnMemoria<RegistroModel>();
-
-        var page = new RegistroModel(fixture.CrearFachada(), logger)
-        {
-            PageContext = new PageContext
-            {
-                HttpContext = new DefaultHttpContext()
-            }
-        };
-
-        var resultado = page.OnGet();
-
-        var redireccion =
-            Assert.IsType<RedirectToPageResult>(resultado);
-
-        Assert.Equal("/Auth/Login", redireccion.PageName);
-        Assert.Null(fixture.Solicitudes.Guardada);
-    }
-
-    [Fact]
-    public void Pagina_RegistroPublicoPost_RechazaSinGuardarDatos()
-    {
-        var fixture = new RegistroCorreoFixture();
-        var logger = new LoggerEnMemoria<RegistroModel>();
-
-        var page = new RegistroModel(fixture.CrearFachada(), logger)
-        {
-            PageContext = new PageContext
-            {
-                HttpContext = new DefaultHttpContext()
-            },
-            Input = new RegistroInput
-            {
-                Username = "empleado",
-                Email = "empleado@example.com",
-                Password = PasswordPrueba,
-                ConfirmarPassword = PasswordPrueba
-            }
-        };
-
-        var resultado = page.OnPostAsync(CancellationToken.None);
-
-        Assert.IsType<NotFoundResult>(resultado);
-        Assert.False(page.SolicitudRecibida);
-        Assert.Null(fixture.Solicitudes.Guardada);
-
-        Assert.All(logger.Entradas, entrada =>
-        {
-            Assert.DoesNotContain(PasswordPrueba, entrada.Mensaje);
-            Assert.DoesNotContain("empleado@example.com", entrada.Mensaje);
-        });
-    }
     [Fact]
     public async Task Reenvio_ConfiguracionInvalidaNoConsumeIntervalo()
     {

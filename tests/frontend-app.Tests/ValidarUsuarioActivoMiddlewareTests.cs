@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Dominio.Entidades;
+using System.Net;
+using TallerMecanico.Api;
+using TallerMecanico.Contratos.Usuarios;
 using TallerMecanico.Infraestructura.Seguridad;
 using IAutenticacionHttp = Microsoft.AspNetCore.Authentication.IAuthenticationService;
 
@@ -20,7 +21,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
         var resultado = await InvocarAsync(
             Principal(new Claim(ClaimTypes.NameIdentifier, "7"),
                 new Claim(ClaimTypes.Role, "Administrador")),
-            new Usuario { Id = 7, Rol = "Administrador", Activo = true });
+            new EstadoUsuarioDto(true, "Administrador"));
 
         Assert.True(resultado.Continuo);
         Assert.Null(resultado.Autenticacion.EsquemaCerrado);
@@ -38,7 +39,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
         var resultado = await InvocarAsync(
             Principal(new Claim(ClaimTypes.NameIdentifier, "7"),
                 new Claim(ClaimTypes.Role, "Administrador")),
-            rolActual is null ? null : new Usuario { Id = 7, Rol = rolActual, Activo = activo });
+            rolActual is null ? null : new EstadoUsuarioDto(activo, rolActual));
 
         ComprobarRevocacion(resultado);
     }
@@ -74,7 +75,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
 
         var resultado = await InvocarAsync(
             Principal(claims.ToArray()),
-            new Usuario { Id = 7, Rol = "Administrador", Activo = true });
+            new EstadoUsuarioDto(true, "Administrador"));
 
         ComprobarRevocacion(resultado);
     }
@@ -102,7 +103,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
         Assert.Equal("/Auth/Login?expired=1", resultado.Contexto.Response.Headers.Location);
     }
 
-    private static async Task<Resultado> InvocarAsync(ClaimsPrincipal principal, Usuario? usuario)
+    private static async Task<Resultado> InvocarAsync(ClaimsPrincipal principal, EstadoUsuarioDto? usuario)
     {
         var autenticacion = new AutenticacionPrueba();
         using var servicios = new ServiceCollection()
@@ -111,7 +112,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
         var contexto = new DefaultHttpContext
         {
             User = principal,
-            Session = new SesionPrueba(),
+            Session = new SesionUsuariosPrueba(),
             RequestServices = servicios
         };
         contexto.Session.SetString("BorradorOrden", "borrador-prueba");
@@ -124,22 +125,14 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
             return Task.CompletedTask;
         }, NullLogger<ValidarUsuarioActivoMiddleware>.Instance);
 
-        await middleware.InvokeAsync(contexto, new UsuariosPrueba(usuario));
+        var api = new ApiFalsa();
+        if (usuario is not null) api.Json("GET api/auth/estado/7", usuario);
+        await middleware.InvokeAsync(contexto, new UsuariosApi(api.Cliente()));
         return new Resultado(contexto, autenticacion, continuo);
     }
 
     private sealed record Resultado(
         DefaultHttpContext Contexto, AutenticacionPrueba Autenticacion, bool Continuo);
-
-    private sealed class UsuariosPrueba(Usuario? usuario) : IUsuarioPort
-    {
-        public Usuario? ObtenerPorId(int id) => usuario?.Id == id ? usuario : null;
-        public Usuario? ObtenerPorUsername(string username) => throw new NotSupportedException();
-        public bool ExisteUsername(string username) => throw new NotSupportedException();
-        public bool ExisteEmail(string email) => throw new NotSupportedException();
-        public void Agregar(Usuario usuario) => throw new NotSupportedException();
-        public void Actualizar(Usuario usuario) => throw new NotSupportedException();
-    }
 
     private sealed class AutenticacionPrueba : IAutenticacionHttp
     {

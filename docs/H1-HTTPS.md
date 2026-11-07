@@ -1,92 +1,48 @@
+# HTTPS local con Kestrel
 
-# H1 - Docker, Nginx y HTTPS
+El despliegue SBA usa una sola instancia del Frontend y tres APIs independientes.
+Kestrel termina HTTPS directamente; ya no hay Nginx ni balanceo entre réplicas.
+El nombre de esta guía se conserva para mantener los enlaces existentes.
 
-## 1. Descripción
+## Certificados
 
-AutoTaller Pro utiliza Docker Compose para ejecutar tres réplicas
-de una aplicación monolítica ASP.NET Core .NET 10, con MySQL
-como base de datos y Nginx como balanceador de carga.
+Generar y confiar en los certificados mkcert de cada equipo según
+[README](../README.md). Se guardan en `certs/localhost.pem` y
+`certs/localhost-key.pem`; esta carpeta está ignorada por Git y Docker.
+Si se conservan certificados del despliegue anterior en `nginx/certs/`, pueden
+copiarse a `certs/` sin regenerarlos ni compartir la clave privada con el equipo.
 
-La arquitectura permite distribuir solicitudes entre las tres
-réplicas y mantener la autenticación mediante cookies compartidas.
+Compose monta `./certs:/https:ro` solo en el Frontend y configura:
 
-## 2. Arquitectura
+| Variable | Valor |
+|---|---|
+| `ASPNETCORE_URLS` | `http://+:8080;https://+:8443` |
+| `Kestrel__Certificates__Default__Path` | `/https/localhost.pem` |
+| `Kestrel__Certificates__Default__KeyPath` | `/https/localhost-key.pem` |
 
-- ASP.NET Core .NET 10
-- MySQL 8.4
-- Tres réplicas: app1, app2 y app3
-- Nginx con balanceo Round Robin
-- Data Protection con claves compartidas
-- HTTP en puerto 80
-- HTTPS en puerto 443
-- Certificados locales generados mediante mkcert
+## Acceso y comprobación
 
-## 3. Instalación y arranque
+Levantar las cuatro aplicaciones con `dotnet msbuild -t:NubeUp` y consultar su
+estado con `dotnet msbuild -t:NubeStatus`. El Frontend publica:
 
-Los requisitos, `.env`, generación de certificados con mkcert y comandos de
-arranque se mantienen en [README.md](../README.md). Usar
-`dotnet msbuild -t:NubeUp`.
-El Compose construye la imagen desde el código de la PC y conecta a Aiven.
+- http://127.0.0.1 (puerto 80).
+- http://127.0.0.1:8088.
+- https://127.0.0.1 (puerto 443).
 
-## 4. Direcciones disponibles
+Abrir HTTPS en el navegador y comprobar que el certificado es del equipo y está
+confiado. Los healthchecks de Compose usan HTTP interno en `/salud`: esa prueba
+no verifica la confianza del navegador en mkcert. Las APIs no publican puertos
+hacia la PC; el Frontend accede a ellas por la red interna de Compose.
 
-- HTTP: http://127.0.0.1
-- HTTPS: https://127.0.0.1
-- HTTP alternativo: http://127.0.0.1:8088
+El volumen `taller-dpkeys` conserva las claves de cookies del Frontend. La sesión
+y los borradores viven en su memoria y se descartan al reiniciarlo. Los datos
+persistentes están en Aiven. `NubeDown` conserva contenedores y volúmenes.
 
-Acceso directo a las réplicas:
+## Alcance
 
-- app1: http://127.0.0.1:5000
-- app2: http://127.0.0.1:5001
-- app3: http://127.0.0.1:5002
+mkcert se usa para desarrollo local. El tráfico Frontend–APIs usa HTTP interno
+con clave compartida y control de roles; cifrar ese tramo queda como mejora
+pendiente. Consultar [SBA](SBA.md) para los límites y el orden de arranque.
 
-Estas direcciones son de la aplicación en esta PC; la base está en Aiven.
-
-## 5. Prueba de balanceo de carga
-
-Ejecutar:
-
-    1..9 | ForEach-Object { (Invoke-RestMethod https://127.0.0.1/h1/replica).replica }
-
-Se esperan identificadores diferentes correspondientes a las
-tres réplicas.
-
-El dashboard también muestra la réplica activa.
-
-## 6. Prueba de tolerancia a fallos
-
-Detener la primera réplica:
-
-    docker compose -f docker-compose.yml stop app1
-
-Comprobar que la aplicación sigue respondiendo por HTTPS
-a través de app2 y app3.
-
-Restaurar la réplica:
-
-    docker compose -f docker-compose.yml start app1
-
-Conservar el volumen de claves y los recursos históricos. No utilizar
-docker compose down -v. Los datos de trabajo están en Aiven.
-
-## 7. Autenticación compartida
-
-Las tres réplicas comparten claves de ASP.NET Core Data Protection.
-
-Esto permite que las cookies de autenticación sean validadas
-por diferentes réplicas.
-
-HttpContext.Session se guarda en la memoria de cada réplica. Los borradores de una orden en curso
-solo los conoce la réplica que los creó.
-
-## 8. Consideraciones de seguridad
-
-- Los certificados mkcert son exclusivamente para desarrollo local.
-- Producción requiere un certificado TLS apropiado.
-- El archivo .env no debe subirse al repositorio.
-- Las claves privadas de HTTPS deben mantenerse fuera de Git.
-- Los puertos publicados están restringidos a 127.0.0.1.
-- Se actualizó System.Security.Cryptography.Pkcs a 10.0.13
-  para corregir advertencias de seguridad detectadas.
-- La compilación y el arranque Docker con Aiven se registran, con su fecha y
-  alcance, en [VALIDACION_NUBE_UNICA.md](VALIDACION_NUBE_UNICA.md).
+Las pruebas históricas de balanceo y `/h1/replica` ya no aplican a este despliegue.
+La validación del entorno anterior no constituye evidencia de arranque del SBA.

@@ -16,6 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\frontend-app\TallerMecanico.Frontend.csproj" />
+    <!-- Solo para guardar usuarios de prueba con el mismo hash Argon2 del Servicio 2. -->
+    <ProjectReference Include="..\..\backend-services\servicio-usuarios\TallerMecanico.ServicioUsuarios.csproj" Aliases="Usuarios" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="TallerMecanico.Contratos" />

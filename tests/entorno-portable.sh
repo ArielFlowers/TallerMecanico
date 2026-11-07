@@ -13,7 +13,7 @@ trap limpiar EXIT
 
 export TALLER_PRUEBA_RAIZ="$temporal/Clon con espacios"
 export TALLER_PRUEBA_LOG="$temporal/comandos.log"
-mkdir -p "$TALLER_PRUEBA_RAIZ/scripts" "$TALLER_PRUEBA_RAIZ/nginx/certs" "$temporal/bin"
+mkdir -p "$TALLER_PRUEBA_RAIZ/scripts" "$TALLER_PRUEBA_RAIZ/certs" "$temporal/bin"
 cp "$raiz/taller.sh" "$TALLER_PRUEBA_RAIZ/taller.sh"
 cp "$raiz/scripts/entorno.sh" "$TALLER_PRUEBA_RAIZ/scripts/entorno.sh"
 printf 'name: tallermecanico\n' > "$TALLER_PRUEBA_RAIZ/docker-compose.yml"
@@ -32,10 +32,10 @@ case "$1" in
         [[ "${TALLER_PRUEBA_PS_ERROR:-0}" == 0 ]] || exit 24
         [[ "${TALLER_PRUEBA_VACIO:-0}" == 0 ]] || exit 0
         printf '%s\n' \
-            'activo|app1|taller-app1|running|taller:local' \
-            'pausado|app2|taller-app2|paused|taller:local' \
-            'reiniciando|app3|taller-app3|restarting|taller:local' \
-            'apagado|nginx|taller-nginx|exited|nginx:alpine' \
+            'activo|frontend|taller-frontend|running|taller:local' \
+            'pausado|servicio-ordenes|taller-ordenes|paused|taller:local' \
+            'reiniciando|servicio-usuarios|taller-usuarios|restarting|taller:local' \
+            'apagado|servicio-reportes|taller-reportes|exited|taller:local' \
             'ajeno|mysql|base-historica|running|mysql:8.4'
         ;;
     compose)
@@ -55,7 +55,8 @@ case "$1" in
                 if [[ "${2:-}" != '--quiet' ]]; then
                     printf 'name: %s\n' "${TALLER_PRUEBA_PROYECTO:-tallermecanico}"
                     [[ "${TALLER_PRUEBA_RENDER_ERROR:-0}" == 0 ]] || exit 33
-                    printf '%s\n' 'services:' '  app1:' '    environment:' '      PASSWORD: secreto-no-imprimir'
+                    printf '%s\n' 'services:' '  frontend:' '    environment:' '      PASSWORD: secreto-no-imprimir'
+                    printf '      ClaveInterna: %s\n' "${TALLER_PRUEBA_CLAVE:-clave-ficticia-de-prueba-0123456789abcdef}"
                 fi
                 ;;
             build) [[ "${TALLER_PRUEBA_BUILD_ERROR:-0}" == 0 ]] || exit 29 ;;
@@ -72,7 +73,7 @@ cat > "$temporal/bin/curl" <<'CURL'
 #!/usr/bin/env bash
 set -euo pipefail
 printf 'curl %s\n' "$*" >> "$TALLER_PRUEBA_LOG"
-# Simular una replica que aun no responde en el primer intento.
+# Simular el Frontend que aun no responde en el primer intento.
 if [[ ! -f "$TALLER_PRUEBA_RAIZ/web-lista" ]]; then
     : > "$TALLER_PRUEBA_RAIZ/web-lista"
     exit 7
@@ -98,7 +99,7 @@ esperar_fallo() {
 ejecutar ayuda >/dev/null
 [[ ! -s "$TALLER_PRUEBA_LOG" ]] || fallar 'La ayuda ejecuto Docker.'
 ejecutar nube status > "$temporal/estado.log"
-grep -F 'taller-app1' "$temporal/estado.log" >/dev/null
+grep -F 'taller-frontend' "$temporal/estado.log" >/dev/null
 if grep -F 'base-historica' "$temporal/estado.log" >/dev/null; then
     fallar 'Se incluyo un servicio ajeno a la aplicacion.'
 fi
@@ -111,27 +112,27 @@ esperar_fallo ejecutar nube build
 
 printf "MYSQL_CONNECTION='conexion-de-prueba'\n" > "$TALLER_PRUEBA_RAIZ/.env"
 esperar_fallo ejecutar nube up
-: > "$TALLER_PRUEBA_RAIZ/nginx/certs/localhost.pem"
-: > "$TALLER_PRUEBA_RAIZ/nginx/certs/localhost-key.pem"
+: > "$TALLER_PRUEBA_RAIZ/certs/localhost.pem"
+: > "$TALLER_PRUEBA_RAIZ/certs/localhost-key.pem"
 
 ejecutar nube up > "$temporal/up.log" 2>&1
 if grep -F 'secreto-no-imprimir' "$temporal/up.log" >/dev/null; then
     fallar 'La validacion imprimio secretos de la configuracion.'
 fi
-exigir_log 'build app1'
-exigir_log 'up -d --no-build --pull missing'
-for puerto in 5000 5001 5002 8088; do
-    exigir_log "http://127.0.0.1:$puerto/Auth/Login"
-done
+exigir_log 'docker-compose.yml build'
+exigir_log 'up -d --no-build --pull never --remove-orphans --wait --wait-timeout 180'
+exigir_log "http://127.0.0.1:8088/salud"
 ejecutar nube build >/dev/null
 ejecutar nube logs >/dev/null
-exigir_log 'logs --follow --tail 80 app1'
+exigir_log 'logs --follow --tail 80'
 ejecutar nube usuarios >/dev/null
-exigir_log 'exec app1 dotnet TallerMecanico.Frontend.dll --inicializar-usuarios'
+exigir_log 'exec servicio-usuarios dotnet TallerMecanico.ServicioUsuarios.dll --inicializar-usuarios'
 
 TALLER_PRUEBA_DOCKER_ERROR=1 esperar_fallo ejecutar nube status
 TALLER_PRUEBA_OS=windows esperar_fallo ejecutar nube status
 TALLER_PRUEBA_PROYECTO=otro esperar_fallo ejecutar nube build
+TALLER_PRUEBA_CLAVE=corta esperar_fallo ejecutar nube up
+TALLER_PRUEBA_CLAVE=CAMBIAR_clave_larga_de_ejemplo_no_utilizar esperar_fallo ejecutar nube build
 TALLER_PRUEBA_CONFIG_ERROR=1 esperar_fallo ejecutar nube up
 TALLER_PRUEBA_RENDER_ERROR=1 esperar_fallo ejecutar nube build
 TALLER_PRUEBA_BUILD_ERROR=1 esperar_fallo ejecutar nube up

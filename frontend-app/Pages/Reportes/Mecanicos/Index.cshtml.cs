@@ -1,26 +1,16 @@
+using System.ComponentModel.DataAnnotations;
+using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.ComponentModel.DataAnnotations;
-using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Api;
 
 namespace TallerMecanico.Pages.Reportes.Mecanicos;
 
 [Authorize(Policy = "SoloAdministrador")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class IndexModel : PageModel
+public sealed class IndexModel(ReportesApi reportes) : PageModel
 {
-    private readonly IReporteMecanicosPort _reporte;
-    private readonly ICurrentUser _usuarioActual;
-
-    public IndexModel(
-        IReporteMecanicosPort reporte,
-        ICurrentUser usuarioActual)
-    {
-        _reporte = reporte;
-        _usuarioActual = usuarioActual;
-    }
-
     [BindProperty(SupportsGet = true)]
     public FiltroReporteMecanicos Filtro { get; set; } = new();
 
@@ -28,36 +18,33 @@ public sealed class IndexModel : PageModel
 
     public string? MensajeError { get; private set; }
 
-    public void OnGet()
+    public Task<IActionResult> OnGetAsync() => AtenderAsync(async () =>
     {
-        CargarDatos();
-    }
+        await CargarDatosAsync(HttpContext.RequestAborted);
+        return Page();
+    });
 
-    public IActionResult OnGetResultados()
+    public Task<IActionResult> OnGetResultadosAsync() => AtenderAsync(async () =>
     {
-        CargarDatos();
+        await CargarDatosAsync(HttpContext.RequestAborted);
         return Partial("_Resultados", this);
-    }
+    });
 
-    public IActionResult OnPostExportarPdf()
-    {
-        return Exportar(() => _reporte.GenerarPdf(Filtro, UsuarioActualNombre),
-            "application/pdf", $"ReporteMecanicos_{FechaArchivo()}.pdf");
-    }
+    public Task<IActionResult> OnPostExportarPdfAsync() => AtenderAsync(() =>
+        ExportarAsync(() => reportes.ExportarMecanicosPdfAsync(Filtro, HttpContext.RequestAborted),
+            "application/pdf", $"ReporteMecanicos_{FechaArchivo()}.pdf"));
 
-    public IActionResult OnPostExportarExcel()
-    {
-        return Exportar(() => _reporte.GenerarExcel(Filtro, UsuarioActualNombre),
+    public Task<IActionResult> OnPostExportarExcelAsync() => AtenderAsync(() =>
+        ExportarAsync(() => reportes.ExportarMecanicosExcelAsync(Filtro, HttpContext.RequestAborted),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"ReporteMecanicos_{FechaArchivo()}.xlsx");
-    }
+            $"ReporteMecanicos_{FechaArchivo()}.xlsx"));
 
-    private void CargarDatos()
+    private async Task CargarDatosAsync(CancellationToken cancelacion)
     {
         IgnorarFiltroOculto();
         try
         {
-            Documento = _reporte.ObtenerDatos(Filtro, UsuarioActualNombre);
+            Documento = await reportes.ObtenerMecanicosAsync(Filtro, cancelacion);
             MensajeError = null;
         }
         catch (ValidationException ex)
@@ -67,27 +54,27 @@ public sealed class IndexModel : PageModel
         }
     }
 
-    private IActionResult Exportar(
-        Func<byte[]> generador,
+    private async Task<IActionResult> ExportarAsync(
+        Func<Task<byte[]>> generador,
         string tipoContenido,
         string nombreArchivo)
     {
         IgnorarFiltroOculto();
         if (!ModelState.IsValid)
         {
-            CargarDatos();
+            await CargarDatosAsync(HttpContext.RequestAborted);
             return Page();
         }
 
         try
         {
-            byte[] contenido = generador();
+            byte[] contenido = await generador();
             return File(contenido, tipoContenido, nombreArchivo);
         }
         catch (ValidationException ex)
         {
             MensajeError = ex.Message;
-            CargarDatos();
+            await CargarDatosAsync(HttpContext.RequestAborted);
             return Page();
         }
     }
@@ -98,10 +85,31 @@ public sealed class IndexModel : PageModel
         Filtro.MecanicoId = null;
     }
 
-    private string UsuarioActualNombre =>
-        string.IsNullOrWhiteSpace(_usuarioActual.Username)
-            ? "sistema"
-            : _usuarioActual.Username;
+    private async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
+    {
+        try
+        {
+            return await accion();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return Challenge();
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                "El servicio de reportes no está disponible. Intenta nuevamente.");
+        }
+        catch (TaskCanceledException) when (!HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                "El servicio de reportes no está disponible. Intenta nuevamente.");
+        }
+    }
 
     private static string FechaArchivo() =>
         DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
