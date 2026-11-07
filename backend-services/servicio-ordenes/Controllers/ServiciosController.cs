@@ -33,6 +33,11 @@ public sealed class ServiciosController(
     [HttpGet("catalogo")]
     public IReadOnlyList<ServicioDto> ObtenerCatalogo() => servicios.ObtenerCatalogo().Select(servicio => servicio.ADto()).ToArray();
 
+    // La orden solo sugiere servicios del catálogo, con las mismas reglas del buscador.
+    [HttpGet("catalogo/sugerencias")]
+    public Task<IReadOnlyList<SugerenciaServicio>> SugerirCatalogo([FromQuery] string? termino, CancellationToken cancelacion) =>
+        servicios.SugerirCatalogoAsync(termino, cancelacion);
+
     [HttpGet("historial")]
     [Authorize(Roles = "Administrador")]
     public IReadOnlyList<HistorialCostoServicioDto> ObtenerHistorial() => historial.ObtenerHistorial().Select(cambio => cambio.ADto()).ToArray();

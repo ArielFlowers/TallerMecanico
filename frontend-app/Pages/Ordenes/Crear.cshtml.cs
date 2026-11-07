@@ -54,28 +54,19 @@ public sealed class CrearModel(
                     vehiculo.Id, vehiculo.Placa, $"{vehiculo.Marca} {vehiculo.Modelo}".Trim())))
             : new JsonResult(await vehiculos.SugerirAsync(termino, HttpContext.RequestAborted));
 
-    public async Task<JsonResult> OnGetSugerenciasServiciosAsync(string? termino)
-    {
-        var catalogo = await servicios.ObtenerCatalogoAsync(HttpContext.RequestAborted);
-        IEnumerable<ServicioDto> encontrados = catalogo;
-        if (!string.IsNullOrWhiteSpace(termino))
-        {
-            string busqueda = termino.Trim();
-            encontrados = catalogo.Where(servicio =>
-                servicio.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ||
-                servicio.Descripcion.Contains(busqueda, StringComparison.OrdinalIgnoreCase));
-        }
-
-        return new JsonResult(encontrados.Select(servicio => new SugerenciaServicio(
-            servicio.Id, servicio.Nombre, servicio.Descripcion)));
-    }
+    // Sin término muestra todo el catálogo; con término usa las reglas del buscador del servicio.
+    public async Task<JsonResult> OnGetSugerenciasServiciosAsync(string? termino) =>
+        string.IsNullOrWhiteSpace(termino)
+            ? new JsonResult((await servicios.ObtenerCatalogoAsync(HttpContext.RequestAborted))
+                .Select(servicio => new SugerenciaServicio(servicio.Id, servicio.Nombre, servicio.Descripcion)))
+            : new JsonResult(await servicios.SugerirCatalogoAsync(termino, HttpContext.RequestAborted));
 
     public async Task<JsonResult> OnGetSugerenciasMecanicosAsync(string? termino) =>
         string.IsNullOrWhiteSpace(termino)
             ? new JsonResult((await mecanicos.ObtenerAsync(cancelacion: HttpContext.RequestAborted))
                 .Select(mecanico => new SugerenciaMecanico(
                     mecanico.Id, NombreCompleto(mecanico), mecanico.Ci)))
-            : new JsonResult(await mecanicos.SugerirAsync(termino, HttpContext.RequestAborted));
+            : new JsonResult(await mecanicos.SugerirAsync(termino, HttpContext.RequestAborted, incluirEspecialidad: false));
 
     public async Task<JsonResult> OnGetSugerenciasProductosAsync(string? termino) =>
         new(await productos.SugerirAsync(termino, HttpContext.RequestAborted));
