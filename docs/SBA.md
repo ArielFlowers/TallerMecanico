@@ -30,7 +30,7 @@ Los diagramas C4, de clases y de secuencia están como código PlantUML en
   de contraseña, correo y bitácora de accesos. Aloja los comandos de consola.
 - **Reportes:** consultas agregadas, filtros, gráficos y exportaciones PDF/XLSX.
 - **Contratos:** DTO de solicitud y respuesta, y las reglas que el Frontend y un
-  servicio deben aplicar igual (`ReglasVehiculo`, `ReglasCuenta`).
+  servicio deben aplicar igual (`Roles`, `ReglasVehiculo`, `ReglasCuenta`).
 
 Órdenes usa Clean Architecture; Usuarios y Reportes usan puertos y adaptadores.
 Sus guías detalladas son [Clean](ARQUITECTURA_CLEAN.md) y

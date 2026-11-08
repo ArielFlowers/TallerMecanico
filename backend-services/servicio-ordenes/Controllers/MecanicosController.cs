@@ -8,7 +8,7 @@ namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/mecanicos")]
-[Authorize(Roles = "Administrador,Recepcionista")]
+[Authorize(Roles = Roles.Personal)]
 public sealed class MecanicosController(MecanicoService mecanicos) : ControllerBase
 {
     [HttpGet]
@@ -28,11 +28,11 @@ public sealed class MecanicosController(MecanicoService mecanicos) : ControllerB
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     public IReadOnlyDictionary<string, string> Crear([FromBody] MecanicoInputModel formulario) => mecanicos.Crear(formulario);
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     public ResultadoMecanico Actualizar(int id, [FromBody] MecanicoInputModel formulario)
     {
         var resultado = mecanicos.Actualizar(id, formulario);
@@ -40,7 +40,7 @@ public sealed class MecanicosController(MecanicoService mecanicos) : ControllerB
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     public IActionResult Eliminar(int id)
     {
         string? error = mecanicos.Eliminar(id);

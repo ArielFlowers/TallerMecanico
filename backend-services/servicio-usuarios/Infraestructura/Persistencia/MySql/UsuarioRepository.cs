@@ -1,3 +1,5 @@
+using TallerMecanico.Contratos;
+
 
 using System.Data.Common;
 using TallerMecanico.Aplicacion.Dto;
@@ -521,7 +523,7 @@ public sealed class UsuarioRepository : IUsuarioAdministracionPort
             int adminsActivos = adminIds.Count;
 
             bool esAdminActual = adminIds.Contains(id);
-            bool seraAdminActivo = activo && rol == "Administrador";
+            bool seraAdminActivo = activo && rol == Roles.Administrador;
 
             if (esAdminActual && !seraAdminActivo && adminsActivos <= 1)
             {

@@ -25,7 +25,7 @@ public sealed class ValidarUsuarioActivoMiddleware(
         int userId = 0;
         bool identidadValida = identificadores.Length == 1 &&
             int.TryParse(identificadores[0], out userId) && userId > 0 && roles.Length == 1 &&
-            roles[0] is "Administrador" or "Recepcionista";
+            roles[0] is Roles.Administrador or Roles.Recepcionista;
 
         if (identidadValida)
         {

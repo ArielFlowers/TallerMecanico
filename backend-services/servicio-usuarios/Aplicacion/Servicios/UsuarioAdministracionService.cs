@@ -3,6 +3,7 @@ using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
 using TallerMecanico.Contratos.Usuarios;
+using TallerMecanico.Contratos;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -55,7 +56,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
                 "El correo electrónico no es válido.", nameof(email));
         }
 
-        if (rol != "Administrador" && rol != "Recepcionista")
+        if (rol != Roles.Administrador && rol != Roles.Recepcionista)
         {
             throw new ArgumentException(
                 "El rol debe ser Administrador o Recepcionista.", nameof(rol));
@@ -222,7 +223,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
             return false;
         }
 
-        if (rol != "Administrador" && rol != "Recepcionista")
+        if (rol != Roles.Administrador && rol != Roles.Recepcionista)
         {
             errorMessage = "El rol debe ser Administrador o Recepcionista.";
             return false;
@@ -246,7 +247,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
                 return false;
             }
 
-            if (rol != "Administrador")
+            if (rol != Roles.Administrador)
             {
                 errorMessage = "No puede cambiar su propio rol.";
                 return false;
@@ -379,7 +380,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
     private int ValidarAdministrador()
     {
         if (!_usuarioActual.EstaAutenticado ||
-            _usuarioActual.Rol != "Administrador" ||
+            _usuarioActual.Rol != Roles.Administrador ||
             _usuarioActual.UsuarioId is not int administradorId ||
             administradorId <= 0)
         {

@@ -39,7 +39,7 @@
         <div class="dashboard-header">
             <div>
                 <h1>Panel de control</h1>
-                <p>Resumen general del taller mecánico — Vista: @(User.IsInRole("Administrador") ? "Administrador" : "Recepcionista")</p>
+                <p>Resumen general del taller mecánico — Vista: @(User.IsInRole(Roles.Administrador) ? Roles.Administrador : Roles.Recepcionista)</p>
             </div>
 
             <div class="dashboard-date">
@@ -81,7 +81,7 @@
         </div>
     </div>
 
-    @if (User.IsInRole("Administrador"))
+    @if (User.IsInRole(Roles.Administrador))
     {
         <section class="home-audit">
             <div class="home-audit-content">

@@ -1,3 +1,5 @@
+using TallerMecanico.Contratos;
+
 
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
@@ -39,8 +41,8 @@ public sealed class InicializadorUsuarios
                 ReglasCuenta.MensajeContrasena);
         }
 
-        if (rol != "Administrador" &&
-            rol != "Recepcionista")
+        if (rol != Roles.Administrador &&
+            rol != Roles.Recepcionista)
         {
             throw new ArgumentException(
                 "El rol debe ser Administrador o Recepcionista.");
@@ -79,7 +81,7 @@ public sealed class InicializadorUsuarios
             ?? throw new InvalidOperationException(
                 "No existe el usuario administrador.");
 
-        if (usuario.Rol != "Administrador" || !usuario.Activo)
+        if (usuario.Rol != Roles.Administrador || !usuario.Activo)
         {
             throw new InvalidOperationException(
                 "La cuenta admin no es un administrador activo.");

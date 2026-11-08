@@ -234,8 +234,8 @@
                         <label asp-for="Input.Rol" class="col-sm-2 col-form-label"></label>
                         <div class="col-sm-10">
                             <select asp-for="Input.Rol" class="form-select">
-                                <option value="Administrador" selected="@(Model.Input.Rol == "Administrador")">Administrador</option>
-                                <option value="Recepcionista" selected="@(Model.Input.Rol == "Recepcionista")">Recepcionista</option>
+                                <option value="Administrador" selected="@(Model.Input.Rol == Roles.Administrador)">Administrador</option>
+                                <option value="Recepcionista" selected="@(Model.Input.Rol == Roles.Recepcionista)">Recepcionista</option>
                             </select>
                             <span asp-validation-for="Input.Rol" class="text-danger"></span>
                         </div>

@@ -69,7 +69,7 @@ public sealed class IndexModel : PageModel
     {
         ValidarPaginacion();
         Busqueda = string.IsNullOrWhiteSpace(Busqueda) ? null : Busqueda.Trim();
-        RolFiltro = RolFiltro is "Administrador" or "Recepcionista" ? RolFiltro : null;
+        RolFiltro = RolFiltro is Roles.Administrador or Roles.Recepcionista ? RolFiltro : null;
         TotalRegistros = await _usuarios.ContarAsync(Busqueda, RolFiltro, ActivoFiltro, HttpContext.RequestAborted);
         TotalPaginas = (int)Math.Ceiling((double)TotalRegistros / TamanoPagina);
         if (Pagina > TotalPaginas && TotalPaginas > 0) Pagina = TotalPaginas;

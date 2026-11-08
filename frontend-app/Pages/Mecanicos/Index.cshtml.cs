@@ -20,7 +20,7 @@ public class IndexModel(MecanicosApi mecanicosApi, IBorradorOrden borradoresOrde
     [BindProperty] public MecanicoInputModel MecanicoInput { get; set; } = new();
     [BindProperty] public int MecanicoId { get; set; }
     public string? FormularioActivo { get; private set; }
-    public bool PuedeAdministrar => User.IsInRole("Administrador");
+    public bool PuedeAdministrar => User.IsInRole(Roles.Administrador);
     [TempData] public string? MensajeExito { get; set; }
     [TempData] public string? MensajeError { get; set; }
 
@@ -124,7 +124,7 @@ public class IndexModel(MecanicosApi mecanicosApi, IBorradorOrden borradoresOrde
     private async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
     {
         if (User.Identity?.IsAuthenticated != true) return Challenge();
-        if (!PuedeAdministrar && !User.IsInRole("Recepcionista")) return Forbid();
+        if (!PuedeAdministrar && !User.IsInRole(Roles.Recepcionista)) return Forbid();
         try { return await accion(); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized) { return Challenge(); }

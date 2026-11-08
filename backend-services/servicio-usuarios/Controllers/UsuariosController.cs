@@ -7,7 +7,7 @@ namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/usuarios")]
-[Authorize(Roles = "Administrador")]
+[Authorize(Roles = Roles.Administrador)]
 public sealed class UsuariosController(
     IUsuarioConsultaPort consulta,
     IUsuarioPort usuarios,
@@ -67,5 +67,5 @@ public sealed class UsuariosController(
     private static string? NormalizarBusqueda(string? busqueda) =>
         string.IsNullOrWhiteSpace(busqueda) ? null : busqueda.Trim();
 
-    private static string? NormalizarRol(string? rol) => rol is "Administrador" or "Recepcionista" ? rol : null;
+    private static string? NormalizarRol(string? rol) => rol is Roles.Administrador or Roles.Recepcionista ? rol : null;
 }

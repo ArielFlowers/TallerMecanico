@@ -9,7 +9,7 @@ namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/vehiculos")]
-[Authorize(Roles = "Administrador,Recepcionista")]
+[Authorize(Roles = Roles.Personal)]
 public sealed class VehiculosController(VehiculoService vehiculos) : ControllerBase
 {
     [HttpGet]

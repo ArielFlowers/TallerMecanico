@@ -8,7 +8,7 @@ namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/productos")]
-[Authorize(Roles = "Administrador,Recepcionista")]
+[Authorize(Roles = Roles.Personal)]
 public sealed class ProductosController(ProductoService productos) : ControllerBase
 {
     [HttpGet]
@@ -35,7 +35,7 @@ public sealed class ProductosController(ProductoService productos) : ControllerB
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     public ResultadoFormulario<ProductoFormViewModel> Actualizar(int id, [FromBody] ProductoFormViewModel formulario)
     {
         formulario.Id = id;
@@ -44,7 +44,7 @@ public sealed class ProductosController(ProductoService productos) : ControllerB
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     public IActionResult Eliminar(int id)
     {
         string? error = productos.Eliminar(id);

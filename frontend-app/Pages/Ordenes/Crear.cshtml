@@ -146,7 +146,7 @@
                         <button type="button" class="ordenes-cambiar-eleccion" data-cambiar-eleccion="orden-mecanico">Cambiar</button>
                     </div>
                     <span asp-validation-for="Formulario.MecanicoId" class="service-validation"></span>
-                    @if (User.IsInRole("Administrador"))
+                    @if (User.IsInRole(Roles.Administrador))
                     {
                         <div class="ordenes-altas">
                             <button type="submit" form="orden-nuevo-mecanico" class="services-btn services-btn-secondary">Nuevo mecánico</button>

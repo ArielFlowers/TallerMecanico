@@ -150,7 +150,7 @@
                                            data-comprobante-url="@Url.Page("./Comprobante", new { id = orden.Id })"
                                            aria-label="Ver comprobante de orden @orden.Id"
                                            aria-haspopup="dialog" aria-controls="comprobante-orden-dialog">Comprobante</a>
-                                        @if (orden.Estado == EstadoOrden.Activa && User.IsInRole("Administrador"))
+                                        @if (orden.Estado == EstadoOrden.Activa && User.IsInRole(Roles.Administrador))
                                         {
                                             <form method="post" asp-page-handler="Anular" asp-route-id="@orden.Id"
                                                   data-confirmar-anulacion data-orden-id="@orden.Id"

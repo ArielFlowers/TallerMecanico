@@ -2,6 +2,7 @@ using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Contratos;
 
 namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
@@ -16,7 +17,7 @@ public sealed class CrearOrdenCasoUso(
     private static readonly TimeSpan DesfaseBolivia = TimeSpan.FromHours(-4);
 
     public DateTime FechaActual => reloj.GetUtcNow().ToOffset(DesfaseBolivia).Date;
-    public bool PuedeCrear => UsuarioValido && currentUser.Rol is "Administrador" or "Recepcionista";
+    public bool PuedeCrear => UsuarioValido && currentUser.Rol is Roles.Administrador or Roles.Recepcionista;
     private bool UsuarioValido => currentUser.EstaAutenticado && !string.IsNullOrWhiteSpace(currentUser.Username);
 
     public ResultadoOrden Ejecutar(CrearOrdenSolicitud solicitud)
@@ -33,61 +34,7 @@ public sealed class CrearOrdenCasoUso(
         try
         {
             using ITransaccionOrden transaccion = unidadTrabajo.Iniciar();
-            Orden? existente = transaccion.Ordenes.ObtenerPorToken(solicitud.Token);
-            if (existente is not null) return RecuperarReenvio(existente);
-
-            var (erroresCabecera, servicios) = ValidarCabecera(transaccion.Cabecera, solicitud);
-            if (erroresCabecera.Count > 0) return ResultadoOrden.Fallo(erroresCabecera);
-            var cantidadesServicios = solicitud.CantidadesServicios?.ToDictionary(linea => linea.ServicioId, linea => linea.Cantidad) ?? [];
-
-            var productos = transaccion.Productos.BloquearPorId(lineas.Select(linea => linea.ProductoId))
-                .ToDictionary(producto => producto.Id);
-            // Otro envío pudo confirmar el mismo token mientras esperábamos los bloqueos.
-            existente = transaccion.Ordenes.ObtenerPorToken(solicitud.Token);
-            if (existente is not null) return RecuperarReenvio(existente);
-
-            var erroresStock = ValidarStock(lineas, productos);
-            if (erroresStock.Count > 0) return ResultadoOrden.Fallo(erroresStock);
-
-            var orden = new Orden
-            {
-                VehiculoId = solicitud.VehiculoId, MecanicoId = solicitud.MecanicoId, Fecha = solicitud.Fecha,
-                ServicioId = servicios[0].Id,
-                CostoServicio = servicios[0].Costo * (servicios[0].UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicios[0].Id, 1)),
-                Servicios = servicios.Select(servicio => new DetalleServicioOrden
-                {
-                    ServicioId = servicio.Id,
-                    Nombre = servicio.Nombre,
-                    Descripcion = servicio.Descripcion,
-                    Costo = servicio.Costo * (servicio.UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicio.Id, 1)),
-                    TiempoEstimadoHoras = servicio.TiempoEstimadoHoras * (servicio.UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicio.Id, 1)),
-                    Cantidad = servicio.UnidadCantidad is null ? 1 : cantidadesServicios.GetValueOrDefault(servicio.Id, 1),
-                    UnidadCantidad = servicio.UnidadCantidad
-                }).ToList(),
-                Token = solicitud.Token, CreadoPor = currentUser.Username!, FechaCreacion = reloj.GetUtcNow().UtcDateTime
-            };
-            var repuestos = lineas.Select(linea => CrearRepuesto(linea, productos[linea.ProductoId].Precio)).ToList();
-
-            decimal total = orden.CalcularTotal(repuestos);
-            if (total > ImporteMaximo) return ResultadoOrden.Fallo("Lineas", "El importe total supera el máximo permitido.");
-
-            transaccion.Ordenes.Insertar(orden);
-            foreach (DetalleServicioOrden servicio in orden.Servicios)
-            {
-                servicio.OrdenId = orden.Id;
-                transaccion.Ordenes.InsertarServicio(servicio);
-            }
-            foreach (DetalleOrden repuesto in repuestos)
-            {
-                repuesto.OrdenId = orden.Id;
-                transaccion.Detalles.Insertar(repuesto);
-                if (!transaccion.Productos.Descontar(repuesto.ProductoId, repuesto.Cantidad))
-                    throw new PersistenciaOrdenException("No se pudo descontar el stock bloqueado.");
-            }
-            transaccion.Ordenes.ActualizarTotal(orden.Id, total);
-            orden.Total = total;
-            transaccion.Confirmar();
-            return ResultadoOrden.Correcto(orden);
+            return RegistrarEnTransaccion(transaccion, solicitud, lineas);
         }
         catch (TokenOrdenDuplicadoException)
         {
@@ -98,6 +45,84 @@ public sealed class CrearOrdenCasoUso(
             logger.LogError(error, "Falló la creación de una orden con token {Token}.", solicitud.Token);
             return ResultadoOrden.Fallo(string.Empty, "No se pudo confirmar la orden. Reintenta con el mismo formulario.");
         }
+    }
+
+    // Todo ocurre dentro de la misma transacción: si algo falla antes de Confirmar, se revierte.
+    private ResultadoOrden RegistrarEnTransaccion(
+        ITransaccionOrden transaccion, CrearOrdenSolicitud solicitud, IReadOnlyList<LineaOrdenSolicitud> lineas)
+    {
+        Orden? existente = transaccion.Ordenes.ObtenerPorToken(solicitud.Token);
+        if (existente is not null) return RecuperarReenvio(existente);
+
+        var (erroresCabecera, servicios) = ValidarCabecera(transaccion.Cabecera, solicitud);
+        if (erroresCabecera.Count > 0) return ResultadoOrden.Fallo(erroresCabecera);
+
+        var productos = transaccion.Productos.BloquearPorId(lineas.Select(linea => linea.ProductoId))
+            .ToDictionary(producto => producto.Id);
+        // Otro envío pudo confirmar el mismo token mientras esperábamos los bloqueos.
+        existente = transaccion.Ordenes.ObtenerPorToken(solicitud.Token);
+        if (existente is not null) return RecuperarReenvio(existente);
+
+        var erroresStock = ValidarStock(lineas, productos);
+        if (erroresStock.Count > 0) return ResultadoOrden.Fallo(erroresStock);
+
+        Orden orden = ArmarOrden(solicitud, servicios);
+        var repuestos = lineas.Select(linea => CrearRepuesto(linea, productos[linea.ProductoId].Precio)).ToList();
+
+        decimal total = orden.CalcularTotal(repuestos);
+        if (total > ImporteMaximo) return ResultadoOrden.Fallo("Lineas", "El importe total supera el máximo permitido.");
+
+        GuardarOrden(transaccion, orden, repuestos, total);
+        transaccion.Confirmar();
+        return ResultadoOrden.Correcto(orden);
+    }
+
+    private Orden ArmarOrden(CrearOrdenSolicitud solicitud, IReadOnlyList<Servicio> servicios)
+    {
+        var cantidades = solicitud.CantidadesServicios?.ToDictionary(linea => linea.ServicioId, linea => linea.Cantidad) ?? [];
+        Servicio principal = servicios[0];
+        return new Orden
+        {
+            VehiculoId = solicitud.VehiculoId, MecanicoId = solicitud.MecanicoId, Fecha = solicitud.Fecha,
+            ServicioId = principal.Id,
+            CostoServicio = principal.Costo * CantidadCobrada(principal, cantidades),
+            Servicios = servicios.Select(servicio => CrearDetalleServicio(servicio, CantidadCobrada(servicio, cantidades))).ToList(),
+            Token = solicitud.Token, CreadoPor = currentUser.Username!, FechaCreacion = reloj.GetUtcNow().UtcDateTime
+        };
+    }
+
+    // Un servicio sin unidad de cantidad siempre cuenta como uno.
+    private static int CantidadCobrada(Servicio servicio, IReadOnlyDictionary<int, int> cantidades) =>
+        servicio.UnidadCantidad is null ? 1 : cantidades.GetValueOrDefault(servicio.Id, 1);
+
+    private static DetalleServicioOrden CrearDetalleServicio(Servicio servicio, int cantidad) => new()
+    {
+        ServicioId = servicio.Id,
+        Nombre = servicio.Nombre,
+        Descripcion = servicio.Descripcion,
+        Costo = servicio.Costo * cantidad,
+        TiempoEstimadoHoras = servicio.TiempoEstimadoHoras * cantidad,
+        Cantidad = cantidad,
+        UnidadCantidad = servicio.UnidadCantidad
+    };
+
+    private static void GuardarOrden(ITransaccionOrden transaccion, Orden orden, IReadOnlyList<DetalleOrden> repuestos, decimal total)
+    {
+        transaccion.Ordenes.Insertar(orden);
+        foreach (DetalleServicioOrden servicio in orden.Servicios)
+        {
+            servicio.OrdenId = orden.Id;
+            transaccion.Ordenes.InsertarServicio(servicio);
+        }
+        foreach (DetalleOrden repuesto in repuestos)
+        {
+            repuesto.OrdenId = orden.Id;
+            transaccion.Detalles.Insertar(repuesto);
+            if (!transaccion.Productos.Descontar(repuesto.ProductoId, repuesto.Cantidad))
+                throw new PersistenciaOrdenException("No se pudo descontar el stock bloqueado.");
+        }
+        transaccion.Ordenes.ActualizarTotal(orden.Id, total);
+        orden.Total = total;
     }
 
     private static DetalleOrden CrearRepuesto(LineaOrdenSolicitud linea, decimal precio)

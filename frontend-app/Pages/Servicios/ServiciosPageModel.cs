@@ -9,7 +9,7 @@ public abstract class ServiciosPageModel : PageModel
     protected async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
     {
         if (User.Identity?.IsAuthenticated != true) return Challenge();
-        if (!User.IsInRole("Administrador")) return Forbid();
+        if (!User.IsInRole(Roles.Administrador)) return Forbid();
 
         try { return await accion(); }
         catch (UnauthorizedAccessException) { return Forbid(); }

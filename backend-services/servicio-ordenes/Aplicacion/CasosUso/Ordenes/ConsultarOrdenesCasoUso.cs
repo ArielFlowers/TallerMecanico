@@ -2,6 +2,7 @@ using TallerMecanico.Contratos.Catalogos;
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Contratos;
 
 namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
@@ -49,7 +50,7 @@ public sealed class ConsultarOrdenesCasoUso(
     {
         if (!usuario.EstaAutenticado
             || string.IsNullOrWhiteSpace(usuario.Username)
-            || usuario.Rol is not ("Administrador" or "Recepcionista"))
+            || usuario.Rol is not (Roles.Administrador or Roles.Recepcionista))
         {
             throw new UnauthorizedAccessException("No tienes permiso para consultar órdenes.");
         }

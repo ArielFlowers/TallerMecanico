@@ -31,7 +31,7 @@
                             <td>@usuario.Username</td>
                             <td>@usuario.Email</td>
                             <td>
-                                <span class="badge @(usuario.Rol == "Administrador" ? "bg-danger" : "bg-primary")">
+                                <span class="badge @(usuario.Rol == Roles.Administrador ? "bg-danger" : "bg-primary")">
                                     @usuario.Rol
                                 </span>
                             </td>

@@ -4,12 +4,13 @@ using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Contratos.Catalogos;
 using TallerMecanico.Contratos.Ordenes;
 using EstadoOrdenDominio = TallerMecanico.Dominio.Entidades.EstadoOrden;
+using TallerMecanico.Contratos;
 
 namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/ordenes")]
-[Authorize(Roles = "Administrador,Recepcionista")]
+[Authorize(Roles = Roles.Personal)]
 public sealed class OrdenesController(
     ConsultaOrdenesFacade consultas,
     OrdenServicioFacade ordenes) : ControllerBase
