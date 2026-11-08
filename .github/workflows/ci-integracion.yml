@@ -1,4 +1,4 @@
-name: CI Integracion
+name: Integracion
 
 # Pruebas que levantan las cuatro aplicaciones juntas: corren si cambia cualquiera.
 on:
@@ -28,27 +28,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  PROYECTO_PRUEBAS: TallerMecanico.sln
-  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
-  DOTNET_NOLOGO: 'true'
-
 jobs:
   integracion:
-    name: ${{ matrix.nombre }}
+    name: HTTP y navegador
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - area: API
-            nombre: API / HTTP
-            filtro: Area=API
-          - area: Frontend
-            nombre: Frontend / navegador
-            # Algunos escenarios HTTP tambien tienen un recorrido de navegador.
-            filtro: Area=Frontend|Tipo=Navegador
+    timeout-minutes: 40
     services:
       mysql:
         image: mysql:8.4
@@ -64,25 +48,23 @@ jobs:
           --health-timeout=5s
           --health-retries=24
     env:
+      PROYECTO_PRUEBAS: TallerMecanico.sln
       TALLER_TEST_MYSQL: 'Server=127.0.0.1;Port=3308;User ID=root;Password=ci_test_password;SslMode=Disabled;'
-      AREA_PRUEBAS: ${{ matrix.area }}
-      FILTRO_PRUEBAS: ${{ matrix.filtro }}
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
     steps:
       - uses: actions/checkout@v6
       - name: Preparar .NET y compilar
         uses: ./.github/actions/preparar-pruebas
       - name: Preparar lectura de PDF
-        if: matrix.area == 'Frontend'
         uses: ./.github/actions/preparar-pdf
       - name: Preparar Node para las pruebas de interfaz
-        if: matrix.area == 'Frontend'
         uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: tests/browser/package-lock.json
       - name: Instalar Playwright y Microsoft Edge
-        if: matrix.area == 'Frontend'
         working-directory: tests/browser
         run: |
           npm ci --no-audit --no-fund
@@ -90,16 +72,16 @@ jobs:
           echo "PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/tests/browser/node_modules/playwright" >> "$GITHUB_ENV"
           echo "PLAYWRIGHT_CHANNEL=msedge" >> "$GITHUB_ENV"
       # Con -m:1 los proyectos corren uno tras otro: varias pruebas levantan las cuatro apps.
-      - name: Ejecutar las pruebas del area
+      - name: Ejecutar las pruebas HTTP y de navegador
         run: >-
           dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore -m:1
-          --filter "$FILTRO_PRUEBAS" --logger trx
-          --results-directory "TestResults/$AREA_PRUEBAS" -- xUnit.ParallelizeTestCollections=false
-      - name: Guardar resultados del area
+          --filter "Area=API|Area=Frontend|Tipo=Navegador" --logger trx
+          --results-directory TestResults -- xUnit.ParallelizeTestCollections=false
+      - name: Guardar resultados
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: resultados-${{ matrix.area }}
-          path: TestResults/${{ matrix.area }}/*.trx
+          name: resultados-integracion
+          path: TestResults/*.trx
           if-no-files-found: warn
           retention-days: 7

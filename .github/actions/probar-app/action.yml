@@ -1,0 +1,23 @@
+name: Probar una aplicacion
+description: Compila el proyecto de PROYECTO_PRUEBAS y ejecuta sus pruebas de logica y de base de datos.
+runs:
+  using: composite
+  steps:
+    - name: Preparar .NET y compilar
+      uses: ./.github/actions/preparar-pruebas
+    - name: Preparar lectura de PDF
+      uses: ./.github/actions/preparar-pdf
+    - name: Ejecutar las pruebas
+      shell: bash
+      run: >-
+        dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+        --filter "Area=Backend|Area=Datos" --logger "trx;LogFileName=resultados.trx"
+        --results-directory TestResults -- xUnit.ParallelizeTestCollections=false
+    - name: Guardar resultados
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: resultados-${{ github.workflow }}
+        path: TestResults/*.trx
+        if-no-files-found: warn
+        retention-days: 7

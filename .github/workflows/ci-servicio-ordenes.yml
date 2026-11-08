@@ -1,4 +1,4 @@
-name: CI Servicio Ordenes
+name: Servicio Ordenes
 
 # Servicio 1: dominio, casos de uso, catalogos y esquema de la base.
 on:
@@ -13,7 +13,6 @@ on:
       - 'tests/pdf_text.py'
       - 'tests/requirements-ci.txt'
       - 'shared/**'
-      - '.github/workflows/pruebas-app.yml'
       - '.github/actions/**'
   push:
     branches: [main]
@@ -27,7 +26,6 @@ on:
       - 'tests/pdf_text.py'
       - 'tests/requirements-ci.txt'
       - 'shared/**'
-      - '.github/workflows/pruebas-app.yml'
       - '.github/actions/**'
   workflow_dispatch:
 
@@ -40,6 +38,29 @@ concurrency:
 
 jobs:
   pruebas:
-    uses: ./.github/workflows/pruebas-app.yml
-    with:
-      proyecto: tests/servicio-ordenes.Tests/servicio-ordenes.Tests.csproj
+    name: Pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3308:3306
+        options: >-
+          --tmpfs /var/lib/mysql
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --protocol=tcp -uroot -pci_test_password --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=24
+    env:
+      PROYECTO_PRUEBAS: tests/servicio-ordenes.Tests/servicio-ordenes.Tests.csproj
+      TALLER_TEST_MYSQL: 'Server=127.0.0.1;Port=3308;User ID=root;Password=ci_test_password;SslMode=Disabled;'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Probar la logica y la base de datos
+        uses: ./.github/actions/probar-app

@@ -1,30 +1,21 @@
 # CI por aplicación
 
-Cada aplicación tiene su workflow y solo corre cuando cambia algo que la afecta. Las
-pruebas que necesitan las cuatro aplicaciones juntas están en un workflow aparte.
+Cada aplicación tiene un solo check y solo corre cuando cambia algo que la afecta.
+Las pruebas que necesitan las cuatro aplicaciones juntas tienen su propio check.
 
-| Workflow | Qué comprueba | Se ejecuta si cambia |
+| Check | Qué comprueba | Se ejecuta si cambia |
 |---|---|---|
-| [CI Frontend](../.github/workflows/ci-frontend.yml) | Páginas y lógica con los servicios simulados | `frontend-app/` o sus pruebas |
-| [CI Servicio Ordenes](../.github/workflows/ci-servicio-ordenes.yml) | Dominio, casos de uso, catálogos y MySQL | `servicio-ordenes/`, sus pruebas o `docs/migraciones/` |
-| [CI Servicio Usuarios](../.github/workflows/ci-servicio-usuarios.yml) | Cuentas, contraseñas, correo simulado y MySQL | `servicio-usuarios/`, sus pruebas o el esquema del Servicio 1 |
-| [CI Servicio Reportes](../.github/workflows/ci-servicio-reportes.yml) | Consultas, PDF y Excel | `servicio-reportes/`, sus pruebas o el esquema del Servicio 1 |
-| [CI Integracion](../.github/workflows/ci-integracion.yml) | HTTP real entre las apps y recorridos de navegador | Cualquier app, `shared/` o `tests/` |
-| [CI Infraestructura](../.github/workflows/ci-infraestructura.yml) | Las cuatro imágenes Docker, lanzadores, Windows y macOS | Docker, scripts o cualquier app |
+| [Frontend / Pruebas](../.github/workflows/ci-frontend.yml) | Páginas y lógica con los servicios simulados | `frontend-app/` o sus pruebas |
+| [Servicio Ordenes / Pruebas](../.github/workflows/ci-servicio-ordenes.yml) | Dominio, casos de uso, catálogos y MySQL | `servicio-ordenes/`, sus pruebas o `docs/migraciones/` |
+| [Servicio Usuarios / Pruebas](../.github/workflows/ci-servicio-usuarios.yml) | Cuentas, contraseñas, correo simulado y MySQL | `servicio-usuarios/`, sus pruebas o el esquema del Servicio 1 |
+| [Servicio Reportes / Pruebas](../.github/workflows/ci-servicio-reportes.yml) | Consultas, PDF, Excel y MySQL | `servicio-reportes/`, sus pruebas o el esquema del Servicio 1 |
+| [Integracion / HTTP y navegador](../.github/workflows/ci-integracion.yml) | HTTP real entre las apps y recorridos en Edge | Cualquier app, `shared/` o `tests/` |
+| [Infraestructura / Docker y lanzadores](../.github/workflows/ci-infraestructura.yml) | Las cuatro imágenes Docker y los lanzadores | Docker, scripts o cualquier app |
 
 Los cambios en `shared/`, `tests/comun/` o las acciones comunes disparan las cuatro
-aplicaciones. Un cambio solo de documentación no ejecuta ningún workflow.
-
-Los cuatro workflows de aplicación llaman a
-[pruebas-app.yml](../.github/workflows/pruebas-app.yml), que define sus dos checks:
-
-| Check | Que comprueba | Herramientas preparadas por CI |
-|---|---|---|
-| Backend | Reglas de negocio, servicios, validaciones, sesiones y PDF, incluido su texto. | .NET 10, Python y pypdf. |
-| Base de datos | Repositorios, esquema, migraciones, transacciones, concurrencia e integridad. | .NET 10 y MySQL 8.4 temporal. |
-
-CI Integracion agrega **API / HTTP** y **Frontend / navegador**, y CI Infraestructura
-agrega **Docker** y **Compatibilidad (Windows / macOS)**.
+aplicaciones. Un cambio solo de documentación no ejecuta ningún check. Los pasos
+comunes de cada aplicación están en
+[probar-app](../.github/actions/probar-app/action.yml).
 
 ## Cuando se ejecuta
 
@@ -48,14 +39,9 @@ metodo. Las clases que mezclan logica y persistencia se clasifican por metodo.
 | `Area=Datos` | Persistencia y comportamiento de MySQL. |
 | `Area=Frontend` | Escenarios dedicados al navegador. |
 | `Tipo=Navegador` | Escenarios HTTP que tambien contienen un recorrido de navegador. |
-| `Tipo=Portabilidad` | Prueba breve de PDF que se repite en Windows y macOS. |
 
-Frontend ejecuta `Area=Frontend|Tipo=Navegador`. Algunos escenarios existentes
-preparan datos e inician sesion mediante HTTP antes de abrir el navegador:
-se reutilizan con Playwright habilitado para cubrir tambien esos recorridos.
-API los ejecuta sin navegador para poder identificar los fallos del servidor
-por separado. Esta repeticion de preparacion es intencional; la suite completa
-de backend y persistencia no se repite en cada sistema operativo.
+Cada aplicación ejecuta `Area=Backend|Area=Datos`. Integracion ejecuta
+`Area=API|Area=Frontend|Tipo=Navegador` sobre toda la solución, con Playwright habilitado.
 
 `ClasificacionPruebasTests` impide que una prueba nueva quede sin area, pertenezca
 a varias o use un nombre desconocido. Asi los filtros no dejan pruebas fuera
@@ -98,9 +84,8 @@ Abrir el check del area que fallo y su paso de pruebas. Cada area guarda un
 artefacto `resultados-...` con el informe TRX, incluso cuando falla la suite;
 se conserva siete dias. Los pasos de preparacion comunes estan en
 [preparar-pruebas](../.github/actions/preparar-pruebas/action.yml).
-Backend y Frontend comparten la preparacion de Python y pypdf mediante
+Las aplicaciones e Integracion comparten la preparacion de Python y pypdf mediante
 [preparar-pdf](../.github/actions/preparar-pdf/action.yml).
 
-Los jobs de compatibilidad validan el software nativo y simulan Docker en los
-lanzadores. El arranque de las cuatro aplicaciones Docker, HTTPS de Kestrel y la conexión
-compartida se comprueban aparte; CI usa exclusivamente MySQL temporal, nunca Aiven.
+El check de Infraestructura construye las imágenes y simula Docker en los lanzadores; no
+levanta el entorno. CI usa exclusivamente MySQL temporal, nunca Aiven.
