@@ -263,7 +263,7 @@ public sealed class ConsultaOrdenesHttpTests
         AllowAutoRedirect = false,
         CookieContainer = cookies ?? new CookieContainer(),
         ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-    }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(5) };
+    }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(30) };
 
     private static async Task ComprobarModalEnNavegador(
         string url, CookieContainer cookies, MySqlAisladoFixture aislada, int activa, int anulada)

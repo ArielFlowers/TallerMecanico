@@ -1,12 +1,18 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes;
+using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Configuracion;
 using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Contratos;
 using TallerMecanico.Controllers;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura;
+using TallerMecanico.Dominio.Servicios;
+using TallerMecanico.Infraestructura.Documentos;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.Fabricas;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
@@ -20,6 +26,10 @@ builder.Services.AddControllers(opciones =>
 {
     opciones.Filters.Add<ErroresApiFilter>();
     opciones.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+}).ConfigureApiBehaviorOptions(opciones =>
+{
+    opciones.InvalidModelStateResponseFactory = _ =>
+        new BadRequestObjectResult(new ErrorApi("Los datos de la solicitud no son válidos."));
 });
 builder.Services.AddHttpContextAccessor();
 
@@ -42,7 +52,19 @@ builder.Services.AddScoped<DatabaseInitializer>();
 // =====================================================
 // ÓRDENES: CASOS DE USO Y ADAPTADORES
 // =====================================================
-builder.Services.AddInfraestructuraOrdenes();
+builder.Services.AddScoped<IUnidadTrabajoOrden, MySqlUnidadTrabajoOrden>();
+builder.Services.AddScoped<ValidacionOrdenes>();
+builder.Services.AddScoped<CrearOrdenCasoUso>();
+builder.Services.AddScoped<AnularOrdenCasoUso>();
+builder.Services.AddScoped<OrdenServicioFacade>();
+builder.Services.AddScoped<CreadorConsultaOrdenes>();
+builder.Services.AddScoped<IOrdenQueryRepository>(proveedor => proveedor.GetRequiredService<CreadorConsultaOrdenes>().CrearRepositorio());
+builder.Services.AddScoped<ConsultarOrdenesCasoUso>();
+builder.Services.AddScoped<ConsultaOrdenesFacade>();
+builder.Services.AddSingleton<ImporteEnPalabras>();
+builder.Services.AddScoped<IComprobantePdf, ComprobanteOrdenPdf>();
+builder.Services.AddScoped<GenerarComprobanteCasoUso>();
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // =====================================================
 // FACTORY METHOD

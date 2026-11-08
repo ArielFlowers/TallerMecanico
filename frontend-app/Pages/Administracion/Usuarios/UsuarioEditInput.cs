@@ -20,7 +20,7 @@ public sealed class UsuarioEditInput : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!ValidacionCuentaInput.EmailValido(Email))
+        if (!ReglasCuenta.EmailValido(Email))
         {
             yield return new ValidationResult(
                 "Ingrese un correo electrónico válido.",

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 

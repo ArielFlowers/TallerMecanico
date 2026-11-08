@@ -19,4 +19,3 @@ public sealed record TokenSolicitud(string Token);
 public sealed record RegistroUsuarioSolicitud(string Username, string Email, string Password);
 
 // Permite mantener el mensaje y el campo de validación que muestra la interfaz.
-public sealed record ErrorUsuarioApi(string Mensaje, string? Campo = null, string? Codigo = null);

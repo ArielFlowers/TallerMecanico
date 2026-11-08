@@ -17,7 +17,8 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
+# Compose habilita HTTPS en 8443 con el certificado interno.
 ENV ASPNETCORE_URLS=http://+:8080
-EXPOSE 8080
+EXPOSE 8080 8443
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "TallerMecanico.ServicioReportes.dll"]

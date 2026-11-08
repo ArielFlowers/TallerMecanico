@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MimeKit;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Infraestructura.Correo;
 
@@ -163,7 +163,7 @@ public sealed class GmailEmailService : IEmailService
 
         string from = ObtenerConfiguracion("Email:Smtp:From");
         if (!MailboxAddress.TryParse(from, out MailboxAddress? remitente) ||
-            !ValidadorSolicitudRegistro.EmailValido(remitente.Address))
+            !ReglasCuenta.EmailValido(remitente.Address))
         {
             throw new ConfiguracionRegistroException("Email:Smtp:From");
         }

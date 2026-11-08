@@ -1,6 +1,6 @@
 
 using System.Data.Common;
-using TallerMecanico.Aplicacion.DTOs;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Infraestructura.Persistencia;
 

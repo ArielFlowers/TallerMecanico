@@ -12,12 +12,13 @@ internal sealed class OrdenServicioPrueba(
     IUnidadTrabajoOrden unidad,
     ICurrentUser usuario,
     ValidacionOrdenes validador,
-    TimeProvider reloj)
+    TimeProvider reloj,
+    IAuditoriaPort? auditoria = null)
 {
     private readonly CrearOrdenCasoUso _crear =
         new(unidad, usuario, validador, reloj, NullLogger<CrearOrdenCasoUso>.Instance);
     private readonly AnularOrdenCasoUso _anular =
-        new(unidad, usuario, reloj, NullLogger<AnularOrdenCasoUso>.Instance);
+        new(unidad, usuario, reloj, NullLogger<AnularOrdenCasoUso>.Instance, auditoria);
 
     public DateTime FechaActual => _crear.FechaActual;
 

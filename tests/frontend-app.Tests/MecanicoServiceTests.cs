@@ -4,10 +4,9 @@ using TallerMecanico.Api;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using Microsoft.Extensions.DependencyInjection;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Sesion;
+using TallerMecanico.Pages.Ordenes;
 
 namespace TallerMecanico.IntegrationTests;
 

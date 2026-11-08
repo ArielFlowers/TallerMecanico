@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
+using AuthenticationSchemeOptions = Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,10 +11,14 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TallerMecanico.Aplicacion.Fachadas;
 using TallerMecanico.Aplicacion.Puertos;
+using TallerMecanico.Aplicacion.Servicios;
+using TallerMecanico.Contratos;
 using TallerMecanico.Controllers;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Infraestructura;
+using TallerMecanico.Infraestructura.Persistencia;
+using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
@@ -104,7 +108,7 @@ public sealed class UsuariosApiHttpTests(UsuariosApiHost host) : IClassFixture<U
         using var respuesta = await cliente.PostAsJsonAsync("api/usuarios", new CrearInvitacionSolicitud(
             "recepcionista@example.com", "Recepcionista", "Clave123!"));
         Assert.Equal(HttpStatusCode.Conflict, respuesta.StatusCode);
-        var error = await respuesta.Content.ReadFromJsonAsync<ErrorUsuarioApi>();
+        var error = await respuesta.Content.ReadFromJsonAsync<ErrorApi>();
         Assert.NotNull(error);
         Assert.Equal("Email", error.Campo);
         Assert.Equal("SolicitudDuplicada", error.Codigo);
@@ -149,7 +153,21 @@ public sealed class UsuariosApiHost : IAsyncLifetime
         builder.Services.AddAuthorization(opciones => opciones.FallbackPolicy =
             new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
         builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-        builder.Services.AddInfraestructuraUsuarios(builder.Configuration);
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.Configure<Argon2idOptions>(builder.Configuration.GetSection(Argon2idOptions.SectionName));
+        builder.Services.AddSingleton<IFallbackHash, AuthenticationFallbackHash>();
+        builder.Services.AddScoped<IActivacionInvitacionPort, ActivacionInvitacionMySqlAdapter>();
+        builder.Services.AddScoped<IRevisionSolicitudesPort, RevisionSolicitudesRepository>();
+        builder.Services.AddScoped<DatabaseConnectionFactory, MySqlConnectionFactory>();
+        builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+        builder.Services.AddScoped<IGeneradorNombreUsuarioPort, GeneradorNombreUsuarioService>();
+        builder.Services.AddScoped<IGestionUsuariosPort, UsuarioAdministracionService>();
+        builder.Services.AddScoped<ICambioContrasenaPort, CambioContrasenaService>();
+        builder.Services.AddScoped<RegistroUsuarioService>();
+        builder.Services.AddScoped<RegistroFacade>();
+        builder.Services.AddScoped<VerificacionEmailService>();
+        builder.Services.AddScoped<ReenvioVerificacionService>();
+        builder.Services.AddScoped<RevisionSolicitudesService>();
         var usuarios = new UsuariosApiEnMemoria();
         builder.Services.AddSingleton<IUsuarioPort>(usuarios);
         builder.Services.AddSingleton<IUsuarioAdministracionPort>(usuarios);

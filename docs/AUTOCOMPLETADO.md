@@ -67,7 +67,7 @@ Configurar `PLAYWRIGHT_MODULE` con una instalación existente de Playwright, com
 
 ```powershell
 dotnet build
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~Autocompletado'
+dotnet test TallerMecanico.sln -m:1 --filter 'FullyQualifiedName~Autocompletado'
 ```
 
 Sin `PLAYWRIGHT_MODULE`, el caso de navegador se omite explícitamente; el test de configuración se ejecuta. No hacen falta paquetes nuevos ni TALLER_TEST_MYSQL. Se puede usar `TALLER_AUTOCOMPLETADO_CAPTURA` para guardar una captura móvil en una carpeta temporal.
@@ -94,7 +94,7 @@ Configurar `TALLER_TEST_MYSQL` exclusivamente con un servidor destinado a prueba
 
 ```powershell
 dotnet build
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~Mecanicos|FullyQualifiedName~Autocompletado'
+dotnet test TallerMecanico.sln -m:1 --filter 'FullyQualifiedName~Mecanicos|FullyQualifiedName~Autocompletado'
 ```
 
 Sin `TALLER_TEST_MYSQL`, los casos que necesitan MySQL se omiten explícitamente. La comprobación móvil automatizada no sustituye una revisión con lector de pantalla ni una prueba en un teléfono físico.
@@ -119,7 +119,7 @@ Con `TALLER_TEST_MYSQL` apuntando **únicamente a un servidor aislado de pruebas
 
 ```powershell
 dotnet build
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~Clientes|FullyQualifiedName~Autocompletado|FullyQualifiedName~VehiculosTests'
+dotnet test TallerMecanico.sln -m:1 --filter 'FullyQualifiedName~Clientes|FullyQualifiedName~Autocompletado|FullyQualifiedName~VehiculosTests'
 ```
 
 Si el ejecutable Debug está abierto, se puede verificar sin interrumpirlo usando `--configuration VerificacionClientes` en ambos comandos. El host HTTPS de Clientes utiliza el ensamblado compilado de la configuración que se está probando, no una aplicación local existente. No se cambia el esquema de producción ni se accede a `taller_mecanico`.
@@ -150,7 +150,7 @@ Con `TALLER_TEST_MYSQL` apuntando exclusivamente al servidor aislado de pruebas 
 
 ```powershell
 dotnet build
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~TallerMecanico.IntegrationTests.Productos|FullyQualifiedName~TallerMecanico.IntegrationTests.AutocompletadoTests'
+dotnet test TallerMecanico.sln -m:1 --filter 'FullyQualifiedName~TallerMecanico.IntegrationTests.Productos|FullyQualifiedName~TallerMecanico.IntegrationTests.AutocompletadoTests'
 ```
 
 Sin MySQL se omiten los casos correspondientes; sin Playwright se ejecutan las verificaciones HTTP, pero no el bloque de navegador. La prueba móvil automatizada no sustituye una prueba en teléfono físico o con lector de pantalla.
@@ -181,7 +181,7 @@ También se ejecutan las pruebas anteriores de Vehículos y de los módulos ya i
 
 ```powershell
 dotnet build
-dotnet test tests/TallerMecanico.IntegrationTests/TallerMecanico.IntegrationTests.csproj --filter 'FullyQualifiedName~TallerMecanico.IntegrationTests.Vehiculos|FullyQualifiedName~TallerMecanico.IntegrationTests.AutocompletadoTests'
+dotnet test TallerMecanico.sln -m:1 --filter 'FullyQualifiedName~TallerMecanico.IntegrationTests.Vehiculos|FullyQualifiedName~TallerMecanico.IntegrationTests.AutocompletadoTests'
 ```
 
 Para la regresión completa de buscadores, añadir al filtro las clases de Mecánicos, Clientes y Productos. Sin MySQL se omiten los casos correspondientes; sin Playwright se omite la verificación de navegador. Las pruebas móviles usan un viewport, no un teléfono físico. No se accede a la base local `taller_mecanico`.

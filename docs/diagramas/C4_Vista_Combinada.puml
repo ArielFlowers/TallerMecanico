@@ -1,37 +1,60 @@
 @startuml C4_Vista_Combinada
 !pragma layout smetana
-title C4 - Vista combinada: contexto, contenedores y despliegue
+title C4 - Vista combinada de los niveles 1 a 3
 skinparam shadowing false
+skinparam componentStyle rectangle
 skinparam defaultFontName Segoe UI
 skinparam defaultFontSize 11
 skinparam ArrowColor #4A5568
 skinparam BorderColor #4A5568
 
-actor "Administrador /\nRecepcionista" as Admin
-actor "Mecánico" as Mec
+actor "Administrador /
+Recepcionista" as Admin
 
-node "Host Docker" {
-  component "Frontend\n.NET 10 :8080\nHTTPS" as FE #7C3AED
-  component "servicio-ordenes\n.NET 10 :5201\nClean" as S1 #9F7AEA
-  component "servicio-usuarios\n.NET 10 :5202\nHexagonal" as S2 #F6AD55
-  component "servicio-reportes\n.NET 10 :5203\nHexagonal" as S3 #F687B3
+package "AutoTaller Pro (red Docker)" {
+  package "Frontend — Razor Pages :8088 / :443" as FE #EEF2FF {
+    [Pages y sesión] as UI
+    [Clientes HTTP] as API
+  }
+  package "servicio-ordenes — Clean :8443" as S1 #ECFDF5 {
+    [Controllers] as S1C
+    [Casos de uso y fachadas] as S1A
+    [Dominio y contratos] as S1N
+    [MySQL y comprobante PDF] as S1I
+  }
+  package "servicio-usuarios — Hexagonal :8443" as S2 #FEF3C7 {
+    [Controllers] as S2C
+    [Servicios y puertos] as S2A
+    [MySQL, Gmail y Argon2id] as S2I
+  }
+  package "servicio-reportes — Hexagonal :8443" as S3 #FCE7F3 {
+    [ReportesController] as S3C
+    [Servicios y puertos] as S3A
+    [MySQL, QuestPDF y ClosedXML] as S3I
+  }
 }
 
-cloud "Aiven" {
-  database "MySQL 8.4" as BD #4299E1
-}
+database "MySQL 8.4
+Aiven" as BD #DBEAFE
+cloud "SMTP Gmail" as SMTP #FFEDD5
 
-cloud "Gmail" {
-  node "SMTP" as SMTP #F6AD55
-}
-
-Admin --> FE
-Mec --> FE
-FE --> S1
-FE --> S2
-FE --> S3
-S1 --> BD
-S2 --> BD
-S3 --> BD
-S2 --> SMTP
+Admin --> UI : HTTPS
+UI --> API
+API --> S1C : HTTPS
+X-Clave-Interna
+API --> S2C : HTTPS
+X-Clave-Interna
+API --> S3C : HTTPS
+X-Clave-Interna
+S1C --> S1A
+S1A --> S1N
+S1I ..|> S1N
+S2C --> S2A
+S2I ..|> S2A
+S3C --> S3A
+S3I ..|> S3A
+S1I --> BD
+S2I --> BD
+S3I --> BD
+S2I --> SMTP
 @enduml

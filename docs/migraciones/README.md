@@ -79,7 +79,7 @@ La creación de cuentas iniciales y el restablecimiento administrativo conservan
 La compilación no inicia la aplicación ni ejecuta su inicializador:
 
 ```powershell
-dotnet build TallerMecanico.csproj --no-restore
+dotnet build backend-services/servicio-ordenes/TallerMecanico.ServicioOrdenes.csproj --no-restore
 ```
 
 Para validar posteriormente el comportamiento de MySQL:

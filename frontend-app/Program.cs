@@ -3,11 +3,9 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using TallerMecanico.Api;
-using TallerMecanico.Aplicacion.Configuracion;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
-using TallerMecanico.Infraestructura.Seguridad;
-using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Configuracion;
+using TallerMecanico.Seguridad;
+using TallerMecanico.Sesion;
 
 var builder =
     WebApplication.CreateBuilder(args);

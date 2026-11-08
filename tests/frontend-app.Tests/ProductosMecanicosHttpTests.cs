@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using TallerMecanico.Api;
-using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Sesion;
+using TallerMecanico.Pages.Ordenes;
 using ProductosPage = TallerMecanico.Pages.Productos.IndexModel;
 using MecanicosPage = TallerMecanico.Pages.Mecanicos.IndexModel;
 

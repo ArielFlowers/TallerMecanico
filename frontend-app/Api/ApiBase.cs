@@ -62,14 +62,20 @@ public abstract class ApiBase(HttpClient http)
     }
 
     // Para operaciones cuyo rechazo la página muestra al usuario.
-    protected async Task<ResultadoApi> EnviarAsync(HttpMethod metodo, string ruta, object? cuerpo = null, CancellationToken cancelacion = default)
+    // Con servicioNoDisponibleComoMensaje, un 503 también se muestra (por ejemplo, el correo pendiente).
+    protected async Task<ResultadoApi> EnviarAsync(HttpMethod metodo, string ruta, object? cuerpo = null,
+        CancellationToken cancelacion = default, bool servicioNoDisponibleComoMensaje = false)
     {
         using var solicitud = new HttpRequestMessage(metodo, ruta);
         if (cuerpo is not null) solicitud.Content = JsonContent.Create(cuerpo, cuerpo.GetType());
         using HttpResponseMessage respuesta = await http.SendAsync(solicitud, cancelacion);
 
-        if (respuesta.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Conflict or HttpStatusCode.NotFound)
-            return new ResultadoApi(false, respuesta.StatusCode, await LeerMensajeAsync(respuesta, cancelacion));
+        if (respuesta.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Conflict or HttpStatusCode.NotFound ||
+            (servicioNoDisponibleComoMensaje && respuesta.StatusCode == HttpStatusCode.ServiceUnavailable))
+        {
+            ErrorApi error = await LeerErrorAsync(respuesta, cancelacion);
+            return new ResultadoApi(false, respuesta.StatusCode, error.Mensaje, error.Campo);
+        }
 
         await ValidarAsync(respuesta, cancelacion);
         return new ResultadoApi(true, respuesta.StatusCode, null);
@@ -91,19 +97,23 @@ public abstract class ApiBase(HttpClient http)
         }
     }
 
-    protected static async Task<string> LeerMensajeAsync(HttpResponseMessage respuesta, CancellationToken cancelacion = default)
+    protected static async Task<string> LeerMensajeAsync(HttpResponseMessage respuesta, CancellationToken cancelacion = default) =>
+        (await LeerErrorAsync(respuesta, cancelacion)).Mensaje;
+
+    private static async Task<ErrorApi> LeerErrorAsync(HttpResponseMessage respuesta, CancellationToken cancelacion)
     {
         const string generico = "No se pudo completar la operación. Intenta nuevamente.";
         try
         {
             ErrorApi? error = await respuesta.Content.ReadFromJsonAsync<ErrorApi>(cancelacion);
-            return string.IsNullOrWhiteSpace(error?.Mensaje) ? generico : error.Mensaje;
+            return string.IsNullOrWhiteSpace(error?.Mensaje) ? new ErrorApi(generico, error?.Campo) : error;
         }
         catch (System.Text.Json.JsonException)
         {
-            return generico;
+            return new ErrorApi(generico);
         }
     }
 }
 
-public sealed record ResultadoApi(bool Exito, HttpStatusCode Codigo, string? Mensaje);
+// Campo indica qué dato del formulario rechazó el servicio, si corresponde.
+public sealed record ResultadoApi(bool Exito, HttpStatusCode Codigo, string? Mensaje, string? Campo = null);

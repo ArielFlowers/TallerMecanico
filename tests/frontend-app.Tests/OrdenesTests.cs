@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
-using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Sesion;
 
 namespace TallerMecanico.IntegrationTests;
 

@@ -1,117 +1,90 @@
 # Validación de la integración SBA
 
-Fecha: 06/11/2026. Rama de trabajo: `alex/usuarios-reportes-sba`.
-
-## Alcance
-
-Se completó la extracción de Usuarios, su consumo HTTP desde Razor y el
-despliegue de las cuatro aplicaciones. Reportes conserva la implementación del
-equipo. Órdenes y el dashboard reutilizan los casos de uso existentes mediante
-sus contratos HTTP; se retiró su código duplicado del Frontend.
-
-Los formularios, las rutas, los estilos y los scripts de la aplicación conservan
-su comportamiento. En las vistas de Órdenes solo se actualizaron las referencias
-a los DTO. Los scripts de pruebas admiten `PLAYWRIGHT_CHANNEL=chromium`, manteniendo
-Edge como valor predeterminado.
+Fecha: 08/11/2026. Rama: `adrian/consolidar-4-apps`, sobre `main` con las cuatro
+aplicaciones integradas.
 
 ## Compilación y pruebas automatizadas
 
-La solución y los proyectos de pruebas compilaron sin errores ni advertencias.
-Las suites se ejecutaron con MySQL 8.4 temporal, Python con pypdf y Chromium de
-Playwright. Las pruebas crearon bases `autotaller_test_*` y las eliminaron al
-terminar. No se usó Aiven para probar.
+La solución compiló sin errores ni advertencias. Las suites se ejecutaron con
+MySQL 8.4 temporal; cada prueba crea su base `autotaller_test_*` y la elimina al
+terminar. No se usó Aiven.
 
 | Suite | Aprobadas | Fallidas | Omitidas |
 |---|---:|---:|---:|
-| Usuarios | 180 | 0 | 0 |
-| Reportes | 43 | 0 | 0 |
-| Órdenes y catálogos | 350 | 0 | 0 |
-| Frontend, HTTP e interfaz | 401 | 0 | 0 |
-| **Total** | **974** | **0** | **0** |
+| Órdenes y catálogos | 420 | 0 | 6 |
+| Frontend | 216 | 0 | 1 |
+| Usuarios | 183 | 0 | 0 |
+| Reportes | 43 | 0 | 2 |
+| **Total** | **862** | **0** | **9** |
 
-El [resumen en JSON](evidencias/sba/resultados.json) se extrajo de los contadores
-TRX e incorpora los resultados de Docker y del despliegue, sin credenciales.
-
-Se verificaron, entre otros, login por rol, invitación y activación, restricciones
-de edición y baja, revocación de sesión por cambio de cuenta, contraseña,
-auditoría, filtros, borradores, tokens, transacciones y exportaciones. Las pruebas
-de correo utilizan SMTP simulado; no acreditan recepción en Gmail.
+Las 9 omitidas son recorridos de navegador y lecturas de texto de PDF, que requieren
+Playwright y Python con pypdf. En esta corrida local no estaban configurados; el CI
+sí prepara esas herramientas.
 
 Para reproducirlas, preparar las herramientas indicadas en [README](../README.md)
 y ejecutar desde la raíz:
 
 ```console
 dotnet build TallerMecanico.sln
-dotnet test TallerMecanico.sln -- xUnit.ParallelizeTestCollections=false
+dotnet test TallerMecanico.sln -m:1 -- xUnit.ParallelizeTestCollections=false
 ```
+
+`-m:1` ejecuta los proyectos uno tras otro, porque varias pruebas web levantan las
+cuatro aplicaciones como procesos.
 
 ## Docker y HTTPS
 
-Se construyeron las cuatro imágenes y se levantó un proyecto de prueba separado,
-con una base descartable y puertos locales 18080, 18088 y 18443. Las cuatro apps
-alcanzaron el estado `healthy` en el orden previsto.
+Se construyeron las cuatro imágenes y se levantó un proyecto Compose separado, con
+certificados mkcert y una base descartable del MySQL de pruebas. Las cuatro apps
+alcanzaron el estado `healthy` en el orden previsto. Desde el contenedor del Frontend:
 
-Pasaron **19 comprobaciones**:
+| Comprobación | Resultado |
+|---|---|
+| HTTP plano hacia una API (`:8080`) | Rechazado |
+| HTTPS sin confiar en la CA interna | Rechazado |
+| HTTPS con la CA interna a las tres APIs | 200 |
+| HTTPS con CA, sin clave interna | 401 |
+| Llamar a una API desde la PC | Sin respuesta: no publica puertos |
+| Login con credenciales falsas desde el Frontend | "Usuario o contraseña incorrectos.": llegó al Servicio 2 por HTTPS |
 
-- HTTP del Frontend, login público y salud de las cuatro aplicaciones.
-- HTTPS servido por Kestrel, verificando el certificado contra la CA de mkcert.
-- APIs sin puertos publicados hacia la PC.
-- Frontend sin cadena MySQL ni credenciales SMTP en su entorno.
-- Rechazo 401 de una llamada sin clave interna.
-- Consulta del estado de cuenta con clave, sin exigir rol Administrador.
-- Rechazo 403 de administración de usuarios como Recepcionista.
-- Consulta de usuarios como Administrador.
-- Ambos reportes en PDF y Excel dentro de los contenedores Linux, comprobando
-  cabecera PDF y estructura ZIP/XLSX de los archivos devueltos.
+`HttpsInternoTests` comprueba además que el Frontend rechaza otra CA y un nombre de
+servicio distinto. `docker compose config` es válido y lista exactamente
+`frontend`, `servicio-ordenes`, `servicio-usuarios` y `servicio-reportes`.
 
-El proyecto de prueba reutilizó el Compose del repositorio con configuración
-aislada. No se sustituyó el despliegue conectado a la base compartida para
-realizar estas comprobaciones.
+## Lanzadores
 
-Después de finalizar y retirar el entorno temporal se ejecutó el target real
-`NubeUp`. Quedaron saludables `frontend`, `servicio-ordenes`,
-`servicio-usuarios` y `servicio-reportes`. El login HTTP en 8088 y la salud HTTPS
-en 443 respondieron 200. Se retiraron los contenedores anteriores de réplicas,
-Nginx, Redis y MySQL local; el volumen histórico
-`tallermecanico_taller-mysql-data` se conservó y se verificó su existencia.
-Este arranque no creó cuentas ni datos ficticios en Aiven.
+`tests/entorno-portable.sh` pasó con Docker y HTTP simulados, incluido un clon con
+espacios en su ruta. Comprueba construcción, arranque, espera de salud, estado,
+logs, inicialización de cuentas en Usuarios, apagado, propagación de errores y
+rechazo de claves internas inválidas, sin imprimir secretos.
 
-## Lanzadores y CI
+## Evidencia visual
 
-`tests/entorno-portable.sh` pasó con Docker y HTTP simulados, incluido un clon
-con espacios en su ruta. Comprueba construcción, arranque, espera de salud,
-estado, logs, inicialización de cuentas en Usuarios, apagado, propagación de
-errores y rechazo de claves internas inválidas, sin imprimir secretos.
+Capturas generadas con cuentas y datos ficticios, sin la configuración privada de
+Aiven o SMTP:
 
-El workflow mantiene sus áreas y ahora compila y prueba `TallerMecanico.sln`,
-incluidas las cuatro suites. Usa nombres TRX generados para conservar cada
-resultado. Los jobs de compatibilidad publican cada aplicación por separado;
-Windows también valida la sintaxis del lanzador PowerShell.
-
-Se comprobaron localmente el YAML, la sintaxis Bash y el lanzador simulado.
-La ejecución remota de GitHub Actions y el recorrido nativo de Windows deben
-comprobarse al subir el PR; no se ejecutaron desde esta revisión en macOS.
-
-Las cinco capturas de [Usuarios y Reportes](ENTREGA_SBA_USUARIOS_REPORTES.md)
-se guardaron en un recorrido adicional aprobado sobre otra base descartable.
+| Evidencia | Archivo |
+|---|---|
+| Confirmación de operación sobre un usuario | [Confirmación](evidencias/sba/confirmacion-usuario.png) |
+| Formulario de invitación y validaciones | [Crear usuario](evidencias/sba/crear-usuario.png) |
+| Cambio de contraseña | [Contraseña](evidencias/sba/cambiar-contrasena.png) |
+| Reporte de órdenes y estados | [Órdenes](evidencias/sba/estados-ordenes.png) |
+| Filtros y gráfico del reporte por mecánico | [Mecánicos](evidencias/sba/filtro-mecanicos.png) |
 
 ## Prueba manual del equipo
 
-El comando habitual prepara el despliegue real con la configuración privada de
-cada equipo:
-
-```console
-dotnet msbuild -t:NubeUp
-```
-
-Abrir http://127.0.0.1:8088 o https://127.0.0.1 y recorrer:
+Con el despliegue real (`dotnet msbuild -t:NubeUp`), abrir http://127.0.0.1:8088 o
+https://127.0.0.1 y recorrer:
 
 1. Login como Administrador y Recepcionista; comparar menús y accesos.
-2. Invitar una cuenta ficticia identificable y confirmar recepción del correo.
-3. Activarla, comprobar que el enlace no se reutiliza y cambiar la contraseña.
-4. Editar, desactivar y reactivar; comprobar sesión y auditoría.
-5. Filtrar y exportar los dos reportes; abrir PDF y Excel.
+2. Crear una orden saliendo a registrar cliente, vehículo y producto; comprobar que
+   el borrador se conserva y que el comprobante se abre solo.
+3. Intentar más stock del disponible.
+4. Anular la orden; comprobar que el stock vuelve y que aparece en la bitácora.
+5. Invitar una cuenta ficticia identificable y confirmar que llega el correo.
+6. Activarla, comprobar que el enlace no se reutiliza y cambiar la contraseña.
+7. Editar, desactivar y reactivar; comprobar sesión y bitácora.
+8. Filtrar y exportar los dos reportes; abrir PDF y Excel.
 
-La recepción real del correo, la entrega al LMS y la defensa del equipo no se
-sustituyen con las pruebas automatizadas. HTTPS interno entre Frontend y APIs
-permanece como mejora opcional, tal como establece el plan.
+La recepción real del correo, la entrega al LMS y la defensa no se sustituyen con las
+pruebas automatizadas: las de correo usan SMTP simulado.

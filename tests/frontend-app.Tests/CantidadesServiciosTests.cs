@@ -7,8 +7,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
-using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
+using TallerMecanico.Pages.Ordenes;
 
 namespace TallerMecanico.IntegrationTests;
 

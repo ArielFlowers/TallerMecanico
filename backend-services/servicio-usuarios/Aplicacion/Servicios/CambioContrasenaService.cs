@@ -1,6 +1,6 @@
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -39,10 +39,9 @@ public sealed class CambioContrasenaService(
             return false;
         }
 
-        if (!ValidadorSolicitudRegistro.PasswordValido(nueva))
+        if (!ReglasCuenta.ContrasenaValida(nueva))
         {
-            error = "La nueva contraseña debe tener entre 8 y 128 caracteres, "
-                  + "mayúscula, minúscula, número y carácter especial.";
+            error = ReglasCuenta.MensajeContrasena;
             return false;
         }
 

@@ -1,0 +1,59 @@
+@startuml Clases_Reportes_Hexagonal
+!pragma layout smetana
+title Diagrama de clases - Servicio 3: Reportes (Hexagonal)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+
+package "Adaptador de entrada (Controllers)" {
+  class ReportesController {
+    + ObtenerOrdenes(filtro): DocumentoReporteOrdenes
+    + ExportarOrdenesPdf(filtro): FileResult
+    + ExportarOrdenesExcel(filtro): FileResult
+    + ObtenerMecanicos(filtro): DocumentoReporteMecanicos
+    + ExportarMecanicosPdf(filtro): FileResult
+    + ExportarMecanicosExcel(filtro): FileResult
+  }
+}
+
+package "Núcleo (Aplicacion)" {
+  interface IReporteOrdenesPort <<puerto de entrada>> {
+    + ObtenerDatos(filtro, generadoPor)
+    + GenerarPdf(filtro, generadoPor): byte[]
+    + GenerarExcel(filtro, generadoPor): byte[]
+  }
+  interface IReporteMecanicosPort <<puerto de entrada>>
+  class ReporteOrdenesService
+  class ReporteMecanicosService
+
+  interface IConsultaReportesPort <<puerto de salida>> {
+    + ObtenerReporteOrdenes(filtro, generadoPor)
+    + ObtenerReporteMecanicos(filtro, generadoPor)
+  }
+  interface "IGeneradorReporte*PdfPort" as IPdf <<puerto de salida>>
+  interface "IGeneradorReporte*ExcelPort" as IExcel <<puerto de salida>>
+}
+
+package "Adaptadores de salida (Infraestructura)" {
+  class ConsultaReportesMySqlAdapter
+  class "QuestPdfReporte*Adapter" as QuestPdf
+  class "ClosedXmlReporte*Adapter" as ClosedXml
+  class XlsxBuilder
+}
+
+ReportesController --> IReporteOrdenesPort
+ReportesController --> IReporteMecanicosPort
+ReporteOrdenesService ..|> IReporteOrdenesPort
+ReporteMecanicosService ..|> IReporteMecanicosPort
+ReporteOrdenesService --> IConsultaReportesPort
+ReporteOrdenesService --> IPdf
+ReporteOrdenesService --> IExcel
+ReporteMecanicosService --> IConsultaReportesPort
+ReporteMecanicosService --> IPdf
+ReporteMecanicosService --> IExcel
+
+ConsultaReportesMySqlAdapter ..|> IConsultaReportesPort
+QuestPdf ..|> IPdf
+ClosedXml ..|> IExcel
+ClosedXml --> XlsxBuilder
+@enduml

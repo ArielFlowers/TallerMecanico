@@ -11,7 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using TallerMecanico.Api;
 using TallerMecanico.Contratos.Usuarios;
-using TallerMecanico.Infraestructura.Seguridad;
+using TallerMecanico.Seguridad;
+using TallerMecanico.Sesion;
 using TallerMecanico.Pages.Auth;
 using UsuariosIndex = TallerMecanico.Pages.Administracion.Usuarios.IndexModel;
 using CrearUsuario = TallerMecanico.Pages.Administracion.Usuarios.CrearModel;
@@ -147,7 +148,7 @@ public sealed class UsuariosHttpTests
     {
         var api = PrepararApi(); api.Json("POST api/usuarios", new { });
         using var respuesta = new RespuestaUsuariosPrueba(HttpStatusCode.Conflict,
-            new ErrorUsuarioApi("Ya existe un usuario o solicitud pendiente con ese valor.", "Email", "SolicitudDuplicada"));
+            new ErrorApi("Ya existe un usuario o solicitud pendiente con ese valor.", "Email", "SolicitudDuplicada"));
         var pagina = Preparar(new CrearUsuario(new UsuariosApi(respuesta.Cliente())));
         pagina.Input = new() { Email = "nuevo@example.test", Rol = "Recepcionista", Password = "ClavePrueba123!", ConfirmarPassword = "ClavePrueba123!" };
         Assert.IsType<PageResult>(await pagina.OnPostAsync());
@@ -161,7 +162,7 @@ public sealed class UsuariosHttpTests
     [InlineData("ConfiguracionCorreo", "Error de configuración del servidor de correo.")]
     public async Task Invitacion_ErrorCorreoPreservaMensajeSinIndicarExito(string codigo, string mensaje)
     {
-        using var respuesta = new RespuestaUsuariosPrueba(HttpStatusCode.ServiceUnavailable, new ErrorUsuarioApi(mensaje, Codigo: codigo));
+        using var respuesta = new RespuestaUsuariosPrueba(HttpStatusCode.ServiceUnavailable, new ErrorApi(mensaje, Codigo: codigo));
         var pagina = Preparar(new CrearUsuario(new UsuariosApi(respuesta.Cliente())));
         Assert.IsType<PageResult>(await pagina.OnPostAsync());
         Assert.Equal(mensaje, Error(pagina));
@@ -330,7 +331,7 @@ public sealed class UsuariosHttpTests
         public void SaveTempData(HttpContext context, IDictionary<string, object> values) { }
     }
 
-    private sealed class RespuestaUsuariosPrueba(HttpStatusCode codigo, ErrorUsuarioApi error) : HttpMessageHandler
+    private sealed class RespuestaUsuariosPrueba(HttpStatusCode codigo, ErrorApi error) : HttpMessageHandler
     {
         public HttpClient Cliente() => new(this) { BaseAddress = new Uri("http://usuarios.prueba/") };
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

@@ -1,6 +1,5 @@
 
 using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Validaciones;
 using TallerMecanico.Dominio.Entidades;
 
 namespace TallerMecanico.Aplicacion.Servicios;
@@ -34,10 +33,10 @@ public sealed class InicializadorUsuarios
                 "El usuario debe tener entre 3 y 50 caracteres.");
         }
 
-        if (!ValidadorSolicitudRegistro.PasswordValido(password))
+        if (!ReglasCuenta.ContrasenaValida(password))
         {
             throw new ArgumentException(
-                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial.");
+                ReglasCuenta.MensajeContrasena);
         }
 
         if (rol != "Administrador" &&
@@ -70,10 +69,10 @@ public sealed class InicializadorUsuarios
     {
         ArgumentNullException.ThrowIfNull(password);
 
-        if (!ValidadorSolicitudRegistro.PasswordValido(password))
+        if (!ReglasCuenta.ContrasenaValida(password))
         {
             throw new ArgumentException(
-                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial.");
+                ReglasCuenta.MensajeContrasena);
         }
 
         Usuario usuario = _usuarioPort.ObtenerPorUsername("admin")

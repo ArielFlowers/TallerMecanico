@@ -63,7 +63,7 @@ tambien `[Trait("Tipo", "Navegador")]`.
 Desde la raiz, cambiar el filtro por el area deseada:
 
 ```console
-dotnet test TallerMecanico.sln --configuration Release --filter "Area=Backend" -- xUnit.ParallelizeTestCollections=false
+dotnet test TallerMecanico.sln -m:1 --configuration Release --filter "Area=Backend" -- xUnit.ParallelizeTestCollections=false
 ```
 
 API, Datos y los escenarios completos de Frontend requieren `TALLER_TEST_MYSQL`.

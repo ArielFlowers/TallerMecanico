@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
-using TallerMecanico.Aplicacion.Validaciones;
+using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -49,7 +49,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
     {
         ValidarAdministrador();
 
-        if (!ValidadorSolicitudRegistro.EmailValido(email))
+        if (!ReglasCuenta.EmailValido(email))
         {
             throw new ArgumentException(
                 "El correo electrónico no es válido.", nameof(email));
@@ -61,10 +61,10 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
                 "El rol debe ser Administrador o Recepcionista.", nameof(rol));
         }
 
-        if (!ValidadorSolicitudRegistro.PasswordValido(password))
+        if (!ReglasCuenta.ContrasenaValida(password))
         {
             throw new ArgumentException(
-                "La contraseña debe tener entre 8 y 128 caracteres, con mayúscula, minúscula, número y carácter especial, sin espacios al principio ni al final.",
+                ReglasCuenta.MensajeContrasena,
                 nameof(password));
         }
 
@@ -81,7 +81,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
         {
             string usuarioNormalizado = username.Trim();
 
-            if (!ValidadorSolicitudRegistro.UsuarioValido(usuarioNormalizado))
+            if (!ReglasCuenta.UsuarioValido(usuarioNormalizado))
             {
                 throw new ArgumentException(
                     "El nombre de usuario no es válido.", nameof(username));
@@ -216,7 +216,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
 
         errorMessage = null;
 
-        if (!ValidadorSolicitudRegistro.EmailValido(email))
+        if (!ReglasCuenta.EmailValido(email))
         {
             errorMessage = "El correo electrónico no es válido.";
             return false;

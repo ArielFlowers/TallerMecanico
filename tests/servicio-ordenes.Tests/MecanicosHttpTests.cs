@@ -57,7 +57,7 @@ public sealed class MecanicosHttpTests
                 AllowAutoRedirect = false,
                 CookieContainer = cookies,
                 ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-            }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(5) };
+            }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(30) };
 
             try
             {

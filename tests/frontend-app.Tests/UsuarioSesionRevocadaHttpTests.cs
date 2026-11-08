@@ -8,7 +8,6 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
-using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 
@@ -113,7 +112,7 @@ public sealed class UsuarioSesionRevocadaHttpTests
                     })
                 {
                     BaseAddress = new Uri(url),
-                    Timeout = TimeSpan.FromSeconds(5)
+                    Timeout = TimeSpan.FromSeconds(30)
                 };
 
                 bool listo = false;

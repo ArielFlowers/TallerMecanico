@@ -4,9 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Sesion;
+using TallerMecanico.Pages.Ordenes;
 using PaginaVehiculos = TallerMecanico.Pages.Vehiculos.IndexModel;
 
 namespace TallerMecanico.IntegrationTests;

@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TallerMecanico.Api;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Sesion;
 using TallerMecanico.Contratos.Catalogos;
 using TallerMecanico.Contratos.Ordenes;
 

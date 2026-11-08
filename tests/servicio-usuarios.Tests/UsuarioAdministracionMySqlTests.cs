@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using TallerMecanico.Aplicacion.DTOs;
+using TallerMecanico.Aplicacion.Dto;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Aplicacion.Errores;
 using TallerMecanico.Dominio.Entidades;
@@ -9,7 +9,6 @@ using TallerMecanico.Aplicacion.Servicios;
 using TallerMecanico.Infraestructura.Persistencia;
 using TallerMecanico.Infraestructura.Persistencia.MySql;
 using TallerMecanico.Infraestructura.Seguridad;
-using TallerMecanico.Aplicacion.Validaciones;
 using Xunit;
 
 namespace TallerMecanico.IntegrationTests;

@@ -4,9 +4,9 @@ Sistema de gestión de taller en .NET 10 con cuatro aplicaciones SBA y una base
 MySQL 8.4 compartida en Aiven.
 
 ```text
-Navegador -> Frontend Razor -> HTTP -> Servicio 1: Órdenes y catálogos (Clean)
-                           -> HTTP -> Servicio 2: Usuarios (Hexagonal)
-                           -> HTTP -> Servicio 3: Reportes (Hexagonal)
+Navegador -> Frontend Razor -> HTTPS -> Servicio 1: Órdenes y catálogos (Clean)
+                           -> HTTPS -> Servicio 2: Usuarios (Hexagonal)
+                           -> HTTPS -> Servicio 3: Reportes (Hexagonal)
                                          |            |            |
                                          +------ MySQL Aiven ------+
 ```
@@ -65,8 +65,9 @@ antes de que arranquen Usuarios y Reportes. Kestrel atiende HTTPS directamente.
 
    Pegar el valor en `CLAVE_INTERNA='...'`. Compose entrega la misma clave al
    Frontend y a las tres APIs. No publicar esa clave ni la configuración resuelta.
-4. Guardar los certificados de este equipo en `certs/`. Si ya existen, conservarlos;
-   los certificados anteriores de `nginx/certs/` pueden copiarse a esta carpeta.
+4. Guardar los certificados de este equipo en `certs/`. Son cinco archivos: el del
+   navegador, el interno de las APIs y la CA en la que confía el Frontend. Quien ya
+   tenga `localhost.pem` y `localhost-key.pem` solo necesita los dos últimos comandos.
    Para generarlos por primera vez:
 
    Windows:
@@ -75,6 +76,8 @@ antes de que arranquen Usuarios y Reportes. Kestrel atiende HTTPS directamente.
    New-Item -ItemType Directory -Force certs | Out-Null
    mkcert -install
    mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem 127.0.0.1 localhost ::1
+   mkcert -cert-file certs/servicios.pem -key-file certs/servicios-key.pem servicio-ordenes servicio-usuarios servicio-reportes localhost
+   Copy-Item "$(mkcert -CAROOT)\rootCA.pem" certs\ca-interna.pem
    ```
 
    macOS (con Homebrew):
@@ -84,6 +87,8 @@ antes de que arranquen Usuarios y Reportes. Kestrel atiende HTTPS directamente.
    mkdir -p certs
    mkcert -install
    mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem 127.0.0.1 localhost ::1
+   mkcert -cert-file certs/servicios.pem -key-file certs/servicios-key.pem servicio-ordenes servicio-usuarios servicio-reportes localhost
+   cp "$(mkcert -CAROOT)/rootCA.pem" certs/ca-interna.pem
    ```
 
    Cada equipo confía en su propia autoridad local. `mkcert -install` puede pedir
@@ -99,8 +104,8 @@ dotnet msbuild -t:NubeUp
 ```
 
 Abrir http://127.0.0.1:8088 o https://127.0.0.1. También se publica HTTP en el
-puerto 80. Las APIs solo exponen su puerto 8080 dentro de la red de Compose;
-no se publican sus puertos hacia la PC.
+puerto 80. Las APIs solo atienden HTTPS en el puerto 8443 dentro de la red de
+Compose; no se publican sus puertos hacia la PC.
 
 | Acción | Comando |
 |---|---|
@@ -134,14 +139,14 @@ apagar el entorno.
 
 | Ubicación | Responsabilidad |
 |---|---|
-| `frontend-app/` | Razor Pages, recursos web, sesión, cookies y clientes HTTP en `Api/` |
+| `frontend-app/` | `Pages/` y `wwwroot/`, clientes HTTP en `Api/`, borradores y token en `Sesion/`, cookie y usuario activo en `Seguridad/` |
 | `backend-services/servicio-ordenes/` | Servicio 1: dominio, casos de uso Clean, catálogos, dashboard y esquema MySQL |
 | `backend-services/servicio-usuarios/` | Servicio 2: autenticación, cuentas, invitaciones, correo y auditoría de acceso |
 | `backend-services/servicio-reportes/` | Servicio 3: consultas y generación de PDF y Excel mediante puertos y adaptadores |
 | `shared/TallerMecanico.Contratos/` | DTO compartidos; no contiene acceso a datos |
 | `tests/` | Proyectos de pruebas por aplicación y herramientas comunes |
 | `scripts/` | Lanzadores Windows/macOS y administración de la base |
-| `certs/` | Certificados locales ignorados por Git, montados solo en el Frontend |
+| `certs/` | Certificados locales ignorados por Git, montados como solo lectura en las cuatro apps |
 
 Cada aplicación tiene su Dockerfile. El contexto de construcción es la raíz
 para incluir `shared/`. El Frontend no recibe la conexión MySQL ni las credenciales
@@ -154,7 +159,7 @@ Compilar y ejecutar las suites desde la raíz:
 
 ```console
 dotnet build TallerMecanico.sln
-dotnet test TallerMecanico.sln -- xUnit.ParallelizeTestCollections=false
+dotnet test TallerMecanico.sln -m:1 -- xUnit.ParallelizeTestCollections=false
 ```
 
 Para ejecutar solo una aplicación, usar su `.csproj` en `tests/frontend-app.Tests`,
@@ -169,7 +174,7 @@ if (-not (Test-Path -LiteralPath tests/.env.test)) { Copy-Item tests/.env.test.e
 notepad tests/.env.test
 docker compose --project-directory . --env-file tests/.env.test -f tests/docker-compose.test.yml up -d --wait
 $env:TALLER_TEST_MYSQL = 'Server=127.0.0.1;Port=3308;User ID=root;Password=CLAVE_DE_PRUEBAS;SslMode=Disabled;'
-dotnet test TallerMecanico.sln -- xUnit.ParallelizeTestCollections=false
+dotnet test TallerMecanico.sln -m:1 -- xUnit.ParallelizeTestCollections=false
 ```
 
 macOS:
@@ -179,7 +184,7 @@ test -f tests/.env.test || cp tests/.env.test.example tests/.env.test
 nano tests/.env.test
 docker compose --project-directory . --env-file tests/.env.test -f tests/docker-compose.test.yml up -d --wait
 export TALLER_TEST_MYSQL='Server=127.0.0.1;Port=3308;User ID=root;Password=CLAVE_DE_PRUEBAS;SslMode=Disabled;'
-dotnet test TallerMecanico.sln -- xUnit.ParallelizeTestCollections=false
+dotnet test TallerMecanico.sln -m:1 -- xUnit.ParallelizeTestCollections=false
 ```
 
 Usar en `TALLER_TEST_MYSQL` la misma clave privada de `tests/.env.test`. Las pruebas
@@ -211,7 +216,5 @@ un resultado TRX por ensamblado. Los recorridos de navegador y la lectura de PDF
 - [Administrar, respaldar y restaurar Aiven](docs/BD_NUBE.md).
 - [Estado y evidencia de la rúbrica](docs/CUMPLIMIENTO_RUBRICA.md).
 - [Resultados de validación SBA](docs/VALIDACION_SBA.md).
-- [Material de entrega de Usuarios y Reportes](docs/ENTREGA_SBA_USUARIOS_REPORTES.md).
-- [Guía de integración para los compañeros](docs/GUIA_COMPANEROS_SBA.md).
 
 No subir `.env`, `tests/.env.test`, respaldos ni claves de certificados a Git.

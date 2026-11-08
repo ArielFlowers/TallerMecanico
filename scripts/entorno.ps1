@@ -61,7 +61,7 @@ function Comprobar-Configuracion([switch]$Certificados) {
         throw 'Copia .env.example como .env y completa la conexion de Aiven; consulta README.md.'
     }
     if ($Certificados) {
-        foreach ($certificado in @('localhost.pem', 'localhost-key.pem')) {
+        foreach ($certificado in @('localhost.pem', 'localhost-key.pem', 'servicios.pem', 'servicios-key.pem', 'ca-interna.pem')) {
             if (-not (Test-Path -LiteralPath (Join-Path $raiz ('certs/' + $certificado)))) {
                 throw 'Faltan certificados en certs/. Generalos con mkcert siguiendo README.md.'
             }

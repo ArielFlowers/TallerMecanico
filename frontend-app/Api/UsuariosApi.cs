@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using TallerMecanico.Contratos.Usuarios;
 
 namespace TallerMecanico.Api;
@@ -18,23 +17,23 @@ public sealed class UsuariosApi(HttpClient http) : ApiBase(http)
         return await respuesta.Content.ReadFromJsonAsync<UsuarioSesionDto>(cancelacion);
     }
 
-    public Task<ResultadoUsuarioApi> CerrarSesionAsync(CancellationToken cancelacion = default) =>
+    public Task<ResultadoApi> CerrarSesionAsync(CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, "api/auth/logout", cancelacion: cancelacion);
 
     public Task<EstadoUsuarioDto?> ObtenerEstadoAsync(int id, CancellationToken cancelacion = default) =>
         LeerOpcionalAsync<EstadoUsuarioDto>($"api/auth/estado/{id}", cancelacion);
 
-    public Task<ResultadoUsuarioApi> CambiarContrasenaAsync(CambiarContrasenaSolicitud solicitud,
+    public Task<ResultadoApi> CambiarContrasenaAsync(CambiarContrasenaSolicitud solicitud,
         CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, "api/auth/cambiar-contrasena", solicitud, cancelacion);
 
-    public Task<ResultadoUsuarioApi> VerificarEmailAsync(string token, CancellationToken cancelacion = default) =>
+    public Task<ResultadoApi> VerificarEmailAsync(string token, CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, "api/auth/verificar-email", new TokenSolicitud(token), cancelacion);
 
-    public Task<ResultadoUsuarioApi> ActivarInvitacionAsync(string token, CancellationToken cancelacion = default) =>
+    public Task<ResultadoApi> ActivarInvitacionAsync(string token, CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, "api/auth/activar-invitacion", new TokenSolicitud(token), cancelacion);
 
-    public Task<ResultadoUsuarioApi> ReenviarVerificacionAsync(string email, CancellationToken cancelacion = default) =>
+    public Task<ResultadoApi> ReenviarVerificacionAsync(string email, CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, "api/auth/reenviar-verificacion", new EmailSolicitud(email), cancelacion);
 
     public Task<IReadOnlyList<UsuarioListadoDto>> ListarAsync(string? busqueda, string? rol, bool? activo,
@@ -53,43 +52,21 @@ public sealed class UsuariosApi(HttpClient http) : ApiBase(http)
     public Task<UsuarioDto?> ObtenerPorIdAsync(int id, CancellationToken cancelacion = default) =>
         LeerOpcionalAsync<UsuarioDto>($"api/usuarios/{id}", cancelacion);
 
-    public Task<ResultadoUsuarioApi> CrearInvitacionAsync(CrearInvitacionSolicitud solicitud,
+    public Task<ResultadoApi> CrearInvitacionAsync(CrearInvitacionSolicitud solicitud,
         CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, "api/usuarios", solicitud, cancelacion);
 
-    public Task<ResultadoUsuarioApi> ActualizarAsync(int id, ActualizarUsuarioSolicitud solicitud,
+    public Task<ResultadoApi> ActualizarAsync(int id, ActualizarUsuarioSolicitud solicitud,
         CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Put, $"api/usuarios/{id}", solicitud, cancelacion);
 
-    public Task<ResultadoUsuarioApi> DesactivarAsync(int id, CancellationToken cancelacion = default) =>
+    public Task<ResultadoApi> DesactivarAsync(int id, CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, $"api/usuarios/{id}/desactivar", cancelacion: cancelacion);
 
-    public Task<ResultadoUsuarioApi> ReactivarAsync(int id, CancellationToken cancelacion = default) =>
+    public Task<ResultadoApi> ReactivarAsync(int id, CancellationToken cancelacion = default) =>
         EnviarUsuarioAsync(HttpMethod.Post, $"api/usuarios/{id}/reactivar", cancelacion: cancelacion);
 
-    private async Task<ResultadoUsuarioApi> EnviarUsuarioAsync(HttpMethod metodo, string ruta,
-        object? cuerpo = null, CancellationToken cancelacion = default)
-    {
-        using var solicitud = new HttpRequestMessage(metodo, ruta);
-        if (cuerpo is not null) solicitud.Content = JsonContent.Create(cuerpo, cuerpo.GetType());
-        using var respuesta = await Http.SendAsync(solicitud, cancelacion);
-        if (respuesta.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Conflict or HttpStatusCode.NotFound
-            or HttpStatusCode.ServiceUnavailable)
-        {
-            ErrorUsuarioApi? error = null;
-            try { error = await respuesta.Content.ReadFromJsonAsync<ErrorUsuarioApi>(cancelacion); }
-            catch (JsonException) { }
-            return new ResultadoUsuarioApi(false, respuesta.StatusCode,
-                string.IsNullOrWhiteSpace(error?.Mensaje)
-                    ? "No se pudo completar la operación. Intenta nuevamente."
-                    : error.Mensaje,
-                error?.Campo, error?.Codigo);
-        }
-        await ValidarAsync(respuesta, cancelacion);
-        return new ResultadoUsuarioApi(true, respuesta.StatusCode, null, null);
-    }
-
+    private Task<ResultadoApi> EnviarUsuarioAsync(HttpMethod metodo, string ruta,
+        object? cuerpo = null, CancellationToken cancelacion = default) =>
+        EnviarAsync(metodo, ruta, cuerpo, cancelacion, servicioNoDisponibleComoMensaje: true);
 }
-
-public sealed record ResultadoUsuarioApi(bool Exito, HttpStatusCode Codigo, string? Mensaje,
-    string? Campo, string? TipoError = null);

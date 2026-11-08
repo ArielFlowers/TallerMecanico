@@ -1,6 +1,6 @@
 # Cumplimiento de la rúbrica: 3er Entregable
 
-Estado documental al 06/11/2026 durante la integración de cuatro aplicaciones SBA. Cubre los requisitos de código y arquitectura de cada grupo interno. La evidencia de implementación se distingue de la ejecución de pruebas y de la defensa; no representa un puntaje confirmado.
+Estado documental al 08/11/2026, con las cuatro aplicaciones SBA integradas. Cubre los requisitos de código y arquitectura de cada grupo interno. La evidencia de implementación se distingue de la ejecución de pruebas y de la defensa; no representa un puntaje confirmado.
 
 **Estados:** ✅ implementación localizada y comprobada | 🔶 decisión de presentación o revisión manual pendiente. Ver [resultados reales de la integración](VALIDACION_SBA.md).
 
@@ -36,7 +36,7 @@ Estado documental al 06/11/2026 durante la integración de cuatro aplicaciones S
 | Requisito | Pts | Estado | Evidencia |
 |---|---:|---|---|
 | Login, sesiones y menú por rol | 10 | ✅ | Cada rol ve opciones distintas y ninguna queda sin destino |
-| Bitácora en atributos de auditoría | 10 | 🔶 | `CreadoPor` y `ModificadoPor` en cada CRUD. Los borrados de catálogos son físicos, así que quedan en la tabla `Auditoria` y no en atributos de la fila |
+| Bitácora en atributos de auditoría | 10 | 🔶 | `CreadoPor` y `ModificadoPor` en cada CRUD. Los borrados de catálogos son físicos, así que quedan en la tabla `Auditoria` y no en atributos de la fila; la anulación de órdenes también se registra como `ORDEN_ANULADA` |
 | Select de usuarios sin contraseña | 2 | ✅ | `UsuarioListadoDto` |
 | Insert con nombre por protocolo y activación por correo | 7 | ✅ | `GeneradorNombreUsuarioService`, token con SHA-256 y vencimiento de 1 hora |
 | Dar de baja a un usuario | 1 | ✅ | `DesactivarUsuario` |
@@ -48,14 +48,13 @@ Estado documental al 06/11/2026 durante la integración de cuatro aplicaciones S
 
 ```powershell
 dotnet build TallerMecanico.sln
-dotnet test TallerMecanico.sln -- xUnit.ParallelizeTestCollections=false
+dotnet test TallerMecanico.sln -m:1 -- xUnit.ParallelizeTestCollections=false
 ```
 
-Resultado de la integración: **974 pruebas aprobadas, 0 fallidas y 0 omitidas**, con MySQL temporal, Chromium y lectura de PDF habilitados. Las cuatro aplicaciones también pasaron 19 comprobaciones dentro de Docker. Ver [Validación SBA](VALIDACION_SBA.md) y [material de entrega del grupo 2](ENTREGA_SBA_USUARIOS_REPORTES.md).
+Resultado de la integración: **862 pruebas aprobadas, 0 fallidas y 9 omitidas** con MySQL temporal; las omitidas requieren navegador o lectura de PDF. Ver [Validación SBA](VALIDACION_SBA.md).
 
 - La suite completa requiere `TALLER_TEST_MYSQL`, y las pruebas de navegador y de PDF requieren además `PLAYWRIGHT_MODULE` y `TALLER_PDF_PYTHON`; ver el README.
-- Recorridos de roles, formularios y exportaciones ejecutados con Chromium sobre bases temporales. Edge continúa como predeterminado de CI.
 - Flujo de cuenta comprobado con SMTP simulado: invitación, activación de un solo uso, cambio de contraseña y baja.
 - Correo real: confirmar manualmente la llegada al buzón del destinatario durante la prueba del equipo.
 - Reportes: generación, estructura y contenido comprobados automáticamente; abrir también las salidas en los lectores que se usarán para la defensa.
-- Despliegue: cuatro aplicaciones saludables, HTTPS directo en Kestrel y APIs sin puertos públicos comprobados en el proyecto Docker temporal. `NubeUp` realiza la transición del entorno habitual con la configuración privada del equipo.
+- Despliegue: cuatro aplicaciones saludables, HTTPS directo en Kestrel, HTTPS interno hacia las APIs y APIs sin puertos públicos comprobados en un proyecto Docker temporal. `NubeUp` realiza la transición del entorno habitual con la configuración privada del equipo.

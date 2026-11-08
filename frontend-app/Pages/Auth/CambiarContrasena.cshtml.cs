@@ -55,17 +55,23 @@ public sealed class CambiarContrasenaModel(
         return RedirectToPage("/Auth/Login");
     }
 
-    public sealed class Entrada
+    // La misma política que aplica el Servicio 2, para avisar antes de enviar.
+    public sealed class Entrada : IValidatableObject
     {
         [Required(ErrorMessage = "Ingrese su contraseña actual.")]
         public string Actual { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Ingrese la nueva contraseña.")]
-        [StringLength(128, MinimumLength = 8,
-        ErrorMessage = "La nueva contraseña debe tener entre 8 y 128 caracteres.")]
         public string Nueva { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Confirme la nueva contraseña.")]
+        [Compare(nameof(Nueva), ErrorMessage = "Las contraseñas nuevas no coinciden.")]
         public string Confirmacion { get; set; } = string.Empty;
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!string.IsNullOrEmpty(Nueva) && !ReglasCuenta.ContrasenaValida(Nueva))
+                yield return new ValidationResult(ReglasCuenta.MensajeContrasena, [nameof(Nueva)]);
+        }
     }
 }

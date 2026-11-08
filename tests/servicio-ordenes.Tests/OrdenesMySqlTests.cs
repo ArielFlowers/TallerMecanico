@@ -21,7 +21,8 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
     private sealed record Datos(int Vehiculo, int Mecanico, int A, int B, int Servicio);
     private IUnidadTrabajoOrden Unidad => new MySqlUnidadTrabajoOrden(basePrueba.Factory, NullLogger<MySqlUnidadTrabajoOrden>.Instance);
     private OrdenServicioPrueba Servicio(UsuarioPrueba? usuario = null, IUnidadTrabajoOrden? unidad = null) =>
-        new(unidad ?? Unidad, usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System);
+        new(unidad ?? Unidad, usuario ?? new UsuarioPrueba(), new ValidacionOrdenes(), TimeProvider.System,
+            new AuditoriaRepository(basePrueba.Factory));
 
     private Datos Preparar(int stockA = 10, int stockB = 10)
     {
@@ -161,6 +162,8 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         Assert.Equal("admin_prueba", basePrueba.Escalar("SELECT AnuladoPor FROM Ordenes WHERE Id = @Id;", ("@Id", creada.OrdenId)));
         Assert.Equal(fechaCreacion, basePrueba.Escalar("SELECT FechaCreacion FROM Ordenes WHERE Id = @Id;", ("@Id", creada.OrdenId)));
         Assert.NotNull(basePrueba.Escalar("SELECT FechaAnulacion FROM Ordenes WHERE Id = @Id;", ("@Id", creada.OrdenId)));
+        Assert.Equal("admin_prueba", basePrueba.Escalar(
+            "SELECT Username FROM Auditoria WHERE Accion = 'ORDEN_ANULADA' AND EntidadId = @Id;", ("@Id", creada.OrdenId.ToString())));
         Assert.False(Servicio(administrador).AnularOrden(creada.OrdenId.Value).Exito);
         Assert.Equal(10, Stock(datos.A));
         Assert.Equal(10, Stock(datos.B));
@@ -196,6 +199,8 @@ public sealed class OrdenesMySqlTests(MySqlAisladoFixture basePrueba)
         Assert.False(Servicio(administrador, fallida).AnularOrden(creada.OrdenId!.Value).Exito);
         Assert.Equal("Activa", basePrueba.Escalar("SELECT Estado FROM Ordenes WHERE Id = @Id;", ("@Id", creada.OrdenId)));
         Assert.Equal(DBNull.Value, basePrueba.Escalar("SELECT AnuladoPor FROM Ordenes WHERE Id = @Id;", ("@Id", creada.OrdenId)));
+        Assert.Equal(0L, Convert.ToInt64(basePrueba.Escalar(
+            "SELECT COUNT(*) FROM Auditoria WHERE Accion = 'ORDEN_ANULADA' AND EntidadId = @Id;", ("@Id", creada.OrdenId.ToString()))));
         Assert.Equal(8, Stock(datos.A));
         Assert.Equal(7, Stock(datos.B));
         Assert.True(Servicio(administrador).AnularOrden(creada.OrdenId.Value).Exito);

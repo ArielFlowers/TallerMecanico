@@ -9,7 +9,6 @@ skinparam BorderColor #4A5568
 
 actor "Administrador" as Admin
 actor "Recepcionista" as Recep
-actor "Mecánico" as Mec
 
 rectangle "AutoTaller Pro\nFrontend + Servicio de órdenes +\nServicio de usuarios + Servicio de reportes" as Sistema #7C3AED {
   [Frontend Razor Pages] as FE
@@ -23,10 +22,9 @@ database "Base de datos\nMySQL 8.4 (Aiven)" as BD #4299E1
 
 Admin --> FE : Gestiona usuarios,\nreportes y anulaciones
 Recep --> FE : Registra órdenes,\nclientes y vehículos
-Mec --> FE : Consulta órdenes\ny trabajo asignado
-FE --> S1 : HTTP interno
-FE --> S2 : HTTP interno
-FE --> S3 : HTTP interno
+FE --> S1 : HTTPS interno
+FE --> S2 : HTTPS interno
+FE --> S3 : HTTPS interno
 S2 --> SMTP : Envía invitaciones\ny verificaciones
 S1 --> BD : Lee y escribe\ndatos del taller
 S2 --> BD : Lee y escribe\nusuarios y auditoría

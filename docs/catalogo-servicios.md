@@ -38,7 +38,7 @@ incorporados y a su unidad correcta; nunca vuelve al catálogo antiguo como fall
 
 La carga adopta los IDs inequívocos, asigna el nombre canónico, precio inicial y
 unidad, o inserta solo los servicios que faltan. Es transaccional y debe ejecutarse
-como operación administrativa única, no desde cada réplica al arrancar.
+como operación administrativa única, no al arrancar el servicio.
 El índice único impide asignar el mismo código a dos registros.
 
 Repetir la carga no reinicia precios de códigos ya incorporados ni genera

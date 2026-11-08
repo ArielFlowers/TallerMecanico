@@ -24,11 +24,26 @@ package "Servicio 1 — Clean Architecture" as S1 #ECFDF5 {
 }
 
 package "Servicio 2 — Hexagonal" as S2 #FEF3C7 {
-  [API de usuarios\ny autenticación] as S2API
+  [AuthController y
+UsuariosController] as S2API
+  [Servicios de cuentas
+(autenticación, gestión,
+contraseña y nombre de usuario)] as S2APP
+  [Puertos de salida
+usuarios, bitácora,
+correo y hash] as S2PORT
+  [Adaptadores
+MySQL, Gmail y Argon2id] as S2INF
 }
 
 package "Servicio 3 — Hexagonal" as S3 #FCE7F3 {
-  [API de reportes\nPDF y Excel] as S3API
+  [ReportesController] as S3API
+  [ReporteOrdenesService y
+ReporteMecanicosService] as S3APP
+  [Puertos de salida
+consulta, PDF y Excel] as S3PORT
+  [Adaptadores
+MySQL, QuestPDF y ClosedXML] as S3INF
 }
 
 package "Contratos compartidos" as DTO #F3F4F6 {
@@ -40,9 +55,9 @@ cloud "SMTP Gmail" as SMTP #FFEDD5
 
 UI --> API
 API --> SES
-API --> C1 : HTTP
-API --> S2API : HTTP
-API --> S3API : HTTP
+API --> C1 : HTTPS
+API --> S2API : HTTPS
+API --> S3API : HTTPS
 API ..> Contratos
 
 C1 --> MOD1
@@ -54,9 +69,15 @@ MOD3 --> INF
 MOD1 --> INF
 INF --> NUC
 INF --> BD
-S2API --> BD
-S2API --> SMTP
-S3API --> BD
+S2API --> S2APP
+S2APP --> S2PORT
+S2INF ..|> S2PORT
+S2INF --> BD
+S2INF --> SMTP
+S3API --> S3APP
+S3APP --> S3PORT
+S3INF ..|> S3PORT
+S3INF --> BD
 C1 ..> Contratos
 S2API ..> Contratos
 S3API ..> Contratos
