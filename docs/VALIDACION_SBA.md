@@ -12,10 +12,10 @@ terminar. No se usó Aiven.
 | Suite | Aprobadas | Fallidas | Omitidas |
 |---|---:|---:|---:|
 | Órdenes y catálogos | 420 | 0 | 6 |
-| Frontend | 197 | 0 | 1 |
+| Frontend | 216 | 0 | 1 |
 | Usuarios | 183 | 0 | 0 |
 | Reportes | 43 | 0 | 2 |
-| **Total** | **843** | **0** | **9** |
+| **Total** | **862** | **0** | **9** |
 
 Las 9 omitidas son recorridos de navegador y lecturas de texto de PDF, que requieren
 Playwright y Python con pypdf. En esta corrida local no estaban configurados; el CI

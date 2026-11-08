@@ -21,8 +21,9 @@ Los diagramas C4, de clases y de secuencia están como código PlantUML en
 
 ## Responsabilidades y límites
 
-- **Frontend:** páginas, cookies, sesión y borradores en memoria. Consume los
-  clientes de `Api/`; no recibe la cadena MySQL ni las credenciales del correo.
+- **Frontend:** `Pages/`, clientes HTTP en `Api/`, borradores y token en `Sesion/`, y
+  cookie y usuario activo en `Seguridad/`. No tiene capas de negocio ni recibe la
+  cadena MySQL o las credenciales del correo.
 - **Órdenes:** catálogos, dashboard, consultas y transacciones de órdenes. Es el
   único servicio que crea o actualiza el esquema al arrancar.
 - **Usuarios:** credenciales, estado de cuentas, invitaciones, activación, cambio

@@ -139,7 +139,7 @@ apagar el entorno.
 
 | Ubicación | Responsabilidad |
 |---|---|
-| `frontend-app/` | Razor Pages, recursos web, sesión, cookies y clientes HTTP en `Api/` |
+| `frontend-app/` | `Pages/` y `wwwroot/`, clientes HTTP en `Api/`, borradores y token en `Sesion/`, cookie y usuario activo en `Seguridad/` |
 | `backend-services/servicio-ordenes/` | Servicio 1: dominio, casos de uso Clean, catálogos, dashboard y esquema MySQL |
 | `backend-services/servicio-usuarios/` | Servicio 2: autenticación, cuentas, invitaciones, correo y auditoría de acceso |
 | `backend-services/servicio-reportes/` | Servicio 3: consultas y generación de PDF y Excel mediante puertos y adaptadores |

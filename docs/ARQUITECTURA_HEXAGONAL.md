@@ -34,6 +34,7 @@ backend-services/servicio-reportes/
 frontend-app/
   Pages/            Presentación Razor y formularios
   Api/              UsuariosApi, ReportesApi y propagación del usuario
+  Seguridad/        Usuario actual y validación de la cuenta activa
 shared/TallerMecanico.Contratos/
   Usuarios/         DTO de cuenta y sesión, y ReglasCuenta (compartidas con el Frontend)
   Reportes/         Filtros y documentos de reporte

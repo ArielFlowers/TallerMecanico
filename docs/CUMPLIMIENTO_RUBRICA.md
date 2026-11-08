@@ -51,7 +51,7 @@ dotnet build TallerMecanico.sln
 dotnet test TallerMecanico.sln -m:1 -- xUnit.ParallelizeTestCollections=false
 ```
 
-Resultado de la integración: **843 pruebas aprobadas, 0 fallidas y 9 omitidas** con MySQL temporal; las omitidas requieren navegador o lectura de PDF. Ver [Validación SBA](VALIDACION_SBA.md).
+Resultado de la integración: **862 pruebas aprobadas, 0 fallidas y 9 omitidas** con MySQL temporal; las omitidas requieren navegador o lectura de PDF. Ver [Validación SBA](VALIDACION_SBA.md).
 
 - La suite completa requiere `TALLER_TEST_MYSQL`, y las pruebas de navegador y de PDF requieren además `PLAYWRIGHT_MODULE` y `TALLER_PDF_PYTHON`; ver el README.
 - Flujo de cuenta comprobado con SMTP simulado: invitación, activación de un solo uso, cambio de contraseña y baja.
