@@ -9,7 +9,7 @@ namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/servicios")]
-[Authorize(Roles = "Administrador,Recepcionista")]
+[Authorize(Roles = Roles.Personal)]
 public sealed class ServiciosController(
     IServicioService servicios,
     IHistorialCostoServicioService historial) : ControllerBase
@@ -39,7 +39,7 @@ public sealed class ServiciosController(
         servicios.SugerirCatalogoAsync(termino, cancelacion);
 
     [HttpGet("historial")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     public IReadOnlyList<HistorialCostoServicioDto> ObtenerHistorial() => historial.ObtenerHistorial().Select(cambio => cambio.ADto()).ToArray();
 
     [HttpGet("{id:int}")]
@@ -50,19 +50,19 @@ public sealed class ServiciosController(
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     [TypeFilter(typeof(ValidacionFormularioServicioFilter), Order = OrdenValidacionFormulario)]
     public ActionResult<ResultadoFormulario<ServicioFormViewModel>> Crear([FromBody] ServicioFormViewModel formulario) =>
         Guardar(formulario);
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     [TypeFilter(typeof(ValidacionFormularioServicioFilter), Order = OrdenValidacionFormulario)]
     public ActionResult<ResultadoFormulario<ServicioFormViewModel>> Actualizar(int id, [FromBody] ServicioFormViewModel formulario) =>
         Guardar(formulario, id);
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = Roles.Administrador)]
     public IActionResult Eliminar(int id)
     {
         try { servicios.Eliminar(id); }

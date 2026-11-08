@@ -1,3 +1,5 @@
+using TallerMecanico.Contratos;
+
 
 using System.Text;
 using TallerMecanico.Aplicacion.Servicios;
@@ -35,8 +37,8 @@ public sealed class InicializacionUsuariosConsola
             return;
         }
 
-        CrearCuenta("Administrador");
-        CrearCuenta("Recepcionista");
+        CrearCuenta(Roles.Administrador);
+        CrearCuenta(Roles.Recepcionista);
 
         Console.WriteLine(
             "Inicialización de usuarios finalizada.");

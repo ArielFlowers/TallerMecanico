@@ -308,7 +308,7 @@ public sealed class CrearModel(
 
     public IActionResult OnPostNuevoMecanico()
     {
-        if (!User.IsInRole("Administrador")) return Forbid();
+        if (!User.IsInRole(Roles.Administrador)) return Forbid();
         AsegurarToken();
         Guid id = borradores.Guardar(Formulario);
         return RedirectToPage("/Mecanicos/Index", new { OrdenBorradorId = id });

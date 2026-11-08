@@ -8,7 +8,7 @@ namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/clientes")]
-[Authorize(Roles = "Administrador,Recepcionista")]
+[Authorize(Roles = Roles.Personal)]
 public sealed class ClientesController(ClienteService clientes) : ControllerBase
 {
     [HttpGet]

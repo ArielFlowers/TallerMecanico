@@ -40,7 +40,7 @@ public class IndexModel(ProductosApi productosApi, IBorradorOrden borradoresOrde
 
     public Task<IActionResult> OnPostEliminarAsync() => AtenderAsync(async () =>
     {
-        if (!User.IsInRole("Administrador")) return Forbid();
+        if (!User.IsInRole(Roles.Administrador)) return Forbid();
         var resultado = await productosApi.EliminarAsync(ProductoId, HttpContext.RequestAborted);
         if (resultado.Exito) TempData["ProductoExito"] = "Producto eliminado correctamente.";
         else TempData["ProductoError"] = resultado.Mensaje;
@@ -49,9 +49,9 @@ public class IndexModel(ProductosApi productosApi, IBorradorOrden borradoresOrde
 
     private async Task<IActionResult> GuardarFormularioAsync(bool actualizar)
     {
-        bool altaDesdeOrdenValida = !actualizar && User.IsInRole("Recepcionista")
+        bool altaDesdeOrdenValida = !actualizar && User.IsInRole(Roles.Recepcionista)
             && OrdenBorradorId.HasValue && borradoresOrden.Obtener(OrdenBorradorId.Value) is not null;
-        if (!User.IsInRole("Administrador") && !altaDesdeOrdenValida) return Forbid();
+        if (!User.IsInRole(Roles.Administrador) && !altaDesdeOrdenValida) return Forbid();
         FormularioActivo = actualizar ? "editar" : "crear";
         if (actualizar) ProductoInput.Id = ProductoId;
         if (!ModelState.IsValid) return await MostrarFormularioAsync();
@@ -116,7 +116,7 @@ public class IndexModel(ProductosApi productosApi, IBorradorOrden borradoresOrde
     private async Task<IActionResult> AtenderAsync(Func<Task<IActionResult>> accion)
     {
         if (User.Identity?.IsAuthenticated != true) return Challenge();
-        if (!User.IsInRole("Administrador") && !User.IsInRole("Recepcionista")) return Forbid();
+        if (!User.IsInRole(Roles.Administrador) && !User.IsInRole(Roles.Recepcionista)) return Forbid();
         try { return await accion(); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.Unauthorized) { return Challenge(); }

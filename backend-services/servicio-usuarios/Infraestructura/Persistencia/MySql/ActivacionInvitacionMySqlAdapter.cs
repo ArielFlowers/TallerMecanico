@@ -1,3 +1,5 @@
+using TallerMecanico.Contratos;
+
 
 using System.Data.Common;
 using TallerMecanico.Aplicacion.Dto;
@@ -106,8 +108,8 @@ public sealed class ActivacionInvitacionMySqlAdapter
 
             // Comprobar que las credenciales y el rol sean válidos.
             if (string.IsNullOrWhiteSpace(passwordHash) ||
-                (rolUsuario != "Administrador" &&
-                 rolUsuario != "Recepcionista"))
+                (rolUsuario != Roles.Administrador &&
+                 rolUsuario != Roles.Recepcionista))
             {
                 transaction.Rollback();
 

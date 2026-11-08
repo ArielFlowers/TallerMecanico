@@ -1,6 +1,7 @@
 using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Contratos;
 
 namespace TallerMecanico.Aplicacion.CasosUso.Ordenes;
 
@@ -13,7 +14,7 @@ public sealed class AnularOrdenCasoUso(
 {
     private bool PuedeAnular => currentUser.EstaAutenticado
         && !string.IsNullOrWhiteSpace(currentUser.Username)
-        && currentUser.Rol == "Administrador";
+        && currentUser.Rol == Roles.Administrador;
 
     public ResultadoOrden Ejecutar(int ordenId)
     {

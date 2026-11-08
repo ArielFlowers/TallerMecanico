@@ -28,7 +28,7 @@ public sealed class AuthController(
     public ActionResult<UsuarioSesionDto> Login(CredencialesLogin solicitud)
     {
         var usuario = autenticacion.ValidarCredenciales(solicitud.Username, solicitud.Password);
-        if (usuario is null || usuario.Rol is not ("Administrador" or "Recepcionista"))
+        if (usuario is null || usuario.Rol is not (Roles.Administrador or Roles.Recepcionista))
         {
             Registrar("LOGIN_FALLIDO", null, null);
             return Unauthorized(new ErrorApi("Usuario o contraseña incorrectos."));
@@ -39,7 +39,7 @@ public sealed class AuthController(
     }
 
     [HttpPost("logout")]
-    [Authorize(Roles = "Administrador,Recepcionista")]
+    [Authorize(Roles = Roles.Personal)]
     public IActionResult Logout()
     {
         Registrar("LOGOUT", usuarioActual.UsuarioId, usuarioActual.Username);
@@ -55,7 +55,7 @@ public sealed class AuthController(
     }
 
     [HttpPost("cambiar-contrasena")]
-    [Authorize(Roles = "Administrador,Recepcionista")]
+    [Authorize(Roles = Roles.Personal)]
     public IActionResult CambiarContrasena(CambiarContrasenaSolicitud solicitud)
     {
         return cambioContrasena.Cambiar(solicitud.Actual, solicitud.Nueva, solicitud.Confirmacion, out string error)

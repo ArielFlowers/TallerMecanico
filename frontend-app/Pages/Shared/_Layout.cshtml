@@ -1,6 +1,6 @@
 @{
-    bool esAdministrador = User.IsInRole("Administrador");
-    bool esRecepcionista = User.IsInRole("Recepcionista");
+    bool esAdministrador = User.IsInRole(Roles.Administrador);
+    bool esRecepcionista = User.IsInRole(Roles.Recepcionista);
     string nombreUsuario = User.Identity?.Name ?? "Usuario";
 }
 
@@ -395,7 +395,7 @@
 
                     <span>
                         @nombreUsuario
-                        (@(esAdministrador ? "Administrador" : esRecepcionista ? "Recepcionista" : "Usuario"))
+                        (@(esAdministrador ? Roles.Administrador : esRecepcionista ? Roles.Recepcionista : "Usuario"))
                     </span>
 
                 </div>

@@ -32,7 +32,7 @@ public class LoginModel(UsuariosApi usuarios) : PageModel
         {
             var usuario = await usuarios.IniciarSesionAsync(Input.Username, Input.Password, HttpContext.RequestAborted);
             if (usuario is null || usuario.Id <= 0 || string.IsNullOrWhiteSpace(usuario.Username) ||
-                usuario.Rol is not ("Administrador" or "Recepcionista"))
+                usuario.Rol is not (Roles.Administrador or Roles.Recepcionista))
             {
                 ModelState.AddModelError(string.Empty, "Usuario o contraseña incorrectos.");
                 return Page();

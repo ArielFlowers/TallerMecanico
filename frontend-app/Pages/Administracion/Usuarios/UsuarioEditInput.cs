@@ -27,7 +27,7 @@ public sealed class UsuarioEditInput : IValidatableObject
                 new[] { nameof(Email) });
         }
 
-        if (Rol != "Administrador" && Rol != "Recepcionista")
+        if (Rol != Roles.Administrador && Rol != Roles.Recepcionista)
         {
             yield return new ValidationResult(
                 "El rol debe ser Administrador o Recepcionista.",

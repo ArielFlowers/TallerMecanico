@@ -1,5 +1,6 @@
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Dominio.Entidades;
+using TallerMecanico.Contratos;
 
 namespace TallerMecanico.Aplicacion.Servicios;
 
@@ -46,7 +47,7 @@ public sealed class RevisionSolicitudesService
     private int ValidarAdministrador()
     {
         if (!_usuarioActual.EstaAutenticado ||
-            _usuarioActual.Rol != "Administrador" ||
+            _usuarioActual.Rol != Roles.Administrador ||
             _usuarioActual.UsuarioId is not int administradorId ||
             administradorId <= 0)
         {

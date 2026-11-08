@@ -104,14 +104,14 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SoloAdministrador", policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.RequireRole("Administrador");
+        policy.RequireRole(Roles.Administrador);
     });
     options.AddPolicy("PersonalAutorizado", policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireRole(
-            "Administrador",
-            "Recepcionista");
+            Roles.Administrador,
+            Roles.Recepcionista);
     });
 });
 

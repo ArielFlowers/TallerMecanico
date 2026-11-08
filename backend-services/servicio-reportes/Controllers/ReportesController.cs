@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Contratos.Reportes;
+using TallerMecanico.Contratos;
 
 namespace TallerMecanico.Controllers;
 
 [ApiController]
 [Route("api/reportes")]
-[Authorize(Roles = "Administrador")]
+[Authorize(Roles = Roles.Administrador)]
 public sealed class ReportesController(
     IReporteOrdenesPort ordenes,
     IReporteMecanicosPort mecanicos,
