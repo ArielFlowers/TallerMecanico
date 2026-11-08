@@ -1,4 +1,4 @@
-namespace TallerMecanico.Infraestructura.Sesion;
+namespace TallerMecanico.Sesion;
 
 public static class SesionDisponible
 {

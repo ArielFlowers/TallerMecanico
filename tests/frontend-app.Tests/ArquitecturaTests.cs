@@ -14,13 +14,13 @@ public sealed class ArquitecturaTests
         Assert.Contains("TallerMecanico.Contratos", referencias);
     }
 
-    private static readonly string[] Prohibidos = ["TallerMecanico.Infraestructura", "MySqlConnector", "QuestPDF", "ClosedXML"];
+    private static readonly string[] Prohibidos = ["TallerMecanico.Infraestructura", "TallerMecanico.Aplicacion", "TallerMecanico.Dominio", "MySqlConnector", "QuestPDF", "ClosedXML"];
 
     // Deuda ya asignada en el plan del entregable. Quitar cada archivo al corregirlo.
     private static readonly string[] Pendientes = [];
 
     [Fact]
-    public void Dominio_Aplicacion_Y_Pages_NoDependenDeInfraestructura()
+    public void Frontend_NoMencionaLasCapasDeLosServicios()
     {
         string raiz = BuscarRaiz();
 
@@ -52,9 +52,8 @@ public sealed class ArquitecturaTests
 
     private static IEnumerable<string> BuscarArchivos(string raiz)
     {
-        foreach (string capa in new[] { "Dominio", "Aplicacion", "Pages" })
+        foreach (string capa in new[] { "Api", "Configuracion", "Pages", "Seguridad", "Sesion" })
         {
-            if (!Directory.Exists(Path.Combine(raiz, capa))) continue;
             foreach (string ruta in Directory.EnumerateFiles(Path.Combine(raiz, capa), "*", SearchOption.AllDirectories))
             {
                 if (ruta.EndsWith(".cs") || ruta.EndsWith(".cshtml"))

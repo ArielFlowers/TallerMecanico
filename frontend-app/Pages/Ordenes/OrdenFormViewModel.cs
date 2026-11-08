@@ -1,4 +1,4 @@
-namespace TallerMecanico.Aplicacion.Dto;
+namespace TallerMecanico.Pages.Ordenes;
 
 public sealed class OrdenFormViewModel
 {

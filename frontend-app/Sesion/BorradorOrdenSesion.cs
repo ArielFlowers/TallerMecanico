@@ -1,9 +1,8 @@
 using System.Text.Json;
-using TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Seguridad;
+using TallerMecanico.Pages.Ordenes;
 
-namespace TallerMecanico.Infraestructura.Sesion;
+namespace TallerMecanico.Sesion;
 
 public sealed class BorradorOrdenSesion(IHttpContextAccessor contexto, ICurrentUser usuario) : IBorradorOrden
 {

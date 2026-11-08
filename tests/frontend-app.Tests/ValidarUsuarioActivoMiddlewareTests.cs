@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
 using TallerMecanico.Api;
 using TallerMecanico.Contratos.Usuarios;
-using TallerMecanico.Infraestructura.Seguridad;
+using TallerMecanico.Seguridad;
+using TallerMecanico.Sesion;
 using IAutenticacionHttp = Microsoft.AspNetCore.Authentication.IAuthenticationService;
 
 namespace TallerMecanico.IntegrationTests;

@@ -1,8 +1,7 @@
 
 using System.Security.Claims;
-using TallerMecanico.Aplicacion.Puertos;
 
-namespace TallerMecanico.Infraestructura.Seguridad;
+namespace TallerMecanico.Seguridad;
 
 public sealed class CurrentUser : ICurrentUser
 {

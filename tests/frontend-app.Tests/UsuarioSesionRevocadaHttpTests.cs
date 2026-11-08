@@ -8,7 +8,6 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
-using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 

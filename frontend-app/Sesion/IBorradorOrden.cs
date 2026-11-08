@@ -1,6 +1,6 @@
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Pages.Ordenes;
 
-namespace TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
+namespace TallerMecanico.Sesion;
 
 public interface IBorradorOrden
 {

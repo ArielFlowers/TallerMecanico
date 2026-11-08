@@ -1,6 +1,6 @@
 using TallerMecanico.Contratos.Catalogos;
 
-namespace TallerMecanico.Aplicacion.Dto;
+namespace TallerMecanico.Pages.Servicios;
 
 public class ServicioTablaViewModel
 {

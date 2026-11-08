@@ -2,8 +2,7 @@ using TallerMecanico.Api;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TallerMecanico.Infraestructura.Sesion;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Sesion;
 
 namespace TallerMecanico.IntegrationTests;
 

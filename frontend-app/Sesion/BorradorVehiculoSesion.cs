@@ -1,8 +1,7 @@
 using System.Text.Json;
-using TallerMecanico.Aplicacion.Puertos;
-using TallerMecanico.Aplicacion.Dto;
+using TallerMecanico.Seguridad;
 
-namespace TallerMecanico.Infraestructura.Sesion;
+namespace TallerMecanico.Sesion;
 
 public sealed class BorradorVehiculoSesion(
     IHttpContextAccessor httpContextAccessor,

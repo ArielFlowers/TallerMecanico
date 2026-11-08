@@ -3,8 +3,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Infraestructura.Sesion;
+using TallerMecanico.Sesion;
+using TallerMecanico.Pages.Ordenes;
 using PaginaClientes = TallerMecanico.Pages.Clientes.IndexModel;
 
 namespace TallerMecanico.IntegrationTests;

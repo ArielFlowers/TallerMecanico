@@ -12,7 +12,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.Extensions.Options;
-using TallerMecanico.Infraestructura.Seguridad;
 
 namespace TallerMecanico.IntegrationTests;
 

@@ -4,8 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TallerMecanico.Aplicacion.Dto;
-using TallerMecanico.Aplicacion.Puertos;
 using TallerMecanico.Api;
 using System.Security.Claims;
 using PaginaServicios = TallerMecanico.Pages.Servicios.IndexModel;

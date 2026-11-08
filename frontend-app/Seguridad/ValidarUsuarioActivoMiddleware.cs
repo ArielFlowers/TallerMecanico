@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using TallerMecanico.Api;
 
-namespace TallerMecanico.Infraestructura.Seguridad;
+namespace TallerMecanico.Seguridad;
 
 public sealed class ValidarUsuarioActivoMiddleware(
     RequestDelegate next, ILogger<ValidarUsuarioActivoMiddleware> logger)

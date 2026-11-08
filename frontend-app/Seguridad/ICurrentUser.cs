@@ -1,5 +1,5 @@
 
-namespace TallerMecanico.Aplicacion.Puertos;
+namespace TallerMecanico.Seguridad;
 
 public interface ICurrentUser
 {

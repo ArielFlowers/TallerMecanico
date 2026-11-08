@@ -1,4 +1,4 @@
-namespace TallerMecanico.Aplicacion.Dto;
+namespace TallerMecanico.Sesion;
 
 public sealed class BorradorVehiculo
 {

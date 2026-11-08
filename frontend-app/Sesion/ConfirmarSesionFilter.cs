@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace TallerMecanico.Infraestructura.Sesion;
+namespace TallerMecanico.Sesion;
 
 public sealed class ConfirmarSesionFilter(ILogger<ConfirmarSesionFilter> logger) : IAsyncPageFilter
 {

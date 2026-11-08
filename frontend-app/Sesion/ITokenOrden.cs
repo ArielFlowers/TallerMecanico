@@ -1,4 +1,4 @@
-namespace TallerMecanico.Aplicacion.CasosUso.Ordenes.Contratos;
+namespace TallerMecanico.Sesion;
 
 public interface ITokenOrden
 {

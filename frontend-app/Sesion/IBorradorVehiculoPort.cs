@@ -1,6 +1,5 @@
-using TallerMecanico.Aplicacion.Dto;
 
-namespace TallerMecanico.Aplicacion.Puertos;
+namespace TallerMecanico.Sesion;
 
 public interface IBorradorVehiculoPort
 {
