@@ -8,7 +8,7 @@ la misma base `taller_mecanico` de Aiven MySQL 8.4.
 
 ## Qué entrega el responsable
 
-- Acceso al repositorio y nombre de la rama acordada (actualmente `feature/bd-nube`).
+- Acceso al repositorio y nombre de la rama acordada (actualmente `main`).
 - Por privado: host, puerto, usuario y clave de la base Aiven existente.
 - Una cuenta activa de la aplicación, distinta de MySQL y Gmail.
 - Cuenta SMTP de pruebas y contraseña de aplicación, o indicación de usar una propia.

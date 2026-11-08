@@ -23,7 +23,7 @@
 
 ```text
 backend-services/servicio-usuarios/
-  Aplicacion/       Puertos, servicios, fachadas y validaciones de cuentas
+  Aplicacion/       Puertos, servicios y fachadas de cuentas
   Dominio/          Usuario y SolicitudRegistro
   Infraestructura/  MySQL, auditoría, correo y Argon2id
   Controllers/      Adaptadores de entrada HTTP: autenticación y usuarios
@@ -35,7 +35,7 @@ frontend-app/
   Pages/            Presentación Razor y formularios
   Api/              UsuariosApi, ReportesApi y propagación del usuario
 shared/TallerMecanico.Contratos/
-  Usuarios/         DTO de cuenta y sesión
+  Usuarios/         DTO de cuenta y sesión, y ReglasCuenta (compartidas con el Frontend)
   Reportes/         Filtros y documentos de reporte
 ```
 
@@ -43,13 +43,29 @@ Regla de dependencias dentro de cada API: `Controllers -> Aplicacion -> Dominio`
 (Reportes no necesita entidades propias). `Infraestructura` implementa
 `Aplicacion/Puertos`; el Frontend se comunica por HTTP y solo comparte DTO.
 
-## Patrones
+## Patrones de diseño
 
-| Patrón | Dónde |
-|---|---|
-| Facade | `Aplicacion/Fachadas/RegistroFacade` |
-| Factory Method | `Creador*` en el Servicio 1; ver la guía Clean |
-| Singleton | `ConfiguracionTaller` (`Lazy<T>`), dentro de cada proceso que la utiliza |
+| Patrón | Ejemplo del código | Propósito |
+|---|---|---|
+| Repository | `servicio-usuarios/Infraestructura/Persistencia/MySql/UsuarioRepository.cs` | Aísla el SQL detrás de los puertos de usuarios |
+| Adapter | `servicio-reportes/Infraestructura/Documentos/QuestPdfReporteOrdenesAdapter.cs` y adaptadores ClosedXML | Implementa los puertos de generación con bibliotecas concretas |
+| Facade | `servicio-usuarios/Aplicacion/Fachadas/RegistroFacade.cs` | Coordina el flujo de solicitud de registro con una entrada común |
+| Singleton | `ConfiguracionTaller` (`Lazy<T>`) | Una sola configuración del taller dentro de cada proceso que la usa |
+
+## Principios SOLID
+
+| Principio | Evidencia | Justificación |
+|---|---|---|
+| Responsabilidad única | Servicios de Reportes y sus adaptadores | Consultar SQL y dibujar un PDF son responsabilidades distintas |
+| Abierto/cerrado | `IGeneradorReporte*PdfPort` e `IGeneradorReporte*ExcelPort` | Una implementación nueva se registra sin cambiar la orquestación del reporte |
+| Sustitución de Liskov | Puertos de usuarios y dobles de `servicio-usuarios.Tests` | Los servicios funcionan igual con adaptadores reales o dobles |
+| Segregación de interfaces | `IUsuarioConsultaPort` e `IUsuarioAdministracionPort` | Consultar y administrar tienen contratos separados |
+| Inversión de dependencias | Constructor de `UsuarioAdministracionService` | La aplicación depende de puertos; MySQL, correo y hash quedan en Infraestructura |
+
+## Diagramas
+
+En [`docs/diagramas/`](diagramas/): `Clases_Usuarios_Hexagonal.puml`,
+`Clases_Reportes_Hexagonal.puml` y `Secuencia_Login.puml`.
 
 ## Auditoría (quién hizo qué)
 
@@ -57,6 +73,7 @@ Regla de dependencias dentro de cada API: `Controllers -> Aplicacion -> Dominio`
 - Modificación: `ModificadoPor` + `FechaModificacion` en las entidades editables.
 - Anulación: `AnuladoPor` + `FechaAnulacion` en Órdenes.
 - Eliminación en catálogos: como el borrado es físico, queda en la tabla `Auditoria` con usuario, fecha y datos del registro (`CLIENTE_ELIMINADO`, `VEHICULO_ELIMINADO`, `PRODUCTO_ELIMINADO`, `MECANICO_ELIMINADO` y `SERVICIO_ELIMINADO`).
+- Baja lógica de una orden: además de sus columnas, queda como `ORDEN_ANULADA` en la tabla `Auditoria`.
 - Eventos: tabla `Auditoria` y trigger `TRG_Servicios_HistorialCosto`.
 
 ## Gestión de usuarios (HU3)
@@ -102,8 +119,8 @@ Ambos usan el logo en el encabezado y los datos sumariados al pie.
   con `GraficoEstadosOrdenes` y `GraficoMecanicos`.
 - Salida: `IGeneradorReporte*ExcelPort`, implementados por `ClosedXmlReporte*Adapter`
   con `XlsxBuilder`.
-- Composición: `Infraestructura/RegistroDependencias.AddInfraestructuraReportes()`
-  registra la fábrica de conexiones, los adaptadores y los servicios.
+- Composición: el `Program.cs` del servicio registra la fábrica de conexiones, los
+  adaptadores y los servicios.
 
 ### Contrato HTTP
 
@@ -121,9 +138,12 @@ El frontend envía la clave interna; el controlador exige rol Administrador y to
 responden 400, la falta de sesión 401/403 y una base caída 503 mediante
 `ErroresApiFilter`. Las páginas Razor conservan sus rutas y ahora son asíncronas.
 
+Reportes lee las tablas de Órdenes y Mecánicos directamente porque la base es
+compartida; la justificación está en [SBA](SBA.md#decisiones-de-la-arquitectura).
+
 Pruebas: `tests/servicio-reportes.Tests` cubre servicios, adaptadores (QuestPDF y
-ClosedXML) e integración MySQL aislada; el contrato HTTP y el flujo navegador
-permanecen en `tests/frontend-app.Tests`.
+ClosedXML), arquitectura e integración MySQL aislada; el contrato HTTP y el flujo
+navegador permanecen en `tests/frontend-app.Tests`.
 
 ## Dashboard por rol
 

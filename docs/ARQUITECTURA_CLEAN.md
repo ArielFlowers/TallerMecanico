@@ -20,7 +20,7 @@ lógica de negocio ni referencias a MySQL, Razor o librerías de documentos.
 
 ```text
 Navegador ──► frontend-app (Razor Pages)
-                    │  HTTP/JSON + X-Clave-Interna + X-Usuario-*
+                    │  HTTPS/JSON + X-Clave-Interna + X-Usuario-*
                     ├──► servicio-ordenes   (Clean)
                     ├──► servicio-usuarios  (Hexagonal)
                     └──► servicio-reportes  (Hexagonal)
@@ -50,7 +50,7 @@ Navegador ──► frontend-app (Razor Pages)
 | Servicios de catálogo | `Aplicacion/Servicios/` | Clientes, vehículos, mecánicos, productos, servicios y dashboard |
 | Infraestructura | `Infraestructura/` | MySQL, QuestPDF y seguridad; implementa los contratos |
 | Presentación HTTP | `Controllers/` | Controladores MVC que reciben los DTO compartidos |
-| Composición | `Program.cs` e `Infraestructura/RegistroDependencias.cs` | Conecta cada contrato con su implementación |
+| Composición | `Program.cs` | Conecta cada contrato con su implementación |
 
 ```text
 Controllers  ──►  Fachadas  ──►  Casos de uso  ──►  Dominio
@@ -123,8 +123,9 @@ concesión a propósito para mantener el código simple.
    orden.
 4. Si `orden.PuedeAnularse()` es falso, responde con error sin tocar el stock.
 5. Bloquea los productos y aplica `orden.Anular(usuario, fecha)`.
-6. Guarda el estado y la auditoría, y restituye el stock.
+6. Guarda el estado y quién anuló, y restituye el stock.
 7. Confirma, o revierte todo si algo falla.
+8. Registra `ORDEN_ANULADA` en la bitácora, como las bajas de los catálogos.
 
 ## Patrones de diseño
 
@@ -174,7 +175,7 @@ Los diagramas del entregable se mantienen como código PlantUML en
 ## Pruebas
 
 ```powershell
-dotnet test TallerMecanico.sln
+dotnet test TallerMecanico.sln -m:1
 dotnet test tests/servicio-ordenes.Tests/servicio-ordenes.Tests.csproj
 dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj
 ```
@@ -193,6 +194,4 @@ dotnet test tests/frontend-app.Tests/frontend-app.Tests.csproj
 - `OrdenesPaginasTests`: páginas de órdenes con el Servicio 1 simulado (token,
   servicio no disponible, fecha, borrador y comprobante).
 
-Con `TALLER_TEST_MYSQL` configurado, la solución completa dio 806 pruebas aprobadas,
-0 fallidas y 9 omitidas. Las omitidas son de navegador o de extracción de texto PDF,
-que requieren herramientas opcionales.
+Los resultados de la solución completa están en [Validación](VALIDACION_SBA.md).
