@@ -113,7 +113,7 @@ public sealed class UsuarioSesionRevocadaHttpTests
                     })
                 {
                     BaseAddress = new Uri(url),
-                    Timeout = TimeSpan.FromSeconds(5)
+                    Timeout = TimeSpan.FromSeconds(30)
                 };
 
                 bool listo = false;

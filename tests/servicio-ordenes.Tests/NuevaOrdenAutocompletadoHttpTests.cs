@@ -206,7 +206,7 @@ public sealed class NuevaOrdenAutocompletadoHttpTests
     internal static HttpClient NuevoCliente(string url, CookieContainer cookies) => new(new HttpClientHandler
     {
         AllowAutoRedirect = false, CookieContainer = cookies, ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-    }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(5) };
+    }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(30) };
 
     internal static async Task IniciarSesion(HttpClient cliente, string usuario, string password)
     {

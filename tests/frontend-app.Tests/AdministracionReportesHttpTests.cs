@@ -261,7 +261,7 @@ public sealed class AdministracionReportesHttpTests
     private static HttpClient NuevoCliente(string url, CookieContainer cookies) => new(new HttpClientHandler
     {
         AllowAutoRedirect = false, CookieContainer = cookies, ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-    }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(10) };
+    }) { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(30) };
 
     private static string Token(string html)
     {

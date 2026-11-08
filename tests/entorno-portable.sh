@@ -114,6 +114,9 @@ printf "MYSQL_CONNECTION='conexion-de-prueba'\n" > "$TALLER_PRUEBA_RAIZ/.env"
 esperar_fallo ejecutar nube up
 : > "$TALLER_PRUEBA_RAIZ/certs/localhost.pem"
 : > "$TALLER_PRUEBA_RAIZ/certs/localhost-key.pem"
+: > "$TALLER_PRUEBA_RAIZ/certs/servicios.pem"
+: > "$TALLER_PRUEBA_RAIZ/certs/servicios-key.pem"
+: > "$TALLER_PRUEBA_RAIZ/certs/ca-interna.pem"
 
 ejecutar nube up > "$temporal/up.log" 2>&1
 if grep -F 'secreto-no-imprimir' "$temporal/up.log" >/dev/null; then
