@@ -1,0 +1,86 @@
+@startuml Clases_Usuarios_Hexagonal
+!pragma layout smetana
+title Diagrama de clases - Servicio 2: Usuarios (Hexagonal)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+
+package "Adaptadores de entrada (Controllers)" {
+  class AuthController {
+    + Login(solicitud): UsuarioSesionDto
+    + CambiarContrasena(solicitud)
+    + Estado(id): EstadoUsuarioDto
+  }
+  class UsuariosController {
+    + Listar(...): UsuarioListadoDto[]
+    + Crear(solicitud)
+    + Actualizar(id, solicitud)
+    + Desactivar(id)
+    + Reactivar(id)
+  }
+}
+
+package "Núcleo (Aplicacion y Dominio)" {
+  interface IAuthenticationService <<puerto de entrada>> {
+    + ValidarCredenciales(username, password)
+  }
+  interface IGestionUsuariosPort <<puerto de entrada>> {
+    + CrearInvitacion(username, email, rol, password)
+    + ActivarUsuarioDesdeInvitacion(token, out error)
+    + ActualizarUsuario(id, email, rol, activo, out error)
+    + DesactivarUsuario(id, out error)
+    + ReactivarUsuario(id, out error)
+  }
+  interface ICambioContrasenaPort <<puerto de entrada>> {
+    + Cambiar(actual, nueva, confirmacion, out error)
+  }
+  class AuthenticationService
+  class UsuarioAdministracionService
+  class CambioContrasenaService
+  class GeneradorNombreUsuarioService {
+    + GenerarUsuarioUnico(correo): string
+  }
+  class Usuario
+
+  interface IUsuarioPort <<puerto de salida>>
+  interface IUsuarioConsultaPort <<puerto de salida>>
+  interface IUsuarioAdministracionPort <<puerto de salida>>
+  interface IAuditoriaPort <<puerto de salida>>
+  interface IEmailService <<puerto de salida>>
+  interface IPasswordHasher <<puerto de salida>>
+}
+
+package "Adaptadores de salida (Infraestructura)" {
+  class UsuarioRepository
+  class AuditoriaRepository
+  class GmailEmailService
+  class Argon2idPasswordHasher
+}
+
+AuthController --> IAuthenticationService
+AuthController --> ICambioContrasenaPort
+UsuariosController --> IGestionUsuariosPort
+UsuariosController --> IUsuarioConsultaPort
+
+AuthenticationService ..|> IAuthenticationService
+UsuarioAdministracionService ..|> IGestionUsuariosPort
+CambioContrasenaService ..|> ICambioContrasenaPort
+
+AuthenticationService --> IUsuarioPort
+AuthenticationService --> IPasswordHasher
+UsuarioAdministracionService --> IUsuarioAdministracionPort
+UsuarioAdministracionService --> IEmailService
+UsuarioAdministracionService --> IAuditoriaPort
+UsuarioAdministracionService --> GeneradorNombreUsuarioService
+CambioContrasenaService --> IUsuarioPort
+CambioContrasenaService --> IPasswordHasher
+CambioContrasenaService --> IAuditoriaPort
+AuthenticationService ..> Usuario
+
+UsuarioRepository ..|> IUsuarioPort
+UsuarioRepository ..|> IUsuarioConsultaPort
+UsuarioRepository ..|> IUsuarioAdministracionPort
+AuditoriaRepository ..|> IAuditoriaPort
+GmailEmailService ..|> IEmailService
+Argon2idPasswordHasher ..|> IPasswordHasher
+@enduml

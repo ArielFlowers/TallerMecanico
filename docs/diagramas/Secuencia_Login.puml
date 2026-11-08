@@ -1,0 +1,39 @@
+@startuml Secuencia_Login
+!pragma layout smetana
+title Secuencia - Iniciar sesión
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+
+actor Usuario
+participant "Pages/Auth/Login" as UI
+participant "UsuariosApi" as API
+participant "AuthController" as C
+participant "AuthenticationService" as S
+participant "UsuarioRepository" as R
+participant "Argon2idPasswordHasher" as H
+database MySQL
+
+Usuario -> UI : Usuario y contraseña
+UI -> API : IniciarSesionAsync(usuario, contraseña)
+API -> C : POST api/auth/login\nHTTPS + X-Clave-Interna
+C -> S : ValidarCredenciales(usuario, contraseña)
+S -> R : ObtenerPorUsername(usuario)
+R -> MySQL : SELECT
+MySQL --> R : Fila del usuario
+R --> S : Usuario
+S -> H : VerificarPassword(contraseña, hash)
+H --> S : Resultado
+
+alt Credenciales válidas y cuenta activa
+  S --> C : UsuarioAutenticado
+  C --> API : 200 UsuarioSesionDto (sin hash)
+  API --> UI : Id, usuario y rol
+  UI -> UI : Crea la cookie con SignInAsync
+  UI --> Usuario : Inicio con el menú de su rol
+else Credenciales incorrectas
+  S --> C : null
+  C --> API : 401 ErrorApi
+  API --> UI : null
+  UI --> Usuario : "Usuario o contraseña incorrectos."
+end
+@enduml
