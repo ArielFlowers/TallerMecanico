@@ -1,0 +1,81 @@
+name: Pruebas de una app
+
+# Definicion comun: cada app la llama con su proyecto de pruebas.
+on:
+  workflow_call:
+    inputs:
+      proyecto:
+        description: Proyecto de pruebas de la app.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  PROYECTO_PRUEBAS: ${{ inputs.proyecto }}
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: 'true'
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preparar .NET y compilar
+        uses: ./.github/actions/preparar-pruebas
+      - name: Preparar lectura de PDF
+        uses: ./.github/actions/preparar-pdf
+      - name: Probar logica, validaciones y PDF
+        run: >-
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          --filter "Area=Backend" --logger "trx;LogFileName=backend.trx"
+          --results-directory TestResults/backend -- xUnit.ParallelizeTestCollections=false
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-backend-${{ github.workflow }}
+          path: TestResults/backend/*.trx
+          if-no-files-found: warn
+          retention-days: 7
+
+  datos:
+    name: Base de datos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3308:3306
+        options: >-
+          --tmpfs /var/lib/mysql
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --protocol=tcp -uroot -pci_test_password --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=24
+    env:
+      TALLER_TEST_MYSQL: 'Server=127.0.0.1;Port=3308;User ID=root;Password=ci_test_password;SslMode=Disabled;'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preparar .NET y compilar
+        uses: ./.github/actions/preparar-pruebas
+      - name: Probar repositorios y transacciones en MySQL
+        run: >-
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore
+          --filter "Area=Datos" --logger "trx;LogFileName=datos.trx"
+          --results-directory TestResults/datos -- xUnit.ParallelizeTestCollections=false
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-datos-${{ github.workflow }}
+          path: TestResults/datos/*.trx
+          if-no-files-found: warn
+          retention-days: 7

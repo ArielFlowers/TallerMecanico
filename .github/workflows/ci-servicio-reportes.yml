@@ -1,0 +1,45 @@
+name: CI Servicio Reportes
+
+# Servicio 3. El esquema lo crea el Servicio 1, por eso tambien vigila su persistencia.
+on:
+  pull_request:
+    paths:
+      - 'backend-services/servicio-reportes/**'
+      - 'tests/servicio-reportes.Tests/**'
+      - 'backend-services/servicio-ordenes/Infraestructura/Persistencia/**'
+      - '.github/workflows/ci-servicio-reportes.yml'
+      - 'tests/comun/**'
+      - 'tests/Comun.props'
+      - 'tests/pdf_text.py'
+      - 'tests/requirements-ci.txt'
+      - 'shared/**'
+      - '.github/workflows/pruebas-app.yml'
+      - '.github/actions/**'
+  push:
+    branches: [main]
+    paths:
+      - 'backend-services/servicio-reportes/**'
+      - 'tests/servicio-reportes.Tests/**'
+      - 'backend-services/servicio-ordenes/Infraestructura/Persistencia/**'
+      - '.github/workflows/ci-servicio-reportes.yml'
+      - 'tests/comun/**'
+      - 'tests/Comun.props'
+      - 'tests/pdf_text.py'
+      - 'tests/requirements-ci.txt'
+      - 'shared/**'
+      - '.github/workflows/pruebas-app.yml'
+      - '.github/actions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas:
+    uses: ./.github/workflows/pruebas-app.yml
+    with:
+      proyecto: tests/servicio-reportes.Tests/servicio-reportes.Tests.csproj

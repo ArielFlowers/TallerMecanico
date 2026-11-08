@@ -1,0 +1,45 @@
+name: CI Servicio Ordenes
+
+# Servicio 1: dominio, casos de uso, catalogos y esquema de la base.
+on:
+  pull_request:
+    paths:
+      - 'backend-services/servicio-ordenes/**'
+      - 'tests/servicio-ordenes.Tests/**'
+      - 'docs/migraciones/**'
+      - '.github/workflows/ci-servicio-ordenes.yml'
+      - 'tests/comun/**'
+      - 'tests/Comun.props'
+      - 'tests/pdf_text.py'
+      - 'tests/requirements-ci.txt'
+      - 'shared/**'
+      - '.github/workflows/pruebas-app.yml'
+      - '.github/actions/**'
+  push:
+    branches: [main]
+    paths:
+      - 'backend-services/servicio-ordenes/**'
+      - 'tests/servicio-ordenes.Tests/**'
+      - 'docs/migraciones/**'
+      - '.github/workflows/ci-servicio-ordenes.yml'
+      - 'tests/comun/**'
+      - 'tests/Comun.props'
+      - 'tests/pdf_text.py'
+      - 'tests/requirements-ci.txt'
+      - 'shared/**'
+      - '.github/workflows/pruebas-app.yml'
+      - '.github/actions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas:
+    uses: ./.github/workflows/pruebas-app.yml
+    with:
+      proyecto: tests/servicio-ordenes.Tests/servicio-ordenes.Tests.csproj

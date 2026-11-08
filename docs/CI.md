@@ -1,36 +1,40 @@
-# CI por areas
+# CI por aplicación
 
-Las cuatro suites se compilan y se ejecutan desde `TallerMecanico.sln`, manteniendo los filtros por área. Cada ensamblado guarda su propio TRX con nombre generado para evitar sobrescribir resultados.
+Cada aplicación tiene su workflow y solo corre cuando cambia algo que la afecta. Las
+pruebas que necesitan las cuatro aplicaciones juntas están en un workflow aparte.
 
-Todo se configura en un solo [workflow CI](../.github/workflows/ci.yml). En el PR
-cada check tiene un nombre que indica que esta comprobando:
+| Workflow | Qué comprueba | Se ejecuta si cambia |
+|---|---|---|
+| [CI Frontend](../.github/workflows/ci-frontend.yml) | Páginas y lógica con los servicios simulados | `frontend-app/` o sus pruebas |
+| [CI Servicio Ordenes](../.github/workflows/ci-servicio-ordenes.yml) | Dominio, casos de uso, catálogos y MySQL | `servicio-ordenes/`, sus pruebas o `docs/migraciones/` |
+| [CI Servicio Usuarios](../.github/workflows/ci-servicio-usuarios.yml) | Cuentas, contraseñas, correo simulado y MySQL | `servicio-usuarios/`, sus pruebas o el esquema del Servicio 1 |
+| [CI Servicio Reportes](../.github/workflows/ci-servicio-reportes.yml) | Consultas, PDF y Excel | `servicio-reportes/`, sus pruebas o el esquema del Servicio 1 |
+| [CI Integracion](../.github/workflows/ci-integracion.yml) | HTTP real entre las apps y recorridos de navegador | Cualquier app, `shared/` o `tests/` |
+| [CI Infraestructura](../.github/workflows/ci-infraestructura.yml) | Las cuatro imágenes Docker, lanzadores, Windows y macOS | Docker, scripts o cualquier app |
+
+Los cambios en `shared/`, `tests/comun/` o las acciones comunes disparan las cuatro
+aplicaciones. Un cambio solo de documentación no ejecuta ningún workflow.
+
+Los cuatro workflows de aplicación llaman a
+[pruebas-app.yml](../.github/workflows/pruebas-app.yml), que define sus dos checks:
 
 | Check | Que comprueba | Herramientas preparadas por CI |
 |---|---|---|
-| Backend | Reglas de negocio, servicios, validaciones, sesiones y comprobantes PDF, incluido su texto. | .NET 10, Python y pypdf. |
-| API / HTTP | Autenticacion, permisos, endpoints de autocompletado, formularios y respuestas HTTP/HTTPS de Razor Pages. | .NET 10 y MySQL 8.4 temporal. |
-| Base de datos / MySQL | Repositorios, esquema, migraciones, transacciones, concurrencia e integridad de datos. | .NET 10 y MySQL 8.4 temporal. |
-| Frontend / navegador | Interacciones reales en Edge: autocompletado, formularios, navegacion, borradores, modales y comprobantes. | .NET 10, MySQL 8.4 temporal, Node, Playwright, Python y pypdf. |
-| Compatibilidad (Windows) | Compilacion y publicacion nativas, ayuda de MSBuild, lanzadores, rutas con espacios y generacion nativa de PDF. | .NET 10 y Bash de Git para Windows. |
-| Compatibilidad (macOS) | Las mismas comprobaciones de compatibilidad en una maquina macOS. | .NET 10 y Bash. |
+| Backend | Reglas de negocio, servicios, validaciones, sesiones y PDF, incluido su texto. | .NET 10, Python y pypdf. |
+| Base de datos | Repositorios, esquema, migraciones, transacciones, concurrencia e integridad. | .NET 10 y MySQL 8.4 temporal. |
 
-La aplicacion usa Razor Pages; **API / HTTP** incluye sus handlers y paginas,
-ademas de los endpoints JSON. Backend comprueba la logica sin servidor web ni
-base de datos real. Los errores de SQL se investigan primero en Base de datos;
-los de rutas, cookies, roles y respuestas, en API; los de interaccion visual, en
-Frontend.
+CI Integracion agrega **API / HTTP** y **Frontend / navegador**, y CI Infraestructura
+agrega **Docker** y **Compatibilidad (Windows / macOS)**.
 
 ## Cuando se ejecuta
 
-- Al abrir o actualizar un PR: una ejecucion del workflow.
-- Al hacer push a `main`: una ejecucion para comprobar el codigo integrado.
+- Al abrir o actualizar un PR, si cambió una ruta vigilada.
+- Al hacer push a `main`, con las mismas rutas.
 - Manualmente desde Actions, mediante `workflow_dispatch`.
-- Un nuevo commit del mismo PR cancela su ejecucion anterior.
+- Un nuevo commit del mismo PR cancela la ejecución anterior de ese workflow.
 
-Los pushes a ramas de trabajo se comprueban a traves de su PR. Ya no disparan
-una segunda ejecucion identica. Windows y macOS comparten una unica definicion
-de job; GitHub necesita una maquina distinta para cada sistema y por eso muestra
-un check de cada uno. No hay un workflow separado de portabilidad.
+Si en GitHub se marcan checks como obligatorios, no conviene exigir los de un workflow
+con rutas: cuando no corre, el PR queda esperando un check que nunca llega.
 
 ## Como se reparten las pruebas
 

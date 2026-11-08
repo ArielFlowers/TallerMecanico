@@ -1,0 +1,43 @@
+name: CI Frontend
+
+# Logica y paginas del Frontend, con los servicios simulados.
+on:
+  pull_request:
+    paths:
+      - 'frontend-app/**'
+      - 'tests/frontend-app.Tests/**'
+      - '.github/workflows/ci-frontend.yml'
+      - 'tests/comun/**'
+      - 'tests/Comun.props'
+      - 'tests/pdf_text.py'
+      - 'tests/requirements-ci.txt'
+      - 'shared/**'
+      - '.github/workflows/pruebas-app.yml'
+      - '.github/actions/**'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-app/**'
+      - 'tests/frontend-app.Tests/**'
+      - '.github/workflows/ci-frontend.yml'
+      - 'tests/comun/**'
+      - 'tests/Comun.props'
+      - 'tests/pdf_text.py'
+      - 'tests/requirements-ci.txt'
+      - 'shared/**'
+      - '.github/workflows/pruebas-app.yml'
+      - '.github/actions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas:
+    uses: ./.github/workflows/pruebas-app.yml
+    with:
+      proyecto: tests/frontend-app.Tests/frontend-app.Tests.csproj

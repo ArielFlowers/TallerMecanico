@@ -1,0 +1,131 @@
+name: CI Infraestructura
+
+# Empaquetado de las cuatro apps y lanzadores en cada sistema.
+on:
+  pull_request:
+    paths:
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+      - '.dockerignore'
+      - '.env.example'
+      - 'scripts/**'
+      - 'taller.*'
+      - 'Directory.Solution.targets'
+      - 'Directory.Build.rsp'
+      - 'TallerMecanico.sln'
+      - 'tests/entorno-portable.sh'
+      - 'frontend-app/**'
+      - 'backend-services/**'
+      - 'shared/**'
+      - '.github/workflows/ci-infraestructura.yml'
+      - '.github/actions/**'
+  push:
+    branches: [main]
+    paths:
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+      - '.dockerignore'
+      - '.env.example'
+      - 'scripts/**'
+      - 'taller.*'
+      - 'Directory.Solution.targets'
+      - 'Directory.Build.rsp'
+      - 'TallerMecanico.sln'
+      - 'tests/entorno-portable.sh'
+      - 'frontend-app/**'
+      - 'backend-services/**'
+      - 'shared/**'
+      - '.github/workflows/ci-infraestructura.yml'
+      - '.github/actions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROYECTO_PRUEBAS: TallerMecanico.sln
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: 'true'
+
+jobs:
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Solo para validar y construir; aqui no se levanta el entorno.
+      CLAVE_INTERNA: clave-de-validacion
+      MYSQL_CONNECTION: Server=localhost;Database=validacion;
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validar docker-compose.yml
+        run: docker compose config --quiet
+      - name: Construir las cuatro imagenes
+        run: docker compose build
+
+  compatibilidad:
+    name: Compatibilidad (${{ matrix.sistema }})
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sistema: Windows
+            runner: windows-latest
+          - sistema: macOS
+            runner: macos-latest
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preparar .NET y compilar
+        uses: ./.github/actions/preparar-pruebas
+      - name: Publicar las cuatro aplicaciones para el sistema actual
+        run: |
+          for proyecto in frontend-app/TallerMecanico.Frontend.csproj backend-services/servicio-*/TallerMecanico.Servicio*.csproj; do
+            aplicacion="$(basename "$proyecto" .csproj)"
+            dotnet publish "$proyecto" --configuration Release --no-restore --output "$RUNNER_TEMP/taller-publicado/$aplicacion"
+          done
+      - name: Validar lanzadores y rutas con espacios
+        run: |
+          bash -n scripts/entorno.sh
+          bash -n taller.sh
+          bash ./taller.sh ayuda
+          bash ./tests/entorno-portable.sh
+          dotnet msbuild -t:Ayuda
+      - name: Comprobar el lanzador nativo de Windows
+        if: matrix.sistema == 'Windows'
+        shell: cmd
+        run: taller.cmd ayuda
+      - name: Validar sintaxis del lanzador PowerShell
+        if: matrix.sistema == 'Windows'
+        shell: pwsh
+        run: |
+          $tokensLanzador = $null
+          $erroresLanzador = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'scripts/entorno.ps1'),
+            [ref]$tokensLanzador, [ref]$erroresLanzador) | Out-Null
+          if ($erroresLanzador.Count -gt 0) {
+            $erroresLanzador | Format-List
+            exit 1
+          }
+      - name: Comprobar la generacion nativa de PDF
+        run: >-
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore -m:1
+          --filter "Tipo=Portabilidad" --logger trx
+          --results-directory TestResults/compatibilidad
+      - name: Guardar resultados de compatibilidad
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-compatibilidad-${{ matrix.sistema }}
+          path: TestResults/compatibilidad/*.trx
+          if-no-files-found: warn
+          retention-days: 7
