@@ -1,36 +1,31 @@
-# CI por areas
+# CI por aplicación
 
-Las cuatro suites se compilan y se ejecutan desde `TallerMecanico.sln`, manteniendo los filtros por área. Cada ensamblado guarda su propio TRX con nombre generado para evitar sobrescribir resultados.
+Cada aplicación tiene un solo check y solo corre cuando cambia algo que la afecta.
+Las pruebas que necesitan las cuatro aplicaciones juntas tienen su propio check.
 
-Todo se configura en un solo [workflow CI](../.github/workflows/ci.yml). En el PR
-cada check tiene un nombre que indica que esta comprobando:
-
-| Check | Que comprueba | Herramientas preparadas por CI |
+| Check | Qué comprueba | Se ejecuta si cambia |
 |---|---|---|
-| Backend | Reglas de negocio, servicios, validaciones, sesiones y comprobantes PDF, incluido su texto. | .NET 10, Python y pypdf. |
-| API / HTTP | Autenticacion, permisos, endpoints de autocompletado, formularios y respuestas HTTP/HTTPS de Razor Pages. | .NET 10 y MySQL 8.4 temporal. |
-| Base de datos / MySQL | Repositorios, esquema, migraciones, transacciones, concurrencia e integridad de datos. | .NET 10 y MySQL 8.4 temporal. |
-| Frontend / navegador | Interacciones reales en Edge: autocompletado, formularios, navegacion, borradores, modales y comprobantes. | .NET 10, MySQL 8.4 temporal, Node, Playwright, Python y pypdf. |
-| Compatibilidad (Windows) | Compilacion y publicacion nativas, ayuda de MSBuild, lanzadores, rutas con espacios y generacion nativa de PDF. | .NET 10 y Bash de Git para Windows. |
-| Compatibilidad (macOS) | Las mismas comprobaciones de compatibilidad en una maquina macOS. | .NET 10 y Bash. |
+| [Frontend / Pruebas](../.github/workflows/ci-frontend.yml) | Páginas y lógica con los servicios simulados | `frontend-app/` o sus pruebas |
+| [Servicio Ordenes / Pruebas](../.github/workflows/ci-servicio-ordenes.yml) | Dominio, casos de uso, catálogos y MySQL | `servicio-ordenes/`, sus pruebas o `docs/migraciones/` |
+| [Servicio Usuarios / Pruebas](../.github/workflows/ci-servicio-usuarios.yml) | Cuentas, contraseñas, correo simulado y MySQL | `servicio-usuarios/`, sus pruebas o el esquema del Servicio 1 |
+| [Servicio Reportes / Pruebas](../.github/workflows/ci-servicio-reportes.yml) | Consultas, PDF, Excel y MySQL | `servicio-reportes/`, sus pruebas o el esquema del Servicio 1 |
+| [Integracion / HTTP y navegador](../.github/workflows/ci-integracion.yml) | HTTP real entre las apps y recorridos en Edge | Cualquier app, `shared/` o `tests/` |
+| [Infraestructura / Docker y lanzadores](../.github/workflows/ci-infraestructura.yml) | Las cuatro imágenes Docker y los lanzadores | Docker, scripts o cualquier app |
 
-La aplicacion usa Razor Pages; **API / HTTP** incluye sus handlers y paginas,
-ademas de los endpoints JSON. Backend comprueba la logica sin servidor web ni
-base de datos real. Los errores de SQL se investigan primero en Base de datos;
-los de rutas, cookies, roles y respuestas, en API; los de interaccion visual, en
-Frontend.
+Los cambios en `shared/`, `tests/comun/` o las acciones comunes disparan las cuatro
+aplicaciones. Un cambio solo de documentación no ejecuta ningún check. Los pasos
+comunes de cada aplicación están en
+[probar-app](../.github/actions/probar-app/action.yml).
 
 ## Cuando se ejecuta
 
-- Al abrir o actualizar un PR: una ejecucion del workflow.
-- Al hacer push a `main`: una ejecucion para comprobar el codigo integrado.
+- Al abrir o actualizar un PR, si cambió una ruta vigilada.
+- Al hacer push a `main`, con las mismas rutas.
 - Manualmente desde Actions, mediante `workflow_dispatch`.
-- Un nuevo commit del mismo PR cancela su ejecucion anterior.
+- Un nuevo commit del mismo PR cancela la ejecución anterior de ese workflow.
 
-Los pushes a ramas de trabajo se comprueban a traves de su PR. Ya no disparan
-una segunda ejecucion identica. Windows y macOS comparten una unica definicion
-de job; GitHub necesita una maquina distinta para cada sistema y por eso muestra
-un check de cada uno. No hay un workflow separado de portabilidad.
+Si en GitHub se marcan checks como obligatorios, no conviene exigir los de un workflow
+con rutas: cuando no corre, el PR queda esperando un check que nunca llega.
 
 ## Como se reparten las pruebas
 
@@ -44,14 +39,9 @@ metodo. Las clases que mezclan logica y persistencia se clasifican por metodo.
 | `Area=Datos` | Persistencia y comportamiento de MySQL. |
 | `Area=Frontend` | Escenarios dedicados al navegador. |
 | `Tipo=Navegador` | Escenarios HTTP que tambien contienen un recorrido de navegador. |
-| `Tipo=Portabilidad` | Prueba breve de PDF que se repite en Windows y macOS. |
 
-Frontend ejecuta `Area=Frontend|Tipo=Navegador`. Algunos escenarios existentes
-preparan datos e inician sesion mediante HTTP antes de abrir el navegador:
-se reutilizan con Playwright habilitado para cubrir tambien esos recorridos.
-API los ejecuta sin navegador para poder identificar los fallos del servidor
-por separado. Esta repeticion de preparacion es intencional; la suite completa
-de backend y persistencia no se repite en cada sistema operativo.
+Cada aplicación ejecuta `Area=Backend|Area=Datos`. Integracion ejecuta
+`Area=API|Area=Frontend|Tipo=Navegador` sobre toda la solución, con Playwright habilitado.
 
 `ClasificacionPruebasTests` impide que una prueba nueva quede sin area, pertenezca
 a varias o use un nombre desconocido. Asi los filtros no dejan pruebas fuera
@@ -94,9 +84,8 @@ Abrir el check del area que fallo y su paso de pruebas. Cada area guarda un
 artefacto `resultados-...` con el informe TRX, incluso cuando falla la suite;
 se conserva siete dias. Los pasos de preparacion comunes estan en
 [preparar-pruebas](../.github/actions/preparar-pruebas/action.yml).
-Backend y Frontend comparten la preparacion de Python y pypdf mediante
+Las aplicaciones e Integracion comparten la preparacion de Python y pypdf mediante
 [preparar-pdf](../.github/actions/preparar-pdf/action.yml).
 
-Los jobs de compatibilidad validan el software nativo y simulan Docker en los
-lanzadores. El arranque de las cuatro aplicaciones Docker, HTTPS de Kestrel y la conexión
-compartida se comprueban aparte; CI usa exclusivamente MySQL temporal, nunca Aiven.
+El check de Infraestructura construye las imágenes y simula Docker en los lanzadores; no
+levanta el entorno. CI usa exclusivamente MySQL temporal, nunca Aiven.

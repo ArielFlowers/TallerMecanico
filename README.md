@@ -195,9 +195,9 @@ el MySQL de pruebas:
 docker compose --project-directory . --env-file tests/.env.test -f tests/docker-compose.test.yml down
 ```
 
-El workflow y sus filtros están en `.github/workflows/ci.yml` y en
-[la guía de CI](docs/CI.md); ejecuta las cuatro suites de la solución con los filtros por área y conserva
-un resultado TRX por ensamblado. Los recorridos de navegador y la lectura de PDF requieren:
+Cada aplicación tiene su workflow en `.github/workflows/` y solo corre cuando cambia
+algo que la afecta; las pruebas que levantan las cuatro apps y la infraestructura
+tienen el suyo. El detalle está en [la guía de CI](docs/CI.md).
 
 - Navegador: `npm ci --prefix tests/browser`, instalar Edge con
   `node tests/browser/node_modules/playwright/cli.js install msedge` y definir

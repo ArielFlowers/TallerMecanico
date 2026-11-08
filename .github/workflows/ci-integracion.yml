@@ -1,0 +1,87 @@
+name: Integracion
+
+# Pruebas que levantan las cuatro aplicaciones juntas: corren si cambia cualquiera.
+on:
+  pull_request:
+    paths:
+      - 'frontend-app/**'
+      - 'backend-services/**'
+      - 'shared/**'
+      - 'tests/**'
+      - '.github/workflows/ci-integracion.yml'
+      - '.github/actions/**'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-app/**'
+      - 'backend-services/**'
+      - 'shared/**'
+      - 'tests/**'
+      - '.github/workflows/ci-integracion.yml'
+      - '.github/actions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integracion:
+    name: HTTP y navegador
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3308:3306
+        options: >-
+          --tmpfs /var/lib/mysql
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --protocol=tcp -uroot -pci_test_password --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=24
+    env:
+      PROYECTO_PRUEBAS: TallerMecanico.sln
+      TALLER_TEST_MYSQL: 'Server=127.0.0.1;Port=3308;User ID=root;Password=ci_test_password;SslMode=Disabled;'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Preparar .NET y compilar
+        uses: ./.github/actions/preparar-pruebas
+      - name: Preparar lectura de PDF
+        uses: ./.github/actions/preparar-pdf
+      - name: Preparar Node para las pruebas de interfaz
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - name: Instalar Playwright y Microsoft Edge
+        working-directory: tests/browser
+        run: |
+          npm ci --no-audit --no-fund
+          node node_modules/playwright/cli.js install --with-deps msedge
+          echo "PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/tests/browser/node_modules/playwright" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_CHANNEL=msedge" >> "$GITHUB_ENV"
+      # Con -m:1 los proyectos corren uno tras otro: varias pruebas levantan las cuatro apps.
+      - name: Ejecutar las pruebas HTTP y de navegador
+        run: >-
+          dotnet test "$PROYECTO_PRUEBAS" --configuration Release --no-build --no-restore -m:1
+          --filter "Area=API|Area=Frontend|Tipo=Navegador" --logger trx
+          --results-directory TestResults -- xUnit.ParallelizeTestCollections=false
+      - name: Guardar resultados
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: resultados-integracion
+          path: TestResults/*.trx
+          if-no-files-found: warn
+          retention-days: 7

@@ -1,0 +1,85 @@
+name: Infraestructura
+
+# Empaquetado de las cuatro apps y lanzadores.
+on:
+  pull_request:
+    paths:
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+      - '.dockerignore'
+      - '.env.example'
+      - 'scripts/**'
+      - 'taller.*'
+      - 'Directory.Solution.targets'
+      - 'Directory.Build.rsp'
+      - 'TallerMecanico.sln'
+      - 'tests/entorno-portable.sh'
+      - 'frontend-app/**'
+      - 'backend-services/**'
+      - 'shared/**'
+      - '.github/workflows/ci-infraestructura.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+      - '.dockerignore'
+      - '.env.example'
+      - 'scripts/**'
+      - 'taller.*'
+      - 'Directory.Solution.targets'
+      - 'Directory.Build.rsp'
+      - 'TallerMecanico.sln'
+      - 'tests/entorno-portable.sh'
+      - 'frontend-app/**'
+      - 'backend-services/**'
+      - 'shared/**'
+      - '.github/workflows/ci-infraestructura.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  infraestructura:
+    name: Docker y lanzadores
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Solo para validar y construir; aqui no se levanta el entorno.
+      CLAVE_INTERNA: clave-de-validacion
+      MYSQL_CONNECTION: Server=localhost;Database=validacion;
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validar docker-compose.yml
+        run: docker compose config --quiet
+      - name: Construir las cuatro imagenes
+        run: docker compose build
+      - name: Validar lanzadores y rutas con espacios
+        run: |
+          bash -n scripts/entorno.sh
+          bash -n taller.sh
+          bash ./taller.sh ayuda
+          bash ./tests/entorno-portable.sh
+          dotnet msbuild -t:Ayuda
+      - name: Validar sintaxis del lanzador PowerShell
+        shell: pwsh
+        run: |
+          $tokensLanzador = $null
+          $erroresLanzador = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'scripts/entorno.ps1'),
+            [ref]$tokensLanzador, [ref]$erroresLanzador) | Out-Null
+          if ($erroresLanzador.Count -gt 0) {
+            $erroresLanzador | Format-List
+            exit 1
+          }
