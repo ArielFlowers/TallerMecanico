@@ -95,7 +95,8 @@ public sealed class OrdenesAutocompletadoHttpTests
                         listadoAdministrador = listado;
                     }
                     Assert.Equal(1, ContarFilas(listado));
-                    Assert.Equal(rol == "Administrador", listado.Contains("aria-label=\"Anular orden 1\""));
+                    Assert.Equal(rol == "Administrador", listado.Contains("data-orden-id=\"1\""));
+                    Assert.DoesNotContain("aria-label=\"Anular orden 1\"", listado);
                     Assert.Equal(0, ContarFilas(await cliente.GetStringAsync(seleccion.Replace("Estado=Activa", "Estado=Anulada"))));
                     Assert.Equal(4, ContarFilas(await cliente.GetStringAsync("/Ordenes?TerminoBusqueda=1")));
                     Assert.Equal(1, ContarFilas(await cliente.GetStringAsync("/Ordenes?TerminoBusqueda=15&Estado=Anulada&Fecha=2026-10-12")));
