@@ -8,7 +8,7 @@
 }
 
 <section class="ordenes-detalle-seccion" aria-labelledby="orden-detalle-general">
-    <h3 id="orden-detalle-general">Información general de la orden #@Model.Id</h3>
+    <h3 id="orden-detalle-general">Información general de la orden</h3>
     <dl class="ordenes-datos">
         <div><dt>Fecha del trabajo</dt><dd>@Model.Fecha.ToString(configuracion.FormatoFecha)</dd></div>
         <div>
@@ -75,7 +75,7 @@
     {
         <div class="table-container">
             <table class="orders-table ordenes-productos-table">
-                <caption class="ordenes-solo-lectores">Productos e importes históricos de la orden #@Model.Id</caption>
+                <caption class="ordenes-solo-lectores">Productos e importes históricos de la orden</caption>
                 <thead>
                     <tr>
                         <th scope="col">Código</th>

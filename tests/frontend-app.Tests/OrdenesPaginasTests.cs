@@ -92,6 +92,8 @@ public sealed class OrdenesPaginasTests
         Assert.Equal("./Index", redireccion.PageName);
         Assert.Contains("2026-10-18", Assert.Single(api.Cuerpos));
         Assert.Equal(15, pagina.TempData["OrdenCreadaId"]);
+        Assert.StartsWith("Orden guardada correctamente. Total: Bs.", pagina.TempData["OrdenMensaje"]!.ToString());
+        Assert.DoesNotContain("#15", pagina.TempData["OrdenMensaje"]!.ToString());
     }
 
     [Theory]

@@ -279,8 +279,8 @@ public sealed class CrearModel(
         }
         borradores.Eliminar(BorradorId ?? Guid.Empty);
         TempData["OrdenMensaje"] = resultado.EsReenvio
-            ? $"La orden #{resultado.OrdenId} ya se había guardado. Total: Bs. {resultado.Total:0.00}."
-            : $"Orden #{resultado.OrdenId} guardada correctamente. Total: Bs. {resultado.Total:0.00}.";
+            ? $"La orden ya se había guardado. Total: Bs. {resultado.Total:0.00}."
+            : $"Orden guardada correctamente. Total: Bs. {resultado.Total:0.00}.";
         TempData["OrdenCreadaId"] = resultado.OrdenId;
         return RedirectToPage("./Index");
     }

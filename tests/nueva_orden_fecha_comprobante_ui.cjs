@@ -123,7 +123,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
             assert.equal(await respaldo.isVisible(), true);
             const id = Number(urlPdf.searchParams.get('id'));
             assert.ok(id > 0);
-            const enlace = page.getByRole('link', { name: `Ver comprobante de orden ${id}`, exact: true });
+            const enlace = page.locator(`a[data-comprobante-url="${urlPdf.pathname}${urlPdf.search}"]`);
+            assert.equal(await enlace.count(), 1);
+            assert.equal(new URL(await enlace.getAttribute('href'), base).href, urlPdf.href);
             assert.equal(await enlace.getAttribute('target'), null);
             if (respuestaPdf) {
                 const respuesta = respuestaPdf;
@@ -162,7 +164,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
                 assert.equal(repetido.status(), 200);
                 const confirmacion = await page.evaluate(html => new DOMParser().parseFromString(html, 'text/html')
                     .querySelector('.ordenes-page > .orden-comprobante-aviso[role="status"]').textContent, await repetido.text());
-                assert.match(confirmacion, new RegExp(`orden #${id} ya se había guardado`));
+                assert.match(confirmacion, /La orden ya se había guardado/);
+                assert(!confirmacion.includes(`#${id}`));
             }
             console.log(`${rol}/${escenario}: verificando recarga con el comprobante abierto.`);
             const solicitudesPdf = comprobantes.length, totalPestañas = pestanas.length;

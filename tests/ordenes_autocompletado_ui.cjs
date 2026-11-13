@@ -13,9 +13,16 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         const input = page.locator('#ordenes-autocompletado-texto');
         const id = page.locator('#ordenes-autocompletado-id');
         const opciones = page.locator('#ordenes-autocompletado-sugerencias [role="option"]');
-        const opcionOrden = numero => opciones.filter({
-            has: page.locator('.autocompletado-principal', { hasText: new RegExp(`^Orden #${numero}$`) })
+        let sugerencias = [];
+        page.on('response', async respuesta => {
+            if (new URL(respuesta.url()).searchParams.get('handler') === 'Sugerencias' && respuesta.ok())
+                sugerencias = await respuesta.json();
         });
+        const opcionOrden = numero => {
+            const indice = sugerencias.findIndex(sugerencia => sugerencia.id === numero);
+            assert(indice >= 0, 'La respuesta debe conservar el ID de la orden seleccionada.');
+            return opciones.nth(indice);
+        };
         const filas = page.locator('[data-ver-orden]');
         const estado = page.locator('#Estado');
         const fecha = page.locator('#Fecha');
@@ -35,7 +42,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await input.fill('15');
         await opciones.first().waitFor();
         assert.equal(await opciones.count(), 3);
-        assert.match(await opciones.first().innerText(), /Orden #151/);
+        assert.equal(sugerencias[0].id, 151);
+        assert(!(await opciones.first().innerText()).includes('Orden #'));
         assert.match(await opciones.first().innerText(), /123ABC · Ana María Arce Pérez/);
         await Promise.all([
             page.waitForURL(url => url.searchParams.get('OrdenSeleccionadaId') === '15'),
@@ -80,7 +88,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await input.fill('123A');
         await opciones.first().waitFor();
         assert.equal(await opciones.count(), 1, 'Las sugerencias usan los filtros actuales antes de enviar el formulario.');
-        assert.match(await opciones.first().innerText(), /Orden #150/);
+        assert.equal(sugerencias[0].id, 150);
+        assert(!(await opciones.first().innerText()).includes('Orden #'));
         await page.getByRole('button', { name: 'Buscar', exact: true }).click();
         assert.equal(await filas.count(), 1);
         await page.getByRole('link', { name: 'Limpiar filtros', exact: true }).click();
@@ -89,13 +98,16 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await opcionOrden(1).click();
         const modal = page.locator('#orden-detalle-dialog');
         await filas.first().click();
-        await page.locator('#orden-detalle-general').filter({ hasText: '#1' }).waitFor();
+        await page.locator('#orden-detalle-general').filter({ hasText: /^Información general de la orden$/ }).waitFor();
+        assert(!(await page.locator('#orden-detalle-contenido').innerText()).includes('orden #1'));
         assert.match(await page.locator('#orden-detalle-contenido').innerText(), /Bs\. 31,00/);
-        assert.equal(await page.getByRole('button', { name: 'Anular orden 1', exact: true }).count(), 0);
+        assert.equal(await page.getByRole('button', { name: /^Anular orden del vehículo / }).count(), 0);
         await page.keyboard.press('Escape');
         await modal.waitFor({ state: 'hidden' });
         assert.ok(await filas.first().evaluate(elemento => document.activeElement === elemento));
-        const enlace = page.getByRole('link', { name: 'Ver comprobante de orden 1', exact: true });
+        const enlace = page.locator('a[data-comprobante-url]');
+        assert.equal(await enlace.count(), 1);
+        assert.equal(await enlace.getAttribute('href'), await enlace.getAttribute('data-comprobante-url'));
         assert.equal(await enlace.getAttribute('aria-controls'), 'comprobante-orden-dialog');
         assert.equal(await enlace.getAttribute('target'), null);
         const pdf = await context.request.get(new URL(await enlace.getAttribute('href'), page.url()).href);

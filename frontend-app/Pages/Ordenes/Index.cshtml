@@ -70,7 +70,7 @@
     {
         <div class="orden-comprobante-aviso" role="status">
             @if (!string.IsNullOrWhiteSpace(Model.MensajeExito)) { <span>@Model.MensajeExito</span> }
-            else { <span>Orden #@Model.OrdenCreadaId guardada.</span> }
+            else { <span>Orden guardada.</span> }
             @if (Model.OrdenCreadaId.HasValue)
             {
                 <span>El comprobante se abrirá en una pestaña nueva. Si no se abre, utiliza este enlace:</span>
@@ -107,7 +107,6 @@
                     <caption class="ordenes-solo-lectores">Listado de órdenes de trabajo</caption>
                     <thead>
                         <tr>
-                            <th scope="col">ID</th>
                             <th scope="col">Fecha del trabajo</th>
                             <th scope="col">Placa</th>
                             <th scope="col">Cliente</th>
@@ -123,7 +122,6 @@
                         @foreach (var orden in Model.Ordenes)
                         {
                             <tr>
-                                <td><span class="ordenes-id">#@orden.Id</span></td>
                                 <td><time>@orden.Fecha.ToString(configuracion.FormatoFecha)</time></td>
                                 <td><span class="ordenes-placa">@orden.Placa</span></td>
                                 <td>@(orden.NombreCliente ?? "Sin cliente asignado")</td>
@@ -141,14 +139,14 @@
                                         <button type="button" class="services-btn services-btn-secondary"
                                                 data-ver-orden
                                                 data-detalle-url="@Url.Page("./Index", "Detalle", new { id = orden.Id })"
-                                                aria-label="Ver orden @orden.Id"
+                                                aria-label="Ver orden del vehículo @orden.Placa"
                                                 aria-haspopup="dialog" aria-controls="orden-detalle-dialog">
                                             Ver
                                         </button>
                                         <a asp-page="./Comprobante" asp-route-id="@orden.Id"
                                            class="services-btn services-btn-secondary"
                                            data-comprobante-url="@Url.Page("./Comprobante", new { id = orden.Id })"
-                                           aria-label="Ver comprobante de orden @orden.Id"
+                                           aria-label="Ver comprobante de orden del vehículo @orden.Placa"
                                            aria-haspopup="dialog" aria-controls="comprobante-orden-dialog">Comprobante</a>
                                         @if (orden.Estado == EstadoOrden.Activa && User.IsInRole(Roles.Administrador))
                                         {
@@ -160,7 +158,7 @@
                                                 <input type="hidden" name="TerminoBusqueda" value="@Model.TerminoBusqueda" />
                                                 <input type="hidden" name="OrdenSeleccionadaId" value="@Model.OrdenSeleccionadaId" />
                                                 <button type="submit" class="services-btn services-btn-secondary ordenes-anular-btn"
-                                                        aria-label="Anular orden @orden.Id">Anular</button>
+                                                        aria-label="Anular orden del vehículo @orden.Placa">Anular</button>
                                             </form>
                                         }
                                     </div>

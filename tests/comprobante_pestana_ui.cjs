@@ -5,14 +5,15 @@ const path = require('node:path');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
 
 // Navegación HTTP aislada: usa el JavaScript y la página de espera reales, sin MySQL.
-const raiz = path.resolve(__dirname, '..');
+const raiz = path.resolve(__dirname, '../frontend-app');
 let posts = 0, lecturasPdf = 0, creada = false, resultado = 'ok';
+let esperarGuardado, liberarGuardado, esperarPdf, liberarPdf;
 const visor = '<dialog id="comprobante-orden-dialog"><iframe data-comprobante-frame></iframe><button data-cerrar-comprobante>Cerrar</button></dialog>';
 const documento = contenido => `<!doctype html><html><head><meta charset="utf-8"></head><body>${contenido}${visor}<script src="/js/orden-comprobante.js"></script></body></html>`;
 const formulario = () => documento(`<form id="formulario-orden" method="post" action="/crear" data-comprobante-espera-url="/comprobante-espera.html"><input name="dato" required value="válido"></form>
     <button type="submit" form="formulario-orden">Revisar</button>
     <dialog id="confirmar-orden-dialog"><button data-confirmar-orden>Confirmar</button><button data-cancelar-confirmacion>Cancelar</button></dialog>`);
-const servidor = http.createServer((peticion, respuesta) => {
+const servidor = http.createServer(async (peticion, respuesta) => {
     const url = new URL(peticion.url, 'http://localhost');
     if (url.pathname === '/js/orden-comprobante.js') {
         respuesta.setHeader('Content-Type', 'application/javascript');
@@ -24,11 +25,15 @@ const servidor = http.createServer((peticion, respuesta) => {
     }
     if (url.pathname === '/Ordenes/Comprobante') {
         lecturasPdf++;
+        if (resultado === 'ok' && esperarPdf) {
+            await esperarPdf;
+        }
         return respuesta.end('Destino del comprobante de prueba');
     }
     respuesta.setHeader('Content-Type', 'text/html');
     if (peticion.method === 'POST' && url.pathname === '/crear') {
         posts++;
+        if (resultado === 'ok') await esperarGuardado;
         if (resultado === 'validacion') return respuesta.end(formulario());
         if (resultado === 'error') { respuesta.statusCode = 500; return respuesta.end(documento('No se pudo guardar.')); }
         creada = true;
@@ -51,6 +56,8 @@ const servidor = http.createServer((peticion, respuesta) => {
     try {
         for (const escenario of ['ok', 'bloqueado', 'excepcion', 'validacion', 'error']) {
             resultado = escenario;
+            esperarGuardado = new Promise(resolve => { liberarGuardado = resolve; });
+            esperarPdf = new Promise(resolve => { liberarPdf = resolve; });
             const contexto = await navegador.newContext();
             if (escenario === 'bloqueado') await contexto.addInitScript(() => { window.open = () => null; });
             if (escenario === 'excepcion') await contexto.addInitScript(() => { window.open = () => { throw new Error('Bloqueada'); }; });
@@ -71,7 +78,29 @@ const servidor = http.createServer((peticion, respuesta) => {
             await pagina.getByText('Revisar', { exact: true }).click();
             await pagina.evaluate(() => document.getElementById('formulario-orden').addEventListener('submit', () =>
                 document.getElementById('formulario-orden').requestSubmit(), { once: true }));
-            await Promise.all([pagina.waitForNavigation(), pagina.getByText('Confirmar', { exact: true }).click()]);
+            let pestañaReservada;
+            if (escenario === 'ok') {
+                const nueva = contexto.waitForEvent('page');
+                await Promise.all([
+                    pagina.waitForNavigation(),
+                    pagina.getByText('Confirmar', { exact: true }).click(),
+                    (async () => {
+                        pestañaReservada = await nueva;
+                        await pestañaReservada.waitForLoadState('domcontentloaded');
+                        assert.equal(new URL(pestañaReservada.url()).pathname, '/comprobante-espera.html');
+                        assert.equal(await pestañaReservada.locator('body').innerText(), '');
+                        assert.equal(await pestañaReservada.locator('body > *').count(), 0);
+                        const solicitudPdf = pestañaReservada.waitForRequest('**/Ordenes/Comprobante?id=42');
+                        liberarGuardado();
+                        await solicitudPdf;
+                        assert.equal(new URL(pestañaReservada.url()).pathname, '/comprobante-espera.html');
+                        liberarPdf();
+                        esperarPdf = null;
+                    })()
+                ]);
+            } else {
+                await Promise.all([pagina.waitForNavigation(), pagina.getByText('Confirmar', { exact: true }).click()]);
+            }
             assert.equal(posts, antes + 1);
             const fallo = ['validacion', 'error'].includes(escenario);
             if (fallo) {
@@ -87,6 +116,7 @@ const servidor = http.createServer((peticion, respuesta) => {
                 if (escenario === 'ok') {
                     const pestaña = contexto.pages().find(otra => otra !== pagina);
                     assert(pestaña);
+                    assert.equal(pestaña, pestañaReservada);
                     await pestaña.waitForURL('**/Ordenes/Comprobante?id=42');
                     assert.equal(contexto.pages().length, 2);
                     assert.equal(lecturasPdf, pdfAntes + 1);

@@ -123,8 +123,10 @@ public sealed class ConsultaOrdenesHttpTests
 
                 string filtrado = WebUtility.HtmlDecode(await cliente.GetStringAsync("/Ordenes?Estado=Anulada&Fecha=2026-10-12"));
                 Assert.Equal(1, ContarFilas(filtrado));
-                Assert.Contains($"<span class=\"ordenes-id\">#{anulada}</span>", filtrado);
-                Assert.DoesNotContain($"<span class=\"ordenes-id\">#{activa}</span>", filtrado);
+                Assert.DoesNotContain("<th scope=\"col\">ID</th>", filtrado);
+                Assert.DoesNotContain("ordenes-id", filtrado);
+                Assert.Contains($"data-comprobante-url=\"/Ordenes/Comprobante?id={anulada}\"", filtrado);
+                Assert.DoesNotContain($"data-comprobante-url=\"/Ordenes/Comprobante?id={activa}\"", filtrado);
                 Assert.Matches("<option[^>]+value=\"Anulada\"[^>]+selected", filtrado);
                 Assert.Contains("value=\"2026-10-12\"", filtrado);
 
@@ -138,7 +140,8 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.Equal(anulada.ToString(), parametros["OrdenSeleccionadaId"].ToString());
                 string refrescada = await cliente.GetStringAsync(rutaRefresco);
                 Assert.Equal(1, ContarFilas(refrescada));
-                Assert.Contains($"<span class=\"ordenes-id\">#{anulada}</span>", refrescada);
+                Assert.Contains($"data-comprobante-url=\"/Ordenes/Comprobante?id={anulada}\"", WebUtility.HtmlDecode(refrescada));
+                Assert.DoesNotContain("ordenes-id", refrescada);
                 Assert.Equal(rutaRefresco, ConstruirRutaRefresco(refrescada));
 
                 var limpiar = Regex.Match(refrescada, "<a[^>]+href=\"([^\"]+)\"[^>]*>\\s*Limpiar filtros\\s*</a>");
@@ -159,6 +162,8 @@ public sealed class ConsultaOrdenesHttpTests
                 Assert.DoesNotContain("<script>", detalleHtml);
                 Assert.Contains("&lt;script&gt;", detalleHtml);
                 string detalleTexto = WebUtility.HtmlDecode(detalleHtml);
+                Assert.Contains("Información general de la orden</h3>", detalleTexto);
+                Assert.DoesNotContain($"orden #{activa}", detalleTexto);
                 Assert.Contains("31/12/2025 20:00", detalleTexto);
                 Assert.Contains("UTC-4", detalleTexto);
                 Assert.Contains("Bs. 10,00", detalleTexto);

@@ -58,7 +58,11 @@ public class IndexModel(OrdenesApi ordenes, ILogger<IndexModel> logger) : PageMo
         if (!ModelState.IsValid) return BadRequest("Revisa los filtros de estado y fecha.");
 
         var sugerencias = await ordenes.SugerirAsync(termino, Estado, Fecha, HttpContext.RequestAborted);
-        return new JsonResult(sugerencias);
+        return new JsonResult(sugerencias.Select(sugerencia => sugerencia with
+        {
+            TextoPrincipal = sugerencia.TextoSecundario,
+            TextoSecundario = string.Empty
+        }));
     }
 
     public async Task<IActionResult> OnGetDetalleAsync(int id)
@@ -118,7 +122,7 @@ public class IndexModel(OrdenesApi ordenes, ILogger<IndexModel> logger) : PageMo
             return Page();
         }
 
-        TempData["OrdenMensaje"] = $"Orden #{id} anulada correctamente. Se restituyó el stock.";
+        TempData["OrdenMensaje"] = "Orden anulada correctamente. Se restituyó el stock.";
         return RedirectToPage(new { Estado, Fecha = Fecha?.ToString("yyyy-MM-dd"), TerminoBusqueda, OrdenSeleccionadaId });
     }
 
