@@ -67,7 +67,7 @@
         evento.preventDefault();
         formularioAnulacion = formulario;
         if (descripcionAnulacion) {
-            descripcionAnulacion.textContent = `¿Deseas anular la orden #${formulario.dataset.ordenId}?`;
+            descripcionAnulacion.textContent = "¿Deseas anular la orden seleccionada?";
         }
         dialogoAnulacion?.showModal();
     });
