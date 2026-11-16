@@ -197,7 +197,9 @@
                                                 data-modelo="@vehiculo.Modelo"
                                                 data-kilometraje="@vehiculo.Kilometraje"
                                                 data-observaciones="@vehiculo.Observaciones"
-                                                data-cliente-id="@(vehiculo.ClienteId?.ToString() ?? string.Empty)">
+                                                data-cliente-id="@(vehiculo.ClienteId?.ToString() ?? string.Empty)"
+                                                data-cliente-nombre="@(vehiculo.ClienteId.HasValue ? Model.ObtenerNombreCliente(vehiculo.ClienteId) : string.Empty)"
+                                                data-cliente-ci="@(vehiculo.ClienteId.HasValue ? Model.ObtenerCiCliente(vehiculo.ClienteId.Value) : string.Empty)">
                                             ✎
                                         </button>
 

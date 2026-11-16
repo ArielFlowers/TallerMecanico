@@ -33,8 +33,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         assert.equal(new URL(page.url()).searchParams.get('OrdenBorradorId'), orden);
         assert.equal(new URL(page.url()).searchParams.get('handler'), 'Buscar');
         await filas.first().click();
-        assert.equal(await page.locator('#editar-cliente').evaluate(elemento => elemento.tagName), 'SELECT');
-        assert.equal(await page.locator('#editar-cliente').inputValue(), cliente);
+        assert.equal(await page.locator('#editar-cliente-autocompletado-texto').evaluate(elemento => elemento.tagName), 'INPUT');
+        assert.equal(await page.locator('#editar-cliente-autocompletado-id').inputValue(), cliente);
         assert.equal(await page.locator('#editar-marca').inputValue(), 'Toyota');
         assert.equal(await page.locator('#editar-modelo').inputValue(), 'Corolla');
         await page.locator('#editar-observaciones').fill('Dato sin guardar');
@@ -44,7 +44,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await page.waitForURL(url => url.pathname === '/Vehiculos' && url.searchParams.get('handler') === 'Retomar');
         assert.equal(await filas.count(), 1);
         assert.equal(await page.locator('#editar-observaciones').inputValue(), 'Dato sin guardar');
-        assert.equal(await page.locator('#editar-cliente').inputValue(), cliente);
+        assert.equal(await page.locator('#editar-cliente-autocompletado-id').inputValue(), cliente);
         assert.equal(await id.inputValue(), await filas.first().getAttribute('data-id'));
         await page.locator('#modal-editar .modal-close').click();
 
@@ -95,6 +95,6 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
         await input.press('Escape');
         assert.equal(await input.getAttribute('aria-expanded'), 'false');
         assert.deepEqual(errores, []);
-        console.log('Vehículos real: placa, marca/modelo, ID exacto, edición, selector de cliente intacto, borrador/retorno, búsqueda manual, teclado, ratón y móvil OK.');
+        console.log('Vehículos real: placa, marca/modelo, ID exacto, edición, buscador de cliente, borrador/retorno, búsqueda manual, teclado, ratón y móvil OK.');
     } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

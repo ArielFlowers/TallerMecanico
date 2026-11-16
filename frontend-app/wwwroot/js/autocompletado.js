@@ -272,6 +272,22 @@
             this.mostrarEstado("seleccionado", "mensajeSeleccionado");
             this.comunicar("seleccion", { sugerencia: { ...sugerencia } });
         }
+
+        establecer(id, texto) {
+            this.cancelar();
+            this.cerrar();
+            this.sugerencias = [];
+            this.lista.replaceChildren();
+            const valor = Number(id);
+            const seleccionado = Number.isSafeInteger(valor) && valor > 0;
+            this.seleccion = seleccionado
+                ? { id: valor, textoPrincipal: texto ?? "", textoSecundario: "" }
+                : null;
+            this.input.value = this.seleccion?.textoPrincipal ?? "";
+            if (this.campoId) this.campoId.value = this.seleccion ? String(this.seleccion.id) : "";
+            this.mostrarEstado(this.seleccion ? "seleccionado" : "inicial",
+                this.seleccion ? "mensajeSeleccionado" : "mensajeInicial");
+        }
     }
 
     const inicializar = (contenedor = document) => {
@@ -282,7 +298,13 @@
         });
     };
 
-    window.AutoTallerAutocompletado = Object.freeze({ inicializar });
+    const establecer = (id, valorId, texto) => {
+        const raiz = document.getElementById(id);
+        const instancia = raiz ? instancias.get(raiz) : null;
+        instancia?.establecer(valorId, texto);
+    };
+
+    window.AutoTallerAutocompletado = Object.freeze({ inicializar, establecer });
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => inicializar(), { once: true });
     else inicializar();
 })();

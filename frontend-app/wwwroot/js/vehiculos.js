@@ -9,13 +9,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const catalogo = JSON.parse(document.getElementById("catalogo-vehiculos").textContent);
 
+    const validarCliente = formulario => {
+        const buscadorCliente = formulario.querySelector("[data-cliente-buscador]");
+        const texto = buscadorCliente.querySelector("[data-autocompletado-texto]");
+        const id = Number(buscadorCliente.querySelector("[data-autocompletado-id]").value);
+        texto.setCustomValidity(Number.isSafeInteger(id) && id > 0
+            ? "" : "Selecciona un cliente de la lista de sugerencias.");
+    };
+
+    document.querySelectorAll("[data-cliente-buscador]").forEach(buscadorCliente => {
+        const texto = buscadorCliente.querySelector("[data-autocompletado-texto]");
+        texto.required = true;
+        texto.addEventListener("input", () => validarCliente(texto.form));
+        buscadorCliente.addEventListener("autocompletado:seleccion", evento => {
+            const raiz = buscadorCliente.querySelector("[data-autocompletado]");
+            raiz.dataset.mensajeSeleccionado = `Cliente seleccionado. ${evento.detail.sugerencia.textoSecundario}`.trim();
+            raiz.querySelector("[data-autocompletado-estado]").textContent = raiz.dataset.mensajeSeleccionado;
+            validarCliente(texto.form);
+        });
+        buscadorCliente.addEventListener("autocompletado:invalidacion", () => validarCliente(texto.form));
+        validarCliente(texto.form);
+    });
+
     const validarPlaca = formulario => {
         const input = formulario.querySelector("[data-placa-input]");
         const extranjera = formulario.querySelector("[data-placa-extranjera]").checked;
         const aviso = formulario.querySelector("[data-placa-aviso]");
         input.pattern = extranjera ? input.dataset.patronExtranjero : input.dataset.patronNacional;
         input.maxLength = extranjera ? 15 : 7;
-        input.placeholder = extranjera ? "Ej. AB123CD" : "Ej. 123ABC o 1234ABC";
+        input.placeholder = extranjera ? "Ej. AB123CD" : "Ej. 1234ABC";
         input.value = input.value.replace(/\s/g, "").toUpperCase();
         if (extranjera) input.value = input.value.replace(/-/g, "");
         const ayuda = extranjera ? input.dataset.mensajeExtranjero : input.dataset.mensajeNacional;
@@ -32,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const marca = formulario.querySelector("[data-marca-input]").value;
         const modelo = formulario.querySelector("[data-modelo-input]");
         const modelos = Object.hasOwn(catalogo, marca) ? catalogo[marca] : [];
-        modelo.replaceChildren(new Option("Selecciona un modelo", ""));
+        modelo.replaceChildren(new Option(marca ? "Selecciona un modelo" : "Primero selecciona una marca", ""));
         modelos.forEach(nombre => modelo.add(new Option(nombre, nombre)));
         modelo.value = modelos.includes(seleccionado) ? seleccionado : "";
         modelo.disabled = modelos.length === 0;
@@ -51,7 +73,10 @@ document.addEventListener("DOMContentLoaded", () => {
             ["id", "placa", "marca", "kilometraje", "observaciones"].forEach(campo => {
                 document.getElementById(`editar-${campo}`).value = boton.dataset[campo] ?? "";
             });
-            document.getElementById("editar-cliente").value = boton.dataset.clienteId ?? "";
+            document.getElementById("editar-cliente-autocompletado").dataset.mensajeSeleccionado =
+                boton.dataset.clienteCi ? `Cliente seleccionado. CI: ${boton.dataset.clienteCi}` : "Cliente seleccionado.";
+            window.AutoTallerAutocompletado?.establecer("editar-cliente-autocompletado",
+                boton.dataset.clienteId ?? "", boton.dataset.clienteNombre ?? "");
             document.getElementById("editar-extranjera").checked = boton.dataset.extranjera === "true";
             formulario.querySelector('[name="BorradorId"]').value = "";
             cargarModelos(formulario, boton.dataset.modelo);
@@ -72,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
             campo.classList.remove("input-error", "input-validation-error");
             campo.setCustomValidity("");
         });
+        validarCliente(formulario);
     };
 
     document.querySelector('[data-modal-abrir="modal-crear"]').addEventListener("click", () => {
@@ -82,6 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         formulario.querySelector('[name="Formulario.Id"]').value = "0";
         formulario.querySelector('[name="BorradorId"]').value = "";
+        window.AutoTallerAutocompletado?.establecer("crear-cliente-autocompletado", "", "");
         cargarModelos(formulario);
         limpiarErrores(formulario);
         validarPlaca(formulario);

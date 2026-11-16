@@ -1,8 +1,12 @@
 @model TallerMecanico.Pages.Vehiculos.IndexModel
 @using TallerMecanico.Contratos.Catalogos
+@using TallerMecanico.Pages.Shared
 @{
     string prefijo = ViewData["Prefijo"]?.ToString() ?? "crear";
     bool extranjera = Model.Formulario.EsPlacaExtranjera;
+    string textoCliente = Model.Formulario.ClienteId.HasValue
+        ? Model.ObtenerNombreCliente(Model.Formulario.ClienteId)
+        : string.Empty;
 }
 
 <input asp-for="Formulario.Id" id="@(prefijo)-id" type="hidden" />
@@ -12,15 +16,23 @@
 <input asp-for="Buscar" type="hidden" />
 <input type="hidden" name="VehiculoSeleccionadoId" value="@Model.VehiculoSeleccionadoId" />
 
-<div class="service-form-group">
-    <label for="@(prefijo)-cliente">Cliente <span class="campo-obligatorio">*</span></label>
-    <select asp-for="Formulario.ClienteId" id="@(prefijo)-cliente" class="service-input" required>
-        <option value="">Selecciona un cliente</option>
-        @foreach (var cliente in Model.Clientes)
-        {
-            <option value="@cliente.Id">@Model.ObtenerNombreCliente(cliente.Id) — CI: @Model.ObtenerCiCliente(cliente.Id)</option>
-        }
-    </select>
+<div class="service-form-group" data-cliente-buscador>
+    <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+    {
+        Id = $"{prefijo}-cliente-autocompletado",
+        UrlSugerencias = Url.Page("/Vehiculos/Index", "SugerenciasClientes")!,
+        Modo = BuscadorAutocompletadoModel.ModoSeleccionar,
+        Etiqueta = "Cliente *",
+        Placeholder = "Busca por CI, nombres o apellidos...",
+        NombreCampoTexto = $"{prefijo}-cliente-texto",
+        NombreCampoId = "Formulario.ClienteId",
+        Texto = textoCliente,
+        IdSeleccionado = Model.Formulario.ClienteId,
+        MensajeInicial = "Escribe al menos 2 caracteres del nombre, apellido o CI y selecciona un cliente de la lista.",
+        MensajeSeleccionado = Model.Formulario.ClienteId.HasValue
+            ? $"Cliente seleccionado. CI: {Model.ObtenerCiCliente(Model.Formulario.ClienteId.Value)}"
+            : "Cliente seleccionado."
+    }' />
     <span asp-validation-for="Formulario.ClienteId" class="service-validation"></span>
     @if (Model.Clientes.Count == 0)
     {
@@ -42,7 +54,7 @@
     <input asp-for="Formulario.Placa" id="@(prefijo)-placa" class="service-input" required
            maxlength="@(extranjera ? 15 : 7)"
            pattern="@(extranjera ? ReglasVehiculo.PatronPlacaExtranjera : ReglasVehiculo.PatronPlaca)"
-           placeholder="@(extranjera ? "Ej. AB123CD" : "Ej. 123ABC o 1234ABC")"
+           placeholder="@(extranjera ? "Ej. AB123CD" : "Ej. 1234ABC")"
            data-patron-nacional="@ReglasVehiculo.PatronPlaca"
            data-patron-extranjero="@ReglasVehiculo.PatronPlacaExtranjera"
            data-mensaje-nacional="@ReglasVehiculo.MensajeFormatoPlaca"
@@ -68,7 +80,7 @@
 <div class="service-form-group">
     <label for="@(prefijo)-modelo">Modelo <span class="campo-obligatorio">*</span></label>
     <select asp-for="Formulario.Modelo" id="@(prefijo)-modelo" class="service-input" required data-modelo-input>
-        <option value="">Selecciona un modelo</option>
+        <option value="">@(string.IsNullOrWhiteSpace(Model.Formulario.Marca) ? "Primero selecciona una marca" : "Selecciona un modelo")</option>
         @foreach (string modelo in Model.ObtenerModelosOrdenados(Model.Formulario.Marca ?? string.Empty))
         {
             <option value="@modelo">@modelo</option>
@@ -94,6 +106,6 @@
     <label for="@(prefijo)-observaciones">Observaciones</label>
     <textarea asp-for="Formulario.Observaciones" id="@(prefijo)-observaciones" class="service-input service-textarea"
               rows="3" maxlength="@ReglasVehiculo.LongitudMaximaObservaciones"
-              placeholder="Detalles adicionales del estado del vehículo..."></textarea>
+              placeholder="Ej. Rayón en la puerta delantera, revisión de frenos pendiente..."></textarea>
     <span asp-validation-for="Formulario.Observaciones" class="service-validation"></span>
 </div>

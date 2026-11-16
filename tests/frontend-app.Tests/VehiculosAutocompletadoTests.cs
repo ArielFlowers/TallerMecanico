@@ -13,6 +13,35 @@ namespace TallerMecanico.IntegrationTests;
 public sealed class VehiculosAutocompletadoTests
 {
     [Trait("Area", "Backend")]
+    [Theory]
+    [InlineData(System.Net.HttpStatusCode.Unauthorized)]
+    [InlineData(System.Net.HttpStatusCode.Forbidden)]
+    [InlineData(System.Net.HttpStatusCode.ServiceUnavailable)]
+    public async Task SugerenciasClientes_FalloDeApiConservaEstadoYNoExponeDetalles(System.Net.HttpStatusCode estado)
+    {
+        var (pagina, api, _, _, _, _) = CrearPagina();
+        api.Error("GET api/clientes/sugerencias", estado);
+
+        var resultado = await pagina.OnGetSugerenciasClientesAsync("Ana");
+
+        Assert.Equal("no-store", pagina.Response.Headers.CacheControl);
+        switch (estado)
+        {
+            case System.Net.HttpStatusCode.Unauthorized:
+                Assert.IsType<ChallengeResult>(resultado);
+                break;
+            case System.Net.HttpStatusCode.Forbidden:
+                Assert.IsType<ForbidResult>(resultado);
+                break;
+            default:
+                var error = Assert.IsType<ObjectResult>(resultado);
+                Assert.Equal(StatusCodes.Status503ServiceUnavailable, error.StatusCode);
+                Assert.DoesNotContain("Detalle interno", Assert.IsType<string>(error.Value));
+                break;
+        }
+    }
+
+    [Trait("Area", "Backend")]
     [Fact]
     public async Task RegistrarClienteYRetomar_ConservanSeleccionExactaFormularioYOrden()
     {
