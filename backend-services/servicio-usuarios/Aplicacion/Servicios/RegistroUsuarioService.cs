@@ -11,15 +11,18 @@ public sealed class RegistroUsuarioService
     private readonly IUsuarioPort _usuarios;
     private readonly ISolicitudRegistroPort _solicitudes;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IConfiguracionTokensPort _configuracionTokens;
 
     public RegistroUsuarioService(
         IUsuarioPort usuarios,
         ISolicitudRegistroPort solicitudes,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        IConfiguracionTokensPort configuracionTokens)
     {
         _usuarios = usuarios;
         _solicitudes = solicitudes;
         _passwordHasher = passwordHasher;
+        _configuracionTokens = configuracionTokens;
     }
 
     // El token devuelto es exclusivamente para el futuro
@@ -82,7 +85,7 @@ public sealed class RegistroUsuarioService
             PasswordHash = passwordHash,
             Estado = "PendienteVerificacion",
             TokenVerificacionHash = tokenHash,
-            TokenExpiraEn = ahora.AddHours(1),
+            TokenExpiraEn = ahora + _configuracionTokens.ObtenerDuracionVerificacion(),
             FechaSolicitud = ahora,
             UltimoIntentoVerificacionEn = ahora
         };

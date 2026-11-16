@@ -12,7 +12,7 @@
 | Entrada | `IGestionUsuariosPort` | Lo consume el controlador de Usuarios y lo implementa `UsuarioAdministracionService` |
 | Entrada | `ICambioContrasenaPort` | Lo consume el controlador de autenticación y lo implementa `CambioContrasenaService` |
 | Entrada | `IReporteOrdenesPort`, `IReporteMecanicosPort` | Los consume `ReportesController` del Servicio 3 y los implementan `ReporteOrdenesService` y `ReporteMecanicosService` |
-| Salida | `IUsuarioAdministracionPort`, `IActivacionInvitacionPort`, `ISolicitudRegistroPort`, `IAuditoriaPort` | Adaptadores MySQL de `Infraestructura/Persistencia/MySql` |
+| Salida | `IUsuarioAdministracionPort`, `IActivacionInvitacionPort`, `ISolicitudRegistroPort`, `IAuditoriaPort`, `IConfiguracionTokensPort`, `ISesionUsuarioPort` | Adaptadores MySQL de `Infraestructura/Persistencia/MySql` |
 | Salida | `IConsultaReportesPort` | `ConsultaReportesMySqlAdapter` del Servicio 3 |
 | Salida | `IGeneradorReporte*PdfPort`, `IGeneradorReporte*ExcelPort` | Adaptadores QuestPDF y ClosedXML del Servicio 3 |
 | Salida | `IEmailService`, `IPasswordHasher` | `GmailEmailService`, `Argon2idPasswordHasher` |
@@ -90,12 +90,26 @@ En [`docs/diagramas/`](diagramas/): `Clases_Usuarios_Hexagonal.puml`,
   (8–128, mayúscula, minúscula, número y símbolo, sin espacios en los
   extremos), guarda el hash Argon2id en `SolicitudesRegistro`, genera un
   token aleatorio de 32 bytes (64 hex) y solo persiste su SHA-256, con
-  expiración de 1 hora. El correo lleva el enlace de activación.
+  la expiración configurada en `ConfiguracionTokens` (RF-07). El correo lleva el enlace de activación.
 - **Activación**: `ActivacionInvitacionMySqlAdapter` busca y bloquea la
   solicitud por hash de token dentro de una transacción, crea el usuario
   y marca la solicitud como `Aprobada`; si falla, revierte ambas
   operaciones. La auditoría registra `USUARIO_INVITADO` y
   `USUARIO_ACTIVADO`.
+
+## Duración de tokens y sesión (RF-07)
+
+- La tabla `ConfiguracionTokens` guarda la duración en minutos de cada token:
+  `VerificacionEmail`, `InvitacionUsuario` y `SesionUsuario`. Ninguna duración queda en el código.
+- `IConfiguracionTokensPort` (adaptador `ConfiguracionTokensMySqlAdapter`) lee el valor en cada
+  token nuevo; un `UPDATE` en la base se aplica sin reiniciar el servicio.
+- `SesionUsuarioService` guarda el vencimiento en `Usuarios.SesionVenceEn` mediante
+  `ISesionUsuarioPort`: el login la inicia, cada petición la renueva (el Frontend ya consulta
+  `api/auth/estado/{id}` en cada petición) y el logout o el cambio de contraseña la cierran.
+- Si la sesión venció por inactividad, `estado` responde `SesionVigente = false` y
+  `ValidarUsuarioActivoMiddleware` cierra la sesión con el mensaje `?expired=2`.
+- La tabla de Administración > Usuarios muestra los minutos que le quedan a cada sesión.
+  Hay un solo vencimiento por usuario: si entra desde dos navegadores, cuenta la última actividad.
 
 ## Reportes
 

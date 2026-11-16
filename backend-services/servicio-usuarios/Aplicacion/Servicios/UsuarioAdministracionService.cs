@@ -18,6 +18,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
     private readonly IPasswordHasher _passwordHasher;
     private readonly IActivacionInvitacionPort _activacionInvitacion;
     private readonly IGeneradorNombreUsuarioPort _generador;
+    private readonly IConfiguracionTokensPort _configuracionTokens;
 
     public UsuarioAdministracionService(
         IUsuarioAdministracionPort usuarios,
@@ -28,7 +29,8 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
         ICurrentUser usuarioActual,
         IPasswordHasher passwordHasher,
         IActivacionInvitacionPort activacionInvitacion,
-        IGeneradorNombreUsuarioPort generador)
+        IGeneradorNombreUsuarioPort generador,
+        IConfiguracionTokensPort configuracionTokens)
     {
         _usuarios = usuarios;
         _solicitudes = solicitudes;
@@ -39,6 +41,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
         _passwordHasher = passwordHasher;
         _activacionInvitacion = activacionInvitacion;
         _generador = generador;
+        _configuracionTokens = configuracionTokens;
     }
 
     public string CrearInvitacion(
@@ -116,7 +119,7 @@ public sealed class UsuarioAdministracionService : IGestionUsuariosPort
             PasswordHash = _passwordHasher.GenerarHash(password),
             Estado = "PendienteVerificacion",
             TokenVerificacionHash = tokenHash,
-            TokenExpiraEn = ahora.AddHours(1),
+            TokenExpiraEn = ahora + _configuracionTokens.ObtenerDuracionInvitacion(),
             FechaSolicitud = ahora,
             UltimoIntentoVerificacionEn = ahora,
             Rol = rol,

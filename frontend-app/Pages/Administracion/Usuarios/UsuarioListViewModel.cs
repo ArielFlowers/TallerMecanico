@@ -21,4 +21,8 @@ public sealed class UsuarioListViewModel
     [Display(Name = "Fecha de creación")]
     [DataType(DataType.DateTime)]
     public DateTime FechaCreacion { get; set; }
+
+    // Minutos que le quedan a la sesión abierta; null si no tiene sesión (RF-07).
+    [Display(Name = "Sesión")]
+    public int? MinutosSesionRestantes { get; set; }
 }

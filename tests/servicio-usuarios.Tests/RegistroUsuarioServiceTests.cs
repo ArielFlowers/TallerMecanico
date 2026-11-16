@@ -18,7 +18,7 @@ public class RegistroUsuarioServiceTests
         var hasher = new HasherFalso();
 
         var servicio = new RegistroUsuarioService(
-            usuarios, solicitudes, hasher);
+            usuarios, solicitudes, hasher, new ConfiguracionTokensSimulada());
 
         string token = servicio.CrearSolicitudPendiente(
             "empleado123",
@@ -49,6 +49,24 @@ public class RegistroUsuarioServiceTests
         Assert.True(guardada.TokenExpiraEn > guardada.FechaSolicitud);
     }
 
+    [Fact]
+    public void CrearSolicitud_UsaDuracionDeConfiguracionTokens()
+    {
+        var solicitudes = new SolicitudesFalsas();
+        var configuracion = new ConfiguracionTokensSimulada { MinutosVerificacion = 15 };
+
+        var servicio = new RegistroUsuarioService(
+            new UsuariosFalsos(), solicitudes, new HasherFalso(), configuracion);
+
+        servicio.CrearSolicitudPendiente(
+            "empleado123",
+            "empleado@empresa.com",
+            "ClaveSegura123!");
+
+        var guardada = solicitudes.Guardada!;
+        Assert.Equal(guardada.FechaSolicitud.AddMinutes(15), guardada.TokenExpiraEn);
+    }
+
     [Theory]
     [InlineData("ab", "empleado@empresa.com", "ClaveSegura123!")]
     [InlineData("empleado", "correo-invalido", "ClaveSegura123!")]
@@ -61,7 +79,8 @@ public class RegistroUsuarioServiceTests
         var servicio = new RegistroUsuarioService(
             new UsuariosFalsos(),
             solicitudes,
-            new HasherFalso());
+            new HasherFalso(),
+            new ConfiguracionTokensSimulada());
 
         Assert.Throws<ArgumentException>(() =>
             servicio.CrearSolicitudPendiente(
@@ -81,7 +100,7 @@ public class RegistroUsuarioServiceTests
         var solicitudes = new SolicitudesFalsas();
 
         var servicio = new RegistroUsuarioService(
-            usuarios, solicitudes, new HasherFalso());
+            usuarios, solicitudes, new HasherFalso(), new ConfiguracionTokensSimulada());
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
             servicio.CrearSolicitudPendiente(
@@ -103,7 +122,8 @@ public class RegistroUsuarioServiceTests
         var servicio = new RegistroUsuarioService(
             new UsuariosFalsos(),
             solicitudes,
-            new HasherFalso());
+            new HasherFalso(),
+            new ConfiguracionTokensSimulada());
 
         Assert.Throws<SolicitudRegistroDuplicadaException>(() =>
             servicio.CrearSolicitudPendiente(

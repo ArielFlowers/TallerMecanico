@@ -22,6 +22,7 @@ public sealed class AuthController(
     IGestionUsuariosPort gestionUsuarios,
     ReenvioVerificacionService reenvio,
     RegistroFacade registro,
+    SesionUsuarioService sesiones,
     ILogger<AuthController> logger) : ControllerBase
 {
     [HttpPost("login")]
@@ -34,6 +35,7 @@ public sealed class AuthController(
             return Unauthorized(new ErrorApi("Usuario o contraseña incorrectos."));
         }
 
+        sesiones.Iniciar(usuario.Id);
         Registrar("LOGIN_EXITOSO", usuario.Id, usuario.Username);
         return Ok(new UsuarioSesionDto(usuario.Id, usuario.Username, usuario.Rol));
     }
@@ -42,25 +44,32 @@ public sealed class AuthController(
     [Authorize(Roles = Roles.Personal)]
     public IActionResult Logout()
     {
+        if (usuarioActual.UsuarioId is int id) sesiones.Cerrar(id);
         Registrar("LOGOUT", usuarioActual.UsuarioId, usuarioActual.Username);
         return NoContent();
     }
 
     // Solo exige la clave interna: también se usa antes de autorizar al Recepcionista.
+    // El Frontend lo llama en cada petición, así que también renueva la sesión (RF-07).
     [HttpGet("estado/{id:int}")]
     public ActionResult<EstadoUsuarioDto> Estado(int id)
     {
         var usuario = id > 0 ? usuarios.ObtenerPorId(id) : null;
-        return Ok(new EstadoUsuarioDto(usuario?.Activo == true, usuario?.Rol, usuario?.Username));
+        bool activo = usuario?.Activo == true;
+        bool sesionVigente = activo && sesiones.Renovar(id);
+        return Ok(new EstadoUsuarioDto(activo, usuario?.Rol, usuario?.Username, sesionVigente));
     }
 
     [HttpPost("cambiar-contrasena")]
     [Authorize(Roles = Roles.Personal)]
     public IActionResult CambiarContrasena(CambiarContrasenaSolicitud solicitud)
     {
-        return cambioContrasena.Cambiar(solicitud.Actual, solicitud.Nueva, solicitud.Confirmacion, out string error)
-            ? NoContent()
-            : BadRequest(new ErrorApi(error));
+        if (!cambioContrasena.Cambiar(solicitud.Actual, solicitud.Nueva, solicitud.Confirmacion, out string error))
+            return BadRequest(new ErrorApi(error));
+
+        // El Frontend cierra la sesión después de cambiar la contraseña.
+        if (usuarioActual.UsuarioId is int id) sesiones.Cerrar(id);
+        return NoContent();
     }
 
     [HttpPost("verificar-email")]

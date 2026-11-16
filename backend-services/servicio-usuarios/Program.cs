@@ -51,6 +51,8 @@ builder.Services.AddScoped<IUsuarioAdministracionPort>(proveedor => proveedor.Ge
 builder.Services.AddScoped<ISolicitudRegistroPort, SolicitudRegistroRepository>();
 builder.Services.AddScoped<IActivacionInvitacionPort, ActivacionInvitacionMySqlAdapter>();
 builder.Services.AddScoped<IRevisionSolicitudesPort, RevisionSolicitudesRepository>();
+builder.Services.AddScoped<IConfiguracionTokensPort, ConfiguracionTokensMySqlAdapter>();
+builder.Services.AddScoped<ISesionUsuarioPort, SesionUsuarioMySqlAdapter>();
 builder.Services.AddScoped<IEmailService, GmailEmailService>();
 builder.Services.Configure<Argon2idOptions>(builder.Configuration.GetSection(Argon2idOptions.SectionName));
 builder.Services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
@@ -68,6 +70,7 @@ builder.Services.AddScoped<RegistroFacade>();
 builder.Services.AddScoped<VerificacionEmailService>();
 builder.Services.AddScoped<ReenvioVerificacionService>();
 builder.Services.AddScoped<RevisionSolicitudesService>();
+builder.Services.AddScoped<SesionUsuarioService>();
 
 // =====================================================
 // COMANDOS DE CONSOLA

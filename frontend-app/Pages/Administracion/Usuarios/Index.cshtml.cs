@@ -129,7 +129,8 @@ public sealed class IndexModel : PageModel
                 Email = dto.Email,
                 Rol = dto.Rol,
                 Activo = dto.Activo,
-                FechaCreacion = dto.FechaCreacion
+                FechaCreacion = dto.FechaCreacion,
+                MinutosSesionRestantes = dto.MinutosSesionRestantes
             });
         }
 

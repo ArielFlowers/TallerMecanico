@@ -92,8 +92,9 @@ builder.Services
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy =
             politicaCookieSegura;
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-        options.SlidingExpiration = true;
+        // RF-07: la duración de la sesión ya no está en el código. Se configura en
+        // ConfiguracionTokens (SesionUsuario) y ValidarUsuarioActivoMiddleware cierra
+        // la sesión cuando el Servicio 2 informa que venció por inactividad.
     });
 
 // =====================================================

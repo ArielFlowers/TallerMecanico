@@ -13,16 +13,17 @@ internal sealed class RegistroCorreoFixture
     public UsuariosEnMemoria Usuarios { get; } = new();
     public SolicitudesEnMemoria Solicitudes { get; } = new();
     public CorreoSimulado Correo { get; } = new();
+    public ConfiguracionTokensSimulada ConfiguracionTokens { get; } = new();
 
     public RegistroFacade CrearFachada(string? url = "https://localhost:7043")
     {
         return new RegistroFacade(
-            new RegistroUsuarioService(Usuarios, Solicitudes, new HasherSimulado()),
+            new RegistroUsuarioService(Usuarios, Solicitudes, new HasherSimulado(), ConfiguracionTokens),
             Correo, Configuracion(url));
     }
 
     public ReenvioVerificacionService CrearReenvio()
-        => new(Solicitudes, Correo, Configuracion("https://localhost:7043"));
+        => new(Solicitudes, Correo, Configuracion("https://localhost:7043"), ConfiguracionTokens);
 
     private static IConfiguration Configuracion(string? url)
         => new ConfigurationBuilder().AddInMemoryCollection(

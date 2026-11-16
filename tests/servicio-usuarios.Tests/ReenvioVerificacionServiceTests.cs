@@ -12,7 +12,8 @@ public class ReenvioVerificacionServiceTests
 {
     private static ReenvioVerificacionService CrearServicio(
         SolicitudesFalsas solicitudes,
-        EmailFalso email)
+        EmailFalso email,
+        ConfiguracionTokensSimulada? configuracionTokens = null)
     {
         IConfiguration configuracion = new ConfigurationBuilder()
             .AddInMemoryCollection(
@@ -25,7 +26,8 @@ public class ReenvioVerificacionServiceTests
         return new ReenvioVerificacionService(
             solicitudes,
             email,
-            configuracion);
+            configuracion,
+            configuracionTokens ?? new ConfiguracionTokensSimulada());
     }
 
     [Fact]
@@ -92,6 +94,38 @@ public class ReenvioVerificacionServiceTests
 
         Assert.Equal(hashEsperado, solicitudes.HashRecibido);
         Assert.NotEqual(token, solicitudes.HashRecibido);
+    }
+
+    [Theory]
+    [InlineData(null, 20)]
+    [InlineData("Recepcionista", 1440)]
+    public async Task Reenvio_UsaDuracionSegunTipoDeSolicitud(string? rol, int minutosEsperados)
+    {
+        var solicitudes = new SolicitudesFalsas
+        {
+            Solicitud = new SolicitudRegistro
+            {
+                Id = 16,
+                Email = "empleado@empresa.com",
+                Estado = "PendienteVerificacion",
+                Rol = rol
+            },
+            PermitirRenovacion = true
+        };
+        var configuracion = new ConfiguracionTokensSimulada
+        {
+            MinutosVerificacion = 20,
+            MinutosInvitacion = 1440
+        };
+        var servicio = CrearServicio(solicitudes, new EmailFalso(), configuracion);
+
+        DateTime antes = DateTime.UtcNow;
+        await servicio.SolicitarReenvioAsync("empleado@empresa.com");
+        DateTime despues = DateTime.UtcNow;
+
+        Assert.NotNull(solicitudes.ExpiracionRecibida);
+        Assert.InRange(solicitudes.ExpiracionRecibida!.Value,
+            antes.AddMinutes(minutosEsperados), despues.AddMinutes(minutosEsperados));
     }
 
     [Fact]
@@ -181,6 +215,7 @@ public class ReenvioVerificacionServiceTests
         public int IntentosRenovacion { get; private set; }
         public long IdRecibido { get; private set; }
         public string? HashRecibido { get; private set; }
+        public DateTime? ExpiracionRecibida { get; private set; }
 
         public SolicitudRegistro? ObtenerPendientePorEmail(
             string email)
@@ -196,6 +231,7 @@ public class ReenvioVerificacionServiceTests
             IntentosRenovacion++;
             IdRecibido = solicitudId;
             HashRecibido = nuevoTokenHash;
+            ExpiracionRecibida = nuevaExpiracion;
 
             return PermitirRenovacion;
         }

@@ -343,7 +343,10 @@ public sealed class UsuarioRepository : IUsuarioAdministracionPort
                    Email,
                    Rol,
                    Activo,
-                   FechaCreacion
+                   FechaCreacion,
+                   CASE WHEN SesionVenceEn > UTC_TIMESTAMP(6)
+                        THEN CEIL(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(6), SesionVenceEn) / 60)
+                   END AS MinutosSesionRestantes
             FROM Usuarios
             ORDER BY FechaCreacion DESC, Id DESC
             LIMIT @TamanoPagina OFFSET @Offset;
@@ -383,7 +386,10 @@ public sealed class UsuarioRepository : IUsuarioAdministracionPort
 
         using DbCommand command = connection.CreateCommand();
         command.CommandText = """
-            SELECT Id, Username, Email, Rol, Activo, FechaCreacion
+            SELECT Id, Username, Email, Rol, Activo, FechaCreacion,
+                   CASE WHEN SesionVenceEn > UTC_TIMESTAMP(6)
+                        THEN CEIL(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(6), SesionVenceEn) / 60)
+                   END AS MinutosSesionRestantes
             FROM Usuarios
             WHERE (@Busqueda IS NULL OR Username LIKE CONCAT('%', @Busqueda, '%')
                    OR Email LIKE CONCAT('%', @Busqueda, '%'))
@@ -686,6 +692,18 @@ public sealed class UsuarioRepository : IUsuarioAdministracionPort
             LeerStringOpcional(reader, "Email") ?? string.Empty,
             reader.GetString(reader.GetOrdinal("Rol")),
             reader.GetBoolean(reader.GetOrdinal("Activo")),
-            reader.GetDateTime(reader.GetOrdinal("FechaCreacion")));
+            reader.GetDateTime(reader.GetOrdinal("FechaCreacion")),
+            LeerEnteroOpcional(reader, "MinutosSesionRestantes"));
+    }
+
+    private static int? LeerEnteroOpcional(
+        DbDataReader reader,
+        string columna)
+    {
+        int indice = reader.GetOrdinal(columna);
+
+        return reader.IsDBNull(indice)
+            ? null
+            : Convert.ToInt32(reader.GetValue(indice));
     }
 }

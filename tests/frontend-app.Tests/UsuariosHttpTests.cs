@@ -180,7 +180,9 @@ public sealed class UsuariosHttpTests
         Assert.Equal(11, pagina.TotalRegistros);
         Assert.Equal(11, pagina.TotalUsuarios);
         Assert.Equal(8, pagina.UsuariosActivos);
-        Assert.Equal("admin", Assert.Single(pagina.Usuarios).Username);
+        var usuario = Assert.Single(pagina.Usuarios);
+        Assert.Equal("admin", usuario.Username);
+        Assert.Equal(12, usuario.MinutosSesionRestantes);
         Assert.Contains(api.Llamadas, ruta => ruta.Contains("pagina=2") && ruta.Contains("%26"));
         Assert.IsType<PartialViewResult>(await pagina.OnGetResultadosAsync());
     }
@@ -285,8 +287,8 @@ public sealed class UsuariosHttpTests
     {
         var api = new ApiFalsa();
         api.Json("POST api/auth/login", new UsuarioSesionDto(7, "admin", "Administrador"));
-        api.Json("GET api/auth/estado/7", new EstadoUsuarioDto(true, "Administrador", "admin"));
-        api.Json("GET api/usuarios", new[] { new UsuarioListadoDto(7, "admin", "admin@example.test", "Administrador", true, new DateTime(2026, 1, 2)) });
+        api.Json("GET api/auth/estado/7", new EstadoUsuarioDto(true, "Administrador", "admin", SesionVigente: true));
+        api.Json("GET api/usuarios", new[] { new UsuarioListadoDto(7, "admin", "admin@example.test", "Administrador", true, new DateTime(2026, 1, 2), 12) });
         api.Json("GET api/usuarios/conteo", 11);
         api.Json("GET api/usuarios/resumen", new ResumenUsuarios(11, 8, 2));
         api.Json("GET api/usuarios/7", new UsuarioDto(7, "admin", "admin@example.test", "Administrador", true));

@@ -20,6 +20,7 @@
                         <th>Correo electrónico</th>
                         <th>Rol</th>
                         <th>Activo</th>
+                        <th>Sesión</th>
                         <th>Fecha de creación</th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -43,6 +44,16 @@
                                 else
                                 {
                                     <span class="badge bg-secondary">No</span>
+                                }
+                            </td>
+                            <td>
+                                @if (usuario.Activo && usuario.MinutosSesionRestantes is int minutos)
+                                {
+                                    <span class="badge bg-info text-dark">Quedan @minutos min</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-secondary">Sin sesión</span>
                                 }
                             </td>
                             <td>@usuario.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>

@@ -2,7 +2,8 @@ namespace TallerMecanico.Contratos.Usuarios;
 
 public sealed record UsuarioDto(int Id, string Username, string? Email, string Rol, bool Activo);
 
-public sealed record EstadoUsuarioDto(bool Activo, string? Rol = null, string? Username = null);
+// SesionVigente es false cuando la sesión venció por inactividad (RF-07).
+public sealed record EstadoUsuarioDto(bool Activo, string? Rol = null, string? Username = null, bool SesionVigente = false);
 
 public sealed record ResumenUsuarios(int Total, int Activos, int AdministradoresActivos);
 

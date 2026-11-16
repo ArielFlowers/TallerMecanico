@@ -44,7 +44,8 @@ public sealed class UsuarioAdministracionMySqlTests(MySqlAisladoFixture basePrue
         var generador = new GeneradorNombreUsuarioIntegracionFalso();
 
         return new UsuarioAdministracionService(
-            usuarios, solicitudes, emailService, config, auditoria, currentUser, hasher, new ActivacionInvitacionMySqlAdapter(_fixture.Factory),generador);
+            usuarios, solicitudes, emailService, config, auditoria, currentUser, hasher, new ActivacionInvitacionMySqlAdapter(_fixture.Factory), generador,
+            new ConfiguracionTokensMySqlAdapter(_fixture.Factory));
     }
 
     private (int Id, string Username) CrearUsuarioAdmin(string? username = null)

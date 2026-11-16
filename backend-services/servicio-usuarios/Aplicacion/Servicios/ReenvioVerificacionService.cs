@@ -9,15 +9,18 @@ public sealed class ReenvioVerificacionService
     private readonly ISolicitudRegistroPort _solicitudes;
     private readonly IEmailService _email;
     private readonly IConfiguration _configuration;
+    private readonly IConfiguracionTokensPort _configuracionTokens;
 
     public ReenvioVerificacionService(
         ISolicitudRegistroPort solicitudes,
         IEmailService email,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IConfiguracionTokensPort configuracionTokens)
     {
         _solicitudes = solicitudes;
         _email = email;
         _configuration = configuration;
+        _configuracionTokens = configuracionTokens;
     }
 
     public async Task SolicitarReenvioAsync(
@@ -51,7 +54,12 @@ public sealed class ReenvioVerificacionService
         string tokenHash = Convert.ToHexString(
             SHA256.HashData(tokenBytes));
 
-        DateTime expiracion = DateTime.UtcNow.AddHours(1);
+        // La invitación y la verificación del registro tienen su propia duración.
+        TimeSpan duracion = solicitud.EsInvitacionAdministrativa
+            ? _configuracionTokens.ObtenerDuracionInvitacion()
+            : _configuracionTokens.ObtenerDuracionVerificacion();
+
+        DateTime expiracion = DateTime.UtcNow + duracion;
 
         bool actualizado =
             _solicitudes.IntentarRenovarTokenConLimite(
