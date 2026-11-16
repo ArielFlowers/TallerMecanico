@@ -22,7 +22,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
         var resultado = await InvocarAsync(
             Principal(new Claim(ClaimTypes.NameIdentifier, "7"),
                 new Claim(ClaimTypes.Role, "Administrador")),
-            new EstadoUsuarioDto(true, "Administrador"));
+            new EstadoUsuarioDto(true, "Administrador", SesionVigente: true));
 
         Assert.True(resultado.Continuo);
         Assert.Null(resultado.Autenticacion.EsquemaCerrado);
@@ -40,7 +40,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
         var resultado = await InvocarAsync(
             Principal(new Claim(ClaimTypes.NameIdentifier, "7"),
                 new Claim(ClaimTypes.Role, "Administrador")),
-            rolActual is null ? null : new EstadoUsuarioDto(activo, rolActual));
+            rolActual is null ? null : new EstadoUsuarioDto(activo, rolActual, SesionVigente: true));
 
         ComprobarRevocacion(resultado);
     }
@@ -76,9 +76,21 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
 
         var resultado = await InvocarAsync(
             Principal(claims.ToArray()),
-            new EstadoUsuarioDto(true, "Administrador"));
+            new EstadoUsuarioDto(true, "Administrador", SesionVigente: true));
 
         ComprobarRevocacion(resultado);
+    }
+
+    // RF-07: la cuenta sigue vigente, pero la sesión venció por inactividad.
+    [Fact]
+    public async Task SesionVencidaPorInactividad_CierraSesionConMensajePropio()
+    {
+        var resultado = await InvocarAsync(
+            Principal(new Claim(ClaimTypes.NameIdentifier, "7"),
+                new Claim(ClaimTypes.Role, "Administrador")),
+            new EstadoUsuarioDto(true, "Administrador", SesionVigente: false));
+
+        ComprobarRevocacion(resultado, "/Auth/Login?expired=2");
     }
 
     [Fact]
@@ -93,7 +105,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
     private static ClaimsPrincipal Principal(params Claim[] claims) =>
         new(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 
-    private static void ComprobarRevocacion(Resultado resultado)
+    private static void ComprobarRevocacion(Resultado resultado, string destino = "/Auth/Login?expired=1")
     {
         Assert.False(resultado.Continuo);
         Assert.Equal(CookieAuthenticationDefaults.AuthenticationScheme,
@@ -101,7 +113,7 @@ public sealed class ValidarUsuarioActivoMiddlewareTests
         Assert.Empty(resultado.Contexto.Session.Keys);
         Assert.False(resultado.Contexto.User.Identity?.IsAuthenticated);
         Assert.Equal(StatusCodes.Status302Found, resultado.Contexto.Response.StatusCode);
-        Assert.Equal("/Auth/Login?expired=1", resultado.Contexto.Response.Headers.Location);
+        Assert.Equal(destino, resultado.Contexto.Response.Headers.Location);
     }
 
     private static async Task<Resultado> InvocarAsync(ClaimsPrincipal principal, EstadoUsuarioDto? usuario)

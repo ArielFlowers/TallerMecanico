@@ -26,6 +26,7 @@ public class UsuarioAdministracionServiceTests
     private readonly HasherFalso _hasher;
     private readonly IActivacionInvitacionPort _activacionInvitacion;
     private readonly IGeneradorNombreUsuarioPort _generador;
+    private readonly ConfiguracionTokensSimulada _configuracionTokens = new();
     private readonly UsuarioAdministracionService _service;
 
     public UsuarioAdministracionServiceTests()
@@ -60,7 +61,8 @@ public class UsuarioAdministracionServiceTests
             _currentUser,
             _hasher,
             _activacionInvitacion,
-            _generador);
+            _generador,
+            _configuracionTokens);
     }
 
     [Fact]
@@ -92,6 +94,21 @@ public class UsuarioAdministracionServiceTests
         Assert.Equal("USUARIO_INVITADO", auditoria!.Accion);
         Assert.Equal("nuevo_usuario", auditoria.EntidadId);
         Assert.Contains("Rol: Recepcionista", auditoria.Detalle);
+    }
+
+    [Fact]
+    public void CrearInvitacion_UsaDuracionDeConfiguracionTokens()
+    {
+        _configuracionTokens.MinutosInvitacion = 1440;
+
+        _service.CrearInvitacion(
+            "invitado_dia",
+            "invitado.dia@test.com",
+            "Recepcionista",
+            "ClaveSegura123!");
+
+        var solicitud = _solicitudes.Guardada!;
+        Assert.Equal(solicitud.FechaSolicitud.AddDays(1), solicitud.TokenExpiraEn);
     }
 
     [Fact]

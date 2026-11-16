@@ -88,6 +88,30 @@ public sealed class UsuariosApiHttpTests(UsuariosApiHost host) : IClassFixture<U
     }
 
     [Fact]
+    public async Task Sesion_SeIniciaConLogin_VencePorInactividad_YSeCierraConLogout()
+    {
+        using var anonimo = host.Cliente();
+        using var login = await anonimo.PostAsJsonAsync("api/auth/login", new CredencialesLogin("admin", "Clave123!"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var estado = await anonimo.GetFromJsonAsync<EstadoUsuarioDto>("api/auth/estado/1");
+        Assert.True(estado!.SesionVigente);
+
+        // Sin actividad durante la duración configurada, la sesión vence y no se renueva.
+        host.Sesiones.Vencimientos[1] = DateTime.UtcNow.AddMinutes(-1);
+        estado = await anonimo.GetFromJsonAsync<EstadoUsuarioDto>("api/auth/estado/1");
+        Assert.True(estado!.Activo);
+        Assert.False(estado.SesionVigente);
+
+        using var nuevoLogin = await anonimo.PostAsJsonAsync("api/auth/login", new CredencialesLogin("admin", "Clave123!"));
+        using var admin = host.Cliente("Administrador");
+        using var logout = await admin.PostAsync("api/auth/logout", null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        Assert.False(host.Sesiones.Vencimientos.ContainsKey(1));
+        estado = await anonimo.GetFromJsonAsync<EstadoUsuarioDto>("api/auth/estado/1");
+        Assert.False(estado!.SesionVigente);
+    }
+
+    [Fact]
     public async Task ListadoYEdicion_NoExponenCredenciales()
     {
         using var cliente = host.Cliente("Administrador");
@@ -129,6 +153,7 @@ public sealed class UsuariosApiHost : IAsyncLifetime
     private WebApplication _app = null!;
     private string _url = string.Empty;
     internal AuditoriaApiEnMemoria Auditoria { get; } = new();
+    internal SesionesApiEnMemoria Sesiones { get; } = new();
 
     public async Task InitializeAsync()
     {
@@ -168,6 +193,9 @@ public sealed class UsuariosApiHost : IAsyncLifetime
         builder.Services.AddScoped<VerificacionEmailService>();
         builder.Services.AddScoped<ReenvioVerificacionService>();
         builder.Services.AddScoped<RevisionSolicitudesService>();
+        builder.Services.AddScoped<SesionUsuarioService>();
+        builder.Services.AddSingleton<IConfiguracionTokensPort>(new ConfiguracionTokensSimulada());
+        builder.Services.AddSingleton<ISesionUsuarioPort>(Sesiones);
         var usuarios = new UsuariosApiEnMemoria();
         builder.Services.AddSingleton<IUsuarioPort>(usuarios);
         builder.Services.AddSingleton<IUsuarioAdministracionPort>(usuarios);
@@ -210,6 +238,19 @@ public sealed class UsuariosApiHost : IAsyncLifetime
         public ConcurrentQueue<RegistroAuditoria> Eventos { get; } = new();
         public void Registrar(RegistroAuditoria registro) => Eventos.Enqueue(registro);
         public IReadOnlyList<RegistroAuditoria> ObtenerRecientes(int cantidad) => Eventos.TakeLast(cantidad).ToArray();
+    }
+
+    internal sealed class SesionesApiEnMemoria : ISesionUsuarioPort
+    {
+        public ConcurrentDictionary<int, DateTime> Vencimientos { get; } = new();
+        public void Iniciar(int usuarioId, DateTime venceEn) => Vencimientos[usuarioId] = venceEn;
+        public bool Renovar(int usuarioId, DateTime venceEn)
+        {
+            if (!Vencimientos.TryGetValue(usuarioId, out DateTime actual) || actual <= DateTime.UtcNow) return false;
+            Vencimientos[usuarioId] = venceEn;
+            return true;
+        }
+        public void Cerrar(int usuarioId) => Vencimientos.TryRemove(usuarioId, out _);
     }
 
     private sealed class UsuariosApiEnMemoria : IUsuarioAdministracionPort
