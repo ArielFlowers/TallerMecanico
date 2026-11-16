@@ -40,6 +40,11 @@ package "Núcleo (Aplicacion y Dominio)" {
   class GeneradorNombreUsuarioService {
     + GenerarUsuarioUnico(correo): string
   }
+  class SesionUsuarioService {
+    + Iniciar(usuarioId)
+    + Renovar(usuarioId): bool
+    + Cerrar(usuarioId)
+  }
   class Usuario
 
   interface IUsuarioPort <<puerto de salida>>
@@ -48,6 +53,8 @@ package "Núcleo (Aplicacion y Dominio)" {
   interface IAuditoriaPort <<puerto de salida>>
   interface IEmailService <<puerto de salida>>
   interface IPasswordHasher <<puerto de salida>>
+  interface IConfiguracionTokensPort <<puerto de salida>>
+  interface ISesionUsuarioPort <<puerto de salida>>
 }
 
 package "Adaptadores de salida (Infraestructura)" {
@@ -55,10 +62,13 @@ package "Adaptadores de salida (Infraestructura)" {
   class AuditoriaRepository
   class GmailEmailService
   class Argon2idPasswordHasher
+  class ConfiguracionTokensMySqlAdapter
+  class SesionUsuarioMySqlAdapter
 }
 
 AuthController --> IAuthenticationService
 AuthController --> ICambioContrasenaPort
+AuthController --> SesionUsuarioService
 UsuariosController --> IGestionUsuariosPort
 UsuariosController --> IUsuarioConsultaPort
 
@@ -72,6 +82,9 @@ UsuarioAdministracionService --> IUsuarioAdministracionPort
 UsuarioAdministracionService --> IEmailService
 UsuarioAdministracionService --> IAuditoriaPort
 UsuarioAdministracionService --> GeneradorNombreUsuarioService
+UsuarioAdministracionService --> IConfiguracionTokensPort
+SesionUsuarioService --> ISesionUsuarioPort
+SesionUsuarioService --> IConfiguracionTokensPort
 CambioContrasenaService --> IUsuarioPort
 CambioContrasenaService --> IPasswordHasher
 CambioContrasenaService --> IAuditoriaPort
@@ -83,4 +96,6 @@ UsuarioRepository ..|> IUsuarioAdministracionPort
 AuditoriaRepository ..|> IAuditoriaPort
 GmailEmailService ..|> IEmailService
 Argon2idPasswordHasher ..|> IPasswordHasher
+ConfiguracionTokensMySqlAdapter ..|> IConfiguracionTokensPort
+SesionUsuarioMySqlAdapter ..|> ISesionUsuarioPort
 @enduml

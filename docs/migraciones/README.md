@@ -50,6 +50,13 @@ los metadatos pendientes y la conservación histórica se describen en
 La migración `009_creador_invitaciones.sql` agrega `CreadoPor` opcional en
 `SolicitudesRegistro`. Las invitaciones anteriores quedan con "sistema" como creador al activarse.
 
+La migración `010_configuracion_tokens.sql` (RF-07) crea `ConfiguracionTokens` con la
+duración en minutos de cada token y agrega `SesionVenceEn` en `Usuarios`. Valores iniciales:
+`VerificacionEmail` 60, `InvitacionUsuario` 60 y `SesionUsuario` 30. Para cambiar una duración
+basta un `UPDATE` sobre `DuracionMinutos` (entre 1 y 10080); el Servicio 2 la lee en cada token
+nuevo, sin reiniciar. `DatabaseInitializer` aplica este cambio al iniciar y no pisa valores ya
+modificados. Las sesiones abiertas antes de la actualización deben iniciar sesión otra vez.
+
 El inicializador comprueba las columnas y el índice único antes de agregarlos. Conserva tablas, registros, contraseñas, correos, roles y marcas de verificación existentes.
 
 | Estado anterior | Comportamiento de la versión actual |
