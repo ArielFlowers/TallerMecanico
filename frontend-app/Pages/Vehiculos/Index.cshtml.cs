@@ -51,6 +51,12 @@ public class IndexModel(
         return new JsonResult(await vehiculosApi.SugerirAsync(termino, HttpContext.RequestAborted));
     });
 
+    public Task<IActionResult> OnGetSugerenciasClientesAsync(string? termino) => AtenderAsync(async () =>
+    {
+        Response.Headers.CacheControl = "no-store";
+        return new JsonResult(await clientesApi.SugerirAsync(termino, HttpContext.RequestAborted));
+    });
+
     public Task<IActionResult> OnPostCreateAsync() => AtenderAsync(() => GuardarFormularioAsync(actualizar: false));
     public Task<IActionResult> OnPostUpdateAsync() => AtenderAsync(() => GuardarFormularioAsync(actualizar: true));
 

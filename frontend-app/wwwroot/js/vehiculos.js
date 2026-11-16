@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const aviso = formulario.querySelector("[data-placa-aviso]");
         input.pattern = extranjera ? input.dataset.patronExtranjero : input.dataset.patronNacional;
         input.maxLength = extranjera ? 15 : 7;
-        input.placeholder = extranjera ? "Ej. AB123CD" : "Ej. 123ABC o 1234ABC";
+        input.placeholder = extranjera ? "Ej. AB123CD" : "Ej. 1234ABC";
         input.value = input.value.replace(/\s/g, "").toUpperCase();
         if (extranjera) input.value = input.value.replace(/-/g, "");
         const ayuda = extranjera ? input.dataset.mensajeExtranjero : input.dataset.mensajeNacional;
@@ -51,7 +51,8 @@ document.addEventListener("DOMContentLoaded", () => {
             ["id", "placa", "marca", "kilometraje", "observaciones"].forEach(campo => {
                 document.getElementById(`editar-${campo}`).value = boton.dataset[campo] ?? "";
             });
-            document.getElementById("editar-cliente").value = boton.dataset.clienteId ?? "";
+            window.AutoTallerAutocompletado?.establecer("editar-cliente-autocompletado",
+                boton.dataset.clienteId ?? "", boton.dataset.clienteNombre ?? "");
             document.getElementById("editar-extranjera").checked = boton.dataset.extranjera === "true";
             formulario.querySelector('[name="BorradorId"]').value = "";
             cargarModelos(formulario, boton.dataset.modelo);
@@ -82,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         formulario.querySelector('[name="Formulario.Id"]').value = "0";
         formulario.querySelector('[name="BorradorId"]').value = "";
+        window.AutoTallerAutocompletado?.establecer("crear-cliente-autocompletado", "", "");
         cargarModelos(formulario);
         limpiarErrores(formulario);
         validarPlaca(formulario);

@@ -1,8 +1,12 @@
 @model TallerMecanico.Pages.Vehiculos.IndexModel
 @using TallerMecanico.Contratos.Catalogos
+@using TallerMecanico.Pages.Shared
 @{
     string prefijo = ViewData["Prefijo"]?.ToString() ?? "crear";
     bool extranjera = Model.Formulario.EsPlacaExtranjera;
+    string textoCliente = Model.Formulario.ClienteId.HasValue
+        ? Model.ObtenerNombreCliente(Model.Formulario.ClienteId)
+        : string.Empty;
 }
 
 <input asp-for="Formulario.Id" id="@(prefijo)-id" type="hidden" />
@@ -13,14 +17,20 @@
 <input type="hidden" name="VehiculoSeleccionadoId" value="@Model.VehiculoSeleccionadoId" />
 
 <div class="service-form-group">
-    <label for="@(prefijo)-cliente">Cliente <span class="campo-obligatorio">*</span></label>
-    <select asp-for="Formulario.ClienteId" id="@(prefijo)-cliente" class="service-input" required>
-        <option value="">Selecciona un cliente</option>
-        @foreach (var cliente in Model.Clientes)
-        {
-            <option value="@cliente.Id">@Model.ObtenerNombreCliente(cliente.Id) — CI: @Model.ObtenerCiCliente(cliente.Id)</option>
-        }
-    </select>
+    <partial name="_BuscadorAutocompletado" model='new BuscadorAutocompletadoModel
+    {
+        Id = $"{prefijo}-cliente-autocompletado",
+        UrlSugerencias = Url.Page("/Vehiculos/Index", "SugerenciasClientes")!,
+        Modo = BuscadorAutocompletadoModel.ModoSeleccionar,
+        Etiqueta = "Cliente *",
+        Placeholder = "Busca por CI, nombres o apellidos...",
+        NombreCampoTexto = $"{prefijo}-cliente-texto",
+        NombreCampoId = "Formulario.ClienteId",
+        Texto = textoCliente,
+        IdSeleccionado = Model.Formulario.ClienteId,
+        MensajeInicial = "Escribe al menos 2 caracteres del nombre o CI del cliente.",
+        MensajeSeleccionado = "Cliente seleccionado."
+    }' />
     <span asp-validation-for="Formulario.ClienteId" class="service-validation"></span>
     @if (Model.Clientes.Count == 0)
     {
@@ -42,7 +52,7 @@
     <input asp-for="Formulario.Placa" id="@(prefijo)-placa" class="service-input" required
            maxlength="@(extranjera ? 15 : 7)"
            pattern="@(extranjera ? ReglasVehiculo.PatronPlacaExtranjera : ReglasVehiculo.PatronPlaca)"
-           placeholder="@(extranjera ? "Ej. AB123CD" : "Ej. 123ABC o 1234ABC")"
+           placeholder="@(extranjera ? "Ej. AB123CD" : "Ej. 1234ABC")"
            data-patron-nacional="@ReglasVehiculo.PatronPlaca"
            data-patron-extranjero="@ReglasVehiculo.PatronPlacaExtranjera"
            data-mensaje-nacional="@ReglasVehiculo.MensajeFormatoPlaca"
@@ -94,6 +104,6 @@
     <label for="@(prefijo)-observaciones">Observaciones</label>
     <textarea asp-for="Formulario.Observaciones" id="@(prefijo)-observaciones" class="service-input service-textarea"
               rows="3" maxlength="@ReglasVehiculo.LongitudMaximaObservaciones"
-              placeholder="Detalles adicionales del estado del vehículo..."></textarea>
+              placeholder="Ej. Rayón en la puerta delantera, revisión de frenos pendiente..."></textarea>
     <span asp-validation-for="Formulario.Observaciones" class="service-validation"></span>
 </div>

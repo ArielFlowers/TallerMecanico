@@ -116,7 +116,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE);
 
         await abrirAlta('Vehiculo');
         assert.ok(new URL(page.url()).searchParams.get('OrdenBorradorId'));
-        assert.notEqual(await page.locator('#crear-cliente').inputValue(), '');
+        assert.notEqual(await page.locator('#crear-cliente-autocompletado-id').inputValue(), '');
         await page.locator('#crear-placa').fill('321XYZ');
         await page.locator('#crear-marca').selectOption('Toyota');
         await page.locator('#crear-modelo').selectOption('Hilux');
