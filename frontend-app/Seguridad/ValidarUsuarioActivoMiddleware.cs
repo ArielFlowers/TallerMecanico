@@ -27,6 +27,8 @@ public sealed class ValidarUsuarioActivoMiddleware(
             int.TryParse(identificadores[0], out userId) && userId > 0 && roles.Length == 1 &&
             roles[0] is Roles.Administrador or Roles.Recepcionista;
 
+        // "1": la cuenta cambió o se desactivó. "2": la sesión venció por inactividad (RF-07).
+        string motivo = "1";
         if (identidadValida)
         {
             bool cuentaVigente;
@@ -35,6 +37,11 @@ public sealed class ValidarUsuarioActivoMiddleware(
                 var estado = await usuarios.ObtenerEstadoAsync(userId, context.RequestAborted);
                 cuentaVigente = estado?.Activo == true &&
                     string.Equals(roles[0], estado.Rol, StringComparison.Ordinal);
+                if (cuentaVigente && !estado!.SesionVigente)
+                {
+                    cuentaVigente = false;
+                    motivo = "2";
+                }
             }
             catch (Exception error) when (error is HttpRequestException ||
                 error is TaskCanceledException && !context.RequestAborted.IsCancellationRequested)
@@ -52,11 +59,14 @@ public sealed class ValidarUsuarioActivoMiddleware(
             }
         }
 
-        logger.LogWarning("Sesión revocada por cambios en la cuenta o identidad inválida: {UserId}", userId);
+        if (motivo == "2")
+            logger.LogInformation("Sesión vencida por inactividad: {UserId}", userId);
+        else
+            logger.LogWarning("Sesión revocada por cambios en la cuenta o identidad inválida: {UserId}", userId);
         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         context.Session.Clear();
         context.User = new ClaimsPrincipal(new ClaimsIdentity());
-        context.Response.Redirect("/Auth/Login?expired=1");
+        context.Response.Redirect("/Auth/Login?expired=" + motivo);
     }
 }
 

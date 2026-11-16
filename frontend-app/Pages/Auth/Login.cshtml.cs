@@ -22,6 +22,8 @@ public class LoginModel(UsuariosApi usuarios) : PageModel
         if (User.Identity?.IsAuthenticated == true) return RedirectToPage("/Index");
         if (expired == "1")
             MensajeExpirado = "Su sesión ha expirado porque su cuenta cambió o fue desactivada. Inicie sesión nuevamente o contacte al administrador.";
+        if (expired == "2")
+            MensajeExpirado = "Su sesión expiró por inactividad. Inicie sesión nuevamente.";
         return Page();
     }
 

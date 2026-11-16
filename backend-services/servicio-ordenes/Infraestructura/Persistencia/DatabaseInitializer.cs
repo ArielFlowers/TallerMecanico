@@ -54,12 +54,14 @@ public class DatabaseInitializer
             EnsureServicioCodigoCatalogoSchema(connection);
             CreateUsuariosTable(connection);
             EnsureUsuariosEmailSchema(connection);
+            EnsureUsuariosSesionSchema(connection);
             CreateSolicitudesRegistroTable(connection);
             EnsureSolicitudesRegistroReenvioSchema(connection);
             EnsureSolicitudesRegistroRolSchema(connection);
             EnsureSolicitudesRegistroCreadoPorSchema(connection);
             CreateAuditoriaTable(connection);
             EnsureAuditoriaDetalleSchema(connection);
+            CreateConfiguracionTokensTable(connection);
         }
         finally
         {
@@ -1217,6 +1219,24 @@ public class DatabaseInitializer
         EnsureUsuariosEmailUniqueIndex(connection);
     }
 
+    // Hasta cuándo dura la sesión abierta del usuario (RF-07).
+    // NULL significa que no tiene una sesión abierta.
+    private static void EnsureUsuariosSesionSchema(
+        DbConnection connection)
+    {
+        if (ColumnExists(connection, "Usuarios", "SesionVenceEn"))
+        {
+            return;
+        }
+
+        ExecuteCommand(
+            connection,
+            """
+            ALTER TABLE Usuarios
+            ADD COLUMN SesionVenceEn DATETIME(6) NULL;
+            """);
+    }
+
     private static void EnsureUsuariosEmailUniqueIndex(
         DbConnection connection)
     {
@@ -1416,6 +1436,41 @@ public class DatabaseInitializer
                 INDEX IX_Auditoria_UsuarioId (UsuarioId)
             ) ENGINE=InnoDB
               DEFAULT CHARSET=utf8mb4;
+            """;
+
+        ExecuteCommand(connection, query);
+    }
+
+    // =====================================================
+    // CONFIGURACION DE TOKENS (RF-07)
+    // =====================================================
+
+    // La duración de los tokens se lee de esta tabla y no del código.
+    // INSERT IGNORE no pisa los valores que ya se cambiaron en la base.
+    private static void CreateConfiguracionTokensTable(
+        DbConnection connection)
+    {
+        const string query = """
+            CREATE TABLE IF NOT EXISTS ConfiguracionTokens
+            (
+                Clave VARCHAR(50) NOT NULL,
+                DuracionMinutos INT NOT NULL,
+                Descripcion VARCHAR(200) NULL,
+
+                CONSTRAINT PK_ConfiguracionTokens
+                    PRIMARY KEY (Clave),
+
+                CONSTRAINT CK_ConfiguracionTokens_Duracion
+                    CHECK (DuracionMinutos BETWEEN 1 AND 10080)
+            ) ENGINE=InnoDB
+              DEFAULT CHARSET=utf8mb4;
+
+            INSERT IGNORE INTO ConfiguracionTokens
+                (Clave, DuracionMinutos, Descripcion)
+            VALUES
+                ('VerificacionEmail', 60, 'Enlace para confirmar el correo del registro'),
+                ('InvitacionUsuario', 60, 'Enlace de invitación que envía el administrador'),
+                ('SesionUsuario', 30, 'Sesión iniciada sin actividad');
             """;
 
         ExecuteCommand(connection, query);
